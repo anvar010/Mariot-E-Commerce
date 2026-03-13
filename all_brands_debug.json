@@ -1,0 +1,662 @@
+[
+  {
+    "name": "3MF",
+    "slug": "3mf",
+    "brand_type": "Dry Store",
+    "image_url": "/assets/brands/3mf.jpg.webp"
+  },
+  {
+    "name": "ACE FILTERS",
+    "slug": "ace-filters",
+    "brand_type": "All",
+    "image_url": "/assets/brands/Falater.png.webp"
+  },
+  {
+    "name": "Ailipu",
+    "slug": "ailipu",
+    "brand_type": "All",
+    "image_url": "/assets/brands/ailipu-1.webp"
+  },
+  {
+    "name": "ALTO-SHAAM",
+    "slug": "alto-shaam",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/Alto-Shaam.png.webp"
+  },
+  {
+    "name": "Anfim",
+    "slug": "anfim",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/anfilm.png.webp"
+  },
+  {
+    "name": "APW Wyott",
+    "slug": "apw-wyott",
+    "brand_type": "All",
+    "image_url": "/assets/brands/apwwyott.png.webp"
+  },
+  {
+    "name": "ASAKI",
+    "slug": "asaki",
+    "brand_type": "Food Processing",
+    "image_url": "/assets/brands/asaki-logo.jpg.webp"
+  },
+  {
+    "name": "BATTISTELLA",
+    "slug": "battistella",
+    "brand_type": "All",
+    "image_url": "/assets/brands/BATTISTELLA-1.webp"
+  },
+  {
+    "name": "BERJAYA",
+    "slug": "berjaya",
+    "brand_type": "All",
+    "image_url": "/assets/brands/Berjaya-Logo.jpg.webp"
+  },
+  {
+    "name": "BILAIT",
+    "slug": "bilait",
+    "brand_type": "All",
+    "image_url": "/assets/brands/BILAIT-Logo.webp"
+  },
+  {
+    "name": "Bimatic",
+    "slug": "bimatic",
+    "brand_type": "Food Processing",
+    "image_url": "/assets/brands/bimatic.webp"
+  },
+  {
+    "name": "Blendec",
+    "slug": "blendec",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "blendtec",
+    "slug": "blendtec",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/Blendec-logo.png.webp"
+  },
+  {
+    "name": "BREMA",
+    "slug": "brema",
+    "brand_type": "Refrigeration-line",
+    "image_url": "/assets/brands/brema.jpg.webp"
+  },
+  {
+    "name": "Bunn",
+    "slug": "bunn",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/bunn.webp"
+  },
+  {
+    "name": "CAMRY",
+    "slug": "camry",
+    "brand_type": "Dry Store",
+    "image_url": "/assets/brands/camry.jpg.webp"
+  },
+  {
+    "name": "capinox",
+    "slug": "capinox",
+    "brand_type": "All",
+    "image_url": "/assets/brands/capinox.jpg.webp"
+  },
+  {
+    "name": "COFRIMELL",
+    "slug": "cofrimell",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/cofrimell.jpg.webp"
+  },
+  {
+    "name": "Desmon",
+    "slug": "desmon",
+    "brand_type": "Refrigeration-line",
+    "image_url": "/assets/brands/desmon.png.webp"
+  },
+  {
+    "name": "EASYLINE",
+    "slug": "easyline",
+    "brand_type": "All",
+    "image_url": "/assets/brands/easyline.jpg.webp"
+  },
+  {
+    "name": "Electrolux",
+    "slug": "electrolux",
+    "brand_type": "All",
+    "image_url": "/assets/brands/electrolux.jpg.webp"
+  },
+  {
+    "name": "EMPERO",
+    "slug": "empero",
+    "brand_type": "All",
+    "image_url": "/assets/brands/empero.jpg.webp"
+  },
+  {
+    "name": "FAGOR",
+    "slug": "fagor",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/FagorProfesional.png.webp"
+  },
+  {
+    "name": "Falater",
+    "slug": "falater",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "fimar",
+    "slug": "fimar",
+    "brand_type": "Food Processing",
+    "image_url": "/assets/brands/fimar.jpg.webp"
+  },
+  {
+    "name": "Frymaster",
+    "slug": "frymaster",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/FRYMASTER.png.webp"
+  },
+  {
+    "name": "GEL MATIC",
+    "slug": "gel-matic",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/gelmatic.jpg.webp"
+  },
+  {
+    "name": "George Haddad",
+    "slug": "george-haddad",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "GG F",
+    "slug": "gg-f",
+    "brand_type": "All",
+    "image_url": "/assets/brands/ggf-logo.jpg.webp"
+  },
+  {
+    "name": "GHS",
+    "slug": "ghs",
+    "brand_type": "Food Processing",
+    "image_url": "/assets/brands/ghs.jpg.webp"
+  },
+  {
+    "name": "Grindmaster",
+    "slug": "grindmaster",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/grindmaster.webp"
+  },
+  {
+    "name": "Hamilton Beach",
+    "slug": "hamilton-beach",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/hamilton-logo.jpg.webp"
+  },
+  {
+    "name": "Hatco",
+    "slug": "hatco",
+    "brand_type": "All",
+    "image_url": "/assets/brands/hacto.jpg.webp"
+  },
+  {
+    "name": "HCONVED",
+    "slug": "hconved",
+    "brand_type": "Laundry & Dish Washer",
+    "image_url": "/assets/brands/hoonved.jpg.webp"
+  },
+  {
+    "name": "HENNY PENNY",
+    "slug": "henny-penny",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/hennypenny.jpg.webp"
+  },
+  {
+    "name": "HOBART",
+    "slug": "hobart",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "Hoonved Dishwasher",
+    "slug": "hoonved-dishwasher",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "Hoshizaki",
+    "slug": "hoshizaki",
+    "brand_type": "Refrigeration-line",
+    "image_url": "/assets/brands/hoshizaki.webp"
+  },
+  {
+    "name": "IMESA",
+    "slug": "imesa",
+    "brand_type": "Laundry & Dish Washer",
+    "image_url": "/assets/brands/imesa.jpg.webp"
+  },
+  {
+    "name": "IMPERIAL",
+    "slug": "imperial",
+    "brand_type": "All",
+    "image_url": "/assets/brands/IMPERIAL.png.webp"
+  },
+  {
+    "name": "INFRICO",
+    "slug": "infrico",
+    "brand_type": "Refrigeration-line",
+    "image_url": "/assets/brands/inofrigo.jpg.webp"
+  },
+  {
+    "name": "Inofrigo",
+    "slug": "inofrigo",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "Johny",
+    "slug": "johny",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "JOSPER",
+    "slug": "josper",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/josper.jpg.webp"
+  },
+  {
+    "name": "KITCHENAID",
+    "slug": "kitchenaid",
+    "brand_type": "All",
+    "image_url": "/assets/brands/Kitchen-Aid.png.webp"
+  },
+  {
+    "name": "LA CIMBALI",
+    "slug": "la-cimbali",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/lacimbali.jpg.webp"
+  },
+  {
+    "name": "LA MARZOCCO",
+    "slug": "la-marzocco",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/La-Marzocco.png.webp"
+  },
+  {
+    "name": "La Minerva",
+    "slug": "la-minerva",
+    "brand_type": "Food Processing",
+    "image_url": "/assets/brands/LA-MINERVA.png.webp"
+  },
+  {
+    "name": "Longoni",
+    "slug": "longoni",
+    "brand_type": "All",
+    "image_url": "/assets/brands/Longoni-Brand.png.webp"
+  },
+  {
+    "name": "mac.pan",
+    "slug": "mac.pan",
+    "brand_type": "Bakery",
+    "image_url": "/assets/brands/macpac.jpg.webp"
+  },
+  {
+    "name": "MAHLKONIG",
+    "slug": "mahlkonig",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/MAHLKONIG-vector-logo.png.webp"
+  },
+  {
+    "name": "MARIOT",
+    "slug": "mariot",
+    "brand_type": "All",
+    "image_url": "/assets/brands/mariot.jpg.webp"
+  },
+  {
+    "name": "MARIOT FABRICATION",
+    "slug": "mariot-fabrication",
+    "brand_type": "All",
+    "image_url": "/assets/brands/fabrication.webp"
+  },
+  {
+    "name": "MBM",
+    "slug": "mbm",
+    "brand_type": "All",
+    "image_url": "/assets/brands/mbm-logo.jpg.webp"
+  },
+  {
+    "name": "MENUMASTER",
+    "slug": "menumaster",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/menumaster.jpg.webp"
+  },
+  {
+    "name": "MERRYCHEF",
+    "slug": "merrychef",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/merrychef.png.webp"
+  },
+  {
+    "name": "Middleby Marshall",
+    "slug": "middleby-marshall",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/middleby-marshall-logo.gif.webp"
+  },
+  {
+    "name": "miska",
+    "slug": "miska",
+    "brand_type": "All",
+    "image_url": "/assets/brands/Logo-MiskaFoodTechnology1.jpg.webp"
+  },
+  {
+    "name": "MKE-MATIC",
+    "slug": "mke-matic",
+    "brand_type": "All",
+    "image_url": "/assets/brands/mke-logo.jpg.webp"
+  },
+  {
+    "name": "MOEL",
+    "slug": "moel",
+    "brand_type": "All",
+    "image_url": "/assets/brands/moel.jpg.webp"
+  },
+  {
+    "name": "MONOLITH",
+    "slug": "monolith",
+    "brand_type": "Food Processing",
+    "image_url": "/assets/brands/monolith.jpg.webp"
+  },
+  {
+    "name": "Motex",
+    "slug": "motex",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "Mussana",
+    "slug": "mussana",
+    "brand_type": "All",
+    "image_url": "/assets/brands/mussana.webp"
+  },
+  {
+    "name": "nuova SIMONELLI",
+    "slug": "nuova-simonelli",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/simonelli.jpg.webp"
+  },
+  {
+    "name": "OMEGA",
+    "slug": "omega",
+    "brand_type": "All",
+    "image_url": "/assets/brands/Omega.png.webp"
+  },
+  {
+    "name": "oztiryakiler",
+    "slug": "oztiryakiler",
+    "brand_type": "All",
+    "image_url": "/assets/brands/oztriyakiler.jpg.webp"
+  },
+  {
+    "name": "Pastaline",
+    "slug": "pastaline",
+    "brand_type": "Bakery",
+    "image_url": "/assets/brands/pastaline.webp"
+  },
+  {
+    "name": "PITCO",
+    "slug": "pitco",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/pitco.jpg.webp"
+  },
+  {
+    "name": "POSLIX",
+    "slug": "poslix",
+    "brand_type": "All",
+    "image_url": "/assets/brands/poslix.jpg.webp"
+  },
+  {
+    "name": "PRINCE CASTLE",
+    "slug": "prince-castle",
+    "brand_type": "All",
+    "image_url": "/assets/brands/prince-casle.png.webp"
+  },
+  {
+    "name": "RANCILIO",
+    "slug": "rancilio",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/Rancilio-logo-1.png.webp"
+  },
+  {
+    "name": "RATIONAL",
+    "slug": "rational",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/rational.jpg.webp"
+  },
+  {
+    "name": "RED FOX",
+    "slug": "red-fox",
+    "brand_type": "All",
+    "image_url": "/assets/brands/redfox.jpg.webp"
+  },
+  {
+    "name": "RM Gastro",
+    "slug": "rm-gastro",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "robot coupe",
+    "slug": "robot-coupe",
+    "brand_type": "Food Processing",
+    "image_url": "/assets/brands/robotcoupe.jpg.webp"
+  },
+  {
+    "name": "ROLLER GRILL",
+    "slug": "roller-grill",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/roller-grill.jpg.webp"
+  },
+  {
+    "name": "ROTONDI",
+    "slug": "rotondi",
+    "brand_type": "All",
+    "image_url": "/assets/brands/Rotondi-Group.png.webp"
+  },
+  {
+    "name": "SAB",
+    "slug": "sab",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/sab.jpg.webp"
+  },
+  {
+    "name": "Salva",
+    "slug": "salva",
+    "brand_type": "Bakery",
+    "image_url": "/assets/brands/salva.webp"
+  },
+  {
+    "name": "samixir",
+    "slug": "samixir",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/samixir.jpg.webp"
+  },
+  {
+    "name": "SANTOS",
+    "slug": "santos",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/santos.jpg.webp"
+  },
+  {
+    "name": "SAP",
+    "slug": "sap",
+    "brand_type": "All",
+    "image_url": "/assets/brands/sap-bone-saw-machine-in-dubai.png.webp"
+  },
+  {
+    "name": "SERVER",
+    "slug": "server",
+    "brand_type": "All",
+    "image_url": "/assets/brands/server.jpg.webp"
+  },
+  {
+    "name": "SHEFFIELD",
+    "slug": "sheffield",
+    "brand_type": "All",
+    "image_url": "/assets/brands/Sheffiel.png.webp"
+  },
+  {
+    "name": "Snooker",
+    "slug": "snooker",
+    "brand_type": "All",
+    "image_url": "/assets/brands/snooker-1.webp"
+  },
+  {
+    "name": "SOFINOR",
+    "slug": "sofinor",
+    "brand_type": "All",
+    "image_url": "/assets/brands/sofinor.jpg.webp"
+  },
+  {
+    "name": "SOUTHBEND",
+    "slug": "southbend",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/southbend.jpg.webp"
+  },
+  {
+    "name": "SPACEMAN",
+    "slug": "spaceman",
+    "brand_type": "All",
+    "image_url": "/assets/brands/20210329_Spaceman-Logo_Black.png.webp"
+  },
+  {
+    "name": "Speed Queen",
+    "slug": "speed-queen",
+    "brand_type": "Laundry & Dish Washer",
+    "image_url": "/assets/brands/Speed-Queen.png.webp"
+  },
+  {
+    "name": "STAR",
+    "slug": "star",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/star.jpg.webp"
+  },
+  {
+    "name": "STILCO",
+    "slug": "stilco",
+    "brand_type": "All",
+    "image_url": "/assets/brands/stilco1.jpg.webp"
+  },
+  {
+    "name": "TECHNOCOOLER",
+    "slug": "technocooler",
+    "brand_type": "Refrigeration-line",
+    "image_url": "/assets/brands/technocooler.jpg.webp"
+  },
+  {
+    "name": "Tecno Cooler",
+    "slug": "tecno-cooler",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "TECNODOM",
+    "slug": "tecnodom",
+    "brand_type": "Refrigeration-line",
+    "image_url": "/assets/brands/tecnodom.jpg.webp"
+  },
+  {
+    "name": "TOASTMASTER",
+    "slug": "toastmaster",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/Toastmaster.png.webp"
+  },
+  {
+    "name": "Turbo Chef",
+    "slug": "turbo-chef",
+    "brand_type": "All",
+    "image_url": "/assets/brands/turbo-chef.webp"
+  },
+  {
+    "name": "UEBERMILK",
+    "slug": "uebermilk",
+    "brand_type": "All",
+    "image_url": "/assets/brands/uebermilk_logo_small.png.webp"
+  },
+  {
+    "name": "UNION",
+    "slug": "union",
+    "brand_type": "All",
+    "image_url": "/assets/brands/Union.png.webp"
+  },
+  {
+    "name": "UNOX",
+    "slug": "unox",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/unox.jpg.webp"
+  },
+  {
+    "name": "VAIR",
+    "slug": "vair",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "Venarro",
+    "slug": "venarro",
+    "brand_type": "All",
+    "image_url": "/assets/brands/venarro.jpg.webp"
+  },
+  {
+    "name": "Venix",
+    "slug": "venix",
+    "brand_type": "All",
+    "image_url": "/assets/brands/venix.jpg.webp"
+  },
+  {
+    "name": "VITAMIX",
+    "slug": "vitamix",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/vitamix.jpg.webp"
+  },
+  {
+    "name": "VITO",
+    "slug": "vito",
+    "brand_type": "All",
+    "image_url": "/assets/brands/VITO-OIL-FILTER-SYSTEM.png.webp"
+  },
+  {
+    "name": "VULCAN",
+    "slug": "vulcan",
+    "brand_type": "Cooking",
+    "image_url": "/assets/brands/VULCAN-BRAND.png.webp"
+  },
+  {
+    "name": "Waring USA",
+    "slug": "waring-usa",
+    "brand_type": "All",
+    "image_url": null
+  },
+  {
+    "name": "Warning",
+    "slug": "warning",
+    "brand_type": "Food Processing",
+    "image_url": "/assets/brands/warning.jpg.webp"
+  },
+  {
+    "name": "Zemic",
+    "slug": "zemic",
+    "brand_type": "All",
+    "image_url": "/assets/brands/Zemic-Europe.png.webp"
+  },
+  {
+    "name": "Zmatik",
+    "slug": "zmatik",
+    "brand_type": "Bakery",
+    "image_url": "/assets/brands/zmatik-1.webp"
+  },
+  {
+    "name": "Zumex",
+    "slug": "zumex",
+    "brand_type": "Coffee & Bar",
+    "image_url": "/assets/brands/Zumex.png.webp"
+  }
+]
