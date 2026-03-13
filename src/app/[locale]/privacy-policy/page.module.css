@@ -1,0 +1,96 @@
+.main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8fafc;
+}
+
+.container {
+    width: 100%;
+    margin: 0;
+    padding: 60px 0;
+    flex: 1;
+}
+
+.contentWrapper {
+    background-color: #ffffff;
+    padding: 60px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    width: 100%;
+    text-align: center !important;
+}
+
+.mainTitle {
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+    text-align: center !important;
+    font-weight: 700;
+}
+
+.lastUpdated {
+    text-align: center !important;
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.documentBody {
+    color: #334155;
+    line-height: 1.8;
+    font-size: 1.05rem;
+    text-align: center !important;
+}
+
+.intro {
+    font-size: 1.05rem;
+    margin-bottom: 40px;
+    color: #475569;
+    background: linear-gradient(to right, #ffffff, #f1f5f9);
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+    line-height: 1.8;
+    position: relative;
+    text-align: center !important;
+}
+
+.noticeLabel {
+    display: block;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 12px;
+    font-size: 1.2rem;
+    text-align: center !important;
+}
+
+.section {
+    margin-bottom: 40px;
+}
+
+.section h2 {
+    color: #0f172a;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f1f5f9;
+    text-align: center !important;
+}
+
+.section p {
+    margin-bottom: 16px;
+    text-align: center !important;
+}
+
+@media (max-width: 768px) {
+    .contentWrapper {
+        padding: 30px 20px;
+    }
+
+    .mainTitle {
+        font-size: 2rem;
+    }
+}

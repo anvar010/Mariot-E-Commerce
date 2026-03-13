@@ -1,0 +1,350 @@
+/* ===== Section ===== */
+.categorySection {
+    padding: 20px 0 20px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafb 100%);
+    overflow: hidden;
+}
+
+.container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 60px;
+}
+
+/* ===== Section Header ===== */
+.sectionHeader {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    gap: 20px;
+}
+
+.sectionHeaderLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sectionTag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #5bb377;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.sectionTitle {
+    font-size: 32px;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+}
+
+.sectionSubtitle {
+    font-size: 15px;
+    color: #6b7280;
+    font-weight: 400;
+    margin-top: 2px;
+}
+
+.sectionHeaderRight {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+}
+
+.viewAllLink {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5bb377;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.viewAllLink:hover {
+    color: #3d8b5a;
+    gap: 10px;
+}
+
+.navBtns {
+    display: flex;
+    gap: 8px;
+}
+
+.navBtn {
+    width: 40px;
+    height: 40px;
+    background: #ffffff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.navBtn:hover {
+    background: #111827;
+    color: #ffffff;
+    border-color: #111827;
+}
+
+.navBtnDisabled {
+    opacity: 0.35;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* ===== Slider ===== */
+.sliderWrapper {
+    position: relative;
+}
+
+.categoryGrid {
+    display: flex;
+    overflow-x: auto;
+    gap: 20px;
+    padding: 8px 4px 16px;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.categoryGrid::-webkit-scrollbar {
+    display: none;
+}
+
+/* ===== Fade Edges ===== */
+.fadeLeft,
+.fadeRight {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.fadeLeft {
+    left: 0;
+    background: linear-gradient(90deg, rgba(248, 250, 251, 0.95) 0%, transparent 100%);
+}
+
+.fadeRight {
+    right: 0;
+    background: linear-gradient(270deg, rgba(248, 250, 251, 0.95) 0%, transparent 100%);
+}
+
+/* ===== Category Card ===== */
+.categoryCard {
+    flex: 0 0 180px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1.5px solid #f0f0f0;
+    overflow: hidden;
+    animation: cardFadeIn 0.4s ease both;
+}
+
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.categoryCard:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+    border-color: #d1d5db;
+}
+
+/* ===== Image Box ===== */
+.imageBox {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: #f9fafb;
+    transition: background 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.imageOverlay {
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(91, 179, 119, 0);
+    transition: background 0.3s ease;
+    z-index: 2;
+}
+
+.categoryCard:hover .imageOverlay {
+    background: transparent;
+}
+
+.categoryCard:hover .imageBox {
+    background: #f9fafb;
+}
+
+.categoryImg {
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+}
+
+.categoryCard:hover .categoryImg {
+    transform: scale(1.04);
+}
+
+/* ===== Card Bottom ===== */
+.cardBottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-top: 1px solid #f3f4f6;
+    gap: 8px;
+}
+
+.categoryName {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    line-height: 1.3;
+    transition: color 0.2s ease;
+    flex: 1;
+}
+
+.categoryCard:hover .categoryName {
+    color: #5bb377;
+}
+
+.categoryArrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #9ca3af;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+}
+
+.categoryCard:hover .categoryArrow {
+    background: #5bb377;
+    color: #ffffff;
+    transform: translateX(2px);
+}
+
+/* ===== Responsiveness ===== */
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 30px;
+    }
+
+    .categoryCard {
+        flex: 0 0 160px;
+    }
+
+    .sectionTitle {
+        font-size: 26px;
+    }
+}
+
+@media (max-width: 768px) {
+    .categorySection {
+        padding: 20px 0 20px;
+    }
+
+    .container {
+        padding: 0 20px;
+    }
+
+    .sectionHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 28px;
+        gap: 16px;
+    }
+
+    .sectionTitle {
+        font-size: 22px;
+    }
+
+    .sectionSubtitle {
+        font-size: 13px;
+    }
+
+    .sectionHeaderRight {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .categoryCard {
+        flex: 0 0 170px;
+    }
+
+    .cardBottom {
+        padding: 12px 14px;
+    }
+
+    .categoryName {
+        font-size: 13px;
+    }
+
+    .fadeLeft,
+    .fadeRight {
+        width: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0 16px;
+    }
+
+    .categoryCard {
+        flex: 0 0 155px;
+    }
+
+    .navBtns {
+        display: none;
+    }
+
+    .categoryGrid {
+        gap: 14px;
+    }
+}

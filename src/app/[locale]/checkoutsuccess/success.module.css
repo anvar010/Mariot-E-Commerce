@@ -1,0 +1,256 @@
+.successPage {
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 80px 20px;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Hero Section */
+.successHero {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.iconWrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.checkIcon {
+    color: #10b981;
+    filter: drop-shadow(0 10px 15px rgba(16, 185, 129, 0.2));
+}
+
+.mainTitle {
+    font-size: 48px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+    letter-spacing: -1px;
+}
+
+.subTitle {
+    font-size: 20px;
+    color: #64748b;
+    margin-bottom: 24px;
+}
+
+.orderBadge {
+    display: inline-block;
+    background: #ffffff;
+    padding: 8px 20px;
+    border-radius: 100px;
+    border: 1.5px solid #e2e8f0;
+    color: #1e293b;
+    font-size: 15px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.orderBadge strong {
+    color: #237073;
+}
+
+/* Timeline */
+.timeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 64px;
+}
+
+.timelineItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    flex: 1;
+}
+
+.dot {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.dot.active {
+    border-color: #237073;
+    background: #237073;
+    box-shadow: 0 0 0 4px rgba(35, 112, 115, 0.15);
+}
+
+.timelineItem span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.timelineItem:first-child span {
+    color: #0f172a;
+}
+
+.timelineLine {
+    height: 2px;
+    background: #e2e8f0;
+    flex: 1;
+    margin-bottom: 26px;
+    position: relative;
+    top: -6px;
+}
+
+/* Info Grid */
+.infoGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    margin-bottom: 48px;
+}
+
+.card {
+    background: white;
+    padding: 32px;
+    border-radius: 20px;
+    border: 1.5px solid #f1f5f9;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.cardTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 20px;
+}
+
+.stepsList {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.stepsList li {
+    display: flex;
+    gap: 16px;
+}
+
+.stepIcon {
+    width: 36px;
+    height: 36px;
+    background: #f0f9f9;
+    color: #237073;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stepsList p {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.cardText {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.supportLinks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.supportLinks span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #237073;
+}
+
+/* Actions */
+.actions {
+    display: flex;
+    gap: 16px;
+}
+
+.continueBtn {
+    background: #237073;
+    color: white;
+    padding: 16px 32px;
+    border-radius: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s;
+    box-shadow: 0 10px 15px -3px rgba(35, 112, 115, 0.25);
+}
+
+.continueBtn:hover {
+    background: #1a5658;
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(35, 112, 115, 0.3);
+}
+
+.ordersBtn {
+    background: white;
+    color: #1e293b;
+    padding: 16px 32px;
+    border-radius: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s;
+}
+
+.ordersBtn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .mainTitle {
+        font-size: 36px;
+    }
+
+    .infoGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .continueBtn,
+    .ordersBtn {
+        justify-content: center;
+    }
+}

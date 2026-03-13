@@ -1,0 +1,74 @@
+/* Quotation Form in Cart */
+.quotationFormContainer {
+    padding: 20px 0;
+}
+
+.quotationTitle {
+    font-size: 20px;
+    font-weight: 800;
+    font-style: italic;
+    color: #333;
+    margin-bottom: 25px;
+}
+
+.quotationFormGroup {
+    margin-bottom: 20px;
+}
+
+.quotationFormGroup label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.required {
+    color: #e31e24;
+}
+
+.quotationFormGroup input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #333;
+    outline: none;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.quotationFormGroup input::placeholder {
+    color: #94a3b8;
+}
+
+.quotationFormGroup input:focus {
+    border-color: #337c7f;
+    box-shadow: 0 0 0 3px rgba(51, 124, 127, 0.1);
+}
+
+.downloadBtn {
+    width: 100%;
+    background: #337c7f;
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.downloadBtn:hover:not(:disabled) {
+    background: #2a6669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(51, 124, 127, 0.3);
+}
+
+.downloadBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}

@@ -1,0 +1,239 @@
+.adminOrders {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding: 20px 0;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.titleSection h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.6px;
+    margin-bottom: 4px;
+}
+
+.titleSection p {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.totalBadge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #e2e8f0;
+}
+
+.totalBadge strong {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.exportBtn {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.exportBtn:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.exportBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.filtersWrapper {
+    background-color: #ffffff;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.searchBox {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 0 12px;
+    border-radius: 8px;
+    gap: 10px;
+    color: #94a3b8;
+    transition: all 0.2s;
+}
+
+.searchBox:focus-within {
+    border-color: #94a3b8;
+    background-color: #ffffff;
+}
+
+.searchBox input {
+    width: 100%;
+    padding: 10px 0;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.tableWrapper {
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    text-align: start;
+    padding: 12px 20px;
+    background-color: #f8fafc;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.table tr:hover {
+    background-color: #f8fafc;
+}
+
+.id {
+    color: #4c6ef5;
+    font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.clientInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.customerName {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.customerEmail {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.statusBadge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    display: inline-flex;
+}
+
+.statusPending {
+    background: #fff9db;
+    color: #f59f00;
+    border: 1px solid #ffe066;
+}
+
+.statusProcessing {
+    background: #e7f5ff;
+    color: #1971c2;
+    border: 1px solid #a5d8ff;
+}
+
+.statusShipped {
+    background: #e3fafc;
+    color: #0b7285;
+    border: 1px solid #99e9f2;
+}
+
+.statusDelivered {
+    background: #ebfbee;
+    color: #2f9e44;
+    border: 1px solid #b2f2bb;
+}
+
+.statusCancelled {
+    background: #fff5f5;
+    color: #e03131;
+    border: 1px solid #ffc9c9;
+}
+
+.actionSelect {
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+    outline: none;
+    cursor: pointer;
+    background-color: #fff;
+    transition: all 0.2s;
+}
+
+.actionSelect:hover {
+    border-color: #cbd5e1;
+}
+
+.amount {
+    font-weight: 700;
+    color: #0f172a;
+}

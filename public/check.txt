@@ -1,0 +1,16 @@
+[
+  {
+    "id": 77,
+    "name": "Coffe maker",
+    "is_daily_offer": 1,
+    "offer_start": "2026-03-04T20:07:00.000Z",
+    "offer_end": "2026-02-05T20:00:00.000Z"
+  },
+  {
+    "id": 78,
+    "name": "Coffee Makers",
+    "is_daily_offer": 0,
+    "offer_start": null,
+    "offer_end": null
+  }
+]

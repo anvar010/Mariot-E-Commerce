@@ -1,0 +1,274 @@
+.offersSection {
+    padding: 60px 0 0;
+    background-color: #f3f4f6;
+    overflow: hidden;
+}
+
+.container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+    margin-top: -50px;
+}
+
+.offersGrid {
+    display: flex;
+    overflow-x: auto;
+    gap: 20px;
+    margin-bottom: 40px;
+    padding: 10px 5px 30px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #3ba1a1 #f3f4f6;
+}
+
+/* ===== Full-Image Poster Card ===== */
+.offerCard {
+    flex: 0 0 260px;
+    height: 320px;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    scroll-snap-align: start;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.offerCard:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Image fills entire card */
+.imageContainer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.offerImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.offerCard:hover .offerImage {
+    transform: scale(1.05);
+}
+
+/* Gradient overlay at the bottom for text readability */
+.imageContainer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+            rgba(0, 0, 0, 0) 30%,
+            rgba(0, 0, 0, 0.25) 55%,
+            rgba(0, 0, 0, 0.75) 100%);
+    z-index: 1;
+    transition: background 0.3s ease;
+}
+
+.offerCard:hover .imageContainer::after {
+    background: linear-gradient(180deg,
+            rgba(0, 0, 0, 0) 20%,
+            rgba(0, 0, 0, 0.3) 50%,
+            rgba(0, 0, 0, 0.8) 100%);
+}
+
+/* Subtitle badge — top-right floating tag */
+.overlayText {
+    position: absolute;
+    top: 16px;
+    inset-inline-end: 16px;
+    background: rgba(255, 59, 48, 0.9);
+    color: white;
+    padding: 6px 14px;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 20px;
+    z-index: 5;
+    backdrop-filter: blur(4px);
+}
+
+/* Content overlaid at the bottom of the card */
+.cardContent {
+    position: absolute;
+    bottom: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    padding: 16px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cardTitle {
+    font-size: 16px;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.2;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.cardDescription {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.shopBtn {
+    margin-top: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: fit-content;
+}
+
+.shopBtn:hover {
+    background: #ffffff;
+    color: #333;
+    border-color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+}
+
+/* Ticker / Marquee */
+.tickerContainer {
+    background-color: #f1f7ff;
+    padding: 24px 0;
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.tickerTrack {
+    display: flex;
+    white-space: nowrap;
+    animation: marquee 25s linear infinite;
+    width: max-content;
+}
+
+[dir='rtl'] .tickerTrack {
+    animation: marquee-rtl 25s linear infinite;
+}
+
+.tickerItem {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    padding-inline-end: 30px;
+    color: #4b5563;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.separator {
+    color: #3ba1a1;
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+.highlight {
+    color: #1f2937;
+    font-weight: 800;
+    text-shadow: none;
+}
+
+/* Pause on hover for readability */
+.tickerContainer:hover .tickerTrack {
+    animation-play-state: paused;
+}
+
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes marquee-rtl {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(50%);
+    }
+}
+
+/* Responsiveness */
+@media (max-width: 1200px) {
+    .offerCard {
+        flex: 0 0 240px;
+        height: 300px;
+    }
+
+    .cardTitle {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .offerCard {
+        flex: 0 0 220px;
+        height: 280px;
+    }
+
+    .cardTitle {
+        font-size: 14px;
+    }
+
+    .tickerItem {
+        font-size: 18px;
+        gap: 20px;
+    }
+}
+
+@media (max-width: 640px) {
+    .offerCard {
+        flex: 0 0 220px;
+        height: 280px;
+    }
+
+    .container {
+        padding: 0 16px;
+    }
+
+    .cardTitle {
+        font-size: 18px;
+    }
+
+    .tickerText {
+        font-size: 18px;
+    }
+}

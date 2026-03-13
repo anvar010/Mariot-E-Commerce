@@ -1,0 +1,396 @@
+.adminSEO {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding: 20px 0;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.titleSection h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.6px;
+    margin-bottom: 4px;
+}
+
+.titleSection p {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ecfdf5;
+    color: #059669;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #d1fae5;
+}
+
+.refreshBtn {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.refreshBtn:hover:not(:disabled) {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.refreshBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.statCard {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s;
+}
+
+.statCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.iconBox {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blueIcon {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.greenIcon {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.yellowIcon {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.indigoIcon {
+    background: #eef2ff;
+    color: #6366f1;
+}
+
+.statValue {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 2px;
+}
+
+.statLabel {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.analysisGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.cardHeader {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cardHeader h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.cardContent {
+    padding: 24px;
+}
+
+/* Health Items */
+.healthItem {
+    margin-bottom: 20px;
+}
+
+.healthItem:last-child {
+    margin-bottom: 0;
+}
+
+.healthLabel {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+}
+
+.healthCount {
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+}
+
+.countBad {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.countWarning {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.countGood {
+    background: #d1fae5;
+    color: #10b981;
+}
+
+.countInfo {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.progressBar {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Page Performance Items */
+.perfItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #f1f5f9;
+}
+
+.perfItem:last-child {
+    margin-bottom: 0;
+}
+
+.perfLabel strong {
+    display: block;
+    font-size: 14px;
+    color: #0f172a;
+    margin-bottom: 2px;
+}
+
+.perfLabel span {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.perfValueBlock {
+    text-align: end;
+}
+
+.perfValue {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.perfBadge {
+    font-size: 10px;
+    font-weight: 700;
+    color: #10b981;
+    letter-spacing: 0.05em;
+}
+
+/* Action Plan Section */
+.actionPlan {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    padding: 24px;
+}
+
+.actionPlan h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 20px;
+}
+
+.actionGrid {
+    display: grid;
+    gap: 12px;
+}
+
+.actionItem {
+    border-radius: 12px;
+    padding: 2px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.actionMain {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-radius: 10px;
+}
+
+.actionItem:hover {
+    transform: translateX(4px);
+}
+
+.actionIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.actionText h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 2px 0;
+}
+
+.actionText p {
+    font-size: 12px;
+    margin: 0;
+    opacity: 0.8;
+}
+
+.chevron {
+    margin-inline-start: auto;
+    color: inherit;
+    transition: transform 0.3s;
+}
+
+.chevronActive {
+    transform: rotate(180deg);
+}
+
+.dropdownContent {
+    margin: 0 16px 16px 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.issueRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.issueRow:last-child {
+    border-bottom: none;
+}
+
+.issueRow span {
+    font-size: 13px;
+    color: #334155;
+    font-weight: 500;
+}
+
+.fixBtn {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    cursor: pointer;
+}
+
+.fixBtn:hover {
+    border-color: #0f172a;
+    color: #0f172a;
+}
