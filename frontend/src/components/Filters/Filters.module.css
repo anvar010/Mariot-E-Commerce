@@ -1,0 +1,174 @@
+.sidebar {
+    width: 280px;
+    background: white;
+    border-radius: 4px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+    align-self: flex-start;
+    height: fit-content;
+}
+
+.filterHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px;
+    background: #fff;
+    border-bottom: 1px solid #efefef;
+}
+
+.filterTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #444;
+}
+
+.filterHeader h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.resetBtn {
+    background: none;
+    border: none;
+    color: #444;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.resetBtn:hover {
+    color: #e31e24;
+}
+
+.filterSection {
+    border-bottom: 1px solid #efefef;
+}
+
+.filterSection:last-child {
+    border-bottom: none;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 18px 20px;
+    transition: background 0.2s;
+}
+
+.sectionHeader:hover {
+    background: #fdfdfd;
+}
+
+.sectionHeader h3 {
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rotateIcon {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+    color: #444;
+}
+
+.collapsedIcon {
+    transform: rotate(0deg);
+    transition: transform 0.3s ease;
+    color: #888;
+}
+
+.sectionContent {
+    padding: 5px 20px 20px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #555;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.checkboxLabel:hover {
+    color: #e31e24;
+}
+
+.checkboxLabel input {
+    width: 16px;
+    height: 16px;
+    accent-color: #337c7f;
+    cursor: pointer;
+}
+
+.priceInputs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.priceField {
+    flex: 1;
+}
+
+.priceField span {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.priceField input {
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #444;
+    outline: none;
+}
+
+.priceField input:focus {
+    border-color: #337c7f;
+}
+
+.sliderContainer {
+    padding: 5px 0;
+}
+
+.rangeInput {
+    width: 100%;
+    height: 4px;
+    background: #edf2f7;
+    border-radius: 2px;
+    cursor: pointer;
+    accent-color: #337c7f;
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        display: none;
+    }
+}

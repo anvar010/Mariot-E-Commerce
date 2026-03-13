@@ -1,0 +1,81 @@
+:root {
+  --primary-teal: #337c7f;
+  --text-dark: #333333;
+  --text-muted: #666666;
+  --white: #ffffff;
+  --bg-light: #f8f9fa;
+  --accent-orange: #f58220;
+  --accent-green: #4caf50;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  max-width: 100vw;
+  font-family: var(--font-inter), -apple-system, sans-serif;
+}
+
+html[dir="rtl"],
+html[dir="rtl"] body,
+html[dir="rtl"] input,
+html[dir="rtl"] button,
+html[dir="rtl"] p,
+html[dir="rtl"] span,
+html[dir="rtl"] div,
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3,
+html[dir="rtl"] h4,
+html[dir="rtl"] h5,
+html[dir="rtl"] h6,
+html[dir="rtl"] a,
+html[dir="rtl"] select,
+html[dir="rtl"] textarea {
+  font-family: var(--font-alexandria), sans-serif !important;
+  text-align: right;
+}
+
+html[dir="rtl"] .lucide-chevron-right,
+html[dir="rtl"] .lucide-chevron-left {
+  transform: scaleX(-1) !important;
+}
+
+html[dir="rtl"] .fa {
+  font-family: 'FontAwesome' !important;
+}
+
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select {
+  text-align: end;
+}
+
+html[dir="rtl"] input[type="search"],
+html[dir="rtl"] input[type="text"] {
+  direction: rtl;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+ul {
+  list-style: none;
+}

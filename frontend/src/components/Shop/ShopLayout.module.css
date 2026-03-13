@@ -1,0 +1,873 @@
+.shopLayout {
+    background-color: #f1f5f9;
+    padding: 30px 0;
+    min-height: 100vh;
+}
+
+.topInfo {
+    width: 100%;
+    padding: 0 40px;
+    margin-bottom: 25px;
+}
+
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.breadcrumbs a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumbs a:hover {
+    color: #17a2b8;
+}
+
+.separator {
+    color: #cbd5e1;
+}
+
+.activeBreadcrumb {
+    color: #334155;
+    font-weight: 500;
+}
+
+.mainTitle {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    display: flex;
+    gap: 20px;
+    padding: 0 40px;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 280px;
+    background: white;
+    padding: 20px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.filterHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #333;
+    margin-bottom: 20px;
+}
+
+.filterTitle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.filterHeader h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.resetBtn {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.resetBtn:hover {
+    color: #17a2b8;
+}
+
+.filterSection {
+    margin-bottom: 30px;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 10px;
+    padding: 5px 0;
+}
+
+.sectionHeader:hover h3 {
+    color: #17a2b8;
+}
+
+.rotateIcon {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+    color: #17a2b8;
+}
+
+.collapsedIcon {
+    transform: rotate(0deg);
+    transition: transform 0.3s ease;
+    color: #666;
+}
+
+.filterSection h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    color: #333;
+    letter-spacing: 0.5px;
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #444;
+}
+
+.checkboxLabel input {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #ddd;
+}
+
+.showMore {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 14px;
+    padding: 0;
+    margin-top: 5px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.priceInputs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.priceField {
+    flex: 1;
+}
+
+.priceField span {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.priceField input {
+    width: 100%;
+    border: 1px solid #333;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.sliderContainer {
+    position: relative;
+    height: 30px;
+    display: flex;
+    align-items: center;
+}
+
+.sliderTrack {
+    width: 100%;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+}
+
+.rangeInput {
+    width: 100%;
+    margin-top: 10px;
+    cursor: pointer;
+    accent-color: #63d6f1;
+}
+
+.noResults {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 100px 20px;
+    background: white;
+    border-radius: 8px;
+    color: #666;
+}
+
+/* Main Content Styling */
+.content {
+    flex: 1;
+    min-width: 0;
+    /* Critical: prevents flex item from pushing parent width */
+}
+
+.categoryGridWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 25px;
+    background: transparent;
+    /* Or #e2e8f0 if you want a background container, screenshot looked white background for cards?? No, screenshot background seems transparent or light */
+    /* Wait, the cards are white, the background behind them is likely the page background #f1f5f9 or similar */
+    width: 100%;
+    /* Ensure wrapper doesn't overflow parent */
+    border-radius: 8px;
+}
+
+.categoryGrid {
+    display: flex;
+    overflow-x: hidden;
+    /* Hide scrollbar */
+    gap: 15px;
+    scroll-behavior: smooth;
+    flex: 1;
+    /* Take remaining space */
+    width: 0;
+    /* Force flex child to respect container width */
+    min-width: 0;
+    padding: 5px 0;
+    /* Space for shadow */
+}
+
+/* Fallback for touch devices to allow swipe */
+@media (hover: none) and (pointer: coarse) {
+    .categoryGrid {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+}
+
+.scrollBtn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    flex-shrink: 0;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.scrollBtn:hover {
+    background: #f8fafc;
+    color: #17a2b8;
+    transform: scale(1.05);
+    border-color: #cbd5e1;
+}
+
+.categoryGrid::-webkit-scrollbar {
+    height: 6px;
+}
+
+.categoryGrid::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.categoryCard {
+    background: white;
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px;
+    width: 200px;
+    /* Fixed width */
+    flex: 0 0 auto;
+    /* No shrink */
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 180px;
+    /* Fixed height for uniformity */
+    text-decoration: none;
+}
+
+.categoryCard:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+.categoryImage {
+    height: 120px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    border-radius: 4px;
+}
+
+.demoImg {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.categoryCard p {
+    font-size: 12px;
+    color: #333;
+    margin: 0;
+}
+
+/* Results Header */
+.resultsHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.resultsCount {
+    color: #666;
+    font-size: 16px;
+}
+
+.sortContainer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sortLabel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 20px;
+    color: #1a1a1a;
+}
+
+.sortDropdown {
+    position: relative;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 10px 15px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 200px;
+    cursor: pointer;
+    color: #086c7e;
+    font-weight: 500;
+}
+
+.activeCategoryCard {
+    border: 2px solid #63d6f1;
+    background-color: #f8fafc;
+}
+
+.rotateIcon {
+    transform: rotate(180deg);
+}
+
+.dropdownContent {
+    position: absolute;
+    top: 100%;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    z-index: 1000;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-radius: 0 0 4px 4px;
+    overflow: hidden;
+}
+
+.dropdownContent div {
+    padding: 12px 15px;
+    font-size: 14px;
+    background: white;
+    transition: background 0.2s;
+}
+
+.dropdownContent div:hover {
+    background: #f1f5f9;
+    color: #17a2b8;
+}
+
+/* Product Grid Styling */
+.productGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 5px;
+}
+
+.productCard {
+    background: white;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.productImageContainer {
+    position: relative;
+    padding: 20px;
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.discountBadge {
+    position: absolute;
+    top: 15px;
+    inset-inline-start: 15px;
+    background: #25d366;
+    color: white;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 2px;
+}
+
+.wishlistBtn {
+    position: absolute;
+    top: 15px;
+    inset-inline-end: 15px;
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+}
+
+.productImage {
+    width: 100%;
+    height: 200px;
+    object-fit: contain;
+}
+
+.productInfo {
+    padding: 15px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.productCode {
+    font-size: 13px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.productName {
+    font-size: 14px;
+    color: #666;
+    margin: 0 0 10px 0;
+    line-height: 1.4;
+    height: 40px;
+    overflow: hidden;
+}
+
+.brandLogo {
+    height: 30px;
+    width: auto;
+    object-fit: contain;
+    align-self: flex-start;
+    margin-bottom: 15px;
+}
+
+.priceContainer {
+    margin-bottom: 20px;
+}
+
+.currentPrice {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+    color: #e31e24;
+}
+
+.oldPriceRow {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.oldPrice {
+    font-size: 12px;
+    color: #999;
+    text-decoration: line-through;
+}
+
+.discountText {
+    font-size: 12px;
+    color: #25d366;
+    font-weight: 700;
+}
+
+.actionButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.whatsappBtn,
+.cartBtn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.whatsappBtn {
+    background-color: #5bb377;
+    color: white;
+}
+
+.cartBtn {
+    background-color: #63d6f1;
+    color: white;
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        display: none;
+    }
+
+    .container {
+        padding: 0 20px;
+    }
+
+    .topInfo {
+        padding: 0 20px;
+    }
+
+    .categoryCard {
+        width: 160px;
+        height: 150px;
+        padding: 12px;
+    }
+
+    .categoryImage {
+        height: 90px;
+        margin-bottom: 10px;
+    }
+
+    .productGrid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .shopLayout {
+        padding: 20px 0;
+    }
+
+    .topInfo {
+        padding: 0 16px;
+        margin-bottom: 16px;
+    }
+
+    .container {
+        padding: 0 16px;
+    }
+
+    .mainTitle {
+        font-size: 24px;
+    }
+
+    .breadcrumbs {
+        font-size: 12px;
+        flex-wrap: wrap;
+    }
+
+    .resultsHeader {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .sortContainer {
+        margin-inline-start: auto;
+    }
+
+    .sortDropdown {
+        min-width: unset;
+        padding: 8px 12px;
+    }
+
+    .sortLabel {
+        font-size: 16px;
+    }
+
+    .categoryGridWrapper {
+        margin-bottom: 16px;
+    }
+
+    .categoryCard {
+        width: 130px;
+        height: 130px;
+        padding: 10px;
+    }
+
+    .categoryImage {
+        height: 70px;
+        margin-bottom: 8px;
+    }
+
+    .categoryCard p {
+        font-size: 11px;
+    }
+
+    .scrollBtn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .productGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .productImage {
+        height: 150px;
+    }
+
+    .productInfo {
+        padding: 12px;
+    }
+
+    .productName {
+        font-size: 13px;
+        height: auto;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .currentPrice {
+        font-size: 16px;
+    }
+
+    .pagination {
+        margin: 40px auto 30px;
+        gap: 6px;
+    }
+
+    .arrowBtn,
+    .numBtn {
+        width: 36px;
+        height: 36px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .topInfo {
+        padding: 0 12px;
+    }
+
+    .container {
+        padding: 0 12px;
+    }
+
+    .mainTitle {
+        font-size: 20px;
+    }
+
+    .resultsCount {
+        font-size: 13px;
+    }
+
+    .sortLabel {
+        font-size: 14px;
+    }
+
+    .sortDropdown {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .categoryCard {
+        width: 110px;
+        height: 110px;
+        padding: 8px;
+    }
+
+    .categoryImage {
+        height: 55px;
+        margin-bottom: 6px;
+    }
+
+    .categoryCard p {
+        font-size: 10px;
+    }
+
+    .productGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .productImageContainer {
+        padding: 12px;
+    }
+
+    .productImage {
+        height: 120px;
+    }
+
+    .productInfo {
+        padding: 10px;
+    }
+
+    .productCode {
+        font-size: 11px;
+    }
+
+    .productName {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .currentPrice {
+        font-size: 15px;
+    }
+
+    .whatsappBtn,
+    .cartBtn {
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    .brandLogo {
+        height: 22px;
+        margin-bottom: 10px;
+    }
+
+    .noResults {
+        padding: 60px 16px;
+    }
+
+    .pagination {
+        margin: 30px auto 20px;
+    }
+
+    .arrowBtn,
+    .numBtn {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+}
+
+/* Premium Minimalist Pagination */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 60px auto 40px;
+    padding: 0;
+    width: 100%;
+}
+
+.arrowBtn,
+.numBtn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    outline: none;
+    padding: 0;
+}
+
+.arrowBtn svg {
+    display: block;
+    stroke-width: 2.5px;
+}
+
+.numBtn:hover,
+.arrowBtn:hover:not(:disabled) {
+    border-color: #17a2b8;
+    color: #17a2b8;
+    background: #f0f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(23, 162, 184, 0.1);
+}
+
+.activePage {
+    background: #17a2b8 !important;
+    color: white !important;
+    border-color: #17a2b8 !important;
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3) !important;
+}
+
+.arrowBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #ffffff;
+    border-color: #f1f5f9;
+    color: #cbd5e1;
+}
+
+.arrowBtn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.paginationDots {
+    color: #94a3b8;
+    font-weight: 600;
+    margin: 0 4px;
+    user-select: none;
+}

@@ -1,0 +1,168 @@
+.aboutSection {
+    padding: 20px 0;
+    background-color: #fff;
+    width: 100%;
+}
+
+.container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 40px;
+}
+
+.mainContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 60px;
+    margin-bottom: 80px;
+}
+
+.textContent {
+    flex: 1.5;
+}
+
+.title {
+    font-size: 38px;
+    font-weight: 800;
+    color: #111;
+    font-style: italic;
+    margin-bottom: 35px;
+    line-height: 1.2;
+}
+
+.textWrapper {
+    max-width: 95%;
+}
+
+.description {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #444;
+    margin-bottom: 25px;
+    text-align: justify;
+}
+
+.imageContent {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.iconBox {
+    width: 100%;
+    max-width: 450px;
+    aspect-ratio: 1 / 1;
+    background-color: #1a2b65;
+    /* Dark blue from screenshot */
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    transition: transform 0.3s ease;
+}
+
+.iconBox:hover {
+    transform: scale(1.02);
+}
+
+.iconBoxLogo {
+    width: 60%;
+    max-height: 60%;
+    object-fit: contain;
+}
+
+.trustBadges {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.badge {
+    flex: 1;
+    background: linear-gradient(135deg, #5ecbd7 0%, #4dbbc7 100%);
+    color: white;
+    padding: 18px 25px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 14.5px;
+    box-shadow: 0 4px 15px rgba(89, 206, 219, 0.2);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.badge:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(89, 206, 219, 0.3);
+}
+
+.badgeText {
+    font-style: italic;
+    letter-spacing: -0.2px;
+}
+
+.badgeIcon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 1024px) {
+    .mainContent {
+        flex-direction: column-reverse;
+        gap: 40px;
+    }
+
+    .imageContent {
+        width: 100%;
+    }
+
+    .iconBox {
+        max-width: 350px;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 20px;
+    }
+
+    .aboutSection {
+        padding: 20px 0;
+    }
+
+    .mainContent {
+        margin-bottom: 50px;
+    }
+
+    .title {
+        font-size: 28px;
+    }
+
+    .imageContent {
+        display: none;
+    }
+
+    .iconBox {
+        max-width: 280px;
+    }
+
+    .trustBadges {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .badge {
+        justify-content: space-between;
+    }
+}

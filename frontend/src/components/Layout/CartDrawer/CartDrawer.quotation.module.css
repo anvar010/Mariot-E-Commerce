@@ -1,0 +1,182 @@
+/* Quotation Popup - Bottom sheet sliding up from within the cart drawer */
+
+.quotationOverlay {
+    position: fixed;
+    top: 0;
+    inset-inline-start: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 2050;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+}
+
+.quotationOverlayOpen {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* Slides up from the bottom of the cart drawer (right side) */
+.quotationPopup {
+    position: fixed;
+    bottom: -100%;
+    inset-inline-end: 0;
+    width: 480px;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    z-index: 2060;
+    transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.quotationPopupOpen {
+    bottom: 0;
+}
+
+/* Header */
+.quotationHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 28px 18px;
+}
+
+.quotationHeader h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+    letter-spacing: -0.2px;
+}
+
+.closeQuotationBtn {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.closeQuotationBtn:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+/* Content / Form */
+.quotationContent {
+    padding: 4px 28px 28px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Floating label fields */
+.floatingField {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.floatingField input {
+    width: 100%;
+    padding: 18px 0 8px;
+    border: none;
+    border-bottom: 1.5px solid #cbd5e1;
+    border-radius: 0;
+    font-size: 15px;
+    color: #1e293b;
+    outline: none;
+    background: transparent;
+    transition: border-color 0.2s ease;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.floatingField input::placeholder {
+    color: transparent;
+}
+
+.floatingField label {
+    position: absolute;
+    left: 0;
+    top: 18px;
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 500;
+    pointer-events: none;
+    transition: all 0.2s ease;
+}
+
+.floatingField input:focus~label,
+.floatingField input:not(:placeholder-shown)~label {
+    top: 2px;
+    font-size: 11px;
+    color: #337c7f;
+    font-weight: 600;
+}
+
+.floatingField input:focus {
+    border-bottom-color: #337c7f;
+}
+
+.required {
+    color: #e31e24;
+}
+
+/* Download button */
+.downloadBtn {
+    width: 100%;
+    background: transparent;
+    color: #337c7f;
+    border: 2px solid #337c7f;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin-top: 8px;
+    letter-spacing: 0.4px;
+    font-family: inherit;
+}
+
+.downloadBtn:hover:not(:disabled) {
+    background: #337c7f;
+    color: white;
+}
+
+.downloadBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* RTL support */
+[dir="rtl"] .floatingField label {
+    left: auto;
+    right: 0;
+}
+
+@media (max-width: 480px) {
+    .quotationPopup {
+        width: 100%;
+        inset-inline-end: 0;
+    }
+
+    .quotationHeader {
+        padding: 18px 20px 14px;
+    }
+
+    .quotationContent {
+        padding: 4px 20px 24px;
+    }
+}

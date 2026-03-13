@@ -1,0 +1,409 @@
+.footer {
+    width: 100%;
+}
+
+.container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+@media (min-width: 1024px) {
+    .container {
+        padding: 0 40px;
+    }
+}
+
+/* 1. Support Bar */
+.supportBar {
+    background-color: #f0f7ff;
+    padding: 30px 0;
+    border-bottom: 1px solid #e1e8f0;
+}
+
+.supportBar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.supportText h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.supportText p {
+    font-size: 14px;
+    color: #666;
+}
+
+.supportIcons {
+    display: flex;
+    gap: 40px;
+}
+
+.supportItem {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.iconCircle {
+    width: 45px;
+    height: 45px;
+    background-color: #ffbf00;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.iconCircle svg {
+    display: block;
+    stroke: #ffffff;
+    stroke-width: 2.5px;
+}
+
+.itemInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.itemLabel {
+    font-size: 11px;
+    font-weight: 800;
+    color: #333;
+    letter-spacing: 0.5px;
+}
+
+.itemValue {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+}
+
+.itemSub {
+    font-size: 11px;
+    color: #888;
+}
+
+/* 2. Main Footer */
+.mainFooter {
+    background-color: #f1f1f1;
+    padding: 60px 0 40px;
+}
+
+.footerGrid {
+    display: grid;
+    grid-template-columns: 1fr 1.8fr 1fr 1.2fr;
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+/* Logo & About Col */
+.footerLogoWrapper {
+    display: block;
+    margin-bottom: 25px;
+}
+
+.footerLogoImg {
+    display: block;
+    max-width: 180px;
+    height: auto;
+    object-fit: contain;
+}
+
+.payLogoSvg {
+    height: 24px;
+    width: auto;
+}
+
+.brandName {
+    color: #0056b3;
+    font-size: 32px;
+    font-weight: 900;
+    margin: 0;
+    line-height: 1;
+    letter-spacing: -1.5px;
+}
+
+.brandName span {
+    font-size: 14px;
+    vertical-align: super;
+    margin-inline-start: 2px;
+}
+
+.subText {
+    color: #d90429;
+    font-size: 11px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.address {
+    font-style: normal;
+    font-size: 16px;
+    font-weight: 800;
+    color: #222;
+    line-height: 1.4;
+}
+
+/* Columns */
+.descCol p {
+    font-size: 14.5px;
+    line-height: 1.8;
+    color: #333;
+    font-weight: 500;
+    text-align: start;
+}
+
+.linksCol h4 {
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 25px;
+    color: #111;
+    letter-spacing: 0.5px;
+}
+
+.linksCol ul {
+    padding: 0;
+    margin: 0;
+}
+
+.linksCol li {
+    margin-bottom: 8px;
+}
+
+.linksCol a {
+    font-size: 14px;
+    color: #333;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.linksCol a:hover {
+    color: #000;
+    text-decoration: underline;
+}
+
+.socialSection h4 {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 15px;
+    color: #111;
+}
+
+.socialIcons {
+    display: flex;
+    gap: 12px;
+}
+
+.socialIcons a {
+    width: 42px;
+    height: 42px;
+    background-color: #ffffff;
+    color: #111111;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid #d1d5db;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.socialIcons a svg {
+    stroke-width: 2px;
+    transition: transform 0.3s ease;
+}
+
+/* Brand Colors on Hover */
+.socialIcons a.facebook:hover {
+    background-color: #1877f2;
+    color: #fff;
+    border-color: #1877f2;
+    transform: translateY(-3px);
+}
+
+.socialIcons a.instagram:hover {
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+    color: #fff;
+    border-color: transparent;
+    transform: translateY(-3px);
+}
+
+.socialIcons a.youtube:hover {
+    background-color: #FF0000;
+    color: #fff;
+    border-color: #FF0000;
+    transform: translateY(-3px);
+}
+
+.socialIcons a.tiktok:hover {
+    background-color: #000000;
+    color: #fff;
+    border-color: #000000;
+    transform: translateY(-3px);
+}
+
+.socialIcons a.linkedin:hover {
+    background-color: #0077b5;
+    color: #fff;
+    border-color: #0077b5;
+    transform: translateY(-3px);
+}
+
+.socialIcons a:hover svg {
+    transform: scale(1.1);
+}
+
+/* Payment Section */
+.footerBottomRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 40px;
+    margin-top: 40px;
+    padding-top: 40px;
+    border-top: 1px solid #e1e8f0;
+}
+
+.socialSection h4,
+.paymentSection h4 {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: #111;
+}
+
+.paymentIcons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.payOption {
+    background: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #e1e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    transition: all 0.2s;
+}
+
+.payOption:hover {
+    border-color: #70d475;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.payLogo,
+.payLogoSvg {
+    height: 24px;
+    width: auto;
+    object-fit: contain;
+}
+
+/* 3. Copyright Bar */
+.copyrightBar {
+    background-color: #70d475;
+    color: #111;
+    padding: 12px 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Responsiveness */
+@media (max-width: 1024px) {
+    .footerGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .supportBar .container {
+        flex-direction: column;
+        text-align: start;
+        gap: 40px;
+    }
+
+    .supportIcons {
+        flex-direction: column;
+        gap: 30px;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .supportItem {
+        justify-content: flex-start;
+        text-align: start;
+        width: 100%;
+        gap: 20px;
+    }
+
+    .footerGrid {
+        grid-template-columns: 1fr;
+        text-align: start;
+        gap: 45px;
+    }
+
+    .footerLogoWrapper,
+    .footerLogoImg,
+    .socialIcons,
+    .paymentIcons {
+        justify-content: flex-start;
+    }
+
+    .address {
+        text-align: start;
+        margin-bottom: 0;
+    }
+
+    .footerBottomRow {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: start;
+        gap: 35px;
+        margin-top: 35px;
+        padding-top: 35px;
+    }
+
+    .descCol p {
+        text-align: start;
+        width: 100%;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .linksCol ul {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .linksCol h4 {
+        text-align: start;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .supportText h3 {
+        font-size: 16px;
+    }
+
+    .linksCol h4 {
+        margin-bottom: 15px;
+    }
+}

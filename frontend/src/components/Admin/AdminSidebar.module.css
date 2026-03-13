@@ -1,0 +1,253 @@
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: #343a40;
+    color: #ced4da;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    inset-inline-start: 0;
+    z-index: 1000;
+}
+
+.logoSection {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.flowLogo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logoIcon {
+    width: 20px;
+    height: 20px;
+    background-color: #4c6ef5;
+    border-radius: 4px;
+}
+
+.logoText {
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.logoText span {
+    font-size: 10px;
+    color: #868e96;
+    font-weight: 400;
+}
+
+.logoDots {
+    display: flex;
+    gap: 4px;
+}
+
+.dotBlue {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #4c6ef5;
+}
+
+.dotTeal {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #20c997;
+}
+
+.dotGreen {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #82c91e;
+}
+
+.userProfile {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+}
+
+.userInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.userName {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.userRole {
+    font-size: 11px;
+    color: #adb5bd;
+}
+
+
+.nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 0;
+}
+
+.navLabel {
+    padding: 0 20px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #adb5bd;
+    letter-spacing: 1px;
+}
+
+.menuList {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+}
+
+.menuItem {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    margin: 4px 12px;
+    border-radius: 8px;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 14px;
+    font-weight: 500;
+    gap: 12px;
+    position: relative;
+    border: 1px solid transparent;
+}
+
+.menuItem:hover {
+    color: #f1f5f9;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.active {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.activeIndicator {
+    width: 6px;
+    height: 6px;
+    background-color: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+    position: absolute;
+    inset-inline-end: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.activeIndicator::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: inherit;
+    border-radius: inherit;
+    animation: professionalPulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes professionalPulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(3);
+        opacity: 0;
+    }
+}
+
+.icon {
+    display: flex;
+    align-items: center;
+}
+
+.name {
+    flex: 1;
+}
+
+.rightChevron {
+    opacity: 0.5;
+}
+
+.activityList {
+    list-style: none;
+    padding: 0 20px;
+    margin: 0;
+}
+
+.activityItem {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.activityDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #4c6ef5;
+    margin-top: 5px;
+}
+
+.activityContent p {
+    font-size: 12px;
+    margin: 0;
+    line-height: 1.4;
+    color: #dee2e6;
+}
+
+.sidebarFooter {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logoutBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #ff6b6b;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.logoutBtn:hover {
+    background-color: #fa5252;
+    color: white;
+}

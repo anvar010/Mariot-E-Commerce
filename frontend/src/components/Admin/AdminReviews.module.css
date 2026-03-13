@@ -1,0 +1,207 @@
+.adminReviews {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding: 24px 0;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.titleArea h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.6px;
+    margin-bottom: 4px;
+}
+
+.titleArea p {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.totalBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #dbeafe;
+}
+
+.filtersWrapper {
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    gap: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.searchBox {
+    position: relative;
+    flex: 1;
+}
+
+.searchBox svg {
+    position: absolute;
+    inset-inline-start: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.searchBox input {
+    width: 100%;
+    padding: 12px 14px 12px 42px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #0f172a;
+    transition: all 0.2s;
+    background: #f8fafc;
+}
+
+.searchBox input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.tableContainer {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: start;
+}
+
+.table th {
+    background: #f8fafc;
+    padding: 14px 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table tr:hover {
+    background: #f8fafc;
+}
+
+.productInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.productImage {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #f1f5f9;
+}
+
+.productName {
+    font-weight: 600;
+    color: #0f172a;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.userInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.userName {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.ratingWrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #f59e0b;
+}
+
+.ratingValue {
+    font-weight: 700;
+    color: #0f172a;
+    margin-inline-start: 4px;
+}
+
+.commentCell {
+    max-width: 300px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.deleteBtn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #ef4444;
+}
+
+.deleteBtn:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

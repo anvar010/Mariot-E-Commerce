@@ -1,0 +1,463 @@
+.productCard {
+    background: #f4f4f4;
+    border: 4px solid white;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px #e0e0e0, 0 4px 15px rgba(0, 0, 0, 0.08);
+    padding: 8px;
+    position: relative;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    flex: 1;
+    overflow: hidden;
+    font-family: sans-serif;
+}
+
+.imageSection {
+    position: relative;
+    margin-bottom: 2px;
+}
+
+.badge {
+    position: absolute;
+    top: 5px;
+    inset-inline-start: 5px;
+    background: #3ac672;
+    color: white;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 6px 14px;
+    z-index: 2;
+}
+
+.dealTag {
+    position: absolute;
+    bottom: 0;
+    inset-inline-start: 0;
+    padding: 5px 12px;
+    color: white;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    z-index: 3;
+    letter-spacing: 0.5px;
+}
+
+.weeklyTag {
+    background: #3ba1a1;
+}
+
+.limitedTag {
+    background: #ff3b30;
+}
+
+.dailyTag {
+    background: #5bb377;
+}
+
+.bestSellerTag {
+    background: #1a237e;
+    bottom: 0;
+}
+
+.wishlistBtn {
+    position: absolute;
+    top: 10px;
+    inset-inline-end: 10px;
+    color: #666;
+    z-index: 2;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.productImg {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    padding: 15px;
+    position: relative;
+    border-radius: 0px;
+}
+
+.productImg img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.productInfo {
+    padding: 0 5px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+    flex: 1;
+}
+
+.ratingBox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+    margin-bottom: 4px;
+    height: 20px;
+}
+
+
+.stars {
+    color: #ffc107;
+    font-size: 13px;
+    display: flex;
+    gap: 2px;
+}
+
+.reviewCount {
+    font-size: 13px;
+    color: #888;
+}
+
+.modelName {
+    font-size: 15px;
+    font-weight: 800;
+    color: #444;
+    margin: 0;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 40px;
+    height: 40px;
+}
+
+.dealSection {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.innerTimer {
+    font-size: 11px;
+    font-weight: 700;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+
+.innerTimer span {
+    color: #e31e24;
+    font-variant-numeric: tabular-nums;
+}
+
+.description {
+    font-size: 13px;
+    color: #777;
+    line-height: 1.3;
+    margin: 4px 0 0 0;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.brandLogoBox {
+    margin-bottom: 2px;
+    display: flex;
+    justify-content: flex-start;
+    margin-top: auto;
+    margin-inline-start: -10px;
+}
+
+.logoBorder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 2px 0;
+    height: 35px;
+}
+
+.brandLogoImg {
+    max-height: 40px;
+    max-width: 120px;
+    object-fit: contain;
+    object-position: left center;
+}
+
+.brandText {
+    color: #e31e24;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: -0.5px;
+}
+
+.priceSection {
+    margin-bottom: 2px;
+}
+
+.currentPrice {
+    font-weight: 800;
+    color: #e31e24;
+    font-size: 17px;
+    margin-bottom: 2px;
+    font-family: sans-serif;
+}
+
+.savingsRow {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.oldPrice {
+    text-decoration: line-through;
+    color: #333;
+    font-size: 13px;
+    font-weight: 800;
+    font-family: sans-serif;
+}
+
+.discountText {
+    color: #3ac672;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: sans-serif;
+}
+
+.actionButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.whatsappBtn {
+    background: #39d268;
+    color: white;
+    width: 100%;
+    height: 30px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+}
+
+.cartBtn {
+    background: #00aeef;
+    color: white;
+    width: 100%;
+    height: 30px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+}
+
+.whatsappBtn span {
+    text-transform: capitalize;
+}
+
+.cartBtn span {
+    text-transform: uppercase;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .productCard {
+        width: 100%;
+        max-width: 100%;
+        /* Allow full width in grid columns */
+        border: 4px solid white;
+        /* Thinner border on mobile */
+        padding: 8px;
+    }
+
+    .productImg {
+        height: 180px;
+    }
+
+    .modelName {
+        font-size: 15px;
+        min-height: 38px;
+        /* Maintain alignment */
+        line-height: 1.3;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .description {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: block;
+        height: auto;
+        margin-top: 2px !important;
+    }
+
+    .brandLogoBox {
+        margin-top: 4px !important;
+        height: auto !important;
+        padding-top: 0;
+    }
+
+    .logoBorder {
+        height: auto !important;
+        padding: 0;
+    }
+
+    .currentPrice {
+        font-size: 16px;
+    }
+
+    .whatsappBtn,
+    .cartBtn {
+        font-size: 12px;
+        height: 30px;
+        padding: 0 8px;
+        gap: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .productCard {
+        padding: 6px;
+        border: 4px solid white;
+        border-radius: 2px;
+        background: #f4f4f4;
+    }
+
+    .imageSection {
+        margin-bottom: 2px;
+    }
+
+    .productImg {
+        height: 140px;
+        padding: 6px;
+    }
+
+    .badge {
+        font-size: 8px;
+        padding: 3px 6px;
+        top: 0;
+        inset-inline-start: 0;
+    }
+
+    .dealTag {
+        bottom: 0;
+        inset-inline-start: 0;
+        font-size: 8px;
+        padding: 3px 6px;
+    }
+
+    .wishlistBtn {
+        top: 3px;
+        inset-inline-end: 0;
+    }
+
+    .modelName {
+        font-size: 13px;
+        font-weight: 800;
+        color: #000;
+        margin: 0;
+        min-height: 32px;
+    }
+
+    .description {
+        font-size: 10px;
+        color: #888;
+        margin: 2px 0 0 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ratingBox {
+        padding: 4px 0;
+        margin-bottom: 2px;
+        flex-wrap: nowrap;
+        overflow: hidden;
+    }
+
+    .reviewCount {
+        font-size: 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .brandLogoBox {
+        height: auto !important;
+        margin-bottom: 2px;
+        margin-inline-start: -4px;
+        margin-top: 4px !important;
+        padding-top: 0;
+    }
+
+    .logoBorder {
+        height: auto !important;
+        padding: 0;
+    }
+
+    .brandLogoImg {
+        max-height: 30px;
+        max-width: 80px;
+    }
+
+    .priceSection {
+        margin-bottom: 2px;
+    }
+
+    .currentPrice {
+        font-size: 14px;
+    }
+
+    .oldPrice {
+        font-size: 11px;
+    }
+
+    .discountText {
+        font-size: 9px;
+    }
+
+    .actionButtons {
+        gap: 4px;
+    }
+
+    .whatsappBtn,
+    .cartBtn {
+        height: 30px;
+        padding: 0 6px;
+        font-size: 10px;
+        font-weight: 900;
+        border-radius: 4px;
+    }
+
+    .whatsappBtn img,
+    .whatsappBtn svg,
+    .cartBtn svg {
+        width: 14px;
+        height: 14px;
+    }
+}
