@@ -13,7 +13,7 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   ...(process.env.NODE_ENV === 'production' && {
-    ssl: { rejectUnauthorized: true }
+    ssl: { rejectUnauthorized: false }
   })
 });
 
