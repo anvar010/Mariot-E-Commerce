@@ -130,12 +130,40 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
         fetchPosters();
     }, [initialPosters]);
 
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [scrollLeftState, setScrollLeftState] = useState(0);
+
     const scroll = (direction: 'left' | 'right') => {
         if (scrollRef.current) {
             const { scrollLeft } = scrollRef.current;
             const scrollTo = direction === 'left' ? scrollLeft - 275 : scrollLeft + 275;
             scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
         }
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!scrollRef.current) return;
+        setIsDragging(true);
+        setStartX(e.pageX - scrollRef.current.offsetLeft);
+        setScrollLeftState(scrollRef.current.scrollLeft);
+        e.preventDefault();
+    };
+
+    const handleMouseLeave = () => {
+        setIsDragging(false);
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !scrollRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - scrollRef.current.offsetLeft;
+        const walk = (x - startX) * 1.1;
+        scrollRef.current.scrollLeft = scrollLeftState - walk;
     };
 
     /* Skeleton loading state — lightweight, no spinner */
@@ -160,7 +188,15 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
                     <button className={`${styles.navBtn} ${styles.prev}`} onClick={() => scroll('left')}>
                         <ChevronLeft size={24} />
                     </button>
-                    <div className={styles.postersGrid} ref={scrollRef}>
+                    <div
+                        className={styles.postersGrid}
+                        ref={scrollRef}
+                        onMouseDown={handleMouseDown}
+                        onMouseLeave={handleMouseLeave}
+                        onMouseUp={handleMouseUp}
+                        onMouseMove={handleMouseMove}
+                        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+                    >
                         {posters.map((poster, index) => (
                             <div key={poster.id} className={styles.posterCard}>
                                 <div className={styles.imageContainer}>

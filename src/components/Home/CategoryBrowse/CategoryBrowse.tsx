@@ -79,6 +79,10 @@ const CategoryBrowse = () => {
         }
     }, [isRtl]);
 
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [scrollLeftState, setScrollLeftState] = useState(0);
+
     const scroll = (direction: 'left' | 'right') => {
         if (scrollRef.current) {
             const scrollAmount = 400;
@@ -87,6 +91,30 @@ const CategoryBrowse = () => {
                 behavior: 'smooth'
             });
         }
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!scrollRef.current) return;
+        setIsDragging(true);
+        setStartX(e.pageX - scrollRef.current.offsetLeft);
+        setScrollLeftState(scrollRef.current.scrollLeft);
+        e.preventDefault();
+    };
+
+    const handleMouseLeave = () => {
+        setIsDragging(false);
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !scrollRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - scrollRef.current.offsetLeft;
+        const walk = (x - startX) * 1.1;
+        scrollRef.current.scrollLeft = scrollLeftState - walk;
     };
 
     return (
@@ -123,7 +151,15 @@ const CategoryBrowse = () => {
                 </div>
 
                 <div className={styles.sliderWrapper}>
-                    <div className={styles.categoryGrid} ref={scrollRef}>
+                    <div
+                        className={styles.categoryGrid}
+                        ref={scrollRef}
+                        onMouseDown={handleMouseDown}
+                        onMouseLeave={handleMouseLeave}
+                        onMouseUp={handleMouseUp}
+                        onMouseMove={handleMouseMove}
+                        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+                    >
                         {categories.map((category, index) => (
                             <Link
                                 key={category.id}

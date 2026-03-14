@@ -5,11 +5,12 @@ import Footer from '@/components/Layout/Footer/Footer';
 import ProductDetail from '@/components/Product/ProductDetail/ProductDetail';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 
-const API_BASE_URL_SERVER = 'http://localhost:5000/api/v1';
+const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
-export async function generateMetadata({ params: { slug, locale } }: { params: { slug: string | string[], locale: string } }): Promise<Metadata> {
-    const id = Array.isArray(slug) ? slug.join('/') : slug;
-    const isArabic = locale === 'ar';
+export async function generateMetadata({ params }: { params: { slug: string | string[], locale: string } }): Promise<Metadata> {
+    const slugArray = Array.isArray(params.slug) ? params.slug : [params.slug];
+    const id = slugArray.map(s => decodeURIComponent(s)).join('/');
+    const isArabic = params.locale === 'ar';
 
     try {
         const res = await fetch(`${API_BASE_URL_SERVER}/products/${encodeURIComponent(id)}`);
@@ -42,8 +43,12 @@ export async function generateMetadata({ params: { slug, locale } }: { params: {
 
 export default function ProductPage({ params }: { params: { slug: string | string[], locale: string } }) {
     // Handle both single slug and catch-all slug (array)
-    // Next.js catch-all slugs pass segments as an array ['segment1', 'segment2', ...]
-    const slug = Array.isArray(params.slug) ? params.slug.join('/') : params.slug;
+    // Decode each segment to properly handle slashes and special characters
+    const slugArray = Array.isArray(params.slug) ? params.slug : [params.slug];
+    const slug = slugArray.map(s => decodeURIComponent(s)).join('/');
+
+    console.log("DEBUG SSR ProductPage params.slug:", params.slug);
+    console.log("DEBUG SSR ProductPage decoded slug:", slug);
 
     return (
         <main>

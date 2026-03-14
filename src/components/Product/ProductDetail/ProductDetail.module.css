@@ -104,6 +104,7 @@
     gap: 10px;
     overflow-x: auto;
     scrollbar-width: none;
+    user-select: none;
 }
 
 .thumbWrapper {
@@ -580,17 +581,70 @@
 }
 
 .accordions {
-    margin-top: 30px;
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.resourceList {
+.fullWidthDescription {
+    width: 100%;
+    margin-top: 40px;
+    margin-bottom: 20px;
+}
+
+.splitLayout {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-    margin-top: 10px;
+    grid-template-columns: 1fr 700px;
+    gap: 40px;
+    margin-top: 30px;
+    align-items: start;
+}
+
+.accordionsColumn {
+    width: 100%;
+}
+
+.videoColumn {
+    width: 100%;
+}
+
+.stickyVideoWrapper {
+    position: sticky;
+    top: 100px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.videoHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.videoHeader h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 1200px) {
+    .splitLayout {
+        grid-template-columns: 1fr;
+    }
+
+    .videoColumn {
+        order: -1;
+        /* Video on top for mobile */
+    }
 }
 
 .resourceCard {
@@ -681,6 +735,29 @@
     .downloadLabel {
         display: none;
     }
+}
+
+.aboutBrandContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.aboutBrandLogoBox {
+    background: #fbfbfd;
+    border: 1px solid #eaeaea;
+    border-radius: 12px;
+    padding: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: fit-content;
+}
+
+.aboutBrandLogoImg {
+    max-height: 50px;
+    object-fit: contain;
+    max-width: 200px;
 }
 
 .accordionItem {
@@ -783,12 +860,12 @@
     font-weight: 700;
     text-transform: uppercase;
     margin: 0 0 5px 0;
-    color: #444;
+    color: #000;
 }
 
 .trustContent p {
     font-size: 11px;
-    color: #888;
+    color: #333;
     margin: 0;
     line-height: 1.4;
 }
@@ -1045,30 +1122,35 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 40px;
-    height: 100px;
-    background: #ffffff;
-    border: 2px solid #8e959c;
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: #444;
-    transition: all 0.2s ease;
+    color: #1a202c;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .prevArrow {
-    left: 0;
+    left: -22px;
 }
 
 .nextArrow {
-    right: 0;
+    right: -22px;
 }
 
 .sliderArrow:hover {
-    background: #f1f5f9;
-    color: #000;
+    background: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #ffffff;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .relatedSection {
@@ -1097,6 +1179,7 @@
     scrollbar-width: none;
     -ms-overflow-style: none;
     margin: 0 40px;
+    user-select: none;
 }
 
 .relatedGrid::-webkit-scrollbar {
@@ -1627,7 +1710,7 @@
 .specsList {
     list-style: none !important;
     padding: 0 !important;
-    border: 1px solid #eee;
+    border: none;
     border-radius: 8px;
     overflow: hidden;
     display: flex;
@@ -1636,44 +1719,52 @@
 
 .specItem {
     display: flex;
-    justify-content: space-between;
-    padding: 14px 20px;
-    background: #fff;
-    border-bottom: 1px solid #eee;
+    align-items: center;
+    padding: 16px 24px;
+    background: #ffffff;
+    border: none;
+}
+
+.specItem:nth-child(odd) {
+    background: #e2e8f0;
 }
 
 .specItem:last-child {
-    border-bottom: none;
+    border-radius: 0 0 8px 8px;
 }
 
-.specItem:nth-child(even) {
-    background: #fdfdfd;
+.specItem:first-child {
+    border-radius: 8px 8px 0 0;
 }
 
 .specLabel {
+    color: #000000;
+    font-size: 14px;
     font-weight: 700;
-    color: #1a1a1a;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    min-width: 180px;
+    width: 35%;
+    min-width: 150px;
     padding-inline-end: 20px;
 }
 
 .specValue {
-    color: #444;
-    font-size: 14px;
-    font-weight: 500;
+    color: #000000;
+    font-size: 15px;
+    font-weight: 700;
     flex: 1;
-    text-align: right;
+    text-align: left;
 }
 
 .specItemSingle {
-    padding: 14px 20px;
+    padding: 16px 24px;
     font-size: 14px;
-    color: #444;
-    border-bottom: 1px solid #eee;
+    color: #000000;
+    border: none;
     line-height: 1.6;
+    background: #ffffff;
+}
+
+.specItemSingle:nth-child(odd) {
+    background: #e2e8f0;
 }
 
 @media (max-width: 600px) {

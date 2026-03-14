@@ -11,7 +11,7 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
-const API_BASE_URL_SERVER = 'http://localhost:5000/api/v1';
+const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 async function getInitialData() {
     try {

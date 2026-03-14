@@ -386,7 +386,7 @@ const AdminCMS = () => {
                 <h3 style={{ marginBottom: '10px' }}>Connection Error</h3>
                 <p style={{ color: '#666', marginBottom: '20px' }}>{error}</p>
                 <button
-                    onClick={fetchCMSData}
+                    onClick={() => fetchCMSData()}
                     style={{ background: '#4c6ef5', color: '#fff', border: 'none', padding: '10px 25px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}
                 >
                     Retry Loading

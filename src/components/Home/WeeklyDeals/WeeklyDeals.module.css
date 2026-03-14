@@ -12,9 +12,11 @@
 
 .headerFlex {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb;
 }
 
 .title {
@@ -27,28 +29,53 @@
     text-transform: capitalize;
 }
 
+.sliderWrapper {
+    position: relative;
+    width: 100%;
+}
+
 .navButtons {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 10;
+    padding: 0 10px;
 }
 
 .navBtn {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
     border: 1px solid #e5e7eb;
-    background-color: #fff;
+    background-color: rgba(255, 255, 255, 0.9);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: #9ca3af;
-    transition: all 0.2s ease;
+    color: #1a1a1a;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    pointer-events: auto;
 }
 
 .navBtn:hover {
-    border-color: #d1d5db;
-    color: #4b5563;
+    background-color: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #ffffff;
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.prevBtn {
+    margin-left: -20px;
+}
+
+.nextBtn {
+    margin-right: -20px;
 }
 
 @media (max-width: 480px) {
@@ -65,7 +92,7 @@
     padding: 20px 10px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    /* Firefox */
+    user-select: none;
 }
 
 .dealsGrid::-webkit-scrollbar {
@@ -73,9 +100,10 @@
     /* Chrome, Safari and Opera */
 }
 
-.dealsGrid>* {
+.productWrapper {
     flex: 0 0 auto;
     width: 240px;
+    height: 100%;
 }
 
 @media (max-width: 480px) {
@@ -84,7 +112,7 @@
         padding: 10px 0;
     }
 
-    .dealsGrid>* {
+    .productWrapper {
         width: 180px;
     }
 }

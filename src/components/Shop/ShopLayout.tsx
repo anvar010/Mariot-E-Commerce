@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './ShopLayout.module.css';
 import { Filter, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import ProductCard from '@/components/shared/ProductCard/ProductCard';
+import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import { API_BASE_URL } from '@/config';
 import Loader from '@/components/shared/Loader/Loader';
 import ProductCardSkeleton from '@/components/shared/ProductCardPromotion/ProductCardSkeleton';
@@ -20,6 +20,7 @@ import { getChildCategories, getParentCategory } from '@/utils/shopCategories';
 interface ShopLayoutProps {
     filterType?: 'default' | 'brand' | 'category';
     defaultCategory?: string;
+    defaultSearchQuery?: string;
     hideCategoryGrid?: boolean;
     categoryNameOverride?: string;
     subCategoryOverride?: string;
@@ -33,6 +34,7 @@ interface ShopLayoutProps {
 const ShopLayout: React.FC<ShopLayoutProps> = ({
     filterType = 'default',
     defaultCategory,
+    defaultSearchQuery,
     hideCategoryGrid = false,
     categoryNameOverride,
     subCategoryOverride,
@@ -49,7 +51,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const activeCategory = defaultCategory || searchParams.get('category')?.toLowerCase() || null;
     const brandParam = searchParams.get('brand');
     const searchQueryRaw = searchParams.get('search');
-    const searchQuery = searchQueryRaw ? searchQueryRaw.replace(/\+/g, ' ') : null;
+    const searchQuery = defaultSearchQuery || (searchQueryRaw ? searchQueryRaw.replace(/\+/g, ' ') : null);
     const isLimited = searchParams.get('limited') === 'true';
 
     const [products, setProducts] = useState<any[]>(initialProducts);
@@ -61,6 +63,27 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const [totalProducts, setTotalProducts] = useState(initialTotal);
     const [expandedSections, setExpandedSections] = useState<string[]>([]);
     const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = React.useState(false);
+    const [startX, setStartX] = React.useState(0);
+    const [scrollLeftState, setScrollLeftState] = React.useState(0);
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!scrollContainerRef.current) return;
+        setIsDragging(true);
+        setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
+        setScrollLeftState(scrollContainerRef.current.scrollLeft);
+        e.preventDefault();
+    };
+
+    const handleMouseLeave = () => setIsDragging(false);
+    const handleMouseUp = () => setIsDragging(false);
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !scrollContainerRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - scrollContainerRef.current.offsetLeft;
+        const walk = (x - startX) * 1.1;
+        scrollContainerRef.current.scrollLeft = scrollLeftState - walk;
+    };
 
     const scrollLeft = () => {
         if (scrollContainerRef.current) {
@@ -354,7 +377,15 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                             <button className={styles.scrollBtn} onClick={scrollLeft} aria-label="Scroll left">
                                 <ChevronLeft size={24} />
                             </button>
-                            <div className={styles.categoryGrid} ref={scrollContainerRef}>
+                            <div
+                                className={styles.categoryGrid}
+                                ref={scrollContainerRef}
+                                onMouseDown={handleMouseDown}
+                                onMouseLeave={handleMouseLeave}
+                                onMouseUp={handleMouseUp}
+                                onMouseMove={handleMouseMove}
+                                style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+                            >
                                 {subCategoriesToShow.map((catName: string, idx: number) => {
                                     const slug = catName.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
                                     return (
@@ -414,9 +445,13 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                             Array(12).fill(0).map((_, i) => <ProductCardSkeleton key={i} />)
                         ) : products.length > 0 ? (
                             products.map((p) => (
-                                <ProductCard
+                                <ProductCardPromotion
                                     key={p.id}
-                                    product={p}
+                                    product={{
+                                        ...p,
+                                        price: Number(p.offer_price) > 0 ? Number(p.offer_price) : Number(p.price),
+                                        old_price: Number(p.offer_price) > 0 ? Number(p.price) : (Number(p.old_price) || Number(p.originalPrice) || 0)
+                                    }}
                                 />
                             ))
                         ) : (

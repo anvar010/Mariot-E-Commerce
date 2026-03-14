@@ -128,11 +128,20 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
 
     return (
         <div className={`${styles.card} ${disableHover ? styles.noHover : ''}`}>
-            {!!product.is_best_seller && (
-                <div className={styles.bestSellerTagWrapper}>
+            <div className={styles.tagsWrapperStart}>
+                {!!product.is_weekly_deal && (
+                    <div className={`${styles.dealTag} ${styles.weeklyTag}`}>{t('weeklyDeal')}</div>
+                )}
+                {!!product.is_limited_offer && (
+                    <div className={`${styles.dealTag} ${styles.limitedTag}`}>{t('limitedOffer')}</div>
+                )}
+                {!!product.is_daily_offer && (
+                    <div className={`${styles.dealTag} ${styles.dailyTag}`}>{t('dailyOffer')}</div>
+                )}
+                {!!product.is_best_seller && (
                     <div className={styles.bestSellerTag}>{t('bestSeller')}</div>
-                </div>
-            )}
+                )}
+            </div>
 
             {Number(product.discount_percentage) > 0 && (
                 <div className={styles.discountTagWrapper}>
@@ -206,7 +215,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                 {/* Pricing */}
                 <div className={styles.pricing}>
                     <div className={styles.savingsRow}>
-                        {Number(product.old_price) > 0 && (
+                        {Number(product.old_price) > 0 && Number(product.old_price) > Number(product.price) && (
                             <span className={styles.oldPrice}>
                                 AED {Number(product.old_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </span>

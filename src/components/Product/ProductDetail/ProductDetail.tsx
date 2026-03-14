@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Heart,
     ShoppingCart,
@@ -31,7 +31,7 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
 import { useNotification } from '@/context/NotificationContext';
 import Loader from '@/components/shared/Loader/Loader';
-import ProductCard from '@/components/shared/ProductCard/ProductCard';
+import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Link from 'next/link';
 import { MessageSquare, Phone } from 'lucide-react';
 
@@ -241,6 +241,60 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         }
     };
 
+    const [isDraggingRelated, setIsDraggingRelated] = useState(false);
+    const [startXRelated, setStartXRelated] = useState(0);
+    const [scrollLeftRelated, setScrollLeftRelated] = useState(0);
+
+    const thumbScrollRef = useRef<HTMLDivElement>(null);
+    const [isDraggingThumbs, setIsDraggingThumbs] = useState(false);
+    const [startXThumbs, setStartXThumbs] = useState(0);
+    const [scrollLeftThumbs, setScrollLeftThumbs] = useState(0);
+
+    const handleThumbMouseDown = (e: React.MouseEvent) => {
+        if (!thumbScrollRef.current) return;
+        setIsDraggingThumbs(true);
+        setStartXThumbs(e.pageX - thumbScrollRef.current.offsetLeft);
+        setScrollLeftThumbs(thumbScrollRef.current.scrollLeft);
+        e.preventDefault();
+    };
+
+    const handleThumbMouseLeave = () => setIsDraggingThumbs(false);
+    const handleThumbMouseUp = () => setIsDraggingThumbs(false);
+    const handleThumbMouseMove = (e: React.MouseEvent) => {
+        if (!isDraggingThumbs || !thumbScrollRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - thumbScrollRef.current.offsetLeft;
+        const walk = (x - startXThumbs) * 1.1;
+        thumbScrollRef.current.scrollLeft = scrollLeftThumbs - walk;
+    };
+
+    const handleRelatedMouseDown = (e: React.MouseEvent) => {
+        const grid = document.getElementById('related-grid');
+        if (!grid) return;
+        setIsDraggingRelated(true);
+        setStartXRelated(e.pageX - grid.offsetLeft);
+        setScrollLeftRelated(grid.scrollLeft);
+        e.preventDefault();
+    };
+
+    const handleRelatedMouseLeave = () => {
+        setIsDraggingRelated(false);
+    };
+
+    const handleRelatedMouseUp = () => {
+        setIsDraggingRelated(false);
+    };
+
+    const handleRelatedMouseMove = (e: React.MouseEvent) => {
+        if (!isDraggingRelated) return;
+        const grid = document.getElementById('related-grid');
+        if (!grid) return;
+        e.preventDefault();
+        const x = e.pageX - grid.offsetLeft;
+        const walk = (x - startXRelated) * 1.1;
+        grid.scrollLeft = scrollLeftRelated - walk;
+    };
+
     if (loading) return <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>;
     if (!product) {
         return (
@@ -412,7 +466,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     >
                                         <ChevronLeft size={32} />
                                     </button>
-                                    <div className={styles.thumbnails}>
+                                    <div
+                                        className={styles.thumbnails}
+                                        ref={thumbScrollRef}
+                                        onMouseDown={handleThumbMouseDown}
+                                        onMouseLeave={handleThumbMouseLeave}
+                                        onMouseUp={handleThumbMouseUp}
+                                        onMouseMove={handleThumbMouseMove}
+                                        style={{ cursor: isDraggingThumbs ? 'grabbing' : 'grab' }}
+                                    >
                                         {images.map((img: string, idx: number) => (
                                             <div
                                                 key={idx}
@@ -594,173 +656,181 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                 </div>
 
-                <div className={styles.bottomSection}>
-                    {(() => {
-                        const videoDataRaw = product.youtube_video_link;
-                        let links: string[] = [];
-                        let fIndex = 0;
-                        if (videoDataRaw) {
-                            try {
-                                const parsed = JSON.parse(videoDataRaw);
-                                if (Array.isArray(parsed)) {
-                                    links = parsed.filter(v => v && v.trim() !== '');
-                                } else if (parsed && typeof parsed === 'object' && parsed.links) {
-                                    links = parsed.links.filter((v: string) => v && v.trim() !== '');
-                                    fIndex = parsed.featuredIndex ?? 0;
-                                } else {
-                                    links = [videoDataRaw].filter(v => v && v.trim() !== '');
-                                }
-                            } catch {
-                                links = [String(videoDataRaw)].filter(v => v && v.trim() !== '');
-                            }
-                        }
-
-                        const hasVideo = links.length > 0;
-                        const featuredUrl = hasVideo ? (links[fIndex] || links[0]) : null;
-
-                        const getEmbedUrl = (url: string) => {
-                            if (!url) return '';
-                            if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/').split('&')[0];
-                            if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
-                            return url;
-                        };
-
-                        return (
-                            <div className={hasVideo ? styles.videoAndDescription : ''}>
-                                {hasVideo && featuredUrl && (
-                                    <div className={styles.multiVideoSection}>
-                                        <div className={styles.featuredVideo}>
-                                            <div className={styles.videoContainer}>
-                                                <iframe
-                                                    src={getEmbedUrl(featuredUrl)}
-                                                    title="Product Featured Video"
-                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                    allowFullScreen
-                                                ></iframe>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className={styles.descriptionSection}>
-                                    <h2>{t('description')}</h2>
-                                    <div
-                                        className={styles.descriptionText}
-                                        dangerouslySetInnerHTML={{
-                                            __html: cleanShortcodes(getLocalizedField('description', 'description_ar')) || `<p>${t('noDescription')}</p>`
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        );
-                    })()}
+                <div className={styles.fullWidthDescription}>
+                    <div className={styles.descriptionSection}>
+                        <h2>{t('description')}</h2>
+                        <div
+                            className={styles.descriptionText}
+                            dangerouslySetInnerHTML={{
+                                __html: cleanShortcodes(getLocalizedField('description', 'description_ar')) || `<p>${t('noDescription')}</p>`
+                            }}
+                        />
+                    </div>
                 </div>
 
+                <div className={styles.splitLayout}>
+                    <div className={styles.accordionsColumn}>
+                        <div className={styles.accordions}>
+                            <AccordionItem
+                                title={t('productSpecs')}
+                                isOpen={!!expandedAccordions['specs']}
+                                onToggle={() => toggleAccordion('specs')}
+                            >
+                                {product.specifications ? (
+                                    <div className={styles.specsGrid}>
+                                        {(() => {
+                                            const cleaned = cleanShortcodes(product.specifications);
+                                            const lines = cleaned.split(/<br\/>|\n/).filter(l => l.trim() !== '');
 
-                <div className={styles.accordions}>
-                    <AccordionItem
-                        title={t('productSpecs')}
-                        isOpen={!!expandedAccordions['specs']}
-                        onToggle={() => toggleAccordion('specs')}
-                    >
-                        {product.specifications ? (
-                            <div className={styles.specsGrid}>
-                                {(() => {
-                                    const cleaned = cleanShortcodes(product.specifications);
-                                    // Split by <br/>, \n, or bullet points if any
-                                    const lines = cleaned.split(/<br\/>|\n/).filter(l => l.trim() !== '');
-
-                                    if (lines.length > 1) {
-                                        return (
-                                            <ul className={styles.specsList}>
-                                                {lines.map((line, idx) => {
-                                                    const parts = line.split(':');
-                                                    if (parts.length >= 2) {
-                                                        const label = parts[0].trim();
-                                                        const value = parts.slice(1).join(':').trim();
-                                                        return (
-                                                            <li key={idx} className={styles.specItem}>
-                                                                <span className={styles.specLabel}>{label}</span>
-                                                                <span className={styles.specValue}>{value}</span>
-                                                            </li>
-                                                        );
-                                                    }
-                                                    return <li key={idx} className={styles.specItemSingle}>{line.trim()}</li>;
-                                                })}
-                                            </ul>
-                                        );
-                                    }
-                                    return <div className={styles.descriptionText} dangerouslySetInnerHTML={{ __html: cleaned }} />;
-                                })()}
-                            </div>
-                        ) : (
-                            <p>{t('noSpecs')}</p>
-                        )}
-                    </AccordionItem>
-                    <AccordionItem
-                        title={t('aboutBrand')}
-                        isOpen={!!expandedAccordions['brand']}
-                        onToggle={() => toggleAccordion('brand')}
-                    >
-                        <p>{getLocalizedField('brand_description', 'brand_description_ar') || `${t('aboutBrand')} : ${getLocalizedField('brand_name', 'brand_name_ar') || 'Mariot'}`}</p>
-                    </AccordionItem>
-                    <AccordionItem
-                        title={t('resourcesDownloads')}
-                        isOpen={!!expandedAccordions['resources']}
-                        onToggle={() => toggleAccordion('resources')}
-                    >
-                        {(() => {
-                            let resources: { name: string, url: string }[] = [];
-                            if (product.resources) {
-                                try {
-                                    const parsed = JSON.parse(product.resources);
-                                    if (Array.isArray(parsed)) {
-                                        resources = parsed.filter(r => r.url);
-                                    }
-                                } catch (e) {
-                                    console.error('Failed to parse resources', e);
-                                }
-                            }
-
-                            if (resources.length === 0) return <p>{t('noResources')}</p>;
-
-                            return (
-                                <div className={styles.resourceList}>
-                                    {resources.map((res, i) => (
-                                        <a
-                                            key={i}
-                                            href={res.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className={styles.resourceCard}
-                                        >
-                                            <div className={styles.resourceIconInfo}>
-                                                <div className={styles.fileIconBox}>
-                                                    <FileText size={22} />
-                                                </div>
-                                                <div className={styles.resourceTextInfo}>
-                                                    <span className={styles.resourceName}>{res.name || 'Download'}</span>
-                                                    <span className={styles.resourceFormat}>PDF Document</span>
-                                                </div>
-                                            </div>
-                                            <div className={styles.downloadAction}>
-                                                <span className={styles.downloadLabel}>{t('download') || 'Download'}</span>
-                                                <FileDown size={18} />
-                                            </div>
-                                        </a>
-                                    ))}
+                                            if (lines.length > 1) {
+                                                return (
+                                                    <ul className={styles.specsList}>
+                                                        {lines.map((line, idx) => {
+                                                            const parts = line.split(':');
+                                                            if (parts.length >= 2) {
+                                                                const label = parts[0].trim();
+                                                                const value = parts.slice(1).join(':').trim();
+                                                                return (
+                                                                    <li key={idx} className={styles.specItem}>
+                                                                        <span className={styles.specLabel}>{label}</span>
+                                                                        <span className={styles.specValue}>{value}</span>
+                                                                    </li>
+                                                                );
+                                                            }
+                                                            return <li key={idx} className={styles.specItemSingle}>{line.trim()}</li>;
+                                                        })}
+                                                    </ul>
+                                                );
+                                            }
+                                            return <div className={styles.descriptionText} dangerouslySetInnerHTML={{ __html: cleaned }} />;
+                                        })()}
+                                    </div>
+                                ) : (
+                                    <p>{t('noSpecs')}</p>
+                                )}
+                            </AccordionItem>
+                            <AccordionItem
+                                title={t('aboutBrand')}
+                                isOpen={!!expandedAccordions['brand']}
+                                onToggle={() => toggleAccordion('brand')}
+                            >
+                                <div className={styles.aboutBrandContainer}>
+                                    {product.brand_image && (
+                                        <div className={styles.aboutBrandLogoBox}>
+                                            <img src={resolveUrl(product.brand_image)} alt={getLocalizedField('brand_name', 'brand_name_ar')} className={styles.aboutBrandLogoImg} />
+                                        </div>
+                                    )}
+                                    <p>{getLocalizedField('brand_description', 'brand_description_ar') || `${t('aboutBrand')} : ${getLocalizedField('brand_name', 'brand_name_ar') || 'Mariot'}`}</p>
                                 </div>
-                            );
-                        })()}
-                    </AccordionItem>
-                    <AccordionItem
-                        title={t('relatedVideos')}
-                        isOpen={!!expandedAccordions['videos']}
-                        onToggle={() => toggleAccordion('videos')}
-                    >
+                            </AccordionItem>
+                            <AccordionItem
+                                title={t('resourcesDownloads')}
+                                isOpen={!!expandedAccordions['resources']}
+                                onToggle={() => toggleAccordion('resources')}
+                            >
+                                {(() => {
+                                    let resources: { name: string, url: string }[] = [];
+                                    if (product.resources) {
+                                        try {
+                                            const parsed = JSON.parse(product.resources);
+                                            if (Array.isArray(parsed)) {
+                                                resources = parsed.filter(r => r.url);
+                                            }
+                                        } catch (e) {
+                                            console.error('Failed to parse resources', e);
+                                        }
+                                    }
+
+                                    if (resources.length === 0) return <p>{t('noResources')}</p>;
+
+                                    return (
+                                        <div className={styles.resourceList} style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+                                            {resources.map((res, i) => (
+                                                <a
+                                                    key={i}
+                                                    href={res.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={styles.resourceCard}
+                                                >
+                                                    <div className={styles.resourceIconInfo}>
+                                                        <div className={styles.fileIconBox}>
+                                                            <FileText size={22} />
+                                                        </div>
+                                                        <div className={styles.resourceTextInfo}>
+                                                            <span className={styles.resourceName}>{res.name || 'Download'}</span>
+                                                            <span className={styles.resourceFormat}>PDF Document</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className={styles.downloadAction}>
+                                                        <span className={styles.downloadLabel}>{t('download') || 'Download'}</span>
+                                                        <FileDown size={18} />
+                                                    </div>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+                            </AccordionItem>
+                            <AccordionItem
+                                title={t('relatedVideos')}
+                                isOpen={!!expandedAccordions['videos']}
+                                onToggle={() => toggleAccordion('videos')}
+                            >
+                                {(() => {
+                                    const videoDataRaw = product.youtube_video_link;
+                                    let links: string[] = [];
+                                    if (videoDataRaw) {
+                                        try {
+                                            const parsed = JSON.parse(videoDataRaw);
+                                            if (Array.isArray(parsed)) {
+                                                links = parsed.filter(v => v && v.trim() !== '');
+                                            } else if (parsed && typeof parsed === 'object' && parsed.links) {
+                                                links = parsed.links.filter((v: string) => v && v.trim() !== '');
+                                            } else {
+                                                links = [videoDataRaw].filter(v => v && v.trim() !== '');
+                                            }
+                                        } catch {
+                                            links = [String(videoDataRaw)].filter(v => v && v.trim() !== '');
+                                        }
+                                    }
+
+                                    if (links.length === 0) return <p>{t('noRelatedVideos') || 'No related videos available.'}</p>;
+
+                                    const getEmbedUrl = (url: string) => {
+                                        if (!url) return '';
+                                        if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/').split('&')[0];
+                                        if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
+                                        return url;
+                                    };
+
+                                    return (
+                                        <div className={styles.relatedVideosGrid} style={{ background: 'transparent', padding: 0, border: 'none' }}>
+                                            {links.map((v: string, i: number) => (
+                                                <div key={i} className={styles.relatedVideoItem}>
+                                                    <div className={styles.videoContainerSmall}>
+                                                        <iframe
+                                                            src={getEmbedUrl(v)}
+                                                            title={`Video ${i + 1}`}
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                            allowFullScreen
+                                                        ></iframe>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+                            </AccordionItem>
+                        </div>
+                    </div>
+
+                    {/* Right column: Featured Video */}
+                    <div className={styles.videoColumn}>
                         {(() => {
                             const videoDataRaw = product.youtube_video_link;
                             let links: string[] = [];
+                            let fIndex = 0;
                             if (videoDataRaw) {
                                 try {
                                     const parsed = JSON.parse(videoDataRaw);
@@ -768,6 +838,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         links = parsed.filter(v => v && v.trim() !== '');
                                     } else if (parsed && typeof parsed === 'object' && parsed.links) {
                                         links = parsed.links.filter((v: string) => v && v.trim() !== '');
+                                        fIndex = parsed.featuredIndex ?? 0;
                                     } else {
                                         links = [videoDataRaw].filter(v => v && v.trim() !== '');
                                     }
@@ -776,7 +847,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 }
                             }
 
-                            if (links.length === 0) return <p>{t('noRelatedVideos') || 'No related videos available.'}</p>;
+                            const hasVideo = links.length > 0;
+                            const featuredUrl = hasVideo ? (links[fIndex] || links[0]) : null;
 
                             const getEmbedUrl = (url: string) => {
                                 if (!url) return '';
@@ -785,24 +857,28 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 return url;
                             };
 
+                            if (!hasVideo || !featuredUrl) return null;
+
                             return (
-                                <div className={styles.relatedVideosGrid} style={{ background: 'transparent', padding: 0, border: 'none' }}>
-                                    {links.map((v: string, i: number) => (
-                                        <div key={i} className={styles.relatedVideoItem}>
-                                            <div className={styles.videoContainerSmall}>
-                                                <iframe
-                                                    src={getEmbedUrl(v)}
-                                                    title={`Video ${i + 1}`}
-                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                    allowFullScreen
-                                                ></iframe>
-                                            </div>
-                                        </div>
-                                    ))}
+                                <div className={styles.stickyVideoWrapper}>
+                                    <div className={styles.videoHeader}>
+                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="#e31e24">
+                                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z" />
+                                        </svg>
+                                        <h3>{t('featuredVideo') || 'Featured Video'}</h3>
+                                    </div>
+                                    <div className={styles.videoContainer}>
+                                        <iframe
+                                            src={getEmbedUrl(featuredUrl)}
+                                            title="Product Featured Video"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        ></iframe>
+                                    </div>
                                 </div>
                             );
                         })()}
-                    </AccordionItem>
+                    </div>
                 </div>
 
                 {/* --- New Sections (Bottom) --- */}
@@ -824,9 +900,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 <ChevronLeft size={26} />
                             </button>
 
-                            <div className={styles.relatedGrid} id="related-grid">
+                            <div
+                                className={styles.relatedGrid}
+                                id="related-grid"
+                                onMouseDown={handleRelatedMouseDown}
+                                onMouseLeave={handleRelatedMouseLeave}
+                                onMouseUp={handleRelatedMouseUp}
+                                onMouseMove={handleRelatedMouseMove}
+                                style={{ cursor: isDraggingRelated ? 'grabbing' : 'grab' }}
+                            >
                                 {relatedProducts.map((p) => (
-                                    <ProductCard key={p.id} product={p} />
+                                    <ProductCardPromotion key={p.id} product={{ ...p, price: Number(p.offer_price) > 0 ? Number(p.offer_price) : Number(p.price), old_price: Number(p.offer_price) > 0 ? Number(p.price) : (Number(p.old_price) || Number(p.originalPrice) || 0) }} />
                                 ))}
                             </div>
 

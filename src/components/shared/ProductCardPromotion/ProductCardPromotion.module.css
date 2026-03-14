@@ -23,11 +23,15 @@
 }
 
 /* Badges */
-.bestSellerTagWrapper {
+.tagsWrapperStart {
     position: absolute;
     top: 15px;
     inset-inline-start: 15px;
     z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
 }
 
 .bestSellerTag {
@@ -41,6 +45,21 @@
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+.dealTag {
+    padding: 6px 14px;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.weeklyTag { background: #3ba1a1; }
+.limitedTag { background: #eb1e24; }
+.dailyTag { background: #5bb377; }
 
 .discountTagWrapper {
     position: absolute;
@@ -187,9 +206,9 @@
     font-size: 13px;
     color: #86868b;
     line-height: 1.4;
-    margin-bottom: 2px;
+    margin-bottom: 0;
     font-weight: 500;
-    min-height: 18px;
+    min-height: auto;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -199,27 +218,40 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    min-height: 35px;
+    margin-top: 2px;
     margin-bottom: 2px;
+    padding: 0;
+    margin-left: 0;
 }
 
 .logoBorder {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    height: 40px;
+    padding: 0;
+    margin: 0;
+    /* height: 40px; */
 }
 
 .brandLogoImg {
-    max-height: 35px;
+    max-height: 28px;
     max-width: 130px;
     object-fit: contain;
+    object-position: 0% 50%;
     opacity: 0.95;
     transition: opacity 0.3s ease;
+    margin: 0;
+    margin-inline-start: -6px;
+    padding: 0;
+    display: block;
 }
 
 .card:hover .brandLogoImg {
     opacity: 1;
+}
+
+[dir="rtl"] .brandLogoImg {
+    object-position: 100% 50%;
 }
 
 .brandText {

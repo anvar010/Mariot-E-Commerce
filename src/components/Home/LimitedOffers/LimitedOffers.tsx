@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './LimitedOffers.module.css';
-import ProductCard from '@/components/shared/ProductCard/ProductCard';
+import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import { API_BASE_URL } from '@/config';
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -124,7 +124,7 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
                             <p style={{ padding: '20px', color: '#666', fontStyle: 'italic' }}>{t('noOffers')}</p>
                         ) : (
                             products.map((prod) => (
-                                <ProductCard
+                                <ProductCardPromotion
                                     key={prod.id}
                                     product={{
                                         ...prod,

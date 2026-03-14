@@ -13,6 +13,8 @@
     flex: 1;
     overflow: hidden;
     font-family: sans-serif;
+    min-height: 480px;
+    justify-content: space-between;
 }
 
 .imageSection {
@@ -290,6 +292,7 @@
         border: 4px solid white;
         /* Thinner border on mobile */
         padding: 8px;
+        min-height: 480px;
     }
 
     .productImg {
@@ -347,6 +350,7 @@
         border: 4px solid white;
         border-radius: 2px;
         background: #f4f4f4;
+        min-height: 380px;
     }
 
     .imageSection {
