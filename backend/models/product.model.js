@@ -97,7 +97,7 @@ class Product {
         query += ' LIMIT ? OFFSET ?';
         params.push(parseInt(limit), parseInt(offset));
 
-        const [rows] = await db.execute(query, params);
+        const [rows] = await db.query(query, params);
 
         // Fetch images for these products to ensure frontend gets the gallery
         if (rows.length > 0) {
@@ -116,7 +116,7 @@ class Product {
         if (whereClauses.length > 0) {
             countQuery += ' WHERE ' + whereClauses.join(' AND ');
         }
-        const [countRows] = await db.execute(countQuery, params.slice(0, -2)); // Remove limit and offset params
+        const [countRows] = await db.query(countQuery, params.slice(0, -2)); // Remove limit and offset params
         const total = countRows[0].total;
 
         return { products: rows, total };
