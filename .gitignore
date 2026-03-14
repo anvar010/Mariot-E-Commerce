@@ -1,19 +1,30 @@
+# General
 node_modules
 .next
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+*/node_modules
+*/.next
 .vercel
-build.log
-build_output.txt
-git_log.txt
-git_parent.txt
-page_test.html
-product.json
-reflog.txt
+.env*
+*.log
 *.tsbuildinfo
+
+# Project specific
+frontend/.next
+frontend/node_modules
+backend/node_modules
+backend/.env
+
+# Temp/Migration files (Sensitive - moved to backup)
+*.sql
+tmp.js
+copy-data.js
+import-sql.js
+test-import.js
+test-aiven.js
+power-import.js
+aiven-migrate.js
+import_log.txt
+push_log.txt
+push_error*.txt
+migration-log.txt
+mariot_b2b.sql
