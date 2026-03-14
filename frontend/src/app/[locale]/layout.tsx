@@ -18,6 +18,8 @@ const alexandria = Alexandria({
     variable: '--font-alexandria',
 });
 
+export const dynamic = 'force-dynamic';
+
 export function generateStaticParams() {
     return [{ locale: 'en' }, { locale: 'ar' }];
 }

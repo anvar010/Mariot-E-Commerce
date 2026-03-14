@@ -81,6 +81,7 @@ const Footer = () => {
                             <h4>{t('quickLinks')}</h4>
                             <ul>
                                 <li><Link href="/about">{t('aboutUs')}</Link></li>
+                                <li><Link href="/shop-by-brands">{t('shopByBrand')}</Link></li>
                                 <li><Link href="/contact">{t('contactUs')}</Link></li>
                                 <li><Link href="/affiliate-program">{t('affiliateProgram')}</Link></li>
                                 <li><Link href="/privacy-policy">{t('privacyPolicy')}</Link></li>

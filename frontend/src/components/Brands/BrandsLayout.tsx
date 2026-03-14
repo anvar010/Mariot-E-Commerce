@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './BrandsLayout.module.css';
 import Link from 'next/link';
 import { Truck, ShieldCheck, Award } from 'lucide-react';
@@ -184,6 +184,29 @@ const BrandsLayout = () => {
     const [brands, setBrands] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const filterScrollRef = useRef<HTMLDivElement>(null);
+    const [isDraggingFilter, setIsDraggingFilter] = useState(false);
+    const [startXFilter, setStartXFilter] = useState(0);
+    const [scrollLeftFilter, setScrollLeftFilter] = useState(0);
+
+    const handleFilterMouseDown = (e: React.MouseEvent) => {
+        if (!filterScrollRef.current) return;
+        setIsDraggingFilter(true);
+        setStartXFilter(e.pageX - filterScrollRef.current.offsetLeft);
+        setScrollLeftFilter(filterScrollRef.current.scrollLeft);
+        e.preventDefault();
+    };
+
+    const handleFilterMouseLeave = () => setIsDraggingFilter(false);
+    const handleFilterMouseUp = () => setIsDraggingFilter(false);
+    const handleFilterMouseMove = (e: React.MouseEvent) => {
+        if (!isDraggingFilter || !filterScrollRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - filterScrollRef.current.offsetLeft;
+        const walk = (x - startXFilter) * 1.1;
+        filterScrollRef.current.scrollLeft = scrollLeftFilter - walk;
+    };
+
     useEffect(() => {
         const fetchBrands = async () => {
             try {
@@ -220,7 +243,15 @@ const BrandsLayout = () => {
     return (
         <div className={styles.brandsPage}>
             <div className={styles.container}>
-                <div className={styles.categoryFilters}>
+                <div
+                    className={styles.categoryFilters}
+                    ref={filterScrollRef}
+                    onMouseDown={handleFilterMouseDown}
+                    onMouseLeave={handleFilterMouseLeave}
+                    onMouseUp={handleFilterMouseUp}
+                    onMouseMove={handleFilterMouseMove}
+                    style={{ cursor: isDraggingFilter ? 'grabbing' : 'grab' }}
+                >
                     {categories.map((category) => (
                         <button
                             key={category}

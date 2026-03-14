@@ -10,11 +10,11 @@ export const metadata: Metadata = {
     description: 'Explore our range of professional coffee makers, espresso machines, and brewing equipment. Best quality for cafes and restaurants in UAE.',
 };
 
-const API_BASE_URL_SERVER = 'http://localhost:5000/api/v1';
+const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 async function getCategoryData(slug: string) {
     try {
-        const productUrl = `${API_BASE_URL_SERVER}/products?page=1&limit=20&category=${slug}`;
+        const productUrl = `${API_BASE_URL_SERVER}/products?page=1&limit=20&search=coffee%20makers`;
         const brandsUrl = `${API_BASE_URL_SERVER}/brands?category=${slug}`;
 
         const [productsRes, brandsRes] = await Promise.all([
@@ -53,7 +53,7 @@ export default async function CoffeeMakersPage() {
             <Header />
             <Suspense fallback={<div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>}>
                 <ShopLayout
-                    defaultCategory="coffee-makers"
+                    defaultSearchQuery="coffee makers"
                     categoryNameOverride="Coffee Makers"
                     hideCategoryGrid={true}
                     initialProducts={data.products}

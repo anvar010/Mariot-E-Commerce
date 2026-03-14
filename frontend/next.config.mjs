@@ -4,9 +4,9 @@ const withNextIntl = createNextIntlPlugin('./src/i18n.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    experimental: {
-        optimizePackageImports: ['lucide-react', 'framer-motion'],
-    },
+    // experimental: {
+    //     optimizePackageImports: ['lucide-react', 'framer-motion'],
+    // },
     images: {
         remotePatterns: [
             {
@@ -56,6 +56,10 @@ const nextConfig = {
                 hostname: '192.168.0.100',
                 port: '5000',
                 pathname: '/uploads/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'mariot-backend.onrender.com',
             }
         ],
     },

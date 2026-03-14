@@ -1,6 +1,5 @@
 import { BASE_URL } from '@/config';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+// Dynamically imported when generated to fix next.js SSR build errors
 
 // Helper to resolve image URLs inside the PDF generator
 const resolveImageUrl = (url?: string) => {
@@ -243,6 +242,9 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
     // 3. Capture - images are already base64, just give layout engine a brief moment
     try {
         await new Promise(r => setTimeout(r, 300)); // Buffer for layout engine
+
+        const html2canvas = (await import('html2canvas')).default;
+        const { jsPDF } = await import('jspdf');
 
         const canvas = await html2canvas(container, {
             scale: 2,

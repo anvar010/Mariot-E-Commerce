@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     description: 'Browse our full catalog of commercial kitchen equipment, coffee machines, bakery tools, and refrigeration units. Quality equipment for professionals.',
 };
 
-const API_BASE_URL_SERVER = 'http://localhost:5000/api/v1';
+const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 async function getShopData(locale: string, searchParams: { [key: string]: string | string[] | undefined }) {
     const category = searchParams.category as string | undefined;

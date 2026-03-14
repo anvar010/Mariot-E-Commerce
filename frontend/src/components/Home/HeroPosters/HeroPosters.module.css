@@ -23,6 +23,7 @@
     scroll-behavior: smooth;
     padding: 10px 0;
     scrollbar-width: none;
+    user-select: none;
     /* Hide scrollbar Firefox */
 }
 

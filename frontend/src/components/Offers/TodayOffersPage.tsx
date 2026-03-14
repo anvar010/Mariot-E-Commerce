@@ -13,7 +13,6 @@ import {
     ShoppingCart,
     Phone
 } from 'lucide-react';
-import ProductCard from '@/components/shared/ProductCard/ProductCard';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Loader from '@/components/shared/Loader/Loader';
 import ProductCardSkeleton from '@/components/shared/ProductCardPromotion/ProductCardSkeleton';
@@ -313,8 +312,8 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                                             ? Number(product.offer_price)
                                             : (Number(product.price) || 0),
                                         old_price: Number(product.offer_price) > 0
-                                            ? Number(product.price)
-                                            : (Number(product.oldPrice || product.originalPrice) || 0),
+                                            ? Number(product.price) || 0
+                                            : (Number(product.old_price) || Number(product.originalPrice) || 0),
                                         discount_percentage: product.discount_percentage,
                                         primary_image: product.primary_image || product.image_url || product.image,
                                         brand_name: product.brand_name || product.brand,
@@ -322,6 +321,9 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                                         slug: product.slug,
                                         stock_quantity: product.stock_quantity,
                                         is_best_seller: product.is_best_seller,
+                                        is_weekly_deal: product.is_weekly_deal,
+                                        is_limited_offer: product.is_limited_offer,
+                                        is_daily_offer: product.is_daily_offer,
                                         offer_start: product.offer_start,
                                         offer_end: product.offer_end,
                                         average_rating: product.average_rating,

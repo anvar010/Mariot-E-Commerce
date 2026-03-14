@@ -253,6 +253,7 @@
     min-width: 0;
     padding: 5px 0;
     /* Space for shadow */
+    user-select: none;
 }
 
 /* Fallback for touch devices to allow swipe */

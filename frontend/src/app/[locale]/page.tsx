@@ -12,7 +12,7 @@ import FloatingActions from '@/components/shared/FloatingActions/FloatingActions
 import Footer from '@/components/Layout/Footer/Footer';
 import Reveal from '@/components/shared/Reveal/Reveal';
 
-const API_BASE_URL_SERVER = 'http://localhost:5000/api/v1';
+const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 async function getHomeData(locale: string) {
     const isRtl = locale === 'ar';
