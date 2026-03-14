@@ -11,11 +11,12 @@ const generateToken = (id) => {
 const sendTokenResponse = (user, statusCode, res) => {
     const token = generateToken(user.id);
 
+    const isProd = process.env.NODE_ENV === 'production';
     const options = {
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         httpOnly: true,
-        secure: true,
-        sameSite: 'none',
+        secure: isProd, // Must be true for SameSite=None
+        sameSite: isProd ? 'none' : 'lax',
         path: '/'
     };
 
