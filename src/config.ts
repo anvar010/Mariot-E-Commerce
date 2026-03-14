@@ -1,3 +1,4 @@
+/** Triggering fresh production build with synced database data (Aiven) */
 const getBaseUrl = () => {
     // Use environment variable if set (for production/Vercel)
     if (process.env.NEXT_PUBLIC_API_BASE_URL) {
