@@ -98,6 +98,7 @@ const AdminProducts = () => {
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importing, setImporting] = useState(false);
     const [importResult, setImportResult] = useState<any>(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [activeTab, setActiveTab] = useState('basic');
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -154,14 +155,47 @@ const AdminProducts = () => {
 
         setImporting(true);
         setImportResult(null);
+        setUploadProgress(0);
+
         try {
-            const res = await fetch(`${API_BASE_URL}/products/bulk-import`, {
-                method: 'POST',
-                credentials: 'include',
-                body: formData
+            const data: any = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', `${API_BASE_URL}/products/bulk-import`);
+                xhr.withCredentials = true;
+
+                // Track upload progress
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        setUploadProgress(percentComplete);
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            resolve(response);
+                        } catch (err) {
+                            reject(new Error('Invalid JSON response'));
+                        }
+                    } else {
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            reject(new Error(errorResponse.message || 'Import failed'));
+                        } catch (err) {
+                            reject(new Error('Import failed'));
+                        }
+                    }
+                };
+
+                xhr.onerror = () => {
+                    reject(new Error('Network error during import'));
+                };
+
+                xhr.send(formData);
             });
 
-            const data = await res.json();
             if (data.success) {
                 setImportResult(data.data);
                 showNotification(`Successfully imported ${data.data.success} products!`);
@@ -169,11 +203,12 @@ const AdminProducts = () => {
             } else {
                 showNotification(data.message || 'Import failed', 'error');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Import Error:', error);
-            showNotification('An error occurred during import', 'error');
+            showNotification(error.message || 'An error occurred during import', 'error');
         } finally {
             setImporting(false);
+            setUploadProgress(0);
             event.target.value = ''; // Reset input
         }
     };
@@ -1616,13 +1651,28 @@ const AdminProducts = () => {
                             {!importResult ? (
                                 <>
                                     <div className={styles.importInstructions}>
-                                        <h3>How it works:</h3>
+                                        <h3><LayoutGrid size={18} /> Getting Started</h3>
                                         <ul>
-                                            <li>Download the template file to see the required format.</li>
-                                            <li>Fill in your product details in the Excel sheet.</li>
-                                            <li>Columns like <strong>name</strong> and <strong>price</strong> are mandatory.</li>
-                                            <li>Categories and brands will be created automatically if they don't exist.</li>
-                                            <li>For multiple images, separate URLs with a comma.</li>
+                                            <li className={styles.instructionItem}>
+                                                <div className={styles.instructionNumber}>1</div>
+                                                <span>Download the template file to see the required format.</span>
+                                            </li>
+                                            <li className={styles.instructionItem}>
+                                                <div className={styles.instructionNumber}>2</div>
+                                                <span>Fill in your product details in the Excel sheet.</span>
+                                            </li>
+                                            <li className={styles.instructionItem}>
+                                                <div className={styles.instructionNumber}>3</div>
+                                                <span>Columns like <strong>name</strong> and <strong>price</strong> are mandatory.</span>
+                                            </li>
+                                            <li className={styles.instructionItem}>
+                                                <div className={styles.instructionNumber}>4</div>
+                                                <span>Categories and brands will be created automatically if they don't exist.</span>
+                                            </li>
+                                            <li className={styles.instructionItem}>
+                                                <div className={styles.instructionNumber}>5</div>
+                                                <span>For multiple images, separate URLs with a comma.</span>
+                                            </li>
                                         </ul>
                                         <button className={styles.downloadTemplateBtn} onClick={handleDownloadTemplate}>
                                             <FileDown size={18} />
@@ -1643,16 +1693,25 @@ const AdminProducts = () => {
                                             onClick={() => !importing && document.getElementById('bulk-import-input')?.click()}
                                         >
                                             {importing ? (
-                                                <>
+                                                <div className={styles.progressContainer}>
                                                     <Loader2 size={32} className={styles.spinner} />
-                                                    <p>Processing your products... please wait.</p>
-                                                </>
+                                                    <p>Processing... {uploadProgress}%</p>
+                                                    <div className={styles.progressWrapper}>
+                                                        <div
+                                                            className={styles.progressBarFill}
+                                                            style={{ width: `${uploadProgress}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className={styles.progressText}>Please keep this window open while the upload completes</span>
+                                                </div>
                                             ) : (
-                                                <>
-                                                    <Upload size={32} />
+                                                <div className={styles.uploadIdleState}>
+                                                    <div className={styles.uploadIconCircle}>
+                                                        <Upload size={32} />
+                                                    </div>
                                                     <p>Click here to select your Excel file</p>
                                                     <span>Supports .xlsx and .xls formats</span>
-                                                </>
+                                                </div>
                                             )}
                                         </div>
                                     </div>

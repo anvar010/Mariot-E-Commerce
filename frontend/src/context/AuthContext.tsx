@@ -27,18 +27,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const router = useRouter();
 
     useEffect(() => {
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+            setToken(savedToken);
+        }
         loadUser();
     }, []);
 
     const loadUser = async () => {
+        const savedToken = localStorage.getItem('token');
+        if (!savedToken) {
+            setLoading(false);
+            return;
+        }
+
         try {
             const data = await authApi.getMe();
             setUser(data.data);
-            setToken('cookie_managed'); // Placeholder to satisfy token prop without having raw token
+            setToken(savedToken);
         } catch (err: any) {
             console.error('Failed to load user', err);
             setError(err.message || 'Failed to load user');
             setToken(null);
+            localStorage.removeItem('token');
         } finally {
             setLoading(false);
         }
@@ -49,7 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setError(null);
         try {
             const data = await authApi.login(credentials);
-            setToken('cookie_managed');
+            setToken(data.token);
+            localStorage.setItem('token', data.token);
             setUser(data.user);
             router.push('/');
         } catch (err: any) {
@@ -65,7 +77,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setError(null);
         try {
             const data = await authApi.googleLogin(token);
-            setToken('cookie_managed');
+            setToken(data.token);
+            localStorage.setItem('token', data.token);
             setUser(data.user);
             router.push('/');
         } catch (err: any) {
@@ -81,7 +94,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setError(null);
         try {
             const data = await authApi.register(userData);
-            setToken('cookie_managed');
+            setToken(data.token);
+            localStorage.setItem('token', data.token);
             setUser(data.user);
             router.push('/');
         } catch (err: any) {
@@ -94,7 +108,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const updateUser = async (userData: any) => {
         try {
-            const data = await authApi.updateMe('', userData);
+            const currentToken = localStorage.getItem('token') || '';
+            const data = await authApi.updateMe(currentToken, userData);
             setUser(data.data);
         } catch (err: any) {
             setError(err.message);
@@ -104,11 +119,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = async () => {
         try {
-            // Optional: call backend logout to clear cookie
             await fetch(`${API_BASE_URL}/auth/logout`, { credentials: "include" });
         } catch (e) { }
         setToken(null);
         setUser(null);
+        localStorage.removeItem('token');
         router.push('/signin');
     };
 
