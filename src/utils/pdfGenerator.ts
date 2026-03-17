@@ -182,8 +182,8 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                                 <img src="${itemImageBase64s[idx]}" style="height: 50px; width: 50px; object-fit: contain;">
                             </td>
                             <td style="padding: 15px 10px; text-align: center; font-size: 12px;">${item.quantity}</td>
-                            <td style="padding: 15px 10px; text-align: right; font-size: 12px;">${Number(item.price).toLocaleString()}</td>
-                            <td style="padding: 15px 10px; text-align: right; font-size: 12px; font-weight: bold;">${(Number(item.price) * item.quantity).toLocaleString()}</td>
+                            <td style="padding: 15px 10px; text-align: right; font-size: 12px;">${Number(item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td style="padding: 15px 10px; text-align: right; font-size: 12px; font-weight: bold;">${(Number(item.price) * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -198,17 +198,17 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <div style="display: flex; justify-content: space-between; font-size: 13px;">
                         <span style="width: 180px;">Subtotal (Excl. VAT)</span>
-                        <span style="font-weight: bold;">AED ${Number(quotation.subtotal).toLocaleString()}</span>
+                        <span style="font-weight: bold;">AED ${Number(quotation.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         <span style="width: 180px; text-align: right; direction: rtl;">الإجمالي (غير شامل الضريبة)</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 13px;">
                         <span style="width: 180px;">Total VAT (5%)</span>
-                        <span style="font-weight: bold;">AED ${Number(quotation.tax_amount).toLocaleString()}</span>
+                        <span style="font-weight: bold;">AED ${Number(quotation.tax_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         <span style="width: 180px; text-align: right; direction: rtl;">إجمالي الضريبة (5٪)</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 16px; margin-top: 10px; padding-top: 10px; border-top: 2px solid #e2e8f0; color: #334155;">
                         <span style="width: 180px;"><strong>Grand Total</strong></span>
-                        <span style="font-weight: 800; font-size: 20px; color: #334155;">AED ${Number(quotation.total_amount).toLocaleString()}</span>
+                        <span style="font-weight: 800; font-size: 20px; color: #334155;">AED ${Number(quotation.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         <span style="width: 180px; text-align: right; direction: rtl;"><strong>إجمالي المبلغ المستحق</strong></span>
                     </div>
                 </div>

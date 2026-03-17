@@ -343,6 +343,64 @@
     width: auto;
 }
 
+/* Extra Services Section */
+.extraServicesSection {
+    margin-bottom: 25px;
+}
+
+.extraServicesTitle {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    color: #2c3e50;
+    letter-spacing: -0.01em;
+}
+
+.priceMatchCard {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    background: #ffffff;
+    border: 1px solid #eef2f6;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 20px;
+}
+
+.priceMatchCard:hover {
+    border-color: #cbd5e1;
+    background: #fcfdfe;
+}
+
+.priceMatchIcon {
+    color: #334155;
+    flex-shrink: 0;
+}
+
+.priceMatchInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.priceMatchMain {
+    font-size: 16px;
+    font-weight: 800;
+    color: #2c3e50;
+}
+
+.priceMatchSub {
+    font-size: 13px;
+    color: #718096;
+    font-weight: 600;
+}
+
+.chevronIcon {
+    color: #000000;
+}
+
 /* Purchase Actions */
 .purchaseActions {
     display: flex;
@@ -1058,6 +1116,235 @@
     font-weight: 800;
     color: #1a1a1a;
     margin: 30px 0 15px 0;
+}
+
+/* Price Match Modal Styles */
+.pmModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    padding: 20px;
+    animation: pmFadeIn 0.3s ease-out;
+}
+
+@keyframes pmFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.pmModal {
+    background: #ffffff;
+    width: 100%;
+    max-width: 650px;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.pmHeader {
+    background: #eef2f6;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.pmHeaderTitle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 19px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.pmHeaderTitle em {
+    font-style: italic;
+    font-weight: 500;
+    margin-inline-start: 4px;
+}
+
+.pmCloseBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #1e293b;
+    padding: 4px;
+    display: flex;
+}
+
+.pmContent {
+    padding: 32px 32px 40px 32px;
+}
+
+.pmFormGroup {
+    margin-bottom: 32px;
+}
+
+.pmLabel {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 16px;
+}
+
+.pmInputUnderline {
+    width: 100%;
+    background: none;
+    border: none;
+    border-bottom: 1px solid #cbd5e1;
+    padding: 12px 0;
+    font-size: 18px;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.pmInputUnderline::placeholder {
+    color: #94a3b8;
+}
+
+.pmInputUnderline:focus {
+    border-bottom-color: #3fbabf;
+}
+
+.pmSubLabel {
+    font-size: 15px;
+    color: #64748b;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.pmUploadZone {
+    border: 1.5px dashed #94a3b8;
+    border-radius: 8px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    background: #f8fafc;
+    transition: all 0.2s;
+}
+
+.pmUploadZone:hover {
+    border-color: #3fbabf;
+    background: #f1f5f9;
+}
+
+.pmUploadIcon {
+    color: #94a3b8;
+}
+
+.pmUploadText {
+    font-size: 15px;
+    color: #64748b;
+}
+
+.pmSkipText {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.pmContactGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+}
+
+.pmPhonePrefix {
+    position: absolute;
+    bottom: 12px;
+    left: 0;
+    font-size: 18px;
+    color: #64748b;
+}
+
+.pmPhoneInput {
+    padding-left: 55px !important;
+}
+
+.pmCheckboxGroup {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 40px;
+    cursor: pointer;
+}
+
+.pmCheckbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid #cbd5e1;
+    margin-top: 2px;
+}
+
+.pmCheckboxLabel {
+    font-size: 16px;
+    color: #334155;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.pmCheckboxLabel a {
+    color: #3fbabf;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.pmActions {
+    margin-top: 40px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.pmSubmitBtn {
+    background: #4ab1b5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 14px 48px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.pmSubmitBtn:hover {
+    background: #3fbabf;
+}
+
+@media (max-width: 640px) {
+    .pmContactGrid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .pmContent {
+        padding: 20px;
+    }
 }
 
 /* Continue Shopping */

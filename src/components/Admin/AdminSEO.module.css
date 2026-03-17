@@ -12,16 +12,16 @@
 }
 
 .titleSection h1 {
-    font-size: 26px;
+    font-size: 18px;
     font-weight: 700;
     color: #0f172a;
     letter-spacing: -0.6px;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .titleSection p {
     color: #64748b;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 400;
 }
 
@@ -88,7 +88,7 @@
 
 .statCard {
     background: white;
-    padding: 24px;
+    padding: 16px 20px;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
     display: flex;
@@ -133,7 +133,7 @@
 }
 
 .statValue {
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 700;
     color: #0f172a;
     margin-bottom: 2px;
@@ -168,7 +168,7 @@
 }
 
 .cardHeader h3 {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: #1e293b;
     margin: 0;
@@ -254,7 +254,7 @@
 
 .perfLabel strong {
     display: block;
-    font-size: 14px;
+    font-size: 13px;
     color: #0f172a;
     margin-bottom: 2px;
 }
@@ -291,7 +291,7 @@
 }
 
 .actionPlan h3 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: #0f172a;
     margin-bottom: 20px;

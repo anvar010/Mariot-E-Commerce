@@ -1,14 +1,19 @@
-import type { Metadata } from 'next';
+import { Metadata } from 'next';
+import React from 'react';
 
-export const metadata: Metadata = {
-    title: 'Contact Us | Mariot Store - Hospitality Equipment Experts',
-    description: 'Get in touch with Mariot Store for expert assistance, product inquiries, and wholesale support. Reach us in Dubai, Sharjah, Abu Dhabi, and Al Ain.',
-};
+export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
+    const isArabic = locale === 'ar';
+    return {
+        title: isArabic ? 'تواصل معنا | متجر ماريوت' : 'Contact Us | Mariot Store',
+        description: isArabic ? 'تواصل مع فريق ماريوت لمعدات المطابخ. نحن هنا لمساعدتك في أي استفسارات تخص أعمالك.' : 'Get in touch with the Mariot Kitchen Equipment team. We are here to help you with your B2B inquiries and product support.',
+        openGraph: {
+            title: isArabic ? 'تواصل معنا | ماريوت' : 'Contact Us | Mariot Store',
+            url: `https://mariotstore.com/${locale}/contact`,
+            type: 'website',
+        }
+    };
+}
 
-export default function ContactLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function ContactLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
 }

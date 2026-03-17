@@ -241,7 +241,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                             </div>
                                         </div>
                                         <div className="cart-total-row">
-                                            <span className="cart-total-label">{tCart('cartTotal', { count: n.cartCount })}</span>
+                                            <span className="cart-total-label">{tCart('cartTotal', { count: n.cartCount || 0 })}</span>
                                             <span className="cart-total-value">AED {n.cartTotal?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                         </div>
                                         <div className="cart-buttons">

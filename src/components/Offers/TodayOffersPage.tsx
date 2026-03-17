@@ -330,6 +330,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                                         total_reviews: product.total_reviews
                                     }}
                                     disableHover={true}
+                                    showTimer={true}
                                 />
                             ))
                         ) : (

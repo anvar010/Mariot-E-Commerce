@@ -21,7 +21,9 @@ import {
     FileText,
     Search,
     Mail,
-    HelpCircle
+    HelpCircle,
+    Tag,
+    Upload
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
@@ -67,8 +69,64 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [qty, setQty] = useState(1);
     const [showTabbyModal, setShowTabbyModal] = useState(false);
+    const [showPriceMatchModal, setShowPriceMatchModal] = useState(false);
     const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({ specs: true });
     const [isShortDescExpanded, setIsShortDescExpanded] = useState(false);
+
+    // Price Match Form State
+    const [pmForm, setPmForm] = useState({
+        shopName: '',
+        email: '',
+        phone: '',
+        file: null as File | null,
+        agreed: false
+    });
+    const [isPmSubmitting, setIsPmSubmitting] = useState(false);
+    const pmFileRef = useRef<HTMLInputElement>(null);
+
+    const handlePriceMatchSubmit = async () => {
+        if (!pmForm.agreed) {
+            showNotification(isArabic ? 'يرجى الموافقة على الشروط والأحكام' : 'Please agree to the Terms and Conditions', 'error');
+            return;
+        }
+
+        if (!pmForm.shopName || !pmForm.email || !pmForm.phone) {
+            showNotification(isArabic ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill in all required fields', 'error');
+            return;
+        }
+
+        setIsPmSubmitting(true);
+        try {
+            const formData = new FormData();
+            formData.append('shopName', pmForm.shopName);
+            formData.append('email', pmForm.email);
+            formData.append('phone', pmForm.phone);
+            formData.append('productName', getLocalizedField('name', 'name_ar'));
+            formData.append('productUrl', window.location.href);
+            if (pmForm.file) {
+                formData.append('file', pmForm.file);
+            }
+
+            const res = await fetch('/api/price-match', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                showNotification(isArabic ? 'تم إرسال طلبك بنجاح. سنتواصل معك قريباً.' : 'Your request has been submitted successfully. We will contact you soon.', 'success');
+                setShowPriceMatchModal(false);
+                setPmForm({ shopName: '', email: '', phone: '', file: null, agreed: false });
+            } else {
+                throw new Error(data.message || 'Failed to submit');
+            }
+        } catch (err) {
+            console.error('Price Match Error:', err);
+            showNotification(isArabic ? 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة لاحقاً.' : 'An error occurred while submitting your request. Please try again later.', 'error');
+        } finally {
+            setIsPmSubmitting(false);
+        }
+    };
 
     const { addToCart } = useCart();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
@@ -578,6 +636,19 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         <span className={styles.learnMore} onClick={() => setShowTabbyModal(true)}>{t('learnMore')}</span>
                                     </div>
                                     <img src="/assets/Tabby.webp" alt="Tabby" className={styles.tabbyLogo} />
+                                </div>
+
+                                {/* Extra Services */}
+                                <div className={styles.extraServicesSection}>
+                                    <h3 className={styles.extraServicesTitle}>{t('extraServices') || 'Extra Services'}</h3>
+                                    <div className={styles.priceMatchCard} onClick={() => setShowPriceMatchModal(true)}>
+                                        <Tag className={styles.priceMatchIcon} size={24} fill="currentColor" />
+                                        <div className={styles.priceMatchInfo}>
+                                            <span className={styles.priceMatchMain}>{t('getPriceMatch') || 'Get A Price Match'}</span>
+                                            <span className={styles.priceMatchSub}>{t('priceMatchSub') || '+ 5% Store Credit'}</span>
+                                        </div>
+                                        <ChevronRight size={20} className={styles.chevronIcon} />
+                                    </div>
                                 </div>
 
                                 <div className={styles.purchaseActions}>
@@ -1158,6 +1229,102 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </div>
                                 </div>
 
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Price Match Modal */}
+                {showPriceMatchModal && (
+                    <div className={styles.pmModalOverlay} onClick={() => setShowPriceMatchModal(false)}>
+                        <div className={styles.pmModal} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.pmHeader}>
+                                <div className={styles.pmHeaderTitle}>
+                                    <Tag size={20} fill="currentColor" />
+                                    <span>{t('requestAPriceMatch') || 'Request a'} <em>{t('priceMatch') || 'Price Match'}</em></span>
+                                </div>
+                                <button className={styles.pmCloseBtn} onClick={() => setShowPriceMatchModal(false)}>
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <div className={styles.pmContent}>
+                                <div className={styles.pmFormGroup}>
+                                    <label className={styles.pmLabel}>{t('whereDidYouFindProduct') || 'Where did you find the product?'}</label>
+                                    <input
+                                        type="text"
+                                        className={styles.pmInputUnderline}
+                                        placeholder={t('shopNamePlaceholder') || 'Shop name or website URL'}
+                                        value={pmForm.shopName}
+                                        onChange={(e) => setPmForm({ ...pmForm, shopName: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className={styles.pmFormGroup}>
+                                    <label className={styles.pmLabel}>{t('uploadImageToShowPrice') || 'Please upload an image to show the price'}</label>
+                                    <p className={styles.pmSubLabel}>{t('documentUploadDesc') || 'Or any document that clearly displays the product and its price (photo, screenshot, quotation, etc.)'}</p>
+
+                                    <input
+                                        type="file"
+                                        ref={pmFileRef}
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => setPmForm({ ...pmForm, file: e.target.files?.[0] || null })}
+                                        accept="image/*,application/pdf"
+                                    />
+                                    <div className={styles.pmUploadZone} onClick={() => pmFileRef.current?.click()}>
+                                        <Upload size={32} className={styles.pmUploadIcon} />
+                                        <span className={styles.pmUploadText}>
+                                            {pmForm.file ? pmForm.file.name : (t('uploadImageOrPdf') || 'Upload image or PDF')}
+                                        </span>
+                                    </div>
+                                    <p className={styles.pmSkipText}>{t('skipStepDesc') || 'You can skip this step if the URL above shows the price.'}</p>
+                                </div>
+
+                                <div className={styles.pmFormGroup}>
+                                    <label className={styles.pmLabel}>{t('contactInfoDesc') || 'Your contact information so we can get back to you with our offer'}</label>
+                                    <div className={styles.pmContactGrid}>
+                                        <input
+                                            type="email"
+                                            className={styles.pmInputUnderline}
+                                            placeholder={t('emailPlaceholder') || 'Email'}
+                                            value={pmForm.email}
+                                            onChange={(e) => setPmForm({ ...pmForm, email: e.target.value })}
+                                        />
+                                        <div style={{ position: 'relative' }}>
+                                            <span className={styles.pmPhonePrefix}>+971</span>
+                                            <input
+                                                type="tel"
+                                                className={`${styles.pmInputUnderline} ${styles.pmPhoneInput}`}
+                                                placeholder="5XXXXXXXX"
+                                                value={pmForm.phone}
+                                                onChange={(e) => setPmForm({ ...pmForm, phone: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className={styles.pmCheckboxGroup} onClick={() => setPmForm({ ...pmForm, agreed: !pmForm.agreed })}>
+                                    <input
+                                        type="checkbox"
+                                        id="terms"
+                                        className={styles.pmCheckbox}
+                                        checked={pmForm.agreed}
+                                        onChange={() => { }} // Handled by group click
+                                    />
+                                    <label htmlFor="terms" className={styles.pmCheckboxLabel}>
+                                        {t('agreeTermsPrev') || 'I have read the'} <Link href="/price-match-policy" onClick={(e) => e.stopPropagation()}>{t('priceMatchPolicy') || 'Price Match Policy'}</Link> {t('agreeTermsMid') || 'and I agree to the'} <Link href="/terms" onClick={(e) => e.stopPropagation()}>{t('termsAndConditions') || 'Terms and Conditions'}</Link>
+                                    </label>
+                                </div>
+
+                                <div className={styles.pmActions}>
+                                    <button
+                                        className={styles.pmSubmitBtn}
+                                        onClick={handlePriceMatchSubmit}
+                                        disabled={isPmSubmitting}
+                                    >
+                                        {isPmSubmitting ? (isArabic ? 'جاري الإرسال...' : 'Submitting...') : (t('submit') || 'Submit')}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

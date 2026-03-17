@@ -4,10 +4,18 @@ import Footer from '@/components/Layout/Footer/Footer';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import TodayOffersPage from '@/components/Offers/TodayOffersPage';
 
-export const metadata = {
-    title: 'Daily Deals on Premium Kitchen Equipment | Mariot Store',
-    description: 'Save big with our exclusive daily offers. Limited-time discounts on professional espresso machines, commercial ovens, fryers, and more high-end kitchen gear.',
-};
+export async function generateMetadata({ params: { locale } }: { params: { locale: string } }) {
+    const isArabic = locale === 'ar';
+    return {
+        title: isArabic ? 'العروض اليومية على معدات المطابخ | ماريوت' : 'Daily Deals on Premium Kitchen Equipment | Mariot Store',
+        description: isArabic ? 'وفر الكثير مع عروضنا اليومية الحصرية. خصومات محدودة المدة على آلات الإسبريسو الاحترافية وأفران المطاعم.' : 'Save big with our exclusive daily offers. Limited-time discounts on professional espresso machines, commercial ovens, fryers, and more high-end kitchen gear.',
+        openGraph: {
+            title: isArabic ? 'العروض اليومية | ماريوت' : 'Daily Deals | Mariot Store',
+            url: `https://mariotstore.com/${locale}/today-offers`,
+            type: 'website',
+        }
+    };
+}
 
 export const dynamic = 'force-dynamic';
 

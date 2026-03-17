@@ -405,23 +405,23 @@ const AdminCMS = () => {
     const currentSlide = cmsData?.hero[activeSlide] || defaultSlide;
 
     return (
-        <div className={styles.container} style={{ padding: '30px', width: '100%', maxWidth: 'none', margin: '0', background: '#f5f7fa', minHeight: '100vh' }}>
+        <div className={styles.container} style={{ padding: '20px', width: '100%', maxWidth: 'none', margin: '0', background: '#f5f7fa', minHeight: '100vh' }}>
 
             {/* Header Card */}
             <div style={{
-                padding: '24px 35px',
+                padding: '16px 24px',
                 background: '#fff',
-                borderRadius: '16px',
+                borderRadius: '12px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 border: '1px solid #edf2f7',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '30px'
+                marginBottom: '20px'
             }}>
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '26px', fontWeight: '800', color: '#1a202c' }}>Homepage CMS Manager</h1>
-                    <p style={{ color: '#718096', margin: '4px 0 0 0', fontSize: '15px', fontWeight: '500' }}>Customize your website banners and announcements</p>
+                    <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#1a202c' }}>Homepage CMS Manager</h1>
+                    <p style={{ color: '#718096', margin: '2px 0 0 0', fontSize: '13px', fontWeight: '500' }}>Customize your website banners and announcements</p>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>

@@ -1,12 +1,12 @@
 .shopLayout {
-    background-color: #f1f5f9;
-    padding: 30px 0;
+    background-color: #fff;
+    padding: 0 0 40px 0;
     min-height: 100vh;
 }
 
 .topInfo {
     width: 100%;
-    padding: 0 40px;
+    padding: 40px 40px 25px 40px;
     margin-bottom: 25px;
 }
 
@@ -256,6 +256,77 @@
     user-select: none;
 }
 
+.aboutBrandSection {
+    margin-top: 60px;
+    padding: 0 40px 40px;
+}
+
+.brandBio {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    padding: 40px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+}
+
+.brandBioLogoBox {
+    flex-shrink: 0;
+    width: 200px;
+    height: 120px;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.brandBioLogoImg {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.brandBioContent {
+    flex: 1;
+}
+
+.brandBioTitle {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 15px 0;
+}
+
+.brandBioDescription {
+    font-size: 16px;
+    color: #475569;
+    line-height: 1.8;
+}
+
+@media (max-width: 768px) {
+    .brandBio {
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .aboutBrandSection {
+        margin-top: 40px;
+        padding: 0 20px 30px;
+    }
+    
+    .brandBioLogoBox {
+        width: 160px;
+        height: 100px;
+    }
+}
+
 /* Fallback for touch devices to allow swipe */
 @media (hover: none) and (pointer: coarse) {
     .categoryGrid {
@@ -425,8 +496,8 @@
 /* Product Grid Styling */
 .productGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 5px;
+    grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+    gap: 2px;
 }
 
 .productCard {
@@ -590,7 +661,7 @@
     }
 
     .productGrid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
         gap: 16px;
     }
 }
@@ -664,7 +735,7 @@
     }
 
     .productGrid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: 12px;
     }
 
@@ -745,7 +816,7 @@
     }
 
     .productGrid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 10px;
     }
 
@@ -872,3 +943,30 @@
     margin: 0 4px;
     user-select: none;
 }
+
+/* Brand Banner Styling - Cushioned Landscape Ribbon */
+.brandBanner {
+    width: auto;
+    margin: 24px 40px 0;
+    height: 150px;
+    position: relative;
+    overflow: hidden;
+    background-color: #f8fafc;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.brandBannerImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 768px) {
+    .brandBanner {
+        margin: 16px 16px 0;
+        height: 100px;
+        border-radius: 8px;
+    }
+}
+

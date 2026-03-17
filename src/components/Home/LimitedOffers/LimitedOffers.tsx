@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import styles from './LimitedOffers.module.css';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import { API_BASE_URL } from '@/config';
@@ -124,13 +124,15 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
                             <p style={{ padding: '20px', color: '#666', fontStyle: 'italic' }}>{t('noOffers')}</p>
                         ) : (
                             products.map((prod) => (
-                                <ProductCardPromotion
-                                    key={prod.id}
-                                    product={{
-                                        ...prod,
-                                        image: prod.primary_image || 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1'
-                                    }}
-                                />
+                                <div key={prod.id} className={styles.productWrapper}>
+                                    <ProductCardPromotion
+                                        product={{
+                                            ...prod,
+                                            image: prod.primary_image || 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1'
+                                        }}
+                                        showTimer={true}
+                                    />
+                                </div>
                             ))
                         )}
                     </div>

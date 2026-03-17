@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import styles from './CategoryBrowse.module.css';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';

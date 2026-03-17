@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "computedHash": "645b891da1edbae76ab79c7b088d4e73397464f8396edaf773c0e01971ce75d6"
+    },
+    "seo-in-nextjs": {
+      "source": "dlcastillop/agent-skills",
+      "sourceType": "github",
+      "computedHash": "ca1622fb8c2e32cb62ba90310f7e444eaa430186382893546d9222904978983e"
+    }
+  }
+}

@@ -28,8 +28,7 @@ import {
     Banknote,
     Check
 } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL, BASE_URL } from '@/config';

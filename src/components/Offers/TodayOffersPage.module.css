@@ -215,7 +215,7 @@
 /* Product Grid Adjustments */
 .productGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
     gap: 5px;
     background: #f0f7f2;
     padding: 20px;
@@ -388,7 +388,7 @@
     }
 
     .productGrid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
     }
 }
 

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authApi } from '@/api/auth';
 import { API_BASE_URL } from '@/config';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 
 interface AuthContextType {
     user: any;

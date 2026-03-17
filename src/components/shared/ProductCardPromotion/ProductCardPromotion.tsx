@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ProductCardPromotion.module.css';
 import { Heart, ShoppingCart, Check, Clock, MessageCircle, Star } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import Image from "next/legacy/image";
 import { useCart } from '@/context/CartContext';
 import { getBrandLogo } from '@/utils/brandLogos';
@@ -27,9 +27,10 @@ interface ProductCardPromotionProps {
     };
     timeLeft?: { hours: number; minutes: number; seconds: number };
     disableHover?: boolean;
+    showTimer?: boolean;
 }
 
-const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, timeLeft, disableHover }) => {
+const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, timeLeft, disableHover, showTimer = false }) => {
     const locale = useLocale();
     const t = useTranslations('product');
     const isArabic = locale === 'ar';
@@ -47,7 +48,8 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     const displayBrandImage = localBrandLogo || resolveUrl(product.brand_image || (product as any)?.brand_logo);
     const displayImage = resolveUrl(product.primary_image) || '/assets/placeholder-image.webp';
     const formatTime = (num: number) => num.toString().padStart(2, '0');
-    const isInStock = product.stock_quantity === undefined || product.stock_quantity > 0;
+    const isInventoryTracked = product.track_inventory === 1 || product.track_inventory === '1' || product.track_inventory === true;
+    const isInStock = !isInventoryTracked || product.stock_quantity === undefined || product.stock_quantity > 0;
     const { addToCart } = useCart();
     const isBestSeller = product.is_best_seller === 1 || product.is_best_seller === true;
 
@@ -109,17 +111,22 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         return stars;
     };
 
+    const hasOffer = !!(product.offer_price && Number(product.offer_price) > 0);
+    const displayPrice = hasOffer ? Number(product.offer_price) : Number(product.price || 0);
+    const displayOldPrice = hasOffer ? Number(product.price) : (Number(product.old_price) || 0);
+
     const handleAddToCart = () => {
         if (isInStock) {
             addToCart({
                 id: product.id,
                 name: product.name,
-                price: product.price,
+                price: displayPrice,
                 image: resolveUrl(product.primary_image),
                 brand: product.brand_name,
                 slug: product.slug,
                 stock_quantity: product.stock_quantity,
-                oldPrice: product.old_price
+                track_inventory: product.track_inventory,
+                oldPrice: displayOldPrice
             });
         }
     };
@@ -158,7 +165,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                         objectFit="contain"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                     />
-                    {(() => {
+                    {showTimer && (() => {
                         const t = activeTimer || { hours: 0, minutes: 0, seconds: 0 };
                         return (
                             <div className={styles.timerWrapper}>
@@ -215,9 +222,9 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                 {/* Pricing */}
                 <div className={styles.pricing}>
                     <div className={styles.savingsRow}>
-                        {Number(product.old_price) > 0 && Number(product.old_price) > Number(product.price) && (
+                        {displayOldPrice > 0 && displayOldPrice > displayPrice && (
                             <span className={styles.oldPrice}>
-                                AED {Number(product.old_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                AED {displayOldPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </span>
                         )}
                         {Number(product.discount_percentage) > 0 && (
@@ -225,7 +232,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                         )}
                     </div>
                     <div className={styles.currentPrice}>
-                        AED {(Number(product.price) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </div>
                 </div>
             </div>

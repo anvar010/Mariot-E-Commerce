@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useNotification } from '@/context/NotificationContext';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
@@ -39,6 +40,28 @@ export default function CheckoutPage() {
     const t = useTranslations('checkout');
     const common = useTranslations('common');
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const locale = useLocale();
+
+    // Handle Tabby redirect statuses (cancel/failure)
+    useEffect(() => {
+        const tabbyStatus = searchParams.get('tabby_status');
+        if (tabbyStatus === 'cancel') {
+            showNotification(
+                locale === 'ar'
+                    ? 'لقد ألغيت الدفعة. فضلاً حاول مجددًا أو اختر طريقة دفع أخرى.'
+                    : 'You aborted the payment. Please retry or choose another payment method.',
+                'error'
+            );
+        } else if (tabbyStatus === 'failure') {
+            showNotification(
+                locale === 'ar'
+                    ? 'نأسف، تابي غير قادرة على الموافقة على هذه العملية. الرجاء استخدام طريقة دفع أخرى.'
+                    : 'Sorry, Tabby is unable to approve this purchase, please use an alternative payment method for your order.',
+                'error'
+            );
+        }
+    }, [searchParams]);
 
     const [form, setForm] = useState({
         firstName: user?.name ? user.name.split(' ')[0] : '',
@@ -252,7 +275,8 @@ export default function CheckoutPage() {
                 billing_details: {
                     ...form,
                     name: `${form.firstName} ${form.lastName}`
-                }
+                },
+                locale: locale
             };
 
             const res = await fetch(`${API_BASE_URL}/orders`, {
@@ -267,11 +291,19 @@ export default function CheckoutPage() {
             const data = await res.json();
 
             if (data.success) {
-                showNotification(n('orderSuccess'));
-                clearCart();
-                router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
+                // If payment method requires redirect (like Tabby)
+                if (data.requires_redirect && data.redirect_url) {
+                    showNotification(t('redirectingToPayment'), 'info');
+                    window.location.href = data.redirect_url;
+                } else {
+                    // Only clear frontend cart immediately if it's a direct completion (e.g. Card or Bank)
+                    clearCart();
+                    showNotification(n('orderSuccess'));
+                    router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
+                }
             } else {
-                showNotification(data.message || n('orderFailed'), 'error');
+                const errorMsg = data.error_details?.error ? `${data.message}: ${data.error_details.error}` : (data.message || n('orderFailed'));
+                showNotification(errorMsg, 'error');
             }
 
         } catch (error) {
@@ -306,15 +338,14 @@ export default function CheckoutPage() {
                             </div>
 
                             {user && userAddresses.length > 0 && (
-                                <div className={styles.formGroup} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '8px' }}>
-                                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#475569' }}>
+                                <div className={styles.addressSelectorBox}>
+                                    <label className={styles.addressSelectorLabel}>
                                         {t('savedAddress')}
                                     </label>
                                     <select
-                                        className={styles.formSelect}
+                                        className={styles.modernSelect}
                                         value={selectedAddressId}
                                         onChange={handleAddressSelect}
-                                        style={{ backgroundColor: 'white' }}
                                     >
                                         <option value="">-- {t('newAddress')} --</option>
                                         {userAddresses.map(addr => (
@@ -331,12 +362,14 @@ export default function CheckoutPage() {
                                     <label>{t('firstName')} <span>*</span></label>
                                     <div className={styles.inputWrapper}>
                                         <input className={styles.formInput} type="text" name="firstName" value={form.firstName} onChange={handleInputChange} required placeholder="e.g. John" />
+                                        <User className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
                                 <div className={styles.formGroup}>
                                     <label>{t('lastName')} <span>*</span></label>
                                     <div className={styles.inputWrapper}>
                                         <input className={styles.formInput} type="text" name="lastName" value={form.lastName} onChange={handleInputChange} required placeholder="e.g. Doe" />
+                                        <User className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
 
@@ -344,6 +377,7 @@ export default function CheckoutPage() {
                                     <label>{t('companyOptional')}</label>
                                     <div className={styles.inputWrapper}>
                                         <input className={styles.formInput} type="text" name="companyName" value={form.companyName} onChange={handleInputChange} placeholder="e.g. ACME Corp" />
+                                        <Building className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
 
@@ -357,14 +391,21 @@ export default function CheckoutPage() {
                                             <option value="Bahrain">Bahrain</option>
                                             <option value="Kuwait">Kuwait</option>
                                         </select>
+                                        <MapPin className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
 
                                 <div className={`${styles.formGroup} ${styles.fullWidth}`}>
                                     <label>{t('streetAddress')} <span>*</span></label>
-                                    <div className={styles.inputWrapper} style={{ flexDirection: 'column', gap: '10px' }}>
-                                        <input className={styles.formInput} type="text" name="streetAddress" placeholder={t('houseNumberPlaceholder')} value={form.streetAddress} onChange={handleInputChange} required />
-                                        <input className={styles.formInput} type="text" name="additionalAddress" placeholder={t('apartmentPlaceholder')} value={form.additionalAddress} onChange={handleInputChange} />
+                                    <div className={styles.inputWrapper} style={{ flexDirection: 'column', gap: '10px', alignItems: 'flex-start' }}>
+                                        <div style={{ position: 'relative', width: '100%' }}>
+                                            <input className={styles.formInput} type="text" name="streetAddress" placeholder={t('houseNumberPlaceholder')} value={form.streetAddress} onChange={handleInputChange} required />
+                                            <MapPin className={styles.inputIcon} size={15} />
+                                        </div>
+                                        <div style={{ position: 'relative', width: '100%' }}>
+                                            <input className={styles.formInput} type="text" name="additionalAddress" placeholder={t('apartmentPlaceholder')} value={form.additionalAddress} onChange={handleInputChange} />
+                                            <Building className={styles.inputIcon} size={15} />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -372,6 +413,7 @@ export default function CheckoutPage() {
                                     <label>{t('city')} <span>*</span></label>
                                     <div className={styles.inputWrapper}>
                                         <input className={styles.formInput} type="text" name="city" value={form.city} onChange={handleInputChange} required placeholder="e.g. Dubai" />
+                                        <MapPin className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
 
@@ -379,6 +421,7 @@ export default function CheckoutPage() {
                                     <label>{t('postcode')}</label>
                                     <div className={styles.inputWrapper}>
                                         <input className={styles.formInput} type="text" name="postcode" value={form.postcode} onChange={handleInputChange} placeholder="00000" />
+                                        <MapPin className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
 
@@ -386,6 +429,7 @@ export default function CheckoutPage() {
                                     <label>{t('phone')} <span>*</span></label>
                                     <div className={styles.inputWrapper}>
                                         <input className={styles.formInput} type="tel" name="phone" value={form.phone} onChange={handleInputChange} required placeholder="+971 -- --- ----" dir="ltr" />
+                                        <Phone className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
 
@@ -393,6 +437,7 @@ export default function CheckoutPage() {
                                     <label>{t('email')} <span>*</span></label>
                                     <div className={styles.inputWrapper}>
                                         <input className={styles.formInput} type="email" name="email" value={form.email} onChange={handleInputChange} required placeholder="john@example.com" />
+                                        <Mail className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
 

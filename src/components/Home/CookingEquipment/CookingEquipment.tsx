@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './CookingEquipment.module.css';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL } from '@/config';
