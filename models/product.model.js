@@ -20,17 +20,13 @@ class Product {
 
         // Handle Status (Active/Draft)
         if (status === 'all') {
-            // Admin: no mandatory filter, show everything
-        } else if (status === 'active') {
-            whereClauses.push("(p.status = 'active' OR p.status IS NULL)");
-            whereClauses.push('p.is_active = 1');
-        } else if (status === 'draft') {
-            whereClauses.push("p.status = 'draft'");
+            // Admin: no mandatory is_active filter
         } else if (status) {
             whereClauses.push('p.status = ?');
             params.push(status);
+            whereClauses.push('p.is_active = 1');
         } else {
-            // Public default: only active status AND is_active = 1
+            // Public: only active/null status AND is_active = 1
             whereClauses.push("(p.status = 'active' OR p.status IS NULL)");
             whereClauses.push('p.is_active = 1');
         }

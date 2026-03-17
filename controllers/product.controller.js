@@ -138,11 +138,11 @@ exports.bulkImport = async (req, res, next) => {
 exports.getProducts = async (req, res, next) => {
     try {
         console.log('GET PRODUCTS QUERY:', JSON.stringify(req.query));
-        const { category, brand, seller, minPrice, maxPrice, search, sort, page = 1, limit = 12, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, is_best_seller, status, stockStatus } = req.query;
-        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const { category, brand, seller, minPrice, maxPrice, search, sort, page = 1, limit = 12, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, status, stockStatus } = req.query;
+        const offset = (page - 1) * limit;
 
         const { products, total } = await Product.findAll({
-            category, brand, seller, minPrice, maxPrice, search, sort, limit: parseInt(limit), offset, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, is_best_seller, status, stockStatus
+            category, brand, seller, minPrice, maxPrice, search, sort, limit, offset, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, status, stockStatus
         });
 
         res.json({
