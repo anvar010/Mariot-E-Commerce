@@ -1069,92 +1069,191 @@
 
 .importInstructions {
     background: #f8fafc;
-    padding: 20px;
-    border-radius: 12px;
+    padding: 24px;
+    border-radius: 16px;
     border: 1px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.importInstructions h3 {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.importInstructions ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 24px;
+    margin-bottom: 24px;
+}
+
+.instructionItem {
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #475569;
+}
+
+.instructionNumber {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
 }
 
 .modalContent {
     background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border-radius: 24px;
+    box-shadow: 0 25px 70px -12px rgba(15, 23, 42, 0.15);
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 .importModal {
     width: 100%;
-    max-width: 600px;
+    max-width: 680px;
+    animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .modalHeader {
-    padding: 20px 24px;
+    padding: 24px 32px;
     border-bottom: 1px solid #f1f5f9;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #ffffff;
+    background: linear-gradient(to right, #ffffff, #f8fafc);
 }
 
 .modalHeader h2 {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 20px;
+    font-weight: 800;
     color: #0f172a;
     margin: 0;
+    letter-spacing: -0.02em;
 }
 
 .modalHeader p {
-    font-size: 12px;
+    font-size: 13px;
     color: #64748b;
-    margin: 3px 0 0 0;
+    margin: 4px 0 0 0;
 }
 
 .importBody {
-    padding: 24px;
+    padding: 32px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 32px;
+    background: #ffffff;
 }
 
 .downloadTemplateBtn {
-    width: 100%;
-    padding: 12px;
+    width: auto;
+    padding: 10px 20px;
     background: #ffffff;
-    border: 1.5px solid #e2e8f0;
+    border: 1px solid #cbd5e1;
     border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #0f172a;
-    display: flex;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 10px;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .downloadTemplateBtn:hover {
     background: #f8fafc;
-    border-color: #cbd5e1;
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .uploadPlaceholder {
-    border: 2px dashed #e2e8f0;
-    border-radius: 16px;
-    padding: 40px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 20px;
+    padding: 50px 32px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 16px;
     cursor: pointer;
-    transition: all 0.2s;
-    background: #fafafa;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
 }
 
 .uploadPlaceholder:hover {
     border-color: #3b82f6;
+    background: #f0f7ff33;
+    border-style: solid;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05);
+}
+
+.uploadPlaceholder.dragging {
+    border-color: #3b82f6;
     background: #f0f7ff;
+    transform: scale(1.02);
+}
+
+.uploadIconCircle {
+    width: 64px;
+    height: 64px;
+    background: #eff6ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3b82f6;
+    transition: all 0.3s;
+}
+
+.uploadPlaceholder:hover .uploadIconCircle {
+    background: #3b82f6;
+    color: #ffffff;
+    transform: scale(1.1);
+}
+
+.uploadIdleState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
 }
 
 .uploadPlaceholder svg {
@@ -1162,13 +1261,14 @@
 }
 
 .uploadPlaceholder p {
-    font-weight: 600;
+    font-weight: 700;
     color: #0f172a;
-    font-size: 15px;
+    font-size: 16px;
+    margin: 0;
 }
 
 .uploadPlaceholder span {
-    font-size: 12px;
+    font-size: 13px;
     color: #64748b;
 }
 
@@ -1177,11 +1277,99 @@
     color: #3b82f6;
 }
 
+.progressContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 400px;
+    gap: 12px;
+}
+
+.progressContainer p {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    background: linear-gradient(90deg, #0f172a, #3b82f6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textPulse 2s infinite ease-in-out;
+}
+
+@keyframes textPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.progressWrapper {
+    width: 100%;
+    height: 12px;
+    background-color: #e2e8f0;
+    border-radius: 99px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.progressBarFill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    border-radius: 99px;
+    transition: width 0.3s ease-out;
+    position: relative;
+}
+
+.progressBarFill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-image: linear-gradient(-45deg,
+            rgba(255, 255, 255, 0.2) 25%,
+            transparent 25%,
+            transparent 50%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0.2) 75%,
+            transparent 75%,
+            transparent);
+    z-index: 1;
+    background-size: 20px 20px;
+    animation: moveStripes 1s linear infinite;
+}
+
+@keyframes moveStripes {
+    0% {
+        background-position: 0 0;
+    }
+
+    100% {
+        background-position: 20px 0;
+    }
+}
+
+.progressText {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
 .importSuccessArea {
     display: flex;
     flex-direction: column;
     gap: 24px;
 }
+
 
 .resultSummary {
     display: grid;
