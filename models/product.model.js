@@ -2,15 +2,17 @@ const db = require('../config/db');
 const slugify = require('slugify');
 
 class Product {
-    static async findAll({ category, brand, minPrice, maxPrice, search, sort, limit, offset, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, is_best_seller, status, stockStatus }) {
+    static async findAll({ category, brand, seller, minPrice, maxPrice, search, sort, limit, offset, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, is_best_seller, status, stockStatus }) {
         let query = `
             SELECT p.*, c.name as category_name, c.slug as category_slug, b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image, 
+            s.name as seller_name, s.company_name as seller_company, s.id as seller_id,
             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
             COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = p.id), 0) as average_rating,
             (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as total_reviews
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN brands b ON p.brand_id = b.id
+            LEFT JOIN users s ON p.seller_id = s.id
         `;
 
         const whereClauses = [];
@@ -31,9 +33,9 @@ class Product {
 
         // Handle Stock Status
         if (stockStatus === 'in_stock') {
-            whereClauses.push('p.stock_quantity > 0');
+            whereClauses.push('(p.track_inventory = 0 OR p.stock_quantity > 0)');
         } else if (stockStatus === 'out_of_stock') {
-            whereClauses.push('p.stock_quantity <= 0');
+            whereClauses.push('p.track_inventory = 1 AND p.stock_quantity <= 0');
         }
 
         const isTrue = (val) => val === 'true' || val === 1 || val === '1' || val === true;
@@ -64,6 +66,14 @@ class Product {
         if (brand) {
             whereClauses.push('(b.slug = ? OR b.id = ?)');
             params.push(brand, brand);
+        }
+        if (seller) {
+            if (seller === 'admin') {
+                whereClauses.push('p.seller_id IS NULL');
+            } else {
+                whereClauses.push('p.seller_id = ?');
+                params.push(seller);
+            }
         }
         if (minPrice) {
             whereClauses.push('p.price >= ?');
@@ -97,7 +107,7 @@ class Product {
         query += ' LIMIT ? OFFSET ?';
         params.push(parseInt(limit), parseInt(offset));
 
-        const [rows] = await db.query(query, params);
+        const [rows] = await db.execute(query, params);
 
         // Fetch images for these products to ensure frontend gets the gallery
         if (rows.length > 0) {
@@ -116,7 +126,7 @@ class Product {
         if (whereClauses.length > 0) {
             countQuery += ' WHERE ' + whereClauses.join(' AND ');
         }
-        const [countRows] = await db.query(countQuery, params.slice(0, -2)); // Remove limit and offset params
+        const [countRows] = await db.execute(countQuery, params.slice(0, -2)); // Remove limit and offset params
         const total = countRows[0].total;
 
         return { products: rows, total };
@@ -125,11 +135,13 @@ class Product {
     static async findById(id) {
         const [rows] = await db.execute(`
             SELECT p.*, c.name as category_name, c.slug as category_slug, b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image, b.description as brand_description, b.description_ar as brand_description_ar,
+            s.name as seller_name, s.company_name as seller_company, s.id as seller_id,
             COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = p.id), 0) as average_rating,
             (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as total_reviews
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN brands b ON p.brand_id = b.id
+            LEFT JOIN users s ON p.seller_id = s.id
             WHERE p.id = ? OR p.slug = ?
         `, [id, id]);
 
@@ -199,6 +211,7 @@ class Product {
             const seller_id = (data.seller_id && !isNaN(parseInt(data.seller_id))) ? parseInt(data.seller_id) : null;
             const offer_start = data.offer_start || null;
             const offer_end = data.offer_end || null;
+            const track_inventory = isTrue(data.track_inventory) ? 1 : 0;
 
             const params = [
                 name,
@@ -227,11 +240,12 @@ class Product {
                 youtube_video_link,
                 resources,
                 offer_start,
-                offer_end
+                offer_end,
+                track_inventory
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, track_inventory) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -265,7 +279,7 @@ class Product {
             'name', 'name_ar', 'slug', 'description', 'description_ar', 'short_description', 'short_description_ar', 'specifications', 'price', 'discount_percentage', 'offer_price',
             'stock_quantity', 'category_id', 'brand_id', 'seller_id',
             'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'status',
-            'product_group', 'sub_category', 'model', 'youtube_video_link', 'resources', 'offer_start', 'offer_end'
+            'product_group', 'sub_category', 'model', 'youtube_video_link', 'resources', 'offer_start', 'offer_end', 'track_inventory'
         ];
 
         const productId = parseInt(id);
@@ -288,7 +302,7 @@ class Product {
 
         Object.keys(data).forEach(key => {
             if (allowedColumns.includes(key) && data[key] !== undefined && key !== 'slug') {
-                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active'].includes(key)) {
+                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'track_inventory'].includes(key)) {
                     const val = data[key];
                     cleanData[key] = (val === true || val === 'true' || val === 1 || val === '1') ? 1 : 0;
                 } else if (['category_id', 'brand_id'].includes(key)) {
@@ -355,13 +369,13 @@ class Product {
 
         const allowedColumns = [
             'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer',
-            'is_active', 'status', 'offer_start', 'offer_end', 'discount_percentage', 'price'
+            'is_active', 'status', 'offer_start', 'offer_end', 'discount_percentage', 'price', 'track_inventory'
         ];
 
         const cleanData = {};
         Object.keys(data).forEach(key => {
             if (allowedColumns.includes(key) && data[key] !== undefined) {
-                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active'].includes(key)) {
+                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'track_inventory'].includes(key)) {
                     const val = data[key];
                     cleanData[key] = (val === true || val === 'true' || val === 1 || val === '1') ? 1 : 0;
                 } else {

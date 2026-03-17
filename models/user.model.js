@@ -82,6 +82,36 @@ class User {
             connection.release();
         }
     }
+    /**
+     * Store a hashed reset token and expiry for a user
+     */
+    static async setResetToken(userId, hashedToken, expires) {
+        await db.execute(
+            'UPDATE users SET reset_password_token = ?, reset_password_expires = ? WHERE id = ?',
+            [hashedToken, expires, userId]
+        );
+    }
+
+    /**
+     * Find user by hashed reset token that hasn't expired
+     */
+    static async findByResetToken(hashedToken) {
+        const [rows] = await db.execute(
+            'SELECT u.id, u.name, u.email, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.reset_password_token = ? AND u.reset_password_expires > NOW()',
+            [hashedToken]
+        );
+        return rows[0];
+    }
+
+    /**
+     * Clear the reset token fields after password has been reset
+     */
+    static async clearResetToken(userId) {
+        await db.execute(
+            'UPDATE users SET reset_password_token = NULL, reset_password_expires = NULL WHERE id = ?',
+            [userId]
+        );
+    }
 }
 
 module.exports = User;
