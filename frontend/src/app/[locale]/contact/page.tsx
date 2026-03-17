@@ -26,7 +26,7 @@ const countries = [
     { code: '+90', flag: 'tr', name: 'Turkey' },
 ];
 
-export default function ContactPage() {
+export default function ContactPage({ params }: { params: { locale: string } }) {
     const t = useTranslations('contactPage');
     const [formData, setFormData] = useState({
         name: '',

@@ -64,12 +64,12 @@
 
 .tagline {
     display: inline-block;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 3px;
     color: #5bb377;
     text-transform: uppercase;
-    padding: 6px 16px;
+    padding: 4px 12px;
     background: rgba(91, 179, 119, 0.12);
     border-inline-start: 3px solid #5bb377;
     border-radius: 0 4px 4px 0;
@@ -77,7 +77,7 @@
 }
 
 .title {
-    font-size: 56px;
+    font-size: 42px;
     font-weight: 900;
     color: #ffffff;
     line-height: 1.1;
@@ -91,7 +91,7 @@
 }
 
 .description {
-    font-size: 16px;
+    font-size: 13px;
     line-height: 1.7;
     color: rgba(255, 255, 255, 0.7);
     max-width: 480px;
@@ -134,9 +134,9 @@
 .whatsappBtn {
     background: rgba(255, 255, 255, 0.08);
     color: #25D366;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
-    padding: 14px 28px;
+    padding: 12px 24px;
     border-radius: 50px;
     border: 1.5px solid rgba(37, 211, 102, 0.4);
     display: flex;

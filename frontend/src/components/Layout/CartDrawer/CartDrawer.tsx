@@ -19,7 +19,7 @@ import {
     ChevronRight,
     ArrowLeft
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
@@ -46,6 +46,7 @@ const CartDrawer = () => {
         updateQuantity,
         isDrawerOpen,
         setIsDrawerOpen,
+        cartCount,
         cartTotal,
         subtotal,
         discountAmount,
@@ -121,6 +122,10 @@ const CartDrawer = () => {
 
         setIsGeneratingQuote(true);
         try {
+            // Calculate correct values to match UI inclusive logic
+            const finalTaxable = cartTotal / 1.05;
+            const finalVat = cartTotal - finalTaxable;
+
             // 1. Save quotation to database first
             const res = await fetch(`${API_BASE_URL}/quotations`, {
                 credentials: "include",
@@ -132,9 +137,9 @@ const CartDrawer = () => {
                     customer_phone: quotationForm.phone,
                     vat_number: quotationForm.vat_number,
                     items: cartItems,
-                    subtotal: subtotal,
-                    tax_amount: subtotal * 0.05,
-                    total_amount: subtotal * 1.05
+                    subtotal: Number(finalTaxable.toFixed(2)),
+                    tax_amount: Number(finalVat.toFixed(2)),
+                    total_amount: Number(cartTotal.toFixed(2))
                 })
             });
 
@@ -193,7 +198,9 @@ const CartDrawer = () => {
 
                     <div className={styles.cartTitleRow}>
                         <h2 className={styles.cartTitle}>{t('title')}</h2>
-                        <span className={styles.qtyLabel}>{cartItems.length} {cartItems.length === 1 ? t('item') : t('items')}</span>
+                        <div className={styles.headerBadge}>
+                            {cartCount} {cartCount === 1 ? t('item') : t('items')}
+                        </div>
                     </div>
 
                     {cartItems.length === 0 ? (
@@ -223,7 +230,10 @@ const CartDrawer = () => {
                                         </div>
                                         <div className={styles.itemDetails}>
                                             <div className={styles.itemNameRow}>
-                                                <h4 className={styles.itemName}>{item.name}</h4>
+                                                <div className={styles.itemNameMain}>
+                                                    <h4 className={styles.itemName}>{item.name}</h4>
+                                                    <span className={styles.itemCountBadge}>{item.quantity}</span>
+                                                </div>
                                                 <button className={styles.removeBtn} onClick={() => removeFromCart(item.id)}>
                                                     <Trash2 size={18} />
                                                 </button>

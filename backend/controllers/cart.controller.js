@@ -27,7 +27,9 @@ exports.addToCart = async (req, res, next) => {
         const existingItem = currentCartItems.find(item => item.product_id === product_id);
         const currentQty = existingItem ? existingItem.quantity : 0;
 
-        if (currentQty + quantity > product.stock_quantity) {
+        const isInventoryTracked = product.track_inventory === 1 || product.track_inventory === true;
+
+        if (isInventoryTracked && currentQty + quantity > product.stock_quantity) {
             return res.status(400).json({ success: false, message: `Only ${product.stock_quantity} available in stock` });
         }
 
@@ -48,7 +50,9 @@ exports.updateCartItem = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
 
-        if (quantity > product.stock_quantity) {
+        const isInventoryTracked = product.track_inventory === 1 || product.track_inventory === true;
+
+        if (isInventoryTracked && quantity > product.stock_quantity) {
             return res.status(400).json({ success: false, message: `Only ${product.stock_quantity} available in stock` });
         }
 

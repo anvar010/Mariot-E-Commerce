@@ -40,7 +40,7 @@
 }
 
 .header.sticky .mainHeader {
-    padding: 10px 0;
+    padding: 8px 0;
 }
 
 @media (max-width: 768px) {
@@ -70,7 +70,7 @@
 .topBanner {
     background-color: var(--primary-teal);
     color: var(--white);
-    padding: 8px 0;
+    padding: 5px 0;
     font-size: 13px;
     font-weight: 500;
     transition: all 0.3s ease;
@@ -103,7 +103,7 @@
 
 /* Main Header */
 .mainHeader {
-    padding: 20px 0;
+    padding: 12px 0;
     border-bottom: 1px solid #eeeeee;
 }
 
@@ -133,7 +133,7 @@
 }
 
 .miniIcon {
-    height: 50px;
+    height: 40px;
     width: auto;
     object-fit: contain;
 }
@@ -145,7 +145,7 @@
 }
 
 .logoImage {
-    height: 45px;
+    height: 35px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease;
@@ -176,7 +176,7 @@
 
 .brandName {
     color: #0056b3;
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 900;
     margin: 0;
     line-height: 1;
@@ -337,14 +337,14 @@
 }
 
 .value {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--accent-orange);
 }
 
 .userName {
     font-family: 'Inter', -apple-system, sans-serif !important;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--text-dark);
 }
@@ -378,7 +378,7 @@
 }
 
 .navBar .container {
-    height: 50px;
+    height: 46px;
     gap: 10px;
 }
 
@@ -398,6 +398,10 @@
 
 .categories:hover {
     color: #5bb377;
+}
+
+.categories span {
+    font-size: 12px;
 }
 
 .categoriesActive {
@@ -453,7 +457,7 @@
 }
 
 .navLinks a {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-dark);
     text-transform: uppercase;
@@ -484,12 +488,12 @@
 .langSelector {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     border: 1px solid #000;
-    padding: 8px 18px;
-    border-radius: 12px;
-    font-size: 18px;
-    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     background-color: white;
     transition: background-color 0.2s;
@@ -503,8 +507,8 @@
 }
 
 .flagImg {
-    width: 28px;
-    height: 18px;
+    width: 24px;
+    height: 16px;
     object-fit: cover;
     border-radius: 2px;
     display: flex;
@@ -653,7 +657,7 @@
 /* Support Bar */
 .supportBar {
     background-color: #f8fdfd;
-    padding: 10px 0;
+    padding: 6px 0;
     transition: all 0.3s ease;
     overflow: hidden;
     max-height: 100px;

@@ -5,16 +5,26 @@ import Footer from '@/components/Layout/Footer/Footer';
 import ShopLayout from '@/components/Shop/ShopLayout';
 import Loader from '@/components/shared/Loader/Loader';
 
-export const metadata: Metadata = {
-    title: 'Shop Premium Kitchen Equipment | Mariot Store',
-    description: 'Browse our full catalog of commercial kitchen equipment, coffee machines, bakery tools, and refrigeration units. Quality equipment for professionals.',
-};
+export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
+    const isArabic = locale === 'ar';
+    return {
+        title: isArabic ? 'تسوق معدات المطابخ الفاخرة | ماريوت' : 'Shop Premium Kitchen Equipment | Mariot Store',
+        description: isArabic ? 'تصفح الكتالوج الكامل لمعدات المطابخ التجارية، وآلات القهوة، وعروض التبريد.' : 'Browse our full catalog of commercial kitchen equipment, coffee machines, bakery tools, and refrigeration units. Quality equipment for professionals.',
+        openGraph: {
+            title: isArabic ? 'تسوق معدات المطابخ الفاخرة | ماريوت' : 'Shop Premium Kitchen Equipment | Mariot Store',
+            description: isArabic ? 'تصفح الكتالوج الكامل لمعدات المطابخ التجارية، وآلات القهوة، وعروض التبريد.' : 'Browse our full catalog of commercial kitchen equipment, coffee machines, bakery tools, and refrigeration units. Quality equipment for professionals.',
+            url: `https://mariotstore.com/${locale}/shop`,
+            type: 'website',
+        }
+    };
+}
 
 const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 async function getShopData(locale: string, searchParams: { [key: string]: string | string[] | undefined }) {
     const category = searchParams.category as string | undefined;
     const brand = searchParams.brand as string | undefined;
+    const seller = searchParams.seller as string | undefined;
     const search = searchParams.search as string | undefined;
     const limited = searchParams.limited === 'true';
 
@@ -23,6 +33,7 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
         let productUrl = `${API_BASE_URL_SERVER}/products?page=1&limit=20`;
         if (category) productUrl += `&category=${category}`;
         if (brand) productUrl += `&brand=${brand}`;
+        if (seller) productUrl += `&seller=${seller}`;
         if (search) productUrl += `&search=${encodeURIComponent(search)}`;
         if (limited) productUrl += `&is_limited_offer=true`;
 

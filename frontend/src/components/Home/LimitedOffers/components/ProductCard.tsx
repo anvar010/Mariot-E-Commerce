@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ShoppingCart, CheckCircle2 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import styles from '../LimitedOffers.module.css';
 
 export interface Product {

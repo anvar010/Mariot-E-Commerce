@@ -28,15 +28,15 @@ const AdminSidebar = () => {
     const { user, logout } = useAuth();
 
     const menuItems = [
-        { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/admin' },
-        { name: 'Products', icon: <Package size={20} />, path: '/admin/products' },
-        { name: 'Brands', icon: <Tag size={20} />, path: '/admin/brands' },
-        { name: 'Orders', icon: <ShoppingCart size={20} />, path: '/admin/orders' },
-        { name: 'Coupons', icon: <Ticket size={20} />, path: '/admin/coupons' },
-        { name: 'Users', icon: <Users size={20} />, path: '/admin/users' },
-        { name: 'SEO', icon: <BarChart3 size={20} />, path: '/admin/seo' },
-        { name: 'Analytics', icon: <BarChart3 size={20} />, path: '/admin/analytics' },
-        { name: 'CMS Manager', icon: <Layout size={20} />, path: '/admin/cms' },
+        { name: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/admin' },
+        { name: 'Products', icon: <Package size={18} />, path: '/admin/products' },
+        { name: 'Brands', icon: <Tag size={18} />, path: '/admin/brands' },
+        { name: 'Orders', icon: <ShoppingCart size={18} />, path: '/admin/orders' },
+        { name: 'Coupons', icon: <Ticket size={18} />, path: '/admin/coupons' },
+        { name: 'Users', icon: <Users size={18} />, path: '/admin/users' },
+        { name: 'SEO', icon: <BarChart3 size={18} />, path: '/admin/seo' },
+        { name: 'Analytics', icon: <BarChart3 size={18} />, path: '/admin/analytics' },
+        { name: 'CMS Manager', icon: <Layout size={18} />, path: '/admin/cms' },
     ];
 
     // Normalize path by removing locale for comparison

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from "next/legacy/image";
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { Phone, Mail, Headset, Facebook, Instagram, Youtube, Linkedin, Music2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import styles from './Footer.module.css';

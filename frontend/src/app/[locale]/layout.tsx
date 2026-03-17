@@ -24,15 +24,35 @@ export function generateStaticParams() {
     return [{ locale: 'en' }, { locale: 'ar' }];
 }
 
-export const metadata: Metadata = {
-    title: 'Mariot | Best Kitchen Equipment Supplier in UAE',
-    description: 'Premium Kitchen Equipment in UAE',
-    icons: {
-        icon: '/assets/mariot-icon.webp',
-        shortcut: '/assets/mariot-icon.webp',
-        apple: '/assets/mariot-icon.webp',
-    }
-};
+export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
+    const isArabic = locale === 'ar';
+
+    return {
+        title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
+        description: isArabic ? 'معدات مطابخ فاخرة وتجارية في الإمارات العربية المتحدة' : 'Premium Commercial Kitchen Equipment in UAE',
+        icons: {
+            icon: '/assets/mariot-icon.webp',
+            shortcut: '/assets/mariot-icon.webp',
+            apple: '/assets/mariot-icon.webp',
+        },
+        openGraph: {
+            title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
+            description: isArabic ? 'تصفح مجموعتنا الواسعة من معدات المطابخ. جودة فائقة وأسعار لا تقبل المنافسة.' : 'Browse our wide range of premium commercial kitchen equipment with unbeatable prices.',
+            url: `https://mariotstore.com/${locale}`,
+            siteName: 'Mariot Kitchen Equipment',
+            images: [
+                {
+                    url: 'https://mariotstore.com/assets/mariot-logo.webp',
+                    width: 1200,
+                    height: 630,
+                    alt: isArabic ? 'ماريوت لمعدات المطابخ' : 'Mariot Kitchen Equipment',
+                }
+            ],
+            locale: isArabic ? 'ar_AE' : 'en_US',
+            type: 'website',
+        }
+    };
+}
 
 export default async function LocaleLayout({
     children,

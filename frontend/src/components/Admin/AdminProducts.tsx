@@ -260,7 +260,8 @@ const AdminProducts = () => {
         resources: [{ name: '', url: '' }],
         status: 'active',
         offer_start: '',
-        offer_end: ''
+        offer_end: '',
+        track_inventory: false
     });
 
     useEffect(() => {
@@ -395,53 +396,61 @@ const AdminProducts = () => {
     };
 
     const handleAddVideo = () => {
-        setFormData({
-            ...formData,
-            youtube_video_links: [...formData.youtube_video_links, '']
-        });
+        setFormData(prev => ({
+            ...prev,
+            youtube_video_links: [...prev.youtube_video_links, '']
+        }));
     };
 
     const handleRemoveVideo = (index: number) => {
-        const newLinks = [...formData.youtube_video_links];
-        newLinks.splice(index, 1);
-        setFormData({
-            ...formData,
-            youtube_video_links: newLinks,
-            featured_video_index: formData.featured_video_index >= newLinks.length ? 0 : formData.featured_video_index
+        setFormData(prev => {
+            const newLinks = [...prev.youtube_video_links];
+            newLinks.splice(index, 1);
+            return {
+                ...prev,
+                youtube_video_links: newLinks,
+                featured_video_index: prev.featured_video_index >= newLinks.length ? 0 : prev.featured_video_index
+            };
         });
     };
 
     const handleVideoChange = (index: number, value: string) => {
-        const newLinks = [...formData.youtube_video_links];
-        newLinks[index] = value;
-        setFormData({
-            ...formData,
-            youtube_video_links: newLinks
+        setFormData(prev => {
+            const newLinks = [...prev.youtube_video_links];
+            newLinks[index] = value;
+            return {
+                ...prev,
+                youtube_video_links: newLinks
+            };
         });
     };
 
     const handleAddResource = () => {
-        setFormData({
-            ...formData,
-            resources: [...formData.resources, { name: '', url: '' }]
-        });
+        setFormData(prev => ({
+            ...prev,
+            resources: [...prev.resources, { name: '', url: '' }]
+        }));
     };
 
     const handleRemoveResource = (index: number) => {
-        const newResources = [...formData.resources];
-        newResources.splice(index, 1);
-        setFormData({
-            ...formData,
-            resources: newResources
+        setFormData(prev => {
+            const newResources = [...prev.resources];
+            newResources.splice(index, 1);
+            return {
+                ...prev,
+                resources: newResources
+            };
         });
     };
 
     const handleResourceChange = (index: number, field: 'name' | 'url', value: string) => {
-        const newResources = [...formData.resources];
-        newResources[index] = { ...newResources[index], [field]: value };
-        setFormData({
-            ...formData,
-            resources: newResources
+        setFormData(prev => {
+            const newResources = [...prev.resources];
+            newResources[index] = { ...newResources[index], [field]: value };
+            return {
+                ...prev,
+                resources: newResources
+            };
         });
     };
 
@@ -582,7 +591,8 @@ const AdminProducts = () => {
             is_best_seller: isTrue(product.is_best_seller),
             status: product.status || 'active',
             offer_start: product.offer_start ? new Date(product.offer_start).toISOString().slice(0, 16) : '',
-            offer_end: product.offer_end ? new Date(product.offer_end).toISOString().slice(0, 16) : ''
+            offer_end: product.offer_end ? new Date(product.offer_end).toISOString().slice(0, 16) : '',
+            track_inventory: isTrue(product.track_inventory)
         });
         setIsModalOpen(true);
     };
@@ -619,7 +629,8 @@ const AdminProducts = () => {
             resources: [{ name: '', url: '' }],
             status: 'active',
             offer_start: '',
-            offer_end: ''
+            offer_end: '',
+            track_inventory: false
         });
         setActiveTab('basic');
     };
@@ -918,7 +929,8 @@ const AdminProducts = () => {
                             resources: [{ name: '', url: '' }],
                             status: 'active',
                             offer_start: '',
-                            offer_end: ''
+                            offer_end: '',
+                            track_inventory: false
                         });
                         setActiveTab('basic');
                         setIsModalOpen(true);
@@ -1075,7 +1087,6 @@ const AdminProducts = () => {
                                             <span className={styles.productName}>
                                                 {stripHtml(product.name)}
                                             </span>
-                                            <span className={styles.productSlug}>{product.slug}</span>
                                         </div>
                                     </td>
                                     <td>{product.brand_name || 'RATIONAL'}</td>
@@ -1097,9 +1108,6 @@ const AdminProducts = () => {
                                     <td className={styles.price}>
                                         {product.discount_percentage > 0 ? (
                                             <div>
-                                                <div className={styles.oldPrice}>
-                                                    AED {Number(product.price).toLocaleString()}
-                                                </div>
                                                 <div className={styles.offerPrice}>
                                                     AED {Number(Number(product.offer_price) > 0 ? product.offer_price : product.price).toLocaleString()}
                                                 </div>
@@ -1112,9 +1120,15 @@ const AdminProducts = () => {
                                         )}
                                     </td>
                                     <td>
-                                        <span className={`${styles.stockBadge} ${Number(product.stock_quantity) < 10 ? styles.lowStock : ''}`}>
-                                            {product.stock_quantity || 0}
-                                        </span>
+                                        {(product.track_inventory === 1 || product.track_inventory === '1' || product.track_inventory === true) ? (
+                                            <span className={`${styles.stockBadge} ${Number(product.stock_quantity) < 10 ? styles.lowStock : ''}`}>
+                                                {product.stock_quantity || 0}
+                                            </span>
+                                        ) : (
+                                            <span className={styles.statusAlways}>
+                                                Always in Stock
+                                            </span>
+                                        )}
                                     </td>
                                     <td>
                                         <div className={styles.tagsCell}>
@@ -1123,7 +1137,7 @@ const AdminProducts = () => {
                                             {(product.is_limited_offer === 1 || product.is_limited_offer === '1' || product.is_limited_offer === true) && <span className={`${styles.tag} ${styles.tagLimited}`}>Limited</span>}
                                             {(product.is_daily_offer === 1 || product.is_daily_offer === '1' || product.is_daily_offer === true) && <span className={`${styles.tag} ${styles.tagDaily}`}>Daily Deal</span>}
                                             {!product.is_featured && !product.is_weekly_deal && !product.is_limited_offer && !product.is_daily_offer && (
-                                                <span style={{ color: '#adb5bd', fontSize: '11px' }}>-</span>
+                                                <span className={styles.emptyTag}>-</span>
                                             )}
                                         </div>
                                     </td>
@@ -1222,7 +1236,7 @@ const AdminProducts = () => {
                         <div className={styles.modalSideHeader}>
                             <div className={styles.modalTitleArea}>
                                 <h2>{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-                                <p>{editingId ? `Editing: ${formData.name}` : 'Create a new product catalog entry'}</p>
+                                <p>{editingId ? `You are editing: ${formData.name}` : 'Create a professional product entry for the store'}</p>
                             </div>
                             <button className={styles.closeBtn} onClick={handleCloseModal}>
                                 <X size={20} />
@@ -1440,9 +1454,27 @@ const AdminProducts = () => {
                                                     <input type="number" name="offer_price" step="0.01" value={formData.offer_price} onChange={handleInputChange} />
                                                 </div>
                                                 <div className={styles.formGroup}>
-                                                    <label>Stock Quantity</label>
-                                                    <input type="number" name="stock_quantity" required value={formData.stock_quantity} onChange={handleInputChange} />
+                                                    <label>Track Inventory</label>
+                                                    <div className={styles.toggleWrapper}>
+                                                        <label className={styles.switch}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={formData.track_inventory}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, track_inventory: e.target.checked }))}
+                                                            />
+                                                            <span className={styles.slider}></span>
+                                                        </label>
+                                                        <span className={styles.toggleLabel}>
+                                                            {formData.track_inventory ? 'Strict Stock Control' : 'Always in Stock'}
+                                                        </span>
+                                                    </div>
                                                 </div>
+                                                {formData.track_inventory && (
+                                                    <div className={styles.formGroup}>
+                                                        <label>Stock Quantity</label>
+                                                        <input type="number" name="stock_quantity" required={formData.track_inventory} value={formData.stock_quantity} onChange={handleInputChange} />
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className={styles.formGroup} style={{ marginTop: '20px' }}>
                                                 <label>Inventory Status</label>

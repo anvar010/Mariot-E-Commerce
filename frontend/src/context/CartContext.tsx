@@ -15,6 +15,7 @@ interface CartItem {
     brand?: string;
     slug?: string;
     stock_quantity?: number;
+    track_inventory?: number | boolean;
 }
 
 interface CartContextType {
@@ -51,6 +52,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { showNotification } = useNotification();
     const t = useTranslations('notifications');
 
+    const prevToken = React.useRef(token);
+
     // 1. Initial Load & Sync Logic
     useEffect(() => {
         const handleCartSync = async () => {
@@ -85,8 +88,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 // 2. Fetch the final consolidated cart from server
                 fetchUserCart();
+            } else if (prevToken.current) {
+                // User just logged out
+                setCartItems([]);
+                setAppliedCoupon(null);
+                setDiscountAmount(0);
+                setPointsToUse(0);
+                setPointsDiscountAmount(0);
+                localStorage.removeItem('cart');
             } else {
-                // Guest mode: Load from local storage
+                // Initial guest load
                 const savedCart = localStorage.getItem('cart');
                 if (savedCart) {
                     try {
@@ -99,15 +110,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     setCartItems([]);
                 }
             }
+            prevToken.current = token;
         };
 
-        const timeoutId = setTimeout(handleCartSync, 1500);
+        const timeoutId = setTimeout(handleCartSync, token ? 1500 : 0);
         return () => clearTimeout(timeoutId);
     }, [token]);
 
     // 2. Persistence loop for guests
     useEffect(() => {
-        if (!token) {
+        if (!token && !prevToken.current) {
             localStorage.setItem('cart', JSON.stringify(cartItems));
         }
     }, [cartItems, token]);
@@ -128,7 +140,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     image: item.image || item.product?.image_url || '',
                     quantity: Number(item.quantity),
                     brand: item.brand || item.brand_name || item.product?.brand?.name || '',
-                    stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined
+                    stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined,
+                    track_inventory: item.track_inventory
                 }));
                 setCartItems(items);
             }
@@ -144,10 +157,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Validation against current state
         const existingItem = cartItems.find(item => item.id === product.id);
+        const isInventoryTracked = product.track_inventory === 1 || String(product.track_inventory) === '1' || product.track_inventory === true;
 
         let quantityToAdd = productQuantity;
 
-        if (stockLimit !== undefined) {
+        if (stockLimit !== undefined && isInventoryTracked) {
             const currentInCart = existingItem ? Number(existingItem.quantity) : 0;
             const remainingStock = stockLimit - currentInCart;
 
@@ -178,7 +192,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 image: product.image,
                 brand: product.brand || product.brand_name || '',
                 quantity: quantityToAdd,
-                stock_quantity: stockLimit
+                stock_quantity: stockLimit,
+                track_inventory: product.track_inventory
             }];
         });
 
@@ -256,7 +271,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const item = cartItems.find(i => i.id === productId);
         let validQuantity = quantity;
 
-        if (item && item.stock_quantity !== undefined && quantity > item.stock_quantity) {
+        const isInventoryTracked = item && (item.track_inventory === 1 || String(item.track_inventory) === '1' || item.track_inventory === true);
+
+        if (item && item.stock_quantity !== undefined && isInventoryTracked && quantity > item.stock_quantity) {
             showNotification(t('cartUpdateError', { count: item.stock_quantity }), 'error');
             validQuantity = item.stock_quantity;
         }

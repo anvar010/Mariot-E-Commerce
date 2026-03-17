@@ -1,14 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 .checkoutPage {
-    background-color: #f8fafc;
+    background-color: #f6f8fb;
     min-height: 100vh;
 }
 
 .checkoutContainer {
     width: 100%;
     margin: 0 auto;
-    padding: 60px 40px;
+    padding: 30px 40px;
     font-family: sans-serif;
 }
 
@@ -20,7 +20,7 @@
 }
 
 .checkoutHeader h1 {
-    font-size: 32px;
+    font-size: 24px;
     font-weight: 800;
     color: #0f172a;
     margin: 0;
@@ -29,7 +29,7 @@
 
 .checkoutHeader p {
     color: #64748b;
-    font-size: 16px;
+    font-size: 13px;
     margin: 0;
 }
 
@@ -48,38 +48,42 @@
 
 .checkoutSection {
     background: #ffffff;
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .sectionHeader {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 28px;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
 }
 
 .stepNumber {
-    width: 32px;
-    height: 32px;
+    width: 26px;
+    height: 26px;
     background: #237073;
     color: #fff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
+    font-weight: 800;
+    font-size: 11px;
     flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(35, 112, 115, 0.2);
 }
 
 .sectionTitle {
-    font-size: 20px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 800;
     color: #0f172a;
     margin: 0;
+    letter-spacing: -0.2px;
 }
 
 /* Form Styles */
@@ -100,7 +104,7 @@
 }
 
 .formGroup label {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: #475569;
 }
@@ -115,16 +119,32 @@
     align-items: center;
 }
 
+.inputIcon {
+    position: absolute;
+    inset-inline-start: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.formInput:focus+.inputIcon,
+.formSelect:focus+.inputIcon,
+.formTextarea:focus+.inputIcon {
+    color: #237073;
+}
+
 .formInput,
 .formSelect,
 .formTextarea {
     width: 100%;
-    padding: 12px 16px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
-    font-size: 15px;
-    color: #1e293b;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 11px 12px 11px 42px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #334155;
+    transition: all 0.2s ease;
     background: #fff;
 }
 
@@ -133,49 +153,89 @@
 .formTextarea:focus {
     outline: none;
     border-color: #237073;
-    box-shadow: 0 0 0 4px rgba(35, 112, 115, 0.1);
+    box-shadow: 0 0 0 3px rgba(35, 112, 115, 0.08);
 }
 
 .formInput::placeholder {
-    color: #94a3b8;
+    color: #cbd5e1;
 }
 
 .formTextarea {
-    min-height: 100px;
+    min-height: 80px;
     resize: vertical;
+    padding-inline-start: 12px;
+}
+
+/* Saved Address Selector Redesign */
+.addressSelectorBox {
+    margin-bottom: 28px;
+    padding: 20px;
+    background: #f1f7f7;
+    border-radius: 12px;
+    border: 1px solid #d8e6e6;
+}
+
+.addressSelectorLabel {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    color: #237073;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.modernSelect {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #cfe0e0;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    color: #333;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    outline: none;
+    transition: all 0.2s;
+}
+
+.modernSelect:focus {
+    border-color: #237073;
+    box-shadow: 0 0 0 3px rgba(35, 112, 115, 0.1);
 }
 
 /* Modern Tabbed Payment Selection */
 .paymentGrid {
     display: flex;
     flex-direction: column;
-    gap: 0;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 16px;
-    overflow: hidden;
-    background: #fff;
+    gap: 8px;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    background: transparent;
 }
 
 .paymentTab {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 20px 24px;
+    gap: 12px;
+    padding: 14px 16px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border-bottom: 1.5px solid #f1f5f9;
-}
-
-.paymentTab:last-child {
-    border-bottom: none;
+    transition: all 0.25s ease;
+    border: 1.5px solid #f1f5f9;
+    border-radius: 10px;
+    background: #fff;
 }
 
 .paymentTab:hover:not(.active) {
-    background: #f8fafc;
+    border-color: #e2e8f0;
 }
 
 .paymentTab.active {
-    background: #fafbfb;
+    background: #fff;
+    border-color: #237073;
+    box-shadow: 0 4px 12px rgba(35, 112, 115, 0.06);
 }
 
 .radioDot {
@@ -214,31 +274,33 @@
 }
 
 .tabTitle {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 700;
     color: #0f172a;
 }
 
 .tabDesc {
-    font-size: 13px;
+    font-size: 11px;
     color: #64748b;
 }
 
 .tabIcon {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f1f5f9;
-    border-radius: 10px;
+    background: #f8fafc;
+    border-radius: 6px;
     color: #64748b;
     transition: all 0.3s;
+    border: 1px solid #f1f5f9;
 }
 
 .active .tabIcon {
     background: #237073;
     color: #fff;
+    border-color: #237073;
 }
 
 /* Tabby Specific Branding */
@@ -257,8 +319,12 @@
 
 /* Tab Content */
 .tabContent {
-    background: #fafbfb;
-    border-top: 1.5px solid #f1f5f9;
+    background: #ffffff;
+    border: 1.5px solid #237073;
+    border-top: none;
+    margin-top: -10px;
+    margin-bottom: 12px;
+    border-radius: 0 0 10px 10px;
     overflow: hidden;
     animation: fadeIn 0.3s ease-out;
 }
@@ -312,14 +378,14 @@
 }
 
 .bankDetails {
-    padding: 24px;
+    padding: 20px;
     background: #fafbfb;
 }
 
 .bankCard {
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: 10px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     overflow: hidden;
 }
@@ -328,7 +394,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 18px;
+    padding: 12px 16px;
     border-bottom: 1px solid #f1f5f9;
 }
 
@@ -338,7 +404,7 @@
 
 .bankLabel {
     color: #64748b;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -347,7 +413,7 @@
 .bankValue {
     color: #0f172a;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 12px;
     font-family: 'Outfit', sans-serif;
     text-align: end;
 }
@@ -365,33 +431,38 @@
 
 .summaryContainer {
     position: sticky;
-    top: 125px;
+    top: 100px;
     z-index: 10;
+    max-height: calc(100vh - 120px);
+    display: flex;
 }
 
 .summaryCard {
     background: #ffffff;
     border-radius: 16px;
-    padding: 28px;
+    padding: 20px;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     border: 1px solid #f1f5f9;
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 .summaryTitle {
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 700;
     color: #0f172a;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
     border-bottom: 1px solid #f1f5f9;
 }
 
 .itemList {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    margin-bottom: 24px;
-    max-height: 300px;
+    gap: 12px;
+    margin-bottom: 20px;
+    max-height: 200px;
     overflow-y: auto;
     padding-inline-end: 4px;
 }
@@ -417,7 +488,7 @@
 }
 
 .itemName {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: #1e293b;
     margin-bottom: 2px;
@@ -429,12 +500,12 @@
 }
 
 .itemMeta {
-    font-size: 12px;
+    font-size: 10px;
     color: #64748b;
 }
 
 .itemPrice {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: #0f172a;
 }
@@ -442,14 +513,14 @@
 .totalsGrid {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 24px;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
 .totalRow {
     display: flex;
     justify-content: space-between;
-    font-size: 15px;
+    font-size: 12px;
     color: #64748b;
 }
 
@@ -460,9 +531,9 @@
 .grandTotalRow {
     display: flex;
     justify-content: space-between;
-    padding-top: 16px;
+    padding-top: 12px;
     border-top: 2px dashed #f1f5f9;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 800;
     color: #0f172a;
 }
@@ -472,9 +543,9 @@
     background: #237073;
     color: #fff;
     border: none;
-    padding: 16px;
-    border-radius: 12px;
-    font-size: 16px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
@@ -538,10 +609,10 @@
 
 .couponInput {
     flex: 1;
-    padding: 12px 16px;
+    padding: 10px 14px;
     border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
-    font-size: 14px;
+    border-radius: 8px;
+    font-size: 12px;
     color: #1e293b;
     outline: none;
     transition: all 0.2s ease;
@@ -554,13 +625,13 @@
 }
 
 .applyCouponBtn {
-    padding: 0 20px;
+    padding: 0 16px;
     background: #0f172a;
     color: white;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 12px;
     cursor: pointer;
     transition: background 0.2s;
 }
@@ -632,7 +703,7 @@
     background: none;
     border: none;
     color: #237073;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 600;
     display: flex;
     align-items: center;

@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import styles from './ShopLayout.module.css';
 import { Filter, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL, BASE_URL } from '@/config';
 import Loader from '@/components/shared/Loader/Loader';
 import ProductCardSkeleton from '@/components/shared/ProductCardPromotion/ProductCardSkeleton';
 import { useTranslations, useLocale } from 'next-intl';
@@ -53,6 +53,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const searchQueryRaw = searchParams.get('search');
     const searchQuery = defaultSearchQuery || (searchQueryRaw ? searchQueryRaw.replace(/\+/g, ' ') : null);
     const isLimited = searchParams.get('limited') === 'true';
+    const sellerParam = searchParams.get('seller');
 
     const [products, setProducts] = useState<any[]>(initialProducts);
     const [brands, setBrands] = useState<any[]>(initialBrands);
@@ -127,6 +128,15 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const locale = useLocale();
     const isArabic = locale === 'ar';
 
+    const resolveUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.includes('localhost:5000')) {
+            return url.replace('http://localhost:5000', BASE_URL);
+        }
+        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
+        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
+
     const getBrandDisplayName = () => {
         if (!brandParam) return null;
 
@@ -152,7 +162,14 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 ? (tc.has(activeCategory) ? tc(activeCategory) : (t.has(activeCategory) ? t(activeCategory) : activeCategory.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')))
                 : (brandParam
                     ? getBrandDisplayName()
-                    : (isLimited ? tc('limited-time-offers') : tc('all-products')))));
+                    : (sellerParam
+                        ? (products.length > 0 ? (products[0].seller_company || products[0].seller_name || 'Seller Store') : 'Seller Store')
+                        : (isLimited ? tc('limited-time-offers') : tc('all-products'))))));
+
+    const activeBrandInfo = brandParam ? brands.find((b: any) =>
+        b.slug === brandParam ||
+        b.name?.toLowerCase().replace(/ /g, '-') === brandParam
+    ) : null;
 
     // Get child categories for the top grid
     const targetCategoryForGrid = subCategoryOverride || activeCategory;
@@ -240,6 +257,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
             if (isFeatured) url += `&is_featured=1`;
             if (isLimited) url += `&is_limited_offer=true`;
+            if (sellerParam) url += `&seller=${sellerParam}`;
 
             // Handle Sorting
             if (sortBy === 'price_asc') url += `&sort=price_asc`;
@@ -345,6 +363,18 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
 
     return (
         <div className={styles.shopLayout}>
+            {brandParam && activeBrandInfo && (
+                <div className={styles.brandBanner}>
+                    <img
+                        src={resolveUrl(activeBrandInfo.banner || activeBrandInfo.image) || 'https://images.unsplash.com/photo-1557821552-17105176677c?q=80&w=1600&auto=format&fit=crop'}
+                        alt={getBrandDisplayName() || ""}
+                        className={styles.brandBannerImg}
+                        onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1557821552-17105176677c?q=80&w=1600&auto=format&fit=crop';
+                        }}
+                    />
+                </div>
+            )}
             <div className={styles.topInfo}>
                 <div className={styles.breadcrumbs}>
                     <Link href="/">{tc("home")}</Link>
@@ -536,6 +566,31 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                             >
                                 <ChevronRight size={20} />
                             </button>
+                        </div>
+                    )}
+
+                    {/* Brand About Section */}
+                    {activeBrandInfo && (activeBrandInfo.description || activeBrandInfo.image_url) && (
+                        <div className={styles.aboutBrandSection}>
+                            <div className={styles.brandBio}>
+                                {activeBrandInfo.image_url && (
+                                    <div className={styles.brandBioLogoBox}>
+                                        <img
+                                            src={resolveUrl(activeBrandInfo.image_url)}
+                                            alt={activeBrandInfo.name}
+                                            className={styles.brandBioLogoImg}
+                                        />
+                                    </div>
+                                )}
+                                <div className={styles.brandBioContent}>
+                                    <h2 className={styles.brandBioTitle}>
+                                        {isArabic && activeBrandInfo.name_ar ? activeBrandInfo.name_ar : activeBrandInfo.name}
+                                    </h2>
+                                    <div className={styles.brandBioDescription}>
+                                        {isArabic && activeBrandInfo.description_ar ? activeBrandInfo.description_ar : activeBrandInfo.description}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </main>

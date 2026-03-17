@@ -40,28 +40,16 @@ class Order {
             );
             const orderId = orderResult.insertId;
 
-            // 2. Create order items
+            // 2. Create order items (No stock deduction yet)
             for (const item of items) {
                 await connection.execute(
                     `INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase) 
                      VALUES (?, ?, ?, ?)`,
                     [orderId, item.product_id, item.quantity, item.price]
                 );
-
-                // Reduce stock
-                await connection.execute(
-                    'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
-                    [item.quantity, item.product_id]
-                );
             }
 
-            // 3. Clear cart
-            await connection.execute(
-                'DELETE FROM cart_items WHERE cart_id = (SELECT id FROM carts WHERE user_id = ?)',
-                [userId]
-            );
-
-            // 3.5 Update coupon usage
+            // 3. Update coupon usage (Coupons are consumed immediately to prevent reuse while pending)
             if (coupon_id) {
                 await connection.execute(
                     'UPDATE coupons SET used_count = used_count + 1 WHERE id = ?',
@@ -69,33 +57,11 @@ class Order {
                 );
             }
 
-            // 4. Deduct points used
-            if (points_to_use > 0) {
-                await connection.execute(
-                    'UPDATE users SET reward_points = reward_points - ? WHERE id = ?',
-                    [points_to_use, userId]
-                );
-
-                await connection.execute(
-                    'INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, "redeemed", ?, ?)',
-                    [userId, points_to_use, orderId, `Points redeemed for order #${orderId}`]
-                );
-            }
-
-            // 5. Calculate and add rewards points (on the remaining cash amount out of pocket)
-            // Updated Rule: Award 1 point for every 2 AED spent
-            const pointsEarned = Math.floor(adjustedFinalAmount / 2);
-
-            if (pointsEarned > 0) {
-                await connection.execute(
-                    'UPDATE users SET reward_points = reward_points + ? WHERE id = ?',
-                    [pointsEarned, userId]
-                );
-
-                await connection.execute(
-                    'INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, "earned", ?, ?)',
-                    [userId, pointsEarned, orderId, `Points earned from order #${orderId}`]
-                );
+            // 4. Process completion operations (clearing cart, stock reduction, points) 
+            // We do this immediately for all methods EXCEPT those that require a redirect to a 3rd party (like Tabby) 
+            // where the user hasn't successfully finished the checkout yet.
+            if (payment_method !== 'tabby') {
+                await this.processOrderCompletion(connection, userId, orderId, items, points_to_use, adjustedFinalAmount);
             }
 
             await connection.commit();
@@ -105,6 +71,53 @@ class Order {
             throw error;
         } finally {
             connection.release();
+        }
+    }
+
+    /**
+     * Handles stock reduction, cart clearing, and reward point allocation.
+     * Use this when an order successfully completes payment (Tabby redirect, Stripe Webhook, or immediate Card).
+     */
+    static async processOrderCompletion(connection, userId, orderId, items, points_to_use, adjustedFinalAmount) {
+        // 1. Reduce stock (only if track_inventory is enabled)
+        for (const item of items) {
+            await connection.execute(
+                'UPDATE products SET stock_quantity = GREATEST(0, stock_quantity - ?) WHERE id = ? AND track_inventory = 1',
+                [item.quantity, item.product_id]
+            );
+        }
+
+        // 2. Clear cart
+        await connection.execute(
+            'DELETE FROM cart_items WHERE cart_id = (SELECT id FROM carts WHERE user_id = ?)',
+            [userId]
+        );
+
+        // 3. Deduct points used
+        if (points_to_use > 0) {
+            await connection.execute(
+                'UPDATE users SET reward_points = GREATEST(0, reward_points - ?) WHERE id = ?',
+                [points_to_use, userId]
+            );
+
+            await connection.execute(
+                'INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, "redeemed", ?, ?)',
+                [userId, points_to_use, orderId, `Points redeemed for order #${orderId}`]
+            );
+        }
+
+        // 4. Calculate and add rewards points
+        const pointsEarned = Math.floor(adjustedFinalAmount / 2);
+        if (pointsEarned > 0) {
+            await connection.execute(
+                'UPDATE users SET reward_points = reward_points + ? WHERE id = ?',
+                [pointsEarned, userId]
+            );
+
+            await connection.execute(
+                'INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, "earned", ?, ?)',
+                [userId, pointsEarned, orderId, `Points earned from order #${orderId}`]
+            );
         }
     }
 
@@ -133,7 +146,41 @@ class Order {
     }
 
     static async updatePaymentStatus(id, payment_status) {
-        await db.execute('UPDATE orders SET payment_status = ? WHERE id = ?', [payment_status, id]);
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // First get the current order to see if we need to process completion logic
+            const [order] = await connection.execute('SELECT user_id, payment_status, points_used, final_amount FROM orders WHERE id = ?', [id]);
+            if (order.length === 0) throw new Error("Order not found");
+
+            const currentStatus = order[0].payment_status;
+
+            // Update status
+            await connection.execute('UPDATE orders SET payment_status = ? WHERE id = ?', [payment_status, id]);
+
+            // If it's transitioning to paid, and wasn't paid before, process completion
+            if (payment_status === 'paid' && currentStatus !== 'paid') {
+                // Fetch items for stock reduction
+                const [items] = await connection.execute('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [id]);
+
+                await this.processOrderCompletion(
+                    connection,
+                    order[0].user_id,
+                    id,
+                    items,
+                    order[0].points_used,
+                    order[0].final_amount
+                );
+            }
+
+            await connection.commit();
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
     }
 }
 

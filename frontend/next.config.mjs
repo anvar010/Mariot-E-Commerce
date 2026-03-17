@@ -4,9 +4,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // experimental: {
-    //     optimizePackageImports: ['lucide-react', 'framer-motion'],
-    // },
+    trailingSlash: false,
     images: {
         remotePatterns: [
             {

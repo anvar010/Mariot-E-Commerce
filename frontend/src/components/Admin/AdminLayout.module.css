@@ -1,16 +1,16 @@
 .adminContainer {
     display: flex;
     min-height: 100vh;
-    background-color: #f8f9fa;
+    background-color: #f1f5f9;
 }
 
 .mainContent {
     flex: 1;
-    margin-inline-start: 250px;
+    margin-inline-start: 220px;
     display: flex;
     flex-direction: column;
 }
 
 .pageBody {
-    padding: 30px;
+    padding: 24px;
 }

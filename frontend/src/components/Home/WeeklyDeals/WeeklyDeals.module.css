@@ -88,8 +88,8 @@
 .dealsGrid {
     display: flex;
     overflow-x: auto;
-    gap: 5px;
-    padding: 20px 10px;
+    gap: 2px;
+    padding: 20px 0;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     user-select: none;
@@ -101,14 +101,14 @@
 }
 
 .productWrapper {
-    flex: 0 0 auto;
-    width: 240px;
+    flex: 0 0 220px;
+    width: 220px;
     height: 100%;
 }
 
 @media (max-width: 480px) {
     .dealsGrid {
-        gap: 10px;
+        gap: 2px;
         padding: 10px 0;
     }
 

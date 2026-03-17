@@ -7,10 +7,18 @@ import styles from './page.module.css';
 import Image from "next/legacy/image";
 import { useTranslations } from 'next-intl';
 
-export const metadata: Metadata = {
-    title: 'About Us | Mariot Store - Leading Kitchen Equipment Supplier',
-    description: 'Learn about Mariot Store, your trusted partner for commercial kitchen equipment in the UAE. With over 15 years of industry experience, we provide premium solutions and expert support.',
-};
+export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
+    const isArabic = locale === 'ar';
+    return {
+        title: isArabic ? 'من نحن | ماريوت - المورد الرائد لمعدات المطابخ' : 'About Us | Mariot Store - Leading Kitchen Equipment Supplier',
+        description: isArabic ? 'تعرف على ماريوت، شريكك الموثوق لمعدات المطابخ التجارية في الإمارات' : 'Learn about Mariot Store, your trusted partner for commercial kitchen equipment in the UAE. With over 15 years of industry experience, we provide premium solutions.',
+        openGraph: {
+            title: isArabic ? 'من نحن | معدات ماريوت للمطابخ' : 'About Us | Mariot Kitchen Equipment',
+            url: `https://mariotstore.com/${locale}/about`,
+            type: 'website',
+        }
+    };
+}
 import {
     MapPin,
     Mail,

@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Search, ShoppingCart, User, Coins, Menu, Globe, Phone, MessageCircle, HelpCircle, ChevronDown, X, Shield, Heart, Trophy } from 'lucide-react';
 import styles from './Header.module.css';
@@ -85,12 +84,11 @@ const Header = () => {
     const toggleLang = () => setIsLangOpen(!isLangOpen);
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-    const switchLocale = (newLocale: string) => {
+    const switchLocale = (newLocale: 'en' | 'ar') => {
         setIsLangOpen(false);
-        // Strip current locale prefix from path
+        // The locale-aware router handles locale prefixing automatically
         const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, '') || '/';
-        // Always include locale in URL
-        router.push(`/${newLocale}${pathWithoutLocale}`);
+        router.push(pathWithoutLocale, { locale: newLocale });
     };
 
     const handleSearch = (e?: React.FormEvent) => {
@@ -102,8 +100,8 @@ const Header = () => {
         }
     };
 
-    // Strip locale prefix for active link comparison
-    const cleanPath = pathname.replace(/^\/(en|ar)/, '') || '/';
+    // With locale-aware usePathname, pathname already excludes locale prefix
+    const cleanPath = pathname || '/';
     const isCategoriesPage = cleanPath === '/all-categories';
 
     return (

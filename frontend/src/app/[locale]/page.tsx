@@ -74,8 +74,30 @@ async function getHomeData(locale: string) {
 export default async function Home({ params: { locale } }: { params: { locale: string } }) {
     const data = await getHomeData(locale);
 
+    const organizationJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'Mariot Kitchen Equipment',
+        url: 'https://mariotstore.com',
+        logo: 'https://mariotstore.com/assets/mariot-logo.webp',
+        description: 'Best Kitchen Equipment Supplier in UAE. Premium quality kitchen equipment, coffee makers, and ice makers.',
+        contactPoint: {
+            '@type': 'ContactPoint',
+            telephone: '+971-4-288-2777',
+            contactType: 'customer service',
+            areaServed: 'AE',
+            availableLanguage: ['en', 'ar']
+        },
+        address: {
+            '@type': 'PostalAddress',
+            addressLocality: 'Dubai',
+            addressCountry: 'AE'
+        }
+    };
+
     return (
         <main>
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
             <Header />
             <Hero initialSlides={data.heroSlides} />
             <Reveal><HeroPosters initialPosters={data.heroPosters} /></Reveal>

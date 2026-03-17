@@ -111,7 +111,14 @@ const WeeklyDeals = ({ initialProducts = [] }: WeeklyDealsProps) => {
                         ) : (
                             products.map((prod) => (
                                 <div key={prod.id} className={styles.productWrapper}>
-                                    <ProductCardPromotion product={{ ...prod, price: Number(prod.offer_price) > 0 ? Number(prod.offer_price) : Number(prod.price), old_price: Number(prod.offer_price) > 0 ? Number(prod.price) : (Number(prod.old_price) || Number(prod.originalPrice) || 0) }} />
+                                    <ProductCardPromotion
+                                        product={{
+                                            ...prod,
+                                            price: Number(prod.offer_price) > 0 ? Number(prod.offer_price) : Number(prod.price),
+                                            old_price: Number(prod.offer_price) > 0 ? Number(prod.price) : (Number(prod.old_price) || Number(prod.originalPrice) || 0)
+                                        }}
+                                        showTimer={true}
+                                    />
                                 </div>
                             ))
                         )}

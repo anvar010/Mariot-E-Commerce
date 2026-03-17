@@ -1,6 +1,6 @@
 .weeklySection {
-    padding: 0;
-    margin-top: 0px;
+    padding: 20px 0;
+    margin-top: 0;
     background-color: #f9fafb;
 }
 
@@ -165,8 +165,8 @@
     flex: 1;
     display: flex;
     overflow-x: auto;
-    gap: 5px;
-    padding: 20px 10px;
+    gap: 2px;
+    padding: 20px 0;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     user-select: none;
@@ -177,10 +177,9 @@
 }
 
 .productWrapper {
-    flex: 0 0 auto;
-    width: 240px;
-    min-width: 240px;
-    max-width: 240px;
+    flex: 0 0 220px;
+    width: 220px;
+    min-width: 220px;
 }
 
 .dealCard {
