@@ -10,6 +10,7 @@ import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import { CATEGORIES_STRUCTURE } from '@/data/categories';
 import { stripHtml } from '@/utils/formatters';
+import { getAuthHeaders } from '@/utils/authHeaders';
 
 // Searchable Select Component
 const SearchableSelect = ({ label, name, options, value, onChange, placeholder = "Search..." }: any) => {
@@ -162,6 +163,10 @@ const AdminProducts = () => {
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', `${API_BASE_URL}/products/bulk-import`);
                 xhr.withCredentials = true;
+                const headers = getAuthHeaders() as Record<string, string>;
+                if (headers['Authorization']) {
+                    xhr.setRequestHeader('Authorization', headers['Authorization']);
+                }
 
                 // Track upload progress
                 xhr.upload.onprogress = (e) => {
@@ -217,7 +222,8 @@ const AdminProducts = () => {
         try {
             setExporting(true);
             const response = await fetch(`${API_BASE_URL}/admin/export/products`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
 
             if (!response.ok) throw new Error('Export failed');
@@ -310,7 +316,7 @@ const AdminProducts = () => {
 
     const fetchCategories = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/categories`, { credentials: "include" });
+            const res = await fetch(`${API_BASE_URL}/categories`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) setCategories(data.data);
         } catch (error) {
@@ -320,7 +326,7 @@ const AdminProducts = () => {
 
     const fetchBrands = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include" });
+            const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) setBrands(data.data);
         } catch (error) {
@@ -348,7 +354,7 @@ const AdminProducts = () => {
 
             params.append('t', String(Date.now()));
 
-            const res = await fetch(`${API_BASE_URL}/products?${params.toString()}`, { credentials: "include" });
+            const res = await fetch(`${API_BASE_URL}/products?${params.toString()}`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) {
                 setProducts(data.data);
@@ -501,6 +507,7 @@ const AdminProducts = () => {
             const res = await fetch(`${API_BASE_URL}/upload/image`, {
                 credentials: "include",
                 method: 'POST',
+                headers: getAuthHeaders(),
                 body: formDataUpload
             });
             const data = await res.json();
@@ -542,6 +549,7 @@ const AdminProducts = () => {
             const res = await fetch(`${API_BASE_URL}/upload/document`, {
                 credentials: "include",
                 method: 'POST',
+                headers: getAuthHeaders(),
                 body: formDataUpload
             });
             const data = await res.json();
@@ -717,6 +725,7 @@ const AdminProducts = () => {
                 credentials: "include",
                 method,
                 headers: {
+                    ...getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
@@ -844,6 +853,7 @@ const AdminProducts = () => {
                     credentials: "include",
                     method: 'POST',
                     headers: {
+                        ...getAuthHeaders(),
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ name: brand.name, image_url: brand.logo })
@@ -863,7 +873,8 @@ const AdminProducts = () => {
         try {
             const res = await fetch(`${API_BASE_URL}/products/${id}`, {
                 method: 'DELETE',
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success) {
@@ -896,7 +907,7 @@ const AdminProducts = () => {
             const res = await fetch(`${API_BASE_URL}/products/bulk-update`, {
                 method: 'PATCH',
                 credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ids: selectedIds,
                     data: bulkFormData
