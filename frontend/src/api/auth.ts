@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../config';
+import { getAuthHeaders } from '../utils/authHeaders';
 
 export const authApi = {
     async login(credentials: any) {
@@ -47,7 +48,8 @@ export const authApi = {
 
     async getMe() {
         const response = await fetch(`${API_BASE_URL}/auth/me`, {
-            credentials: "include"
+            credentials: "include",
+            headers: getAuthHeaders()
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Failed to fetch user');
@@ -59,6 +61,7 @@ export const authApi = {
             credentials: "include",
             method: 'PUT',
             headers: {
+                ...getAuthHeaders(),
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(userData)
