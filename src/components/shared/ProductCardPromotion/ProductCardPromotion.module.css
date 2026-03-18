@@ -432,7 +432,9 @@
 
     .productName {
         font-size: 13px;
-        min-height: 36px;
+        min-height: 54px;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
     }
 
     .brandLogoBox {

@@ -950,7 +950,7 @@
     }
 
     .userActions {
-        gap: 10px;
+        gap: 18px;
     }
 
     .searchSection {
@@ -973,7 +973,7 @@
     .cartIconWrapper svg,
     .userIcon,
     .mobileMenuBtn svg {
-        width: 22px;
-        height: 22px;
+        width: 25px;
+        height: 25px;
     }
 }

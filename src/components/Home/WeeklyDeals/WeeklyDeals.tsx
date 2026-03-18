@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 import styles from './WeeklyDeals.module.css';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Loader from '@/components/shared/Loader/Loader';
@@ -85,6 +86,9 @@ const WeeklyDeals = ({ initialProducts = [] }: WeeklyDealsProps) => {
             <div className={styles.container}>
                 <div className={styles.headerFlex}>
                     <h2 className={styles.title}>{t('title')}</h2>
+                    <Link href="/shop?weekly=true" className={styles.viewAll}>
+                        {t('viewAll')} <span>→</span>
+                    </Link>
                 </div>
                 <div className={styles.sliderWrapper}>
                     <div className={styles.navButtons}>

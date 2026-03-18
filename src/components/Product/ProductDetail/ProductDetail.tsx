@@ -615,9 +615,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                                 {getLocalizedField('short_description', 'short_description_ar') && (
                                     <div className={styles.shortDescriptionWrapper}>
-                                        <div className={`${styles.shortDescription} ${isShortDescExpanded ? styles.expanded : ''}`}>
-                                            {getLocalizedField('short_description', 'short_description_ar')}
-                                        </div>
+                                        <div
+                                            className={`${styles.shortDescription} ${isShortDescExpanded ? styles.expanded : ''}`}
+                                            dangerouslySetInnerHTML={{ __html: cleanShortcodes(getLocalizedField('short_description', 'short_description_ar')) }}
+                                        />
                                         {getLocalizedField('short_description', 'short_description_ar').length > 150 && (
                                             <button
                                                 className={styles.readMoreBtn}

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/navigation';
 import styles from './ShopLayout.module.css';
-import { Filter, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Filter, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import Loader from '@/components/shared/Loader/Loader';
@@ -60,6 +60,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const [loading, setLoading] = useState(initialProducts.length === 0);
     const [fetchingProducts, setFetchingProducts] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
+    const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [allCategories, setAllCategories] = useState<any[]>(initialCategories);
     const [totalProducts, setTotalProducts] = useState(initialTotal);
     const [expandedSections, setExpandedSections] = useState<string[]>([]);
@@ -397,7 +398,17 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             </div>
             <div className={styles.container}>
                 {/* Sidebar Filters */}
-                {renderSidebar()}
+                <div className={`${styles.sidebar} ${isMobileFilterOpen ? styles.sidebarOpen : ''}`}>
+                    <div className={styles.mobileFilterHeader}>
+                        <h3>{tc('filters')}</h3>
+                        <button onClick={() => setIsMobileFilterOpen(false)}>
+                            <X size={24} />
+                        </button>
+                    </div>
+                    {renderSidebar()}
+                </div>
+
+                {isMobileFilterOpen && <div className={styles.filterOverlay} onClick={() => setIsMobileFilterOpen(false)} />}
 
                 {/* Main Content */}
                 <main className={styles.content}>
@@ -449,9 +460,16 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                             {fetchingProducts && <span style={{ marginInlineStart: '10px', fontSize: '12px', color: '#666' }}> ({tc('updating')})</span>}
                         </span>
                         <div className={styles.sortContainer}>
+                            <button
+                                className={styles.mobileFilterToggle}
+                                onClick={() => setIsMobileFilterOpen(true)}
+                            >
+                                <Filter size={20} />
+                                <span>{tc("filters")}</span>
+                            </button>
                             <div className={styles.sortLabel}>
-                                <Filter size={20} fill="#333" />
-                                <span>{tc("sort")}</span>
+                                <Filter size={20} fill="#333" className={styles.desktopOnly} />
+                                <span className={styles.desktopOnly}>{tc("sort")}</span>
                             </div>
                             <div className={styles.sortDropdown} onClick={() => setIsSortOpen(!isSortOpen)}>
                                 <span>{getSortLabel(sortBy)}</span>
