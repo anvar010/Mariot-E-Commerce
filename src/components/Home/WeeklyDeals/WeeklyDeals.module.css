@@ -19,6 +19,12 @@
     border-bottom: 2px solid #e5e7eb;
 }
 
+.titleGroup {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
 .title {
     font-size: 22px;
     font-weight: 700;
@@ -27,6 +33,12 @@
     letter-spacing: -0.02em;
     font-family: 'Inter', -apple-system, sans-serif;
     text-transform: capitalize;
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 30px;
 }
 
 .sliderWrapper {
@@ -107,19 +119,62 @@
 }
 
 @media (max-width: 480px) {
+    .headerFlex {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 8px;
+    }
+
+    .headerActions {
+        width: auto;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .title {
+        font-size: 16px;
+        white-space: nowrap;
+    }
+
+    .viewAll {
+        font-size: 13px;
+    }
+
+    .navBtn {
+        width: 36px;
+        height: 36px;
+    }
+
     .dealsGrid {
-        gap: 2px;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 10px;
         padding: 10px 0;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .dealsGrid::-webkit-scrollbar {
+        display: none;
     }
 
     .productWrapper {
-        width: 180px;
+        flex: 0 0 calc(50vw - 25px);
+        width: calc(50vw - 25px);
     }
 }
 
 @media (max-width: 768px) {
     .container {
         padding: 0 20px;
+    }
+
+    .navButtons {
+        display: none;
     }
 }
 
@@ -286,10 +341,6 @@
     color: #0b8fa8;
 }
 
-.viewAll span {
-    font-size: 18px;
-    line-height: 1;
-}
 
 .cartBtn {
     display: flex;
