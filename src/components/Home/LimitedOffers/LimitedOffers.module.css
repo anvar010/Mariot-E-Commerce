@@ -210,13 +210,14 @@
     }
 
     .productGrid {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: calc(50% - 5px);
         gap: 10px;
         padding: 10px 0;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
         scrollbar-width: none;
     }
 
@@ -225,7 +226,7 @@
     }
 
     .productWrapper {
-        flex: 0 0 calc(50vw - 25px);
-        width: calc(50vw - 25px);
+        width: 100%;
+        scroll-snap-align: start;
     }
 }
