@@ -23,7 +23,8 @@ import {
     Mail,
     HelpCircle,
     Tag,
-    Upload
+    Upload,
+    Maximize2
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
@@ -72,6 +73,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [showPriceMatchModal, setShowPriceMatchModal] = useState(false);
     const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({ specs: true });
     const [isShortDescExpanded, setIsShortDescExpanded] = useState(false);
+    const [isFullScreen, setIsFullScreen] = useState(false);
 
     // Price Match Form State
     const [pmForm, setPmForm] = useState({
@@ -515,6 +517,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         alt={getLocalizedField('name', 'name_ar')}
                                         className={styles.mainImage}
                                     />
+                                    <button
+                                        className={styles.expandBtn}
+                                        onClick={() => setIsFullScreen(true)}
+                                        title={isArabic ? 'تكبير الصورة' : 'Expand Image'}
+                                    >
+                                        <Maximize2 size={20} />
+                                    </button>
                                 </div>
 
                                 <div className={styles.thumbnailsWrapper}>
@@ -1331,6 +1340,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                     </div>
                 )}
             </div>
+            {/* Fullscreen Image Overlay */}
+            {isFullScreen && (
+                <div className={styles.fullscreenOverlay} onClick={() => setIsFullScreen(false)}>
+                    <div className={styles.fullscreenContent} onClick={e => e.stopPropagation()}>
+                        <button className={styles.closeOverlayBtn} onClick={() => setIsFullScreen(false)}>
+                            <X size={32} />
+                        </button>
+                        <img
+                            src={images[currentImageIndex]}
+                            alt={getLocalizedField('name', 'name_ar')}
+                            className={styles.fullscreenImage}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
