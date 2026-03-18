@@ -209,8 +209,23 @@
         font-size: 13px;
     }
 
+    .productGrid {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 10px;
+        padding: 10px 0;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .productGrid::-webkit-scrollbar {
+        display: none;
+    }
+
     .productWrapper {
-        flex: 0 0 160px;
-        width: 160px;
+        flex: 0 0 calc(50vw - 25px);
+        width: calc(50vw - 25px);
     }
 }

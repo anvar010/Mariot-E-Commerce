@@ -387,11 +387,30 @@
     .container {
         padding: 0 20px;
     }
+
+    .navButtons {
+        display: none;
+    }
 }
 
 @media (max-width: 480px) {
     .title {
-        font-size: 22px;
+        font-size: 18px;
+    }
+
+    .dealsGrid {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 10px;
+        padding: 10px 0;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .dealsGrid::-webkit-scrollbar {
+        display: none;
     }
 
     .dealCard {
@@ -399,6 +418,8 @@
     }
 
     .productWrapper {
-        width: 180px;
+        flex: 0 0 calc(50vw - 25px);
+        width: calc(50vw - 25px);
+        min-width: 0;
     }
 }

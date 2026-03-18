@@ -7,7 +7,7 @@ import styles from './WeeklyDeals.module.css';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL } from '@/config';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface WeeklyDealsProps {
     initialProducts?: any[];
@@ -15,6 +15,8 @@ interface WeeklyDealsProps {
 
 const WeeklyDeals = ({ initialProducts = [] }: WeeklyDealsProps) => {
     const t = useTranslations('weeklyDeals');
+    const locale = useLocale();
+    const isRtl = locale === 'ar';
     const [products, setProducts] = useState<any[]>(initialProducts);
     const [loading, setLoading] = useState(initialProducts.length === 0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -85,10 +87,14 @@ const WeeklyDeals = ({ initialProducts = [] }: WeeklyDealsProps) => {
         <section id="weekly-deals" className={styles.weeklySection}>
             <div className={styles.container}>
                 <div className={styles.headerFlex}>
-                    <h2 className={styles.title}>{t('title')}</h2>
-                    <Link href="/shop?weekly=true" className={styles.viewAll}>
-                        {t('viewAll')} <span>→</span>
-                    </Link>
+                    <div className={styles.titleGroup}>
+                        <h2 className={styles.title}>{t('title')}</h2>
+                    </div>
+                    <div className={styles.headerActions}>
+                        <Link href="/shop?weekly=true" className={styles.viewAll}>
+                            {t('viewAll')} <span>{isRtl ? '←' : '→'}</span>
+                        </Link>
+                    </div>
                 </div>
                 <div className={styles.sliderWrapper}>
                     <div className={styles.navButtons}>
