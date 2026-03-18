@@ -88,48 +88,61 @@ class Product {
             params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
         }
 
-        if (whereClauses.length > 0) {
-            query += ' WHERE ' + whereClauses.join(' AND ');
+        try {
+            if (whereClauses.length > 0) {
+                query += ' WHERE ' + whereClauses.join(' AND ');
+            }
+
+            if (sort) {
+                const allowedSorts = {
+                    'price_asc': 'p.price ASC',
+                    'price_desc': 'p.price DESC',
+                    'newest': 'p.created_at DESC',
+                    'name_asc': 'p.name ASC'
+                };
+                query += ` ORDER BY ${allowedSorts[sort] || 'p.created_at DESC'}`;
+            } else {
+                query += ' ORDER BY p.created_at DESC';
+            }
+
+            // Create a copy of params for the count query before adding limit/offset
+            const countParams = [...params];
+
+            // Inline LIMIT/OFFSET as safe integers to avoid "Incorrect arguments to mysqld_stmt_execute" on Aiven MySQL 8.x
+            const safeLimit = parseInt(limit) || 12;
+            const safeOffset = parseInt(offset) || 0;
+            query += ` LIMIT ${safeLimit} OFFSET ${safeOffset}`;
+
+            // Use .query instead of .execute for fetching data (it is sometimes more robust with placeholders in complex queries)
+            const [rows] = await db.query(query, params);
+
+            // Fetch images for these products
+            if (rows.length > 0) {
+                const productIds = rows.map(p => p.id);
+                const [images] = await db.query(
+                    `SELECT * FROM product_images WHERE product_id IN (${productIds.join(',')})`
+                );
+
+                rows.forEach(p => {
+                    p.images = images.filter(img => img.product_id === p.id);
+                });
+            }
+
+            // Count query
+            let countQuery = 'SELECT COUNT(*) as total FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN brands b ON p.brand_id = b.id';
+            if (whereClauses.length > 0) {
+                countQuery += ' WHERE ' + whereClauses.join(' AND ');
+            }
+            const [countRows] = await db.query(countQuery, countParams);
+            const total = countRows[0].total;
+
+            return { products: rows, total };
+        } catch (error) {
+            console.error('DATABASE ERROR IN Product.findAll:', error);
+            console.error('QUERY:', query);
+            console.error('PARAMS:', JSON.stringify(params));
+            throw error;
         }
-
-        if (sort) {
-            const allowedSorts = {
-                'price_asc': 'p.price ASC',
-                'price_desc': 'p.price DESC',
-                'newest': 'p.created_at DESC',
-                'name_asc': 'p.name ASC'
-            };
-            query += ` ORDER BY ${allowedSorts[sort] || 'p.created_at DESC'}`;
-        } else {
-            query += ' ORDER BY p.created_at DESC';
-        }
-
-        query += ' LIMIT ? OFFSET ?';
-        params.push(parseInt(limit), parseInt(offset));
-
-        const [rows] = await db.execute(query, params);
-
-        // Fetch images for these products to ensure frontend gets the gallery
-        if (rows.length > 0) {
-            const productIds = rows.map(p => p.id);
-            const [images] = await db.execute(
-                `SELECT * FROM product_images WHERE product_id IN (${productIds.join(',')})`
-            );
-
-            rows.forEach(p => {
-                p.images = images.filter(img => img.product_id === p.id);
-            });
-        }
-
-        // Filter the count query too
-        let countQuery = 'SELECT COUNT(*) as total FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN brands b ON p.brand_id = b.id';
-        if (whereClauses.length > 0) {
-            countQuery += ' WHERE ' + whereClauses.join(' AND ');
-        }
-        const [countRows] = await db.execute(countQuery, params.slice(0, -2)); // Remove limit and offset params
-        const total = countRows[0].total;
-
-        return { products: rows, total };
     }
 
     static async findById(id) {
@@ -203,7 +216,7 @@ class Product {
             const is_featured = isTrue(data.is_featured) ? 1 : 0;
             let is_weekly_deal = isTrue(data.is_weekly_deal) ? 1 : 0;
             let is_limited_offer = isTrue(data.is_limited_offer) ? 1 : 0;
-            const is_daily_offer = isTrue(data.is_daily_offer) ? 1 : 0;
+            const is_best_seller = isTrue(data.is_best_seller) ? 1 : 0;
 
             const status = data.status || 'active';
             const product_group = data.product_group || data.heading || null;
@@ -233,6 +246,7 @@ class Product {
                 is_weekly_deal,
                 is_limited_offer,
                 is_daily_offer,
+                is_best_seller,
                 status,
                 product_group,
                 sub_category,
@@ -245,7 +259,7 @@ class Product {
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, track_inventory) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, track_inventory) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
