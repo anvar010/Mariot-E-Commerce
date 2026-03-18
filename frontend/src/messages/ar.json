@@ -541,6 +541,7 @@
     },
     "weeklyDeals": {
         "title": "عروض أسبوعية",
+        "viewAll": "عرض الكل",
         "noDeals": "لا توجد عروض أسبوعية متاحة حالياً."
     },
     "limitedOffers": {

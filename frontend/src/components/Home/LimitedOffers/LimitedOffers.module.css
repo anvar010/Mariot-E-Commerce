@@ -1,26 +1,28 @@
 .offersSection {
-    width: 100%;
-    background-color: #f0f7f0;
-    padding-bottom: 20px;
-}
-
-.headerBar {
-    background-color: #ffffff;
-    padding: 20px 0;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #f1f5f9;
+    padding: 10px 0 0 0;
+    background-color: #f9fafb;
 }
 
 .container {
     width: 100%;
-    margin: 0 auto;
-    padding: 0 40px;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 60px;
 }
 
-.headerContent {
+.headerFlex {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.titleGroup {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
 .title {
@@ -30,21 +32,22 @@
     margin: 0;
     letter-spacing: -0.02em;
     font-family: 'Inter', -apple-system, sans-serif;
+    text-transform: capitalize;
 }
 
-.timerGroup {
+.headerActions {
     display: flex;
     align-items: center;
     gap: 30px;
 }
 
 .mainTimer {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: #ef4444;
     font-family: 'Inter', -apple-system, sans-serif;
     background: #fef2f2;
-    padding: 6px 14px;
+    padding: 4px 12px;
     border-radius: 100px;
     border: 1px solid #fee2e2;
     letter-spacing: 0.05em;
@@ -57,272 +60,157 @@
     gap: 6px;
     font-size: 15px;
     font-weight: 700;
-    color: #1a202c;
+    color: #086c7e;
     text-decoration: none;
     font-family: 'Inter', -apple-system, sans-serif;
     transition: all 0.2s ease;
-    border-bottom: 2px solid #e2e8f0;
-    padding-bottom: 2px;
-}
-
-.viewAll span {
-    font-size: 18px;
-    line-height: 1;
-    transition: transform 0.2s ease;
 }
 
 .viewAll:hover {
-    color: #3182ce;
-    border-bottom-color: #3182ce;
+    color: #0b8fa8;
 }
 
-.viewAll:hover span {
-    transform: translateX(4px);
+.sliderWrapper {
+    position: relative;
+    width: 100%;
+}
+
+.navButtons {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 10;
+    padding: 0 10px;
+}
+
+.navBtn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #1a1a1a;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    pointer-events: auto;
+}
+
+.navBtn:hover {
+    background-color: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #ffffff;
+    transform: scale(1.1);
+}
+
+.prevBtn {
+    margin-left: -20px;
+}
+
+.nextBtn {
+    margin-right: -20px;
 }
 
 .productGrid {
     display: flex;
     flex-wrap: nowrap;
-    /* Strictly prevents any wrapping to a second row */
+    overflow-x: auto;
     gap: 2px;
     padding: 20px 0;
-    overflow: hidden;
-    /* Clips any products that exceed screen width */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    user-select: none;
+    scroll-behavior: smooth;
+}
+
+.productGrid::-webkit-scrollbar {
+    display: none;
 }
 
 .productWrapper {
-    flex: 0 0 calc((100% - (6 * 2px)) / 7);
-    /* Perfectly fit 7 cards in one row */
-    width: calc((100% - (6 * 2px)) / 7);
-    min-width: 140px;
+    flex: 0 0 220px;
+    width: 220px;
+}
+
+/* System Width (Desktop) Fix: No swiping, wrapped grid */
+@media (min-width: 1025px) {
+    .navButtons {
+        display: none;
+    }
+
+    .productGrid {
+        flex-wrap: nowrap;
+        overflow-x: hidden;
+        cursor: default !important;
+        gap: 12px;
+        justify-content: flex-start;
+    }
+
+    .productWrapper {
+        flex: 0 0 calc((100% - (6 * 12px)) / 7);
+        /* 7 items per row */
+        width: calc((100% - (6 * 12px)) / 7);
+    }
+}
+
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 30px;
+    }
 }
 
 @media (max-width: 768px) {
     .container {
-        padding: 0 15px;
+        padding: 0 20px;
     }
 
-    .title {
-        font-size: 18px;
+    .navButtons {
+        display: none;
     }
 
-    .mainTimer {
-        font-size: 16px;
-    }
-
-    .viewAll {
-        font-size: 14px;
-    }
-
-    .timerGroup {
+    .headerActions {
         gap: 15px;
     }
 }
 
 @media (max-width: 480px) {
-    .headerContent {
+    .headerFlex {
         flex-direction: row;
-        flex-wrap: nowrap;
+        justify-content: space-between;
+        align-items: center;
         gap: 10px;
+        padding-bottom: 8px;
     }
 
-    .title {
-        font-size: 15px;
-        flex-shrink: 1;
-    }
-
-    .timerGroup {
-        gap: 8px;
+    .headerActions {
+        width: auto;
+        gap: 12px;
         flex-shrink: 0;
     }
 
+    .title {
+        font-size: 16px;
+        white-space: nowrap;
+    }
+
     .mainTimer {
-        font-size: 13px;
+        font-size: 11px;
+        padding: 2px 8px;
     }
 
     .viewAll {
-        font-size: 12px;
-    }
-
-    .productGrid {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 5px;
-        padding: 10px 0;
-        overflow: hidden;
+        font-size: 13px;
     }
 
     .productWrapper {
         flex: 0 0 160px;
-        /* Mobile width */
         width: 160px;
     }
-}
-
-.brandBox {
-    margin-top: 10px;
-    margin-bottom: 12px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-}
-
-.brandBox img {
-    max-height: 100%;
-    max-width: 100px;
-    object-fit: contain;
-    mix-blend-mode: multiply;
-}
-
-.productCard {
-    background-color: #fff;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-@media (hover: hover) {
-    .productCard:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-}
-
-.imageBox {
-    width: 100%;
-    aspect-ratio: 1;
-    overflow: hidden;
-    margin-bottom: 15px;
-}
-
-.imageBox img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.cardHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.badge {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 4px;
-    text-transform: uppercase;
-}
-
-.seller {
-    background-color: #3b82f6;
-    color: #fff;
-}
-
-.discountBadge {
-    background-color: #ef4444;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 4px;
-}
-
-.stockStatus {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #10b981;
-    margin-bottom: 8px;
-}
-
-.sku {
-    font-size: 12px;
-    color: #6b7280;
-    margin-bottom: 4px;
-}
-
-.description {
-    font-size: 14px;
-    color: #111827;
-    font-weight: 500;
-    margin-bottom: 12px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    line-clamp: 2;
-    overflow: hidden;
-}
-
-.priceBox {
-    margin-top: auto;
-}
-
-.currentPrice {
-    font-size: 18px;
-    font-weight: 700;
-    color: #111827;
-}
-
-.priceFooter {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 2px;
-}
-
-.oldPrice {
-    font-size: 13px;
-    color: #9ca3af;
-    text-decoration: line-through;
-}
-
-.discountText {
-    font-size: 12px;
-    color: #ef4444;
-    font-weight: 600;
-}
-
-.actionButtons {
-    display: flex;
-    gap: 8px;
-    margin-top: 15px;
-}
-
-.whatsappBtn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    background-color: #25d366;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.cartBtn {
-    width: 40px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #003366;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
 }

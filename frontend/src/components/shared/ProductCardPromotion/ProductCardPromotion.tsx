@@ -165,17 +165,14 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                         objectFit="contain"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                     />
-                    {showTimer && (() => {
-                        const t = activeTimer || { hours: 0, minutes: 0, seconds: 0 };
-                        return (
-                            <div className={styles.timerWrapper}>
-                                <Clock size={16} color="#ff3b30" />
-                                <div className={styles.timer}>
-                                    {formatTime(t.hours)}h : {formatTime(t.minutes)}m : {formatTime(t.seconds)}s
-                                </div>
+                    {showTimer && activeTimer && (
+                        <div className={styles.timerWrapper}>
+                            <Clock size={16} color="#ff3b30" />
+                            <div className={styles.timer}>
+                                {formatTime(activeTimer.hours)}h : {formatTime(activeTimer.minutes)}m : {formatTime(activeTimer.seconds)}s
                             </div>
-                        );
-                    })()}
+                        </div>
+                    )}
                 </div>
             </Link>
 

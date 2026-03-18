@@ -541,6 +541,7 @@
     },
     "weeklyDeals": {
         "title": "Weekly Deals",
+        "viewAll": "View All",
         "noDeals": "No weekly deals available at the moment."
     },
     "limitedOffers": {
