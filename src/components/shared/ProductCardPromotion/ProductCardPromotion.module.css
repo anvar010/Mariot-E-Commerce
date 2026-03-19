@@ -363,7 +363,7 @@
     }
 
     .imageContainer {
-        height: 150px;
+        height: 220px;
         margin-bottom: 12px;
     }
 
@@ -425,8 +425,8 @@
     }
 
     .imageContainer {
-        height: 120px;
-        padding: 12px;
+        height: 180px;
+        padding: 8px;
         border-radius: 12px;
     }
 

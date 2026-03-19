@@ -296,7 +296,7 @@
     }
 
     .productImg {
-        height: 180px;
+        height: 220px;
     }
 
     .modelName {
@@ -358,8 +358,8 @@
     }
 
     .productImg {
-        height: 140px;
-        padding: 6px;
+        height: 180px;
+        padding: 4px;
     }
 
     .badge {
