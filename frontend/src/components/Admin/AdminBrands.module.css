@@ -68,6 +68,26 @@
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
 }
 
+.bulkDeleteBtn {
+    background-color: #ffffff;
+    color: #ef4444;
+    padding: 8px 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    border: 1px solid #fee2e2;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bulkDeleteBtn:hover {
+    background-color: #fef2f2;
+    border-color: #ef4444;
+}
+
 .filtersWrapper {
     background-color: #ffffff;
     padding: 16px;
