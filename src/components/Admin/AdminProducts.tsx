@@ -900,6 +900,36 @@ const AdminProducts = () => {
         );
     };
 
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+        if (!confirm(`Are you sure you want to delete ${selectedIds.length} products? This cannot be undone.`)) return;
+        
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/products/bulk-delete`, {
+                method: 'DELETE',
+                credentials: "include",
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: selectedIds })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showNotification(`Successfully deleted ${selectedIds.length} products`);
+                setSelectedIds([]);
+                fetchProducts();
+            } else {
+                showNotification(data.message || 'Bulk delete failed', 'error');
+            }
+        } catch (error) {
+            showNotification('An error occurred during bulk delete', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleBulkUpdate = async () => {
         if (selectedIds.length === 0) return;
         setBulkUpdating(true);
@@ -944,46 +974,54 @@ const AdminProducts = () => {
                         <p className={styles.subtitle}>Manage your inventory and add new products to the catalog.</p>
                     </div>
 
-                    <button className={styles.addBtn} onClick={() => {
-                        setEditingId(null);
-                        setFormData({
-                            name: '',
-                            name_ar: '',
-                            model: '',
-                            youtube_video_links: [''],
-                            featured_video_index: 0,
-                            description: '',
-                            description_ar: '',
-                            short_description: '',
-                            short_description_ar: '',
-                            specifications: '',
-                            price: '',
-                            discount_percentage: '0',
-                            offer_price: '',
-                            stock_quantity: '',
-                            category_id: categories.length > 0 ? String(categories[0].id) : '1',
-                            brand_id: brands.length > 0 ? String(brands[0].id) : '1',
-                            product_group: '',
-                            sub_category: '',
-                            image_url: '/assets/placeholder-image.webp',
-                            additional_images: ['', '', ''],
-                            is_weekly_deal: false,
-                            is_limited_offer: false,
-                            is_featured: false,
-                            is_daily_offer: false,
-                            is_best_seller: false,
-                            resources: [{ name: '', url: '' }],
-                            status: 'active',
-                            offer_start: '',
-                            offer_end: '',
-                            track_inventory: false
-                        });
-                        setActiveTab('basic');
-                        setIsModalOpen(true);
-                    }}>
-                        <Plus size={20} />
-                        <span>Add New Product</span>
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {selectedIds.length > 0 && (
+                            <button className={styles.bulkDeleteBtn} onClick={handleBulkDelete}>
+                                <Trash2 size={18} />
+                                <span>Delete ({selectedIds.length})</span>
+                            </button>
+                        )}
+                        <button className={styles.addBtn} onClick={() => {
+                            setEditingId(null);
+                            setFormData({
+                                name: '',
+                                name_ar: '',
+                                model: '',
+                                youtube_video_links: [''],
+                                featured_video_index: 0,
+                                description: '',
+                                description_ar: '',
+                                short_description: '',
+                                short_description_ar: '',
+                                specifications: '',
+                                price: '',
+                                discount_percentage: '0',
+                                offer_price: '',
+                                stock_quantity: '',
+                                category_id: categories.length > 0 ? String(categories[0].id) : '1',
+                                brand_id: brands.length > 0 ? String(brands[0].id) : '1',
+                                product_group: '',
+                                sub_category: '',
+                                image_url: '/assets/placeholder-image.webp',
+                                additional_images: ['', '', ''],
+                                is_weekly_deal: false,
+                                is_limited_offer: false,
+                                is_featured: false,
+                                is_daily_offer: false,
+                                is_best_seller: false,
+                                resources: [{ name: '', url: '' }],
+                                status: 'active',
+                                offer_start: '',
+                                offer_end: '',
+                                track_inventory: false
+                            });
+                            setActiveTab('basic');
+                            setIsModalOpen(true);
+                        }}>
+                            <Plus size={20} />
+                            <span>Add New Product</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div className={styles.headerActions}>
@@ -1215,6 +1253,10 @@ const AdminProducts = () => {
                             <button className={styles.bulkUpdateBtn} onClick={() => setIsBulkModalOpen(true)}>
                                 <BarChart3 size={16} />
                                 Set Offer Duration
+                            </button>
+                            <button className={styles.bulkDeleteStickyBtn} onClick={handleBulkDelete}>
+                                <Trash2 size={16} />
+                                Delete Selected
                             </button>
                         </div>
                     </div>

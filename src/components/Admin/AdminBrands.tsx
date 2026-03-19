@@ -198,6 +198,35 @@ const AdminBrands = () => {
         }
     };
 
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+        if (!confirm(`Are you sure you want to delete ${selectedIds.length} brands?`)) return;
+        
+        try {
+            setLoading(true);
+            const res = await fetch(`${API_BASE_URL}/brands`, {
+                method: 'DELETE',
+                credentials: "include",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: selectedIds })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showNotification(`Successfully deleted ${selectedIds.length} brands`);
+                setSelectedIds([]);
+                fetchBrands();
+            } else {
+                showNotification(data.message || 'Bulk delete failed', 'error');
+            }
+        } catch (error) {
+            showNotification('An error occurred during bulk delete', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const toggleSelectAll = () => {
         if (selectedIds.length === brands.length) {
             setSelectedIds([]);
@@ -264,6 +293,12 @@ const AdminBrands = () => {
                     <p>Manage your collection of partner brands and manufacturers.</p>
                 </div>
                 <div className={styles.headerActions}>
+                    {selectedIds.length > 0 && (
+                        <button className={styles.bulkDeleteBtn} onClick={handleBulkDelete}>
+                            <Trash2 size={18} />
+                            <span>Delete ({selectedIds.length})</span>
+                        </button>
+                    )}
                     <button className={styles.addBtn} onClick={() => {
                         setEditingId(null);
                         handleCloseModal();

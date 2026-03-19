@@ -103,6 +103,26 @@
     box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
 }
 
+.bulkDeleteBtn {
+    background-color: #ffffff;
+    color: #ef4444;
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    border: 1px solid #fee2e2;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bulkDeleteBtn:hover {
+    background-color: #fef2f2;
+    border-color: #ef4444;
+}
+
 .filtersWrapper {
     background-color: #ffffff;
     padding: 14px 20px;
@@ -1619,6 +1639,26 @@
 
 .bulkUpdateBtn:hover {
     background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.bulkDeleteStickyBtn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bulkDeleteStickyBtn:hover {
+    background: #dc2626;
     transform: translateY(-1px);
 }
 
