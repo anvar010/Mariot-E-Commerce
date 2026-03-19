@@ -38,6 +38,12 @@ import ProductCardPromotion from '@/components/shared/ProductCardPromotion/Produ
 import Link from 'next/link';
 import { MessageSquare, Phone } from 'lucide-react';
 
+// Swiper imports
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+
 interface ProductDetailProps {
     id: string;
 }
@@ -74,6 +80,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({ specs: true });
     const [isShortDescExpanded, setIsShortDescExpanded] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
+
+    const mainSwiperRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (mainSwiperRef.current && mainSwiperRef.current.activeIndex !== currentImageIndex) {
+            mainSwiperRef.current.slideTo(currentImageIndex);
+        }
+    }, [currentImageIndex]);
 
     // Price Match Form State
     const [pmForm, setPmForm] = useState({
@@ -512,11 +526,30 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 </button>
 
                                 <div className={styles.mainImageWrapper}>
-                                    <img
-                                        src={images[currentImageIndex]}
-                                        alt={getLocalizedField('name', 'name_ar')}
-                                        className={styles.mainImage}
-                                    />
+                                    <Swiper
+                                        onSwiper={(swiper: any) => (mainSwiperRef.current = swiper)}
+                                        spaceBetween={10}
+                                        pagination={{
+                                            clickable: true,
+                                            el: `.${styles.swiperPagination}`,
+                                            bulletClass: styles.swiperBullet,
+                                            bulletActiveClass: styles.swiperBulletActive,
+                                        }}
+                                        modules={[Pagination]}
+                                        className={styles.mainSwiper}
+                                        onSlideChange={(swiper: any) => setCurrentImageIndex(swiper.activeIndex)}
+                                        initialSlide={currentImageIndex}
+                                    >
+                                        {images.map((img: string, idx: number) => (
+                                            <SwiperSlide key={idx} className={styles.mainSlide}>
+                                                <img
+                                                    src={img}
+                                                    alt={`${getLocalizedField('name', 'name_ar')} - ${idx + 1}`}
+                                                    className={styles.mainImage}
+                                                />
+                                            </SwiperSlide>
+                                        ))}
+                                    </Swiper>
                                     <button
                                         className={styles.expandBtn}
                                         onClick={() => setIsFullScreen(true)}
@@ -524,6 +557,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     >
                                         <Maximize2 size={20} />
                                     </button>
+                                    {/* Custom dots container, positioned beneath the image track */}
+                                    <div className={styles.swiperPagination}></div>
                                 </div>
 
                                 <div className={styles.thumbnailsWrapper}>
