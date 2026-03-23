@@ -47,9 +47,6 @@ export default function ProductPage({ params }: { params: { slug: string | strin
     const slugArray = Array.isArray(params.slug) ? params.slug : [params.slug];
     const slug = slugArray.map(s => decodeURIComponent(s)).join('/');
 
-    console.log("DEBUG SSR ProductPage params.slug:", params.slug);
-    console.log("DEBUG SSR ProductPage decoded slug:", slug);
-
     return (
         <main>
             <Header />
