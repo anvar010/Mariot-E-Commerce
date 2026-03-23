@@ -1,5 +1,5 @@
 const express = require('express');
-const { getProducts, getProduct, createProduct, updateProduct, deleteProduct, bulkImport, bulkUpdateProducts, deleteProducts } = require('../controllers/product.controller');
+const { getProducts, getProduct, createProduct, updateProduct, deleteProduct, bulkImport, bulkUpdateProducts, deleteProducts, getSuggestions } = require('../controllers/product.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 const multer = require('multer');
 const path = require('path');
@@ -16,6 +16,8 @@ const upload = multer({ storage });
 router.route('/')
     .get(getProducts)
     .post(protect, authorize('admin'), createProduct);
+
+router.get('/suggestions', getSuggestions);
 
 router.post('/bulk-import', protect, authorize('admin'), upload.single('file'), bulkImport);
 router.patch('/bulk-update', protect, authorize('admin'), bulkUpdateProducts);
