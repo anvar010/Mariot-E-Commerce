@@ -166,7 +166,7 @@
     right: 0;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .quotationPopup {
         width: 100%;
         inset-inline-end: 0;

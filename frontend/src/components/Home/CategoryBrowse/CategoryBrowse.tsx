@@ -6,6 +6,7 @@ import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const categories = [
     { id: 1, name: "Coffee Makers", slug: "coffee-makers", image: "/assets/product_images/coffeemakers.webp" },
@@ -66,16 +67,28 @@ const CategoryBrowse = () => {
 
     useEffect(() => {
         const handler = checkScroll();
-        if (scrollRef.current) {
+        const el = scrollRef.current;
+        
+        if (el) {
             window.requestAnimationFrame(() => {
                 handler();
             });
-        }
+            
+            // Mouse wheel to horizontal scroll conversion
+            const handleWheel = (e: WheelEvent) => {
+                if (e.deltaY !== 0) {
+                    e.preventDefault();
+                    el.scrollLeft += e.deltaY * 0.8; // Slightly Dampened for smoothness
+                }
+            };
 
-        const el = scrollRef.current;
-        if (el) {
             el.addEventListener('scroll', handler, { passive: true });
-            return () => el.removeEventListener('scroll', handler);
+            el.addEventListener('wheel', handleWheel, { passive: false });
+            
+            return () => {
+                el.removeEventListener('scroll', handler);
+                el.removeEventListener('wheel', handleWheel);
+            };
         }
     }, [isRtl]);
 
@@ -120,7 +133,13 @@ const CategoryBrowse = () => {
     return (
         <section className={styles.categorySection} id="category-browse">
             <div className={styles.container}>
-                <div className={styles.sectionHeader}>
+                <motion.div 
+                    className={styles.sectionHeader}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                >
                     <div className={styles.sectionHeaderLeft}>
                         <span className={styles.sectionTag}>{tc("explore-tag")}</span>
                         <h2 className={styles.sectionTitle}>{tc("browse-by-category")}</h2>
@@ -132,23 +151,23 @@ const CategoryBrowse = () => {
                             {isRtl ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
                         </Link>
                         <div className={styles.navBtns}>
-                            <button
+                            <motion.button
                                 className={`${styles.navBtn} ${!canScrollLeft ? styles.navBtnDisabled : ''}`}
                                 onClick={() => scroll('left')}
                                 disabled={!canScrollLeft}
                             >
                                 <ChevronLeft size={20} />
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button
                                 className={`${styles.navBtn} ${!canScrollRight ? styles.navBtnDisabled : ''}`}
                                 onClick={() => scroll('right')}
                                 disabled={!canScrollRight}
                             >
                                 <ChevronRight size={20} />
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 <div className={styles.sliderWrapper}>
                     <div
@@ -161,36 +180,62 @@ const CategoryBrowse = () => {
                         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
                     >
                         {categories.map((category, index) => (
-                            <Link
+                            <motion.div
                                 key={category.id}
-                                href={`/shop?category=${category.slug}`}
-                                className={styles.categoryCard}
-                                style={{ animationDelay: `${index * 0.04}s` }}
+                                className={styles.categoryCardWrapper}
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.5, delay: index * 0.05 }}
                             >
-                                <div className={styles.imageBox}>
-                                    <Image
-                                        src={category.image}
-                                        alt={t.has(category.slug) ? t(category.slug) : category.name}
-                                        fill
-                                        sizes="(max-width: 768px) 150px, 120px"
-                                        style={{ objectFit: 'contain' }}
-                                        className={styles.categoryImg}
-                                    />
-                                    <div className={styles.imageOverlay}></div>
-                                </div>
-                                <div className={styles.cardBottom}>
-                                    <span className={styles.categoryName}>{t(category.slug)}</span>
-                                    <span className={styles.categoryArrow}>
-                                        {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
-                                    </span>
-                                </div>
-                            </Link>
+                                <Link
+                                    href={`/shop?category=${category.slug}`}
+                                    className={styles.categoryCard}
+                                >
+                                    <div className={styles.imageBox}>
+                                        <Image
+                                            src={category.image}
+                                            alt={t.has(category.slug) ? t(category.slug) : category.name}
+                                            fill
+                                            sizes="(max-width: 768px) 150px, 120px"
+                                            style={{ objectFit: 'contain', zIndex: 10 }}
+                                            className={styles.categoryImg}
+                                        />
+                                        <div className={styles.imageOverlay}>
+                                            {category.name.split(' ')[0]}
+                                        </div>
+                                    </div>
+                                    <div className={styles.cardBottom}>
+                                        <span className={styles.categoryName}>
+                                            {t.has(category.slug) ? t(category.slug) : category.name}
+                                        </span>
+                                        <span className={styles.categoryArrow}>
+                                            {isRtl ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
+                                        </span>
+                                    </div>
+                                </Link>
+                            </motion.div>
                         ))}
                     </div>
 
-                    {/* Fade edges */}
-                    {canScrollLeft && <div className={styles.fadeLeft} />}
-                    {canScrollRight && <div className={styles.fadeRight} />}
+                    <AnimatePresence>
+                        {canScrollLeft && (
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className={styles.fadeLeft} 
+                            />
+                        )}
+                        {canScrollRight && (
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className={styles.fadeRight} 
+                            />
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
         </section>

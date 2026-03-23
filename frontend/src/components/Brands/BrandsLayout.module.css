@@ -301,7 +301,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .brandsPage {
         padding: 20px 15px;
     }
@@ -393,7 +393,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .skeletonCard {
         border-radius: 8px;
     }

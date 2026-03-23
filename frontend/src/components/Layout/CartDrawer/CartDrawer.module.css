@@ -801,7 +801,7 @@
     font-weight: 600;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .drawer {
         width: 100%;
         inset-inline-end: -100%;
@@ -930,7 +930,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .brandsPopup {
         position: fixed;
         bottom: 0;

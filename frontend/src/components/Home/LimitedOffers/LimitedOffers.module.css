@@ -122,7 +122,7 @@
     display: flex;
     flex-wrap: nowrap;
     overflow-x: auto;
-    gap: 2px;
+    gap: 0px;
     padding: 20px 0;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -149,14 +149,14 @@
         flex-wrap: nowrap;
         overflow-x: hidden;
         cursor: default !important;
-        gap: 12px;
+        gap: 0px;
         justify-content: flex-start;
     }
 
     .productWrapper {
-        flex: 0 0 calc((100% - (6 * 12px)) / 7);
+        flex: 0 0 calc(100% / 7);
         /* 7 items per row */
-        width: calc((100% - (6 * 12px)) / 7);
+        width: calc(100% / 7);
     }
 }
 
@@ -180,7 +180,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .headerFlex {
         flex-direction: row;
         justify-content: space-between;
@@ -212,8 +212,8 @@
     .productGrid {
         display: grid;
         grid-auto-flow: column;
-        grid-auto-columns: calc(50% - 5px);
-        gap: 10px;
+        grid-auto-columns: 50%;
+        gap: 0px;
         padding: 10px 0;
         overflow-x: auto;
         overscroll-behavior-x: contain;

@@ -28,7 +28,7 @@
     display: grid;
     grid-template-columns: 1.1fr 1fr;
     gap: 40px;
-    margin-bottom: 50px;
+    margin-bottom: 12px;
 }
 
 /* Gallery */
@@ -531,30 +531,7 @@
     border-top: 1px solid #eaeaea;
 }
 
-.descriptionSection {
-    margin-bottom: 30px;
-}
 
-.descriptionSection h2 {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    color: #1a1a1a;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.descriptionSection h2::before {
-    content: '';
-    display: inline-block;
-    width: 4px;
-    height: 18px;
-    background: #e31e24;
-    border-radius: 2px;
-}
 
 .videoAndDescription {
     display: grid;
@@ -648,12 +625,8 @@
 
 .descriptionText {
     font-size: 15px;
-    color: #555;
+    color: #475569;
     line-height: 1.8;
-    background: #f9f9f9;
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #f0f0f0;
 }
 
 .descriptionText ul {
@@ -673,16 +646,29 @@
 
 .fullWidthDescription {
     width: 100%;
-    margin-top: 40px;
-    margin-bottom: 20px;
+    margin-top: 0px;
+    margin-bottom: 12px;
 }
 
 .splitLayout {
     display: grid;
     grid-template-columns: 1fr 700px;
     gap: 40px;
-    margin-top: 30px;
+    margin-top: 0;
     align-items: start;
+}
+
+.fullWidthLayout {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+}
+
+.noBottomGap {
+    margin-bottom: 12px !important;
+}
+
+.fullWidthLayout {
+    margin-top: 0 !important;
 }
 
 .accordionsColumn {
@@ -1010,7 +996,7 @@
 .modal {
     background: #fdfdfd;
     width: 100%;
-    max-width: 480px;
+    max-width: 576px;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
@@ -1507,6 +1493,47 @@
     flex-direction: column;
 }
 
+@media (max-width: 1024px) {
+    .relatedGrid {
+        margin: 0 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .relatedGrid {
+        margin: 0;
+        gap: 8px;
+    }
+
+    .relatedGrid>div {
+        flex: 0 0 200px;
+    }
+
+    .sliderArrow {
+        display: none !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .relatedGrid {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: calc(50% - 5px);
+        gap: 10px;
+        padding: 10px 0;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+    }
+
+    .relatedGrid>div {
+        flex: none;
+        width: 100%;
+        scroll-snap-align: start;
+    }
+}
+
 /* Reviews Redesign */
 .reviewsContent {
     display: flex;
@@ -1898,16 +1925,7 @@
     margin-bottom: 10px;
 }
 
-@media (max-width: 1024px) {
-    .relatedGrid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
 @media (max-width: 600px) {
-    .relatedGrid {
-        grid-template-columns: 1fr;
-    }
 
     .extraSection {
         padding: 20px;
@@ -1978,7 +1996,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .title {
         font-size: 19px;
     }
