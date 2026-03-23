@@ -221,7 +221,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                     <div className={styles.savingsRow}>
                         {displayOldPrice > 0 && displayOldPrice > displayPrice && (
                             <span className={styles.oldPrice}>
-                                AED {displayOldPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                AED {displayOldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         )}
                         {Number(product.discount_percentage) > 0 && (
@@ -229,7 +229,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                         )}
                     </div>
                     <div className={styles.currentPrice}>
-                        AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                 </div>
             </div>

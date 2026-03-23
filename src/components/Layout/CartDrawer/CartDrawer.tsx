@@ -61,7 +61,7 @@ const CartDrawer = () => {
 
     // Local States
     const [couponCode, setCouponCode] = useState('');
-    const [pointsInput, setPointsInput] = useState<number | string>('');
+    const [pointsInput, setPointsInput] = useState<number | string>(pointsToUse > 0 ? pointsToUse : '');
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const [showCoupons, setShowCoupons] = useState(false);
     const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
@@ -75,6 +75,15 @@ const CartDrawer = () => {
         phone: user?.phone_number || '',
         vat_number: user?.vat_number || ''
     });
+
+    // Sync points input with pointsToUse from context
+    useEffect(() => {
+        if (pointsToUse > 0) {
+            setPointsInput(pointsToUse);
+        } else {
+            setPointsInput('');
+        }
+    }, [pointsToUse]);
 
     // Event listener for opening drawer from other components
     useEffect(() => {
@@ -240,7 +249,7 @@ const CartDrawer = () => {
                                             </div>
                                             {item.brand && <p className={styles.itemBrand}>{item.brand}</p>}
                                             <div className={styles.itemPrice}>
-                                                <span>AED {item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                                <span>AED {item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                             </div>
                                             <div className={styles.qtySelectRow}>
                                                 <span className={styles.qtyLabel}>{t('qty')}</span>
@@ -305,7 +314,7 @@ const CartDrawer = () => {
                                     <div className={styles.pointsBox}>
                                         <div className={styles.pointsInfo}>
                                             {t('available')}: <span>{user.reward_points.toLocaleString()} pt</span>
-                                            {pointsToUse > 0 && <span className={styles.appliedBadge}>({pointsToUse} pt {t('applied')})</span>}
+                                            {pointsToUse > 0 && <span className={styles.appliedBadge}>({pointsToUse.toFixed(0)} pt {t('applied')})</span>}
                                         </div>
                                         <div className={styles.pointsInputRow}>
                                             <div className={styles.pointsInputWrapper}>
@@ -337,30 +346,30 @@ const CartDrawer = () => {
                                 <h3 className={styles.totalTitle}>{t('cartTotal')}</h3>
                                 <div className={styles.totalRow}>
                                     <span>{t('subtotal')}</span>
-                                    <span>AED {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    <span>AED {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                                 {discountAmount > 0 && (
                                     <div className={styles.discountRow}>
                                         <span>{t('couponDiscount')}</span>
-                                        <span>- AED {discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        <span>- AED {discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                 )}
                                 {pointsDiscountAmount > 0 && (
                                     <div className={styles.discountRow}>
                                         <span>{t('pointsDiscount')}</span>
-                                        <span>- AED {pointsDiscountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        <span>- AED {pointsDiscountAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                 )}
                                 <div className={styles.totalRow}>
                                     <span>{t('taxableAmount')} (Excl. VAT)</span>
-                                    <span>AED {(cartTotal / 1.05).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    <span>AED {(cartTotal / 1.05).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className={styles.totalRow}>
                                     <span>{t('vatAmount')} (5%)</span>
-                                    <span>AED {(cartTotal - (cartTotal / 1.05)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    <span>AED {(cartTotal - (cartTotal / 1.05)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className={styles.finalTotal}>
-                                    AED {cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    AED {cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                             </div>
                         </>

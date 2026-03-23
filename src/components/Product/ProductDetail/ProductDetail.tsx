@@ -671,11 +671,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                                 <div className={styles.priceSection}>
                                     <div className={styles.currentPrice}>
-                                        AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         <span className={styles.vatLabel}>{t('vatIncluded')}</span>
                                     </div>
                                     {oldPrice && (
-                                        <div className={styles.oldPrice}>AED {oldPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                        <div className={styles.oldPrice}>AED {oldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                                     )}
                                 </div>
 

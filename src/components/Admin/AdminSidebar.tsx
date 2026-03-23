@@ -37,6 +37,7 @@ const AdminSidebar = () => {
         { name: 'SEO', icon: <BarChart3 size={18} />, path: '/admin/seo' },
         { name: 'Analytics', icon: <BarChart3 size={18} />, path: '/admin/analytics' },
         { name: 'CMS Manager', icon: <Layout size={18} />, path: '/admin/cms' },
+        { name: 'Settings', icon: <Settings size={18} />, path: '/admin/settings' },
     ];
 
     // Normalize path by removing locale for comparison

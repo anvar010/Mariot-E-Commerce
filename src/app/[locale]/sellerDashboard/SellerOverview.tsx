@@ -208,7 +208,7 @@ const SellerOverview = () => {
                                                 <div style={{ fontSize: '13px', color: '#64748b' }}>{order.customer_name} • {new Date(order.created_at).toLocaleDateString()}</div>
                                             </div>
                                             <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#22c55e', marginBottom: '4px' }}>+ AED {Number(order.seller_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#22c55e', marginBottom: '4px' }}>+ AED {Number(order.seller_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                                                 <div style={{ fontSize: '12px', fontWeight: 600, color: order.status === 'delivered' ? '#16a34a' : order.status === 'cancelled' ? '#dc2626' : '#ea580c', textTransform: 'uppercase' }}>
                                                     {order.status}
                                                 </div>

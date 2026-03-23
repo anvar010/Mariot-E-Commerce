@@ -35,6 +35,7 @@ interface CartContextType {
     setIsDrawerOpen: (isOpen: boolean) => void;
     pointsToUse: number;
     pointsDiscountAmount: number;
+    pointRate: number;
     applyPoints: (points: number) => void;
     removePoints: () => void;
 }
@@ -48,11 +49,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [discountAmount, setDiscountAmount] = useState(0);
     const [pointsToUse, setPointsToUse] = useState(0);
     const [pointsDiscountAmount, setPointsDiscountAmount] = useState(0);
+    const [pointRate, setPointRate] = useState(0.01); // Default: 100 points = 1 AED
     const { user, token } = useAuth();
     const { showNotification } = useNotification();
     const t = useTranslations('notifications');
 
     const prevToken = React.useRef(token);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/settings`);
+                const data = await res.json();
+                if (data.success && data.data) {
+                    // Backend returns an object: { aed_per_point: '0.01', ... }
+                    const rate = data.data.aed_per_point;
+                    if (rate) setPointRate(parseFloat(rate));
+                }
+            } catch (error) {
+                console.error('Failed to fetch settings:', error);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     // 1. Initial Load & Sync Logic
     useEffect(() => {
@@ -384,12 +403,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
         }
 
-        // 100 points = 1 AED
-        const maxAEDFromPoints = points / 100;
+        // Use dynamic pointRate instead of hardcoded 100
+        const maxAEDFromPoints = points * pointRate;
         const currentTotal = subtotal - discountAmount;
 
         const finalAEDFromPoints = Math.min(maxAEDFromPoints, currentTotal);
-        const actualPointsToUse = finalAEDFromPoints * 100;
+        // Round points to use to nearest whole number to avoid floating point display errors
+        const actualPointsToUse = Math.round(finalAEDFromPoints / pointRate);
 
         setPointsToUse(actualPointsToUse);
         setPointsDiscountAmount(finalAEDFromPoints);
@@ -466,6 +486,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsDrawerOpen,
             pointsToUse,
             pointsDiscountAmount,
+            pointRate,
             applyPoints,
             removePoints
         }}>
