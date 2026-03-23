@@ -254,7 +254,7 @@ const Header = () => {
                                                         <span className={styles.suggestionName}>{item.name}</span>
                                                         <div className={styles.suggestionMeta}>
                                                             <span className={styles.suggestionPrice}>
-                                                                AED {Number(item.offer_price || item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                AED {Number(item.offer_price || item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                             </span>
                                                             {item.category_name && (
                                                                 <span className={styles.suggestionCategory}>{item.category_name}</span>

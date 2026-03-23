@@ -279,10 +279,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 </Link>
 
                 <div className={styles.priceSection}>
-                    <div className={styles.currentPrice}>AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                    <div className={styles.currentPrice}>AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     <div className={styles.savingsRow}>
                         {displayOldPrice > 0 && displayOldPrice > displayPrice && (
-                            <span className={styles.oldPrice}>AED {displayOldPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            <span className={styles.oldPrice}>AED {displayOldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         )}
                         <span className={styles.discountText}>{displayDiscount}</span>
                     </div>

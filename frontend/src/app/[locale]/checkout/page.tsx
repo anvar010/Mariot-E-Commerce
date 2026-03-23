@@ -315,8 +315,10 @@ export default function CheckoutPage() {
     };
 
     const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const vatAmount = cartTotal * 0.05;
-    const finalTotal = cartTotal + vatAmount;
+    // VAT is already included in prices, so cartTotal is our final payment amount
+    const finalTotal = cartTotal;
+    // Calculate the VAT breakdown (1/21 of total)
+    const vatAmount = finalTotal - (finalTotal / 1.05);
 
     return (
         <div className={styles.checkoutPage}>
@@ -621,7 +623,7 @@ export default function CheckoutPage() {
                                                 <div className={styles.itemMeta}>Qty: {item.quantity}</div>
                                             </div>
                                             <div className={styles.itemPrice}>
-                                                AED {(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                AED {(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </div>
                                         </div>
                                     ))}
@@ -630,20 +632,20 @@ export default function CheckoutPage() {
                                 <div className={styles.totalsGrid}>
                                     <div className={styles.totalRow}>
                                         <span>{common('subtotal')}</span>
-                                        <span>{common('currency')} {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        <span>{common('currency')} {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
 
                                     {discountAmount > 0 && (
                                         <div className={`${styles.totalRow} ${styles.discount}`}>
                                             <span>{t('couponDiscount')}</span>
-                                            <span>- {common('currency')} {discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            <span>- {common('currency')} {discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                         </div>
                                     )}
 
                                     {pointsDiscountAmount > 0 && (
                                         <div className={`${styles.totalRow} ${styles.discount}`}>
                                             <span>{t('pointsRedeemed')}</span>
-                                            <span>- {common('currency')} {pointsDiscountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            <span>- {common('currency')} {pointsDiscountAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                         </div>
                                     )}
 
@@ -653,13 +655,18 @@ export default function CheckoutPage() {
                                     </div>
 
                                     <div className={styles.totalRow}>
+                                        <span>{common('taxableAmount')} (Excl. VAT)</span>
+                                        <span>{common('currency')} {(finalTotal / 1.05).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    </div>
+
+                                    <div className={styles.totalRow}>
                                         <span>{common('vat')} (5%)</span>
-                                        <span>{common('currency')} {vatAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        <span>{common('currency')} {vatAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
 
                                     <div className={styles.grandTotalRow}>
                                         <span>{common('total')}</span>
-                                        <span>{common('currency')} {finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        <span>{common('currency')} {finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                 </div>
 

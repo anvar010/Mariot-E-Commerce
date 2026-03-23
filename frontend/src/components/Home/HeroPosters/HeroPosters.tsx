@@ -118,11 +118,11 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
                 if (currentPosters.length > 0) {
                     setPosters(currentPosters.sort((a: any, b: any) => a.order_index - b.order_index));
                 } else {
-                    setPosters(dummyPosters);
+                    setPosters([]);
                 }
             } catch (err) {
                 console.error("Failed to fetch posters:", err);
-                setPosters(dummyPosters);
+                setPosters([]);
             } finally {
                 setLoading(false);
             }
@@ -166,6 +166,8 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
         scrollRef.current.scrollLeft = scrollLeftState - walk;
     };
 
+    if (!loading && posters.length === 0) return null;
+
     /* Skeleton loading state — lightweight, no spinner */
     if (loading && posters.length === 0) return (
         <section className={styles.postersSection}>
@@ -182,7 +184,7 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
     );
 
     return (
-        <section className={styles.postersSection}>
+        <section className={styles.postersSection} id="hero-posters">
             <div className={styles.container}>
                 <div className={styles.scrollWrapper}>
                     <button className={`${styles.navBtn} ${styles.prev}`} onClick={() => scroll('left')}>
@@ -200,7 +202,6 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
                         {posters.map((poster, index) => (
                             <div key={poster.id} className={styles.posterCard}>
                                 <div className={styles.imageContainer}>
-                                    {/* Next.js Image component — Auto creates WebP, responsive srcset subsets, and lazy loads perfectly */}
                                     <Image
                                         src={resolveUrl(poster.image)}
                                         alt={isArabic && poster.title_ar ? poster.title_ar : poster.title}
