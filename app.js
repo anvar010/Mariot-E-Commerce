@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 const errorHandler = require('./middlewares/error.middleware');
 const helmet = require('helmet');
 const hpp = require('hpp');
-// const xss = require('xss-clean');
+const xss = require('xss-clean');
 // Load env vars
 dotenv.config();
 
@@ -26,6 +26,7 @@ const reviewRoutes = require('./routes/review.routes');
 const quotationRoutes = require('./routes/quotation.routes');
 const contactRoutes = require('./routes/contact.routes');
 const cmsRoutes = require('./routes/cms.routes');
+const settingsRoutes = require('./routes/settings.routes');
 const path = require('path');
 
 const cookieParser = require('cookie-parser');
@@ -41,7 +42,7 @@ app.use(helmet());
 // Prevent HTTP param pollution
 app.use(hpp());
 
-// Data sanitization against XSS (Will be re-enabled once dependency is installed)
+// Data sanitization against XSS
 // app.use(xss());
 
 // Cookie parser
@@ -95,6 +96,7 @@ app.use('/api/v1/reviews', reviewRoutes);
 app.use('/api/v1/quotations', quotationRoutes);
 app.use('/api/v1/contact', contactRoutes);
 app.use('/api/v1/cms', cmsRoutes);
+app.use('/api/v1/settings', settingsRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {

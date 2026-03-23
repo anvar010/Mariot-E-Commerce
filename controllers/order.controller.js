@@ -112,22 +112,26 @@ exports.createOrder = async (req, res, next) => {
             // Ensure user actually has enough points
             const clampedPoints = Math.min(Number(points_to_use), actualPoints);
 
-            // 100 points = 1 AED, and cannot exceed the remaining total after coupon
-            const maxAEDFromPoints = clampedPoints / 100;
+            // Fetch dynamic point value (default: 0.01 AED per point)
+            const [settingRows] = await db.execute('SELECT `value` FROM settings WHERE `key` = "aed_per_point"');
+            const aedPerPoint = settingRows[0] ? parseFloat(settingRows[0].value) : 0.01;
+
+            const maxAEDFromPoints = clampedPoints * aedPerPoint;
             const remainingAfterCoupon = subtotal - calculatedCouponDiscount;
             const finalAEDFromPoints = Math.min(maxAEDFromPoints, remainingAfterCoupon);
 
-            validatedPointsToUse = Math.floor(finalAEDFromPoints * 100); // Round down to whole points
+            validatedPointsToUse = Math.floor(finalAEDFromPoints / aedPerPoint); // Round down to whole points
         }
 
         // ====================================================
         // CALCULATE FINAL AMOUNTS
         // ====================================================
-        const totalDiscount = calculatedCouponDiscount + (validatedPointsToUse / 100);
+        const pointsDiscount = validatedPointsToUse * aedPerPoint;
+        const totalDiscount = calculatedCouponDiscount + pointsDiscount;
         const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
-        const vatRate = 0.05; // 5% VAT in UAE
-        const vatAmount = discountedSubtotal * vatRate;
-        const finalAmount = discountedSubtotal + vatAmount;
+        // VAT is already included in the price, so we calculate the breakdown
+        const finalAmount = discountedSubtotal;
+        const vatAmount = finalAmount - (finalAmount / 1.05);
 
         const orderData = {
             items,

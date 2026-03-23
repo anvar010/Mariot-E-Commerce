@@ -27,7 +27,11 @@ class Order {
                 finalAddressId = null; // if default was placeholder and no details passed avoid error
             }
 
-            const pointsDiscount = points_to_use / 100; // 100 points = 1 AED
+            // Fetch dynamic point value (default: 0.01 AED per point)
+            const [settingRows] = await connection.execute('SELECT `value` FROM settings WHERE `key` = "aed_per_point"');
+            const aedPerPoint = settingRows[0] ? parseFloat(settingRows[0].value) : 0.01;
+
+            const pointsDiscount = points_to_use * aedPerPoint;
             const adjustedFinalAmount = Math.max(0, final_amount - pointsDiscount);
 
             const initialPaymentStatus = payment_method === 'card' ? 'paid' : 'pending';
@@ -107,7 +111,10 @@ class Order {
         }
 
         // 4. Calculate and add rewards points
-        const pointsEarned = Math.floor(adjustedFinalAmount / 2);
+        const [settingRows] = await connection.execute('SELECT `value` FROM settings WHERE `key` = "points_per_aed"');
+        const pointsPerAed = settingRows[0] ? parseFloat(settingRows[0].value) : 0.5;
+
+        const pointsEarned = Math.floor(adjustedFinalAmount * pointsPerAed);
         if (pointsEarned > 0) {
             await connection.execute(
                 'UPDATE users SET reward_points = reward_points + ? WHERE id = ?',
