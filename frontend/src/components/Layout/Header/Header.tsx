@@ -21,6 +21,9 @@ const Header = () => {
     const locale = useLocale();
     const t = useTranslations('header');
     const [searchQuery, setSearchQuery] = useState('');
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [isLangOpen, setIsLangOpen] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSticky, setIsSticky] = useState(false);
@@ -54,6 +57,44 @@ const Header = () => {
             }
         }
     }, [user]);
+
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            if (searchQuery.trim().length < 2) {
+                setSuggestions([]);
+                setShowSuggestions(false);
+                return;
+            }
+
+            setIsSearching(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/products/suggestions?search=${encodeURIComponent(searchQuery.trim())}`);
+                const data = await res.json();
+                if (data.success) {
+                    setSuggestions(data.data);
+                    setShowSuggestions(true);
+                }
+            } catch (err) {
+                console.error("Suggestions fetch failed", err);
+            } finally {
+                setIsSearching(false);
+            }
+        };
+
+        const timer = setTimeout(fetchSuggestions, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (!target.closest(`.${styles.searchSection}`)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         let ticking = false;
@@ -160,12 +201,76 @@ const Header = () => {
                                     placeholder={t('searchPlaceholder')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
+                                    onFocus={() => searchQuery.trim().length >= 2 && setShowSuggestions(true)}
                                 />
                                 <button type="submit" className={styles.searchButton}>
                                     <Search size={20} />
                                     <span>{t('search')}</span>
                                 </button>
                             </form>
+
+                            {showSuggestions && (
+                                <div className={styles.suggestionsDropdown}>
+                                    {isSearching ? (
+                                        <div className={styles.suggestionsList}>
+                                            {[1, 2, 3].map((item) => (
+                                                <div key={item} className={styles.skeletonItem}>
+                                                    <div className={styles.skeletonImage}>
+                                                        <div className={styles.shimmer}></div>
+                                                    </div>
+                                                    <div className={styles.skeletonInfo}>
+                                                        <div className={styles.skeletonName}>
+                                                            <div className={styles.shimmer}></div>
+                                                        </div>
+                                                        <div className={styles.skeletonPrice}>
+                                                            <div className={styles.shimmer}></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : suggestions.length > 0 ? (
+                                        <div className={styles.suggestionsList}>
+                                            {suggestions.map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    className={styles.suggestionItem}
+                                                    onClick={() => {
+                                                        router.push(`/product/${item.slug}`);
+                                                        setShowSuggestions(false);
+                                                        setSearchQuery('');
+                                                    }}
+                                                >
+                                                    <div className={styles.suggestionImageWrapper}>
+                                                        <Image
+                                                            src={item.primary_image || '/assets/placeholder-image.webp'}
+                                                            alt={item.name}
+                                                            width={45}
+                                                            height={45}
+                                                            className={styles.suggestionImage}
+                                                        />
+                                                    </div>
+                                                    <div className={styles.suggestionInfo}>
+                                                        <span className={styles.suggestionName}>{item.name}</span>
+                                                        <div className={styles.suggestionMeta}>
+                                                            <span className={styles.suggestionPrice}>
+                                                                AED {Number(item.offer_price || item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                            </span>
+                                                            {item.category_name && (
+                                                                <span className={styles.suggestionCategory}>{item.category_name}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : searchQuery.trim().length >= 2 && (
+                                        <div className={styles.noSuggestions}>
+                                            {t('noResultsFound')}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className={styles.userActions}>

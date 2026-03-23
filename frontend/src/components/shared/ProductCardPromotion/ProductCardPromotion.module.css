@@ -95,14 +95,15 @@
     background: #fbfbfd;
     border-radius: 16px;
     width: 100%;
-    aspect-ratio: 1; /* Match perfect square to reduce weird vertical spacing */
+    aspect-ratio: 1;
+    /* Match perfect square to reduce weird vertical spacing */
     height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 12px;
     overflow: visible;
-    padding: 16px;
+    padding: 32px;
     position: relative;
     transition: all 0.5s ease;
 }
@@ -431,8 +432,9 @@
 
     .imageContainer {
         height: auto;
-        aspect-ratio: 1; /* Keeps it square on mobile */
-        padding: 8px;
+        aspect-ratio: 1;
+        /* Keeps it square on mobile */
+        padding: 18px;
         border-radius: 12px;
         margin-bottom: 12px;
     }
