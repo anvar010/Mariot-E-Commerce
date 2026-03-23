@@ -254,3 +254,39 @@ exports.deleteProducts = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getSuggestions = async (req, res, next) => {
+    try {
+        const { search } = req.query;
+        if (!search || search.trim().length < 2) {
+            return res.json({ success: true, data: [] });
+        }
+
+        // Fetch matching products with limited fields for performance
+        const { products } = await Product.findAll({
+            search: search.trim(),
+            limit: 8,
+            status: 'active',
+            stockStatus: 'in_stock'
+        });
+
+        const suggestions = products.map(p => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            price: p.price,
+            offer_price: p.offer_price,
+            primary_image: p.primary_image,
+            category_name: p.category_name
+        }));
+
+        res.json({
+            success: true,
+            data: suggestions
+        });
+    } catch (error) {
+        console.error('GET SUGGESTIONS ERROR:', error);
+        res.status(500).json({ success: false, message: 'Error fetching suggestions' });
+    }
+};
+
