@@ -812,7 +812,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .topInfo {
         padding: 0 12px;
     }

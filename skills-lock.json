@@ -10,6 +10,11 @@
       "source": "dlcastillop/agent-skills",
       "sourceType": "github",
       "computedHash": "ca1622fb8c2e32cb62ba90310f7e444eaa430186382893546d9222904978983e"
+    },
+    "solana-vulnerability-scanner": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "computedHash": "ef420867cdd984e7d7c900300c8c7257b671260c7d7b5ca2671ca2413967a495"
     }
   }
 }

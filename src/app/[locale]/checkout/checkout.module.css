@@ -995,7 +995,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .checkoutHeader h1 {
         font-size: 22px;
     }

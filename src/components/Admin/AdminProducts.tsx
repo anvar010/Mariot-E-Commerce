@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AdminProducts.module.css';
 import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import Link from 'next/link';
 import { useNotification } from '@/context/NotificationContext';
 import Loader from '@/components/shared/Loader/Loader';
@@ -109,41 +109,45 @@ const AdminProducts = () => {
     });
     const [bulkUpdating, setBulkUpdating] = useState(false);
 
-    const handleDownloadTemplate = () => {
-        const template = [
-            {
-                name: 'Product Name',
-                name_ar: 'اسم المنتج',
-                category: 'Kitchen Equipment',
-                brand: 'RATIONAL',
-                price: 1500.00,
-                discount_percentage: 10,
-                stock_quantity: 50,
-                description: 'Detailed description of the product',
-                description_ar: 'وصف مفصل للمنتج',
-                short_description: 'Key highlights in 1-2 sentences',
-                short_description_ar: 'أبرز مميزات المنتج في جملة أو جملتين',
-                specifications: 'Color: Silver, Weight: 5kg',
-                heading: 'Featured Items',
-                sub_category: 'Ovens',
-                model: 'SCC-61',
-                youtube_video_link: 'https://youtube.com/...',
-                status: 'active',
-                is_featured: 'No',
-                is_weekly_deal: 'No',
-                is_limited_offer: 'No',
-                is_daily_offer: 'No',
-                offer_start: '2024-03-01 00:00:00',
-                offer_end: '2024-03-31 23:59:59',
-                resources: 'Manual: https://example.com/manual.pdf',
-                images: 'https://example.com/image1.jpg, https://example.com/image2.jpg'
-            }
+    const handleDownloadTemplate = async () => {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Import Template');
+
+        const columns = [
+            'name', 'name_ar', 'category', 'brand', 'price', 'discount_percentage',
+            'stock_quantity', 'description', 'description_ar', 'short_description',
+            'short_description_ar', 'specifications', 'heading', 'sub_category',
+            'model', 'youtube_video_link', 'status', 'is_featured', 'is_weekly_deal',
+            'is_limited_offer', 'is_daily_offer', 'offer_start', 'offer_end',
+            'resources', 'images'
         ];
 
-        const worksheet = XLSX.utils.json_to_sheet(template);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Import Template');
-        XLSX.writeFile(workbook, 'mariot_products_template.xlsx');
+        worksheet.addRow(columns);
+
+        worksheet.addRow([
+            'Product Name', 'اسم المنتج', 'Kitchen Equipment', 'RATIONAL', 1500.00, 10,
+            50, 'Detailed description of the product', 'وصف مفصل للمنتج',
+            'Key highlights in 1-2 sentences', 'أبرز مميزات المنتج في جملة أو جملتين',
+            'Color: Silver, Weight: 5kg', 'Featured Items', 'Ovens',
+            'SCC-61', 'https://youtube.com/...', 'active', 'No', 'No',
+            'No', 'No', '2024-03-01 00:00:00', '2024-03-31 23:59:59',
+            'Manual: https://example.com/manual.pdf',
+            'https://example.com/image1.jpg, https://example.com/image2.jpg'
+        ]);
+
+        // Style header row
+        worksheet.getRow(1).font = { bold: true };
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'mariot_products_template.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
         showNotification('Template downloaded successfully');
     };
 

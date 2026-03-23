@@ -113,7 +113,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
 
     const hasOffer = !!(product.offer_price && Number(product.offer_price) > 0);
     const displayPrice = hasOffer ? Number(product.offer_price) : Number(product.price || 0);
-    const displayOldPrice = hasOffer ? Number(product.price) : (Number(product.old_price) || 0);
+    const displayOldPrice = Number(product.old_price) || (hasOffer ? Number(product.price) : 0);
 
     const handleAddToCart = () => {
         if (isInStock) {

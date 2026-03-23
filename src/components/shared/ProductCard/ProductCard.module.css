@@ -344,7 +344,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .productCard {
         padding: 6px;
         border: 4px solid white;

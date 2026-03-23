@@ -77,7 +77,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [qty, setQty] = useState(1);
     const [showTabbyModal, setShowTabbyModal] = useState(false);
     const [showPriceMatchModal, setShowPriceMatchModal] = useState(false);
-    const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({ specs: true });
+    const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({
+        specs: true,
+        description: true
+    });
     const [isShortDescExpanded, setIsShortDescExpanded] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -489,6 +492,25 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const oldPrice = hasOffer ? Number(product.price) : null;
     const monthlyPayment = (displayPrice / 4).toFixed(2);
 
+    // Calculate if video exists
+    const videoDataRaw = product.youtube_video_link;
+    let videoLinks: string[] = [];
+    if (videoDataRaw) {
+        try {
+            const parsed = JSON.parse(videoDataRaw);
+            if (Array.isArray(parsed)) {
+                videoLinks = parsed.filter(v => v && v.trim() !== '');
+            } else if (parsed && typeof parsed === 'object' && parsed.links) {
+                videoLinks = parsed.links.filter((v: string) => v && v.trim() !== '');
+            } else {
+                videoLinks = [videoDataRaw].filter(v => v && v.trim() !== '');
+            }
+        } catch {
+            videoLinks = [String(videoDataRaw)].filter(v => v && v.trim() !== '');
+        }
+    }
+    const hasVideo = videoLinks.length > 0;
+
     // Calculate Rating Stats once per render
     const reviewsCount = reviews.length;
     const avgRatingRaw = reviewsCount > 0 ? reviews.reduce((sum: number, r: any) => sum + Number(r.rating), 0) / reviewsCount : 0;
@@ -772,19 +794,22 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                 </div>
 
-                <div className={styles.fullWidthDescription}>
-                    <div className={styles.descriptionSection}>
-                        <h2>{t('description')}</h2>
+                <div className={`${styles.fullWidthDescription} ${!hasVideo ? styles.noBottomGap : ''}`}>
+                    <AccordionItem
+                        title={t('description')}
+                        isOpen={!!expandedAccordions['description']}
+                        onToggle={() => toggleAccordion('description')}
+                    >
                         <div
                             className={styles.descriptionText}
                             dangerouslySetInnerHTML={{
                                 __html: cleanShortcodes(getLocalizedField('description', 'description_ar')) || `<p>${t('noDescription')}</p>`
                             }}
                         />
-                    </div>
+                    </AccordionItem>
                 </div>
 
-                <div className={styles.splitLayout}>
+                <div className={`${styles.splitLayout} ${!hasVideo ? styles.fullWidthLayout : ''}`}>
                     <div className={styles.accordionsColumn}>
                         <div className={styles.accordions}>
                             <AccordionItem
@@ -942,59 +967,51 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                     </div>
 
                     {/* Right column: Featured Video */}
-                    <div className={styles.videoColumn}>
-                        {(() => {
-                            const videoDataRaw = product.youtube_video_link;
-                            let links: string[] = [];
-                            let fIndex = 0;
-                            if (videoDataRaw) {
-                                try {
-                                    const parsed = JSON.parse(videoDataRaw);
-                                    if (Array.isArray(parsed)) {
-                                        links = parsed.filter(v => v && v.trim() !== '');
-                                    } else if (parsed && typeof parsed === 'object' && parsed.links) {
-                                        links = parsed.links.filter((v: string) => v && v.trim() !== '');
-                                        fIndex = parsed.featuredIndex ?? 0;
-                                    } else {
-                                        links = [videoDataRaw].filter(v => v && v.trim() !== '');
-                                    }
-                                } catch {
-                                    links = [String(videoDataRaw)].filter(v => v && v.trim() !== '');
+                    {hasVideo && (
+                        <div className={styles.videoColumn}>
+                            {(() => {
+                                let fIndex = 0;
+                                if (videoDataRaw) {
+                                    try {
+                                        const parsed = JSON.parse(videoDataRaw);
+                                        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                                            fIndex = parsed.featuredIndex ?? 0;
+                                        }
+                                    } catch { }
                                 }
-                            }
 
-                            const hasVideo = links.length > 0;
-                            const featuredUrl = hasVideo ? (links[fIndex] || links[0]) : null;
+                                const featuredUrl = videoLinks[fIndex] || videoLinks[0];
 
-                            const getEmbedUrl = (url: string) => {
-                                if (!url) return '';
-                                if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/').split('&')[0];
-                                if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
-                                return url;
-                            };
+                                const getEmbedUrl = (url: string) => {
+                                    if (!url) return '';
+                                    if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/').split('&')[0];
+                                    if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
+                                    return url;
+                                };
 
-                            if (!hasVideo || !featuredUrl) return null;
+                                if (!featuredUrl) return null;
 
-                            return (
-                                <div className={styles.stickyVideoWrapper}>
-                                    <div className={styles.videoHeader}>
-                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="#e31e24">
-                                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z" />
-                                        </svg>
-                                        <h3>{t('featuredVideo') || 'Featured Video'}</h3>
+                                return (
+                                    <div className={styles.stickyVideoWrapper}>
+                                        <div className={styles.videoHeader}>
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="#e31e24">
+                                                <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z" />
+                                            </svg>
+                                            <h3>{t('featuredVideo') || 'Featured Video'}</h3>
+                                        </div>
+                                        <div className={styles.videoContainer}>
+                                            <iframe
+                                                src={getEmbedUrl(featuredUrl)}
+                                                title="Product Featured Video"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            ></iframe>
+                                        </div>
                                     </div>
-                                    <div className={styles.videoContainer}>
-                                        <iframe
-                                            src={getEmbedUrl(featuredUrl)}
-                                            title="Product Featured Video"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                            allowFullScreen
-                                        ></iframe>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-                    </div>
+                                );
+                            })()}
+                        </div>
+                    )}
                 </div>
 
                 {/* --- New Sections (Bottom) --- */}

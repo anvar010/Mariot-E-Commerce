@@ -94,7 +94,7 @@
     font-size: 13px;
     line-height: 1.7;
     color: rgba(255, 255, 255, 0.7);
-    max-width: 480px;
+    max-width: 576px;
     margin: 0;
 }
 
@@ -377,7 +377,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .heroSection {
         height: 65vh;
         min-height: 420px;
