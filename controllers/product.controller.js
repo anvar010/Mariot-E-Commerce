@@ -2,7 +2,7 @@ const Product = require('../models/product.model');
 const Category = require('../models/category.model');
 const Brand = require('../models/brand.model');
 const slugify = require('slugify');
-const xlsx = require('xlsx');
+const ExcelJS = require('exceljs');
 const fs = require('fs');
 
 exports.bulkImport = async (req, res, next) => {
@@ -11,9 +11,28 @@ exports.bulkImport = async (req, res, next) => {
             return res.status(400).json({ success: false, message: 'Please upload an excel file' });
         }
 
-        const workbook = xlsx.readFile(req.file.path);
-        const sheetName = workbook.SheetNames[0];
-        const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.readFile(req.file.path);
+        const worksheet = workbook.worksheets[0];
+
+        // Convert ExcelJS rows to array of objects using header row
+        const headers = [];
+        const rows = [];
+        worksheet.eachRow((row, rowNumber) => {
+            const values = row.values; // ExcelJS row.values is 1-indexed (index 0 is empty)
+            if (rowNumber === 1) {
+                // First row = headers
+                for (let i = 1; i < values.length; i++) {
+                    headers.push(String(values[i] || '').trim());
+                }
+            } else {
+                const obj = {};
+                for (let i = 0; i < headers.length; i++) {
+                    obj[headers[i]] = values[i + 1] !== undefined ? values[i + 1] : null;
+                }
+                rows.push(obj);
+            }
+        });
 
         const results = {
             success: 0,
@@ -218,6 +237,19 @@ exports.bulkUpdateProducts = async (req, res, next) => {
         }
         await Product.bulkUpdate(ids, data);
         res.json({ success: true, message: `Successfully updated ${ids.length} products` });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.deleteProducts = async (req, res, next) => {
+    try {
+        const { ids } = req.body;
+        if (!ids || !Array.isArray(ids)) {
+            return res.status(400).json({ success: false, message: 'Invalid IDs' });
+        }
+        await Product.bulkDelete(ids);
+        res.json({ success: true, message: `Successfully deleted ${ids.length} products` });
     } catch (error) {
         next(error);
     }

@@ -169,7 +169,7 @@ exports.getDashboardStats = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
     try {
         const [users] = await db.query(`
-            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, r.name as role 
+            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, u.role_id, r.name as role 
             FROM users u 
             JOIN roles r ON u.role_id = r.id
         `);

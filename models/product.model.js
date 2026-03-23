@@ -421,6 +421,12 @@ class Product {
         // Note: product_images, cart_items, and order_items will be deleted automatically due to ON DELETE CASCADE constraints.
         await db.execute('DELETE FROM products WHERE id = ?', [id]);
     }
+
+    static async bulkDelete(ids) {
+        if (!Array.isArray(ids) || ids.length === 0) return;
+        const placeholders = ids.map(() => '?').join(',');
+        await db.execute(`DELETE FROM products WHERE id IN (${placeholders})`, ids);
+    }
 }
 
 module.exports = Product;

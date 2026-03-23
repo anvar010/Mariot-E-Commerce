@@ -1,5 +1,7 @@
 const Order = require('../models/order.model');
 const Cart = require('../models/cart.model');
+const Coupon = require('../models/coupon.model');
+const db = require('../config/db');
 const axios = require('axios');
 
 exports.createOrder = async (req, res, next) => {
@@ -20,10 +22,109 @@ exports.createOrder = async (req, res, next) => {
             }
         }
 
-        const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const { shipping_address_id, payment_method, points_to_use = 0, coupon_id = null, discount_amount = 0, billing_details = null, locale = 'en' } = req.body;
+        // Use the REAL price from DB (already fetched by Cart.getCartItems)
+        const subtotal = items.reduce((sum, item) => {
+            const unitPrice = Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price);
+            return sum + (unitPrice * item.quantity);
+        }, 0);
 
-        const discountedSubtotal = Math.max(0, subtotal - parseFloat(discount_amount || 0));
+        const { shipping_address_id, payment_method, points_to_use = 0, coupon_id = null, billing_details = null, locale = 'en' } = req.body;
+        // NOTE: discount_amount from req.body is intentionally IGNORED for security
+
+        // ====================================================
+        // SERVER-SIDE COUPON VALIDATION & DISCOUNT CALCULATION
+        // ====================================================
+        let calculatedCouponDiscount = 0;
+        let validatedCouponId = null;
+
+        if (coupon_id) {
+            const [couponRows] = await db.execute('SELECT * FROM coupons WHERE id = ?', [coupon_id]);
+            const coupon = couponRows[0];
+
+            if (coupon && coupon.is_active) {
+                const isExpired = coupon.expiry_date && new Date(coupon.expiry_date) < new Date(new Date().setHours(0, 0, 0, 0));
+                const isOverLimit = coupon.usage_limit > 0 && coupon.used_count >= coupon.usage_limit;
+                const isBelowMinimum = subtotal < Number(coupon.min_order_amount);
+
+                if (!isExpired && !isOverLimit && !isBelowMinimum) {
+                    // Determine the applicable total (respecting brand/product restrictions)
+                    let applicableTotal = subtotal;
+
+                    // Build cart items with brand info for restriction checks
+                    const cartItemsWithBrand = items.map(item => ({
+                        id: item.product_id,
+                        name: item.name,
+                        brand: item.brand_name || '',
+                        price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price),
+                        quantity: item.quantity
+                    }));
+
+                    let applicableItems = cartItemsWithBrand;
+
+                    // Check brand restrictions
+                    if (coupon.applicable_brands) {
+                        try {
+                            const allowedBrands = JSON.parse(coupon.applicable_brands);
+                            applicableItems = applicableItems.filter(item => allowedBrands.includes(item.brand));
+                        } catch (e) { /* invalid JSON, skip restriction */ }
+                    }
+
+                    // Check product restrictions
+                    if (coupon.applicable_products) {
+                        try {
+                            const allowedProducts = JSON.parse(coupon.applicable_products);
+                            applicableItems = applicableItems.filter(item => allowedProducts.includes(item.name) || allowedProducts.includes(String(item.id)));
+                        } catch (e) { /* invalid JSON, skip restriction */ }
+                    }
+
+                    if (applicableItems.length > 0) {
+                        applicableTotal = applicableItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                        const discountValue = parseFloat(coupon.discount_value);
+
+                        if (coupon.discount_type === 'percentage') {
+                            calculatedCouponDiscount = (applicableTotal * discountValue) / 100;
+                        } else {
+                            calculatedCouponDiscount = discountValue;
+                        }
+
+                        // Cap discount at applicable total
+                        if (calculatedCouponDiscount > applicableTotal) {
+                            calculatedCouponDiscount = applicableTotal;
+                        }
+
+                        calculatedCouponDiscount = Number(calculatedCouponDiscount.toFixed(2));
+                        validatedCouponId = coupon.id;
+                    }
+                }
+            }
+        }
+
+        // ====================================================
+        // SERVER-SIDE REWARD POINTS VALIDATION
+        // ====================================================
+        let validatedPointsToUse = 0;
+
+        if (points_to_use > 0) {
+            // Fetch the user's ACTUAL reward points from the database
+            const [userRows] = await db.execute('SELECT reward_points FROM users WHERE id = ?', [req.user.id]);
+            const actualPoints = userRows[0]?.reward_points || 0;
+
+            // Ensure user actually has enough points
+            const clampedPoints = Math.min(Number(points_to_use), actualPoints);
+
+            // 100 points = 1 AED, and cannot exceed the remaining total after coupon
+            const maxAEDFromPoints = clampedPoints / 100;
+            const remainingAfterCoupon = subtotal - calculatedCouponDiscount;
+            const finalAEDFromPoints = Math.min(maxAEDFromPoints, remainingAfterCoupon);
+
+            validatedPointsToUse = Math.floor(finalAEDFromPoints * 100); // Round down to whole points
+        }
+
+        // ====================================================
+        // CALCULATE FINAL AMOUNTS
+        // ====================================================
+        const totalDiscount = calculatedCouponDiscount + (validatedPointsToUse / 100);
+        const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
         const vatRate = 0.05; // 5% VAT in UAE
         const vatAmount = discountedSubtotal * vatRate;
         const finalAmount = discountedSubtotal + vatAmount;
@@ -36,9 +137,9 @@ exports.createOrder = async (req, res, next) => {
             total_amount: subtotal,
             vat_amount: vatAmount,
             final_amount: finalAmount,
-            points_to_use,
-            coupon_id,
-            discount_amount: parseFloat(discount_amount || 0)
+            points_to_use: validatedPointsToUse,
+            coupon_id: validatedCouponId,
+            discount_amount: calculatedCouponDiscount
         };
 
         const orderId = await Order.create(req.user.id, orderData);

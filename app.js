@@ -3,7 +3,8 @@ const cors = require('cors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 const errorHandler = require('./middlewares/error.middleware');
-
+const helmet = require('helmet');
+const hpp = require('hpp');
 // Load env vars
 dotenv.config();
 
@@ -32,6 +33,12 @@ const app = express();
 
 // Body parser
 app.use(express.json());
+
+// Set security headers
+app.use(helmet());
+
+// Prevent HTTP param pollution
+app.use(hpp());
 
 // Cookie parser
 app.use(cookieParser());
