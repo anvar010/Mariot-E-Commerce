@@ -65,3 +65,16 @@ exports.deleteBrand = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.deleteBrands = async (req, res, next) => {
+    try {
+        const { ids } = req.body;
+        if (!ids || !Array.isArray(ids)) {
+            return res.status(400).json({ success: false, message: 'Invalid IDs' });
+        }
+        await Brand.bulkDelete(ids);
+        res.json({ success: true, message: `Successfully deleted ${ids.length} brands` });
+    } catch (error) {
+        next(error);
+    }
+};

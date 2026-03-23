@@ -51,6 +51,12 @@ class Brand {
     static async delete(id) {
         await db.execute('DELETE FROM brands WHERE id = ?', [id]);
     }
+
+    static async bulkDelete(ids) {
+        if (!Array.isArray(ids) || ids.length === 0) return;
+        const placeholders = ids.map(() => '?').join(',');
+        await db.execute(`DELETE FROM brands WHERE id IN (${placeholders})`, ids);
+    }
 }
 
 module.exports = Brand;
