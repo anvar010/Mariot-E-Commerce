@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const errorHandler = require('./middlewares/error.middleware');
 const helmet = require('helmet');
 const hpp = require('hpp');
+const xss = require('xss-clean');
 // Load env vars
 dotenv.config();
 
@@ -39,6 +40,9 @@ app.use(helmet());
 
 // Prevent HTTP param pollution
 app.use(hpp());
+
+// Data sanitization against XSS
+app.use(xss());
 
 // Cookie parser
 app.use(cookieParser());

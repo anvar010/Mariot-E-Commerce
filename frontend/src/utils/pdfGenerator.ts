@@ -34,8 +34,6 @@ const imageToBase64 = async (url: string): Promise<string> => {
 };
 
 export const generateQuotationPDF = async (quotation: any, shouldDownload = false) => {
-    console.log('Generating PDF for quotation:', quotation.quotation_ref);
-
     const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
 
     const formatDate = (dateStr: any) => {
@@ -276,8 +274,6 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
             const url = URL.createObjectURL(blob);
             window.open(url, '_blank');
         }
-
-        console.log(`PDF ${shouldDownload ? 'downloaded' : 'opened in new tab'} successfully.`);
     } catch (error) {
         console.error('PDF Generation Error:', error);
         throw error;
