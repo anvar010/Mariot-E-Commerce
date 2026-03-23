@@ -24,7 +24,9 @@
         "customEquipments": "Custom equipments? Talk to us <phone></phone>",
         "liveSupport": "24X7 LiveSupport",
         "needHelp": "Need help finding parts?",
-        "congratsPoints": "Congratulations! You got 1000 points"
+        "congratsPoints": "Congratulations! You got 1000 points",
+        "searching": "Searching",
+        "noResultsFound": "No products found"
     },
     "product": {
         "inStock": "IN STOCK",
