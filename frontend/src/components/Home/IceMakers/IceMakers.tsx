@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import styles from './IceMakers.module.css';
 import { Link } from '@/i18n/navigation';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
@@ -90,6 +90,12 @@ const IceMakers = ({ initialProducts = [] }: IceMakersProps) => {
     return (
         <section id="ice-makers-section" className={styles.weeklySection}>
             <div className={styles.container}>
+                <div className={styles.mobileHeader}>
+                    <h2 className={styles.mobileTitle}>Ice Makers</h2>
+                    <Link href="/shop?category=ice-equipment" className={styles.mobileViewAll}>
+                        VIEW ALL <ArrowRight size={16} />
+                    </Link>
+                </div>
                 <div className={styles.dealsContentWrapper}>
                     <div className={styles.navButtons}>
                         <button className={`${styles.navBtn} ${styles.prevBtn}`} onClick={() => scroll('left')} aria-label="Scroll left">
@@ -104,7 +110,7 @@ const IceMakers = ({ initialProducts = [] }: IceMakersProps) => {
                         <div className={styles.bannerCard}>
                             <div className={styles.bannerOverlay}>
                                 <h3 className={styles.bannerTitle}>ICE<br />MAKERS</h3>
-                                <Link href="/en/shop?search=ice+makers" className={styles.viewAllBtn}>
+                                <Link href="/shop?category=ice-equipment" className={styles.viewAllBtn}>
                                     VIEW ALL
                                 </Link>
                             </div>

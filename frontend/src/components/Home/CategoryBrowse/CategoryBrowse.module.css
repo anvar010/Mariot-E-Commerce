@@ -330,6 +330,16 @@
 
     .sectionHeader {
         margin-bottom: 24px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .sectionHeaderRight {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .sectionTitle {

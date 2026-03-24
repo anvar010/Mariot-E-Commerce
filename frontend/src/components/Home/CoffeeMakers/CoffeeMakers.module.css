@@ -15,6 +15,10 @@
     margin-bottom: 30px;
 }
 
+.mobileHeader {
+    display: none;
+}
+
 .title {
     font-size: 22px;
     font-weight: 700;
@@ -396,6 +400,33 @@
 @media (max-width: 576px) {
     .title {
         font-size: 18px;
+    }
+
+    .mobileHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 0 5px;
+    }
+
+    .mobileTitle {
+        font-size: 20px;
+        font-weight: 800;
+        color: #1a202c;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: -0.5px;
+    }
+
+    .mobileViewAll {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #10b981;
+        text-decoration: none;
     }
 
     .dealsGrid {

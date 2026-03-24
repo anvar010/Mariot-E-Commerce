@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import styles from './CoffeeMakers.module.css';
 import { Link } from '@/i18n/navigation';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
@@ -82,6 +82,12 @@ const CoffeeMakers = ({ initialProducts = [] }: CoffeeMakersProps) => {
     return (
         <section id="coffee-makers-section" className={styles.weeklySection}>
             <div className={styles.container}>
+                <div className={styles.mobileHeader}>
+                    <h2 className={styles.mobileTitle}>Coffee Makers</h2>
+                    <Link href="/shop?category=coffee-makers" className={styles.mobileViewAll}>
+                        VIEW ALL <ArrowRight size={16} />
+                    </Link>
+                </div>
                 <div className={styles.dealsContentWrapper}>
                     <div className={styles.navButtons}>
                         <button className={`${styles.navBtn} ${styles.prevBtn}`} onClick={() => scroll('left')} aria-label="Scroll left">
@@ -96,7 +102,7 @@ const CoffeeMakers = ({ initialProducts = [] }: CoffeeMakersProps) => {
                         <div className={styles.bannerCard}>
                             <div className={styles.bannerOverlay}>
                                 <h3 className={styles.bannerTitle}>COFFEE<br />MAKERS</h3>
-                                <Link href="/en/shop?search=coffee+makers" className={styles.viewAllBtn}>
+                                <Link href="/shop?category=coffee-makers" className={styles.viewAllBtn}>
                                     VIEW ALL
                                 </Link>
                             </div>
