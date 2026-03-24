@@ -9,6 +9,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { useTranslations, useLocale } from 'next-intl';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
+import Script from 'next/script';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import {
     CreditCard,
@@ -31,8 +32,14 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import styles from './checkout.module.css';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-export default function CheckoutPage() {
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || '');
+
+function CheckoutContent() {
+    const stripe = useStripe();
+    const elements = useElements();
     const { cartItems, cartTotal, discountAmount, pointsToUse, pointsDiscountAmount, appliedCoupon, clearCart, applyDiscount, removeDiscount } = useCart();
     const { user, token } = useAuth();
     const { showNotification } = useNotification();
@@ -98,6 +105,9 @@ export default function CheckoutPage() {
     const [activeBrandsPopup, setActiveBrandsPopup] = useState<number | null>(null);
     const [activeProductsPopup, setActiveProductsPopup] = useState<number | null>(null);
 
+    // Calculate final processing totals early so useEffects can use them
+    const finalTotal = cartTotal;
+
     const fetchAddresses = async () => {
         if (!user) return;
         setLoadingAddresses(true);
@@ -154,6 +164,31 @@ export default function CheckoutPage() {
             fetchAddresses();
         }
     }, [user]);
+
+    // Force re-render of Tabby Promo if coming back to the tab
+    useEffect(() => {
+        if (paymentMethod === 'tabby' && typeof window !== 'undefined' && (window as any).TabbyPromo) {
+            setTimeout(() => {
+                const tabbyElement = document.getElementById('TabbyPromoPayment');
+                if (tabbyElement && !tabbyElement.innerHTML) {
+                    try {
+                        new (window as any).TabbyPromo({
+                            selector: '#TabbyPromoPayment',
+                            currency: 'AED',
+                            price: finalTotal,
+                            installmentsCount: 4,
+                            lang: locale === 'ar' ? 'ar' : 'en',
+                            source: 'checkout',
+                            publicKey: process.env.NEXT_PUBLIC_TABBY_PUBLIC_KEY || 'pk_test_b6ac7af8-c300-4eb6-9ba6-a19ae3bf84de',
+                            merchantCode: 'MARIOT'
+                        });
+                    } catch (e) {
+                        console.error('Tabby Promo Re-init Error', e);
+                    }
+                }
+            }, 50); // Small delay to guarantee React has committed the DOM node
+        }
+    }, [paymentMethod, finalTotal, locale]);
 
     const handleAddressSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const addrId = e.target.value;
@@ -254,7 +289,12 @@ export default function CheckoutPage() {
 
         try {
             if (paymentMethod === 'card') {
-                if (!cardDetails.name || !cardDetails.number || !cardDetails.expiry || !cardDetails.cvc) {
+                if (!stripe || !elements) {
+                    showNotification(t('processing'), 'error'); // Fallback error if Stripe isn't ready
+                    setIsProcessing(false);
+                    return;
+                }
+                if (!cardDetails.name) {
                     showNotification(n('cardDetailsRequired'), 'error');
                     setIsProcessing(false);
                     return;
@@ -291,12 +331,55 @@ export default function CheckoutPage() {
             const data = await res.json();
 
             if (data.success) {
+                // Stripe Card Payment handling
+                if (data.requires_payment && data.client_secret) {
+                    const cardElement = elements?.getElement(CardElement);
+                    if (cardElement && stripe) {
+                        const { error, paymentIntent } = await stripe.confirmCardPayment(data.client_secret, {
+                            payment_method: {
+                                card: cardElement,
+                                billing_details: {
+                                    name: cardDetails.name,
+                                    email: form.email || undefined,
+                                    phone: form.phone || undefined,
+                                    address: {
+                                        city: form.city || undefined,
+                                        country: 'AE',
+                                        line1: form.streetAddress || undefined,
+                                        line2: form.additionalAddress || undefined,
+                                        postal_code: form.postcode || undefined,
+                                    }
+                                }
+                            }
+                        });
+
+                        if (error) {
+                            showNotification(error.message || n('orderFailed'), 'error');
+                            setIsProcessing(false);
+                            return;
+                        }
+
+                        if (paymentIntent && paymentIntent.status === 'succeeded') {
+                            clearCart();
+                            showNotification(n('orderSuccess'));
+                            router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
+                            return;
+                        }
+                    }
+                }
+                // Dev Mock handling
+                else if (data.payment_mock) {
+                    clearCart();
+                    showNotification("Payment successful (Mock Dev Mode)");
+                    router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
+                    return;
+                }
                 // If payment method requires redirect (like Tabby)
-                if (data.requires_redirect && data.redirect_url) {
+                else if (data.requires_redirect && data.redirect_url) {
                     showNotification(t('redirectingToPayment'), 'info');
                     window.location.href = data.redirect_url;
                 } else {
-                    // Only clear frontend cart immediately if it's a direct completion (e.g. Card or Bank)
+                    // Only clear frontend cart immediately if it's a direct completion (like Bank Transfer)
                     clearCart();
                     showNotification(n('orderSuccess'));
                     router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
@@ -316,10 +399,9 @@ export default function CheckoutPage() {
 
     const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
     // VAT is already included in prices, so cartTotal is our final payment amount
-    const finalTotal = cartTotal;
+    
     // Calculate the VAT breakdown (1/21 of total)
-    const vatAmount = finalTotal - (finalTotal / 1.05);
-
+    const vatAmount = (cartTotal * (5 / 105)); // 5% VAT inclusive
     return (
         <div className={styles.checkoutPage}>
             <Header />
@@ -481,19 +563,23 @@ export default function CheckoutPage() {
                                                 <input className={styles.modernInput} type="text" name="name" placeholder={t('placeholderName')} value={cardDetails.name} onChange={handleCardChange} />
                                             </div>
                                             <div className={`${styles.fieldGroup} ${styles.fullWidth}`}>
-                                                <label className={styles.fieldLabel}>{t('cardNumber')}</label>
-                                                <div className={styles.inputWrapper}>
-                                                    <input className={styles.modernInput} style={{ fontFamily: 'monospace', letterSpacing: '1px' }} type="text" name="number" placeholder={t('placeholderCard')} value={cardDetails.number} onChange={handleCardChange} />
-                                                    <Lock size={16} className={styles.cardIcon} />
+                                                <label className={styles.fieldLabel}>Card Details</label>
+                                                <div className={styles.modernInput} style={{ padding: '12px 16px', background: 'white' }}>
+                                                    <CardElement options={{
+                                                        style: {
+                                                            base: {
+                                                                fontSize: '16px',
+                                                                color: '#424770',
+                                                                '::placeholder': {
+                                                                    color: '#aab7c4',
+                                                                },
+                                                            },
+                                                            invalid: {
+                                                                color: '#9e2146',
+                                                            },
+                                                        },
+                                                    }} />
                                                 </div>
-                                            </div>
-                                            <div className={styles.fieldGroup}>
-                                                <label className={styles.fieldLabel}>{t('cardExpiry')}</label>
-                                                <input className={styles.modernInput} type="text" name="expiry" placeholder="MM / YY" value={cardDetails.expiry} onChange={handleCardChange} />
-                                            </div>
-                                            <div className={styles.fieldGroup}>
-                                                <label className={styles.fieldLabel}>{t('cardCvc')}</label>
-                                                <input className={styles.modernInput} type="text" name="cvc" placeholder="123" value={cardDetails.cvc} onChange={handleCardChange} />
                                             </div>
                                         </div>
                                     </div>
@@ -553,6 +639,37 @@ export default function CheckoutPage() {
                                         <img src="/assets/Tabby.webp" alt="Tabby" className={styles.tabbyLogoLarge} />
                                     </div>
                                 </div>
+
+                                {/* Tabby Promo - Shown when Tabby is selected as payment */}
+                                {paymentMethod === 'tabby' && (
+                                    <div className={styles.tabContent}>
+                                        <div style={{ padding: '24px 24px 24px 48px' }}>
+                                            <Script
+                                                src="https://checkout.tabby.ai/tabby-promo.js"
+                                                strategy="lazyOnload"
+                                                onLoad={() => {
+                                                    if (typeof window !== 'undefined' && (window as any).TabbyPromo) {
+                                                        try {
+                                                            new (window as any).TabbyPromo({
+                                                                selector: '#TabbyPromoPayment',
+                                                                currency: 'AED',
+                                                                price: finalTotal,
+                                                                installmentsCount: 4,
+                                                                lang: locale === 'ar' ? 'ar' : 'en',
+                                                                source: 'checkout',
+                                                                publicKey: process.env.NEXT_PUBLIC_TABBY_PUBLIC_KEY || 'pk_test_b6ac7af8-c300-4eb6-9ba6-a19ae3bf84de',
+                                                                merchantCode: 'MARIOT'
+                                                            });
+                                                        } catch (e) {
+                                                            console.error('Tabby Promo Error', e);
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                            <div id="TabbyPromoPayment"></div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -668,6 +785,35 @@ export default function CheckoutPage() {
                                         <span>{common('total')}</span>
                                         <span>{common('currency')} {finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
+
+                                    {/* Tabby Promo in Checkout - Disabled per user request */}
+                                    {false && (
+                                        <div className={styles.tabbyPromoCheckout} style={{ marginTop: '20px', marginBottom: '10px' }}>
+                                            <Script
+                                                src="https://checkout.tabby.ai/tabby-promo.js"
+                                                strategy="lazyOnload"
+                                                onLoad={() => {
+                                                    if (typeof window !== 'undefined' && (window as any).TabbyPromo) {
+                                                        try {
+                                                            new (window as any).TabbyPromo({
+                                                                selector: '#TabbyPromoCheckout',
+                                                                currency: 'AED',
+                                                                price: finalTotal,
+                                                                installmentsCount: 4,
+                                                                lang: locale === 'ar' ? 'ar' : 'en',
+                                                                source: 'checkout',
+                                                                publicKey: process.env.NEXT_PUBLIC_TABBY_PUBLIC_KEY || 'pk_test_b6ac7af8-c300-4eb6-9ba6-a19ae3bf84de',
+                                                                merchantCode: 'MARIOT'
+                                                            });
+                                                        } catch (e) {
+                                                            console.error('Tabby Promo Error', e);
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                            <div id="TabbyPromoCheckout"></div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <button type="submit" className={styles.checkoutBtn} disabled={isProcessing || cartItems.length === 0}>
@@ -842,5 +988,13 @@ export default function CheckoutPage() {
             <Footer />
             <FloatingActions />
         </div >
+    );
+}
+
+export default function CheckoutPage() {
+    return (
+        <Elements stripe={stripePromise}>
+            <CheckoutContent />
+        </Elements>
     );
 }

@@ -37,6 +37,7 @@ import Loader from '@/components/shared/Loader/Loader';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Link from 'next/link';
 import { MessageSquare, Phone } from 'lucide-react';
+import Script from 'next/script';
 
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -697,12 +698,30 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 )}
 
                                 {/* Tabby Area */}
-                                <div className={styles.tabbyBox}>
-                                    <div className={styles.tabbyText}>
-                                        {t('asLowAs')} <strong>AED {monthlyPayment}{t('perMonth')}</strong> {t('orPayments')}
-                                        <span className={styles.learnMore} onClick={() => setShowTabbyModal(true)}>{t('learnMore')}</span>
-                                    </div>
-                                    <img src="/assets/Tabby.webp" alt="Tabby" className={styles.tabbyLogo} />
+                                <div className={styles.tabbyBox} style={{ border: 'none', padding: 0 }}>
+                                    <Script
+                                        src="https://checkout.tabby.ai/tabby-promo.js"
+                                        strategy="lazyOnload"
+                                        onLoad={() => {
+                                            if (typeof window !== 'undefined' && (window as any).TabbyPromo) {
+                                                try {
+                                                    new (window as any).TabbyPromo({
+                                                        selector: '#TabbyPromo',
+                                                        currency: 'AED',
+                                                        price: displayPrice,
+                                                        installmentsCount: 4,
+                                                        lang: locale === 'ar' ? 'ar' : 'en',
+                                                        source: 'product',
+                                                        publicKey: process.env.NEXT_PUBLIC_TABBY_PUBLIC_KEY || 'pk_test_b6ac7af8-c300-4eb6-9ba6-a19ae3bf84de',
+                                                        merchantCode: 'MARIOT'
+                                                    });
+                                                } catch (e) {
+                                                    console.error('Tabby Promo Error', e);
+                                                }
+                                            }
+                                        }}
+                                    />
+                                    <div id="TabbyPromo"></div>
                                 </div>
 
                                 {/* Extra Services */}
