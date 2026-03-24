@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
 
 class Order {
     static async create(userId, { items, shipping_address_id, billing_details, payment_method, total_amount, vat_amount, final_amount, points_to_use = 0, coupon_id = null, discount_amount = 0 }) {
@@ -8,8 +9,9 @@ class Order {
 
             let finalAddressId = shipping_address_id;
 
-            // If a form was given and shipping_address_id is a placeholder (like 1), create the address real-time!
-            if (billing_details && billing_details.streetAddress) {
+            // If a form was given AND the user did NOT select an existing address (so shipping_address_id is the placeholder '1' or null),
+            // ONLY THEN do we create a brand new address manually.
+            if ((!shipping_address_id || shipping_address_id === 1) && billing_details && billing_details.streetAddress) {
                 const [addrResult] = await connection.execute(
                     `INSERT INTO addresses (user_id, address_line1, address_line2, city, state, zip_code, phone) VALUES (?, ?, ?, ?, ?, ?, ?)`,
                     [
@@ -24,7 +26,8 @@ class Order {
                 );
                 finalAddressId = addrResult.insertId;
             } else if (shipping_address_id === 1) {
-                finalAddressId = null; // if default was placeholder and no details passed avoid error
+                // If it's a placeholder but no details were provided (like a purely digital good checkout), null it.
+                finalAddressId = null; 
             }
 
             // Fetch dynamic point value (default: 0.01 AED per point)
@@ -34,7 +37,7 @@ class Order {
             const pointsDiscount = points_to_use * aedPerPoint;
             const adjustedFinalAmount = Math.max(0, final_amount - pointsDiscount);
 
-            const initialPaymentStatus = payment_method === 'card' ? 'paid' : 'pending';
+            const initialPaymentStatus = 'pending';
 
             // 1. Create order
             const [orderResult] = await connection.execute(
@@ -64,7 +67,7 @@ class Order {
             // 4. Process completion operations (clearing cart, stock reduction, points) 
             // We do this immediately for all methods EXCEPT those that require a redirect to a 3rd party (like Tabby) 
             // where the user hasn't successfully finished the checkout yet.
-            if (payment_method !== 'tabby') {
+            if (payment_method !== 'tabby' && payment_method !== 'card') {
                 await this.processOrderCompletion(connection, userId, orderId, items, points_to_use, adjustedFinalAmount);
             }
 
@@ -125,6 +128,55 @@ class Order {
                 'INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, "earned", ?, ?)',
                 [userId, pointsEarned, orderId, `Points earned from order #${orderId}`]
             );
+        }
+
+        // 5. Send Order Confirmation Email
+        try {
+            // Fetch User info
+            const [userRows] = await connection.execute('SELECT name, email FROM users WHERE id = ?', [userId]);
+            
+            // Fetch Order info
+            const [orderRows] = await connection.execute('SELECT * FROM orders WHERE id = ?', [orderId]);
+            
+            if (userRows[0] && orderRows[0]) {
+                const { name, email } = userRows[0];
+                const orderDataFromDb = orderRows[0];
+
+                // Fetch full item details for the email table (names, prices, images)
+                const [fullItems] = await connection.execute(`
+                    SELECT oi.quantity, oi.price_at_purchase as price, p.name,
+                    (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1) as image
+                    FROM order_items oi
+                    JOIN products p ON oi.product_id = p.id
+                    WHERE oi.order_id = ?
+                `, [orderId]);
+
+                // Fetch the actual address record used
+                let billingDetails = {};
+                if (orderDataFromDb.shipping_address_id) {
+                    const [addrRows] = await connection.execute('SELECT * FROM addresses WHERE id = ?', [orderDataFromDb.shipping_address_id]);
+                    if (addrRows[0]) {
+                        const a = addrRows[0];
+                        billingDetails = {
+                            firstName: name.split(' ')[0],
+                            lastName: name.split(' ').slice(1).join(' '),
+                            streetAddress: a.address_line1 + (a.address_line2 ? ', ' + a.address_line2 : ''),
+                            city: a.city,
+                            country: a.state || 'UAE', // Using state field for country as per our address model earlier
+                            phone: a.phone
+                        };
+                    }
+                }
+
+                // Attach billing details for the email helper
+                orderDataFromDb.billing_details = billingDetails;
+
+                sendOrderConfirmationEmail(email, name, orderId, orderDataFromDb.final_amount, fullItems, orderDataFromDb).catch(err => 
+                    console.error(`Failed to send order confirmation email for order #${orderId}:`, err)
+                );
+            }
+        } catch (emailError) {
+            console.error(`Error attempting to send order confirmation for order #${orderId}:`, emailError);
         }
     }
 

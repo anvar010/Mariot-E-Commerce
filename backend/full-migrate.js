@@ -363,6 +363,7 @@ async function migrate() {
         await addColumn('orders', 'points_used', 'INT DEFAULT 0 AFTER payment_method');
         await addColumn('orders', 'points_discount', 'DECIMAL(10, 2) DEFAULT 0.00 AFTER points_used');
         await addColumn('orders', 'coupon_id', 'INT DEFAULT NULL AFTER points_discount');
+        await addColumn('orders', 'stripe_payment_intent_id', 'VARCHAR(255) DEFAULT NULL AFTER coupon_id');
 
         // Coupons table extras
         await addColumn('coupons', 'applicable_brands', 'TEXT DEFAULT NULL');

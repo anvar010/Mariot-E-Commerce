@@ -4,6 +4,11 @@ const Coupon = require('../models/coupon.model');
 const db = require('../config/db');
 const axios = require('axios');
 
+// Initialize Stripe with secret key
+const stripe = process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('REPLACE_WITH')
+    ? require('stripe')(process.env.STRIPE_SECRET_KEY)
+    : null;
+
 exports.createOrder = async (req, res, next) => {
     try {
         const items = await Cart.getCartItems(req.user.id);
@@ -149,6 +154,63 @@ exports.createOrder = async (req, res, next) => {
 
         const orderId = await Order.create(req.user.id, orderData);
 
+        // --- STRIPE CARD INTEGRATION ---
+        if (payment_method === 'card') {
+            try {
+                // If Stripe is not configured, fall back to mock for development
+                if (!stripe) {
+                    // MOCK: Auto-complete for dev testing when keys aren't set
+                    await Order.updatePaymentStatus(orderId, 'paid');
+                    return res.status(201).json({
+                        success: true,
+                        requires_redirect: false,
+                        payment_mock: true,
+                        data: { id: orderId, ...orderData }
+                    });
+                }
+
+                // Create a Stripe PaymentIntent (server-side, secure)
+                const paymentIntent = await stripe.paymentIntents.create({
+                    amount: Math.round(finalAmount * 100), // Stripe uses cents
+                    currency: 'aed',
+                    description: `Order #${orderId} from Mariot Store`,
+                    metadata: {
+                        order_id: orderId.toString(),
+                        user_id: req.user.id.toString()
+                    },
+                    // Receipt email for the customer
+                    receipt_email: billing_details?.email || req.user.email,
+                    // Automatic payment methods lets Stripe pick the best methods
+                    automatic_payment_methods: {
+                        enabled: true,
+                    },
+                }, {
+                    idempotencyKey: `order_${orderId}_${Date.now()}` // Prevent duplicate charges
+                });
+
+                // Store the PaymentIntent ID on the order for later verification
+                await db.execute(
+                    'UPDATE orders SET stripe_payment_intent_id = ? WHERE id = ?',
+                    [paymentIntent.id, orderId]
+                );
+
+                return res.status(201).json({
+                    success: true,
+                    requires_payment: true,
+                    client_secret: paymentIntent.client_secret,
+                    data: { id: orderId, ...orderData }
+                });
+            } catch (stripeError) {
+                console.error('Stripe Error:', stripeError.message);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to initialize card payment',
+                    error_details: { error: stripeError.message }
+                });
+            }
+        }
+        // --- END STRIPE ---
+
         // --- TABBY INTEGRATION ---
         if (payment_method === 'tabby') {
             try {
@@ -259,6 +321,11 @@ exports.createOrder = async (req, res, next) => {
         }
         // --- END TABBY ---
 
+        // For bank transfer orders, complete immediately (manual verification by admin later)
+        if (payment_method === 'bank') {
+            // Bank transfers stay pending until admin manually confirms
+        }
+
         res.status(201).json({
             success: true,
             requires_redirect: false,
@@ -266,6 +333,58 @@ exports.createOrder = async (req, res, next) => {
         });
     } catch (error) {
         next(error);
+    }
+};
+
+// --- STRIPE WEBHOOK ---
+// Handles async payment confirmations from Stripe
+exports.stripeWebhook = async (req, res) => {
+    let event;
+
+    try {
+        // CRITICAL: Verify webhook signature to prevent spoofing
+        if (stripe && process.env.STRIPE_WEBHOOK_SECRET && !process.env.STRIPE_WEBHOOK_SECRET.includes('REPLACE_WITH')) {
+            const sig = req.headers['stripe-signature'];
+            event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+        } else {
+            // Dev fallback - parse raw body
+            event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        }
+    } catch (err) {
+        console.error('[Stripe Webhook] Signature verification failed:', err.message);
+        return res.status(400).json({ success: false, message: `Webhook signature failed: ${err.message}` });
+    }
+
+    try {
+        switch (event.type) {
+            case 'payment_intent.succeeded': {
+                const paymentIntent = event.data.object;
+                const orderId = paymentIntent.metadata?.order_id;
+
+                if (orderId) {
+                    console.log(`[Stripe Webhook] Payment succeeded for Order #${orderId}`);
+                    await Order.updatePaymentStatus(parseInt(orderId), 'paid');
+                }
+                break;
+            }
+            case 'payment_intent.payment_failed': {
+                const paymentIntent = event.data.object;
+                const orderId = paymentIntent.metadata?.order_id;
+
+                if (orderId) {
+                    console.log(`[Stripe Webhook] Payment failed for Order #${orderId}`);
+                    await Order.updatePaymentStatus(parseInt(orderId), 'failed');
+                }
+                break;
+            }
+            default:
+                console.log(`[Stripe Webhook] Unhandled event: ${event.type}`);
+        }
+
+        res.status(200).json({ received: true });
+    } catch (error) {
+        console.error('[Stripe Webhook] Processing error:', error.message);
+        res.status(500).json({ success: false, message: 'Webhook processing failed' });
     }
 };
 
