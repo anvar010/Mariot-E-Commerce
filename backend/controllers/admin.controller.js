@@ -138,7 +138,7 @@ exports.getDashboardStats = async (req, res, next) => {
                     ORDER BY r.created_at DESC
                     LIMIT 5
                 `))[0],
-                lowStockAlerts: (await db.query('SELECT name, stock_quantity FROM products WHERE stock_quantity < 10 ORDER BY stock_quantity ASC LIMIT 5'))[0],
+                lowStockAlerts: (await db.query('SELECT name, stock_quantity FROM products WHERE stock_quantity < 10 AND status = "active" AND is_active = 1 AND track_inventory = 1 ORDER BY stock_quantity ASC LIMIT 5'))[0],
                 seoIssues: (await db.query(`
                     SELECT p.id, p.name, p.slug, 
                     (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image,

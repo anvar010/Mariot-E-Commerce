@@ -103,18 +103,19 @@ exports.createOrder = async (req, res, next) => {
         // SERVER-SIDE REWARD POINTS VALIDATION
         // ====================================================
         let validatedPointsToUse = 0;
+        let aedPerPoint = 0.01; // Default value
 
         if (points_to_use > 0) {
             // Fetch the user's ACTUAL reward points from the database
             const [userRows] = await db.execute('SELECT reward_points FROM users WHERE id = ?', [req.user.id]);
             const actualPoints = userRows[0]?.reward_points || 0;
 
+            // Fetch dynamic point value
+            const [settingRows] = await db.execute('SELECT `value` FROM settings WHERE `key` = "aed_per_point"');
+            if (settingRows[0]) aedPerPoint = parseFloat(settingRows[0].value);
+
             // Ensure user actually has enough points
             const clampedPoints = Math.min(Number(points_to_use), actualPoints);
-
-            // Fetch dynamic point value (default: 0.01 AED per point)
-            const [settingRows] = await db.execute('SELECT `value` FROM settings WHERE `key` = "aed_per_point"');
-            const aedPerPoint = settingRows[0] ? parseFloat(settingRows[0].value) : 0.01;
 
             const maxAEDFromPoints = clampedPoints * aedPerPoint;
             const remainingAfterCoupon = subtotal - calculatedCouponDiscount;

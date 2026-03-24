@@ -210,11 +210,22 @@ const ProductCard: React.FC<ProductCardProps> = ({
     return (
         <div className={styles.productCard}>
             <div className={styles.imageSection}>
-                {displayDiscount && !isDailyOffer && <div className={styles.badge}>{displayDiscount}</div>}
-                {isWeeklyDeal && <div className={`${styles.dealTag} ${styles.weeklyTag}`}>{t('weeklyDeal')}</div>}
-                {isLimitedOffer && <div className={`${styles.dealTag} ${styles.limitedTag}`}>{t('limitedOffer')}</div>}
-                {isDailyOffer && <div className={`${styles.dealTag} ${styles.dailyTag}`}>{t('dailyOffer')}</div>}
-                {!!product?.is_best_seller && <div className={`${styles.dealTag} ${styles.bestSellerTag}`}>{t('bestSeller')}</div>}
+                <div className={styles.tagsWrapper}>
+                    {isWeeklyDeal && <div className={`${styles.dealTag} ${styles.weeklyTag}`}>{t('weeklyDeal')}</div>}
+                    {isLimitedOffer && <div className={`${styles.dealTag} ${styles.limitedTag}`}>{t('limitedOffer')}</div>}
+                    {isDailyOffer && <div className={`${styles.dealTag} ${styles.dailyTag}`}>{t('dailyOffer')}</div>}
+                    
+                    {/* Show Top Selling tag if sold_count >= 2 OR manually marked as best seller */}
+                    {((!!product?.is_best_seller) || (Number(product?.sold_count) >= 2)) && !isWeeklyDeal && !isLimitedOffer && !isDailyOffer && (
+                        <div className={`${styles.dealTag} ${styles.bestSellerTag}`}>{t('topSellingProduct')}</div>
+                    )}
+                </div>
+
+                {displayDiscount && !isDailyOffer && (
+                    <div className={styles.discountBadgeWrapper}>
+                        <div className={styles.badge}>{displayDiscount}</div>
+                    </div>
+                )}
 
                 <button
                     className={`${styles.wishlistBtn} ${isFav ? styles.wishlistActive : ''}`}

@@ -63,11 +63,10 @@ exports.getSellerDashboardStats = async (req, res) => {
             LIMIT 5
         `, [sellerId]);
 
-        // Low stock alerts
         const [lowStockAlerts] = await db.query(`
             SELECT id, name, stock_quantity 
             FROM products 
-            WHERE seller_id = ? AND stock_quantity <= 5 
+            WHERE seller_id = ? AND stock_quantity < 10 AND status = "active" AND is_active = 1 AND track_inventory = 1
             ORDER BY stock_quantity ASC
             LIMIT 5
         `, [sellerId]);
