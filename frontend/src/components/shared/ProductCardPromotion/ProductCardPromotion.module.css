@@ -406,13 +406,14 @@
     }
 
     .pricing {
-        margin-top: 0 !important;
-        padding-top: 4px;
+        margin-top: auto !important;
+        padding-top: 0;
+        border-top: none;
         min-height: auto !important;
     }
 
     .actions {
-        margin-top: 8px;
+        margin-top: 2px;
         gap: 6px;
     }
 
@@ -462,8 +463,9 @@
     }
 
     .pricing {
-        margin-top: 0 !important;
-        padding-top: 2px;
+        margin-top: auto !important;
+        padding-top: 0;
+        border-top: none;
         min-height: auto !important;
     }
 

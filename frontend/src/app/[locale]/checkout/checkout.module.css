@@ -236,6 +236,8 @@
     background: #fff;
     border-color: #237073;
     box-shadow: 0 4px 12px rgba(35, 112, 115, 0.06);
+    border-radius: 10px 10px 0 0;
+    border-bottom: none;
 }
 
 .radioDot {
@@ -322,9 +324,10 @@
     background: #ffffff;
     border: 1.5px solid #237073;
     border-top: none;
-    margin-top: -10px;
+    margin-top: -8px; /* Cancels the 8px flex gap in .paymentGrid */
     margin-bottom: 12px;
     border-radius: 0 0 10px 10px;
+    box-shadow: 0 4px 12px rgba(35, 112, 115, 0.06); /* Match the top tab shadow to unify the 3D block */
     overflow: hidden;
     animation: fadeIn 0.3s ease-out;
 }
@@ -343,7 +346,7 @@
 
 /* Refined Card Form */
 .cardFormGrid {
-    padding: 24px;
+    padding: 24px 24px 28px 48px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
@@ -378,7 +381,7 @@
 }
 
 .bankDetails {
-    padding: 20px;
+    padding: 20px 24px 24px 48px;
     background: #fafbfb;
 }
 
@@ -1105,4 +1108,84 @@
     border-radius: 4px;
     font-weight: 600;
     white-space: nowrap;
+}
+
+/* Tabby Installments Box - Shown when Tabby is selected */
+.tabbyInstallmentsBox {
+    display: flex;
+    gap: 32px;
+    padding: 20px 24px;
+    background: #fafbfc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-top: 12px;
+    animation: tabbySlideIn 0.3s ease-out;
+}
+
+@keyframes tabbySlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tabbyInstallmentsLeft {
+    display: flex;
+    flex-direction: column;
+    min-width: 160px;
+}
+
+.tabbyInstallmentsRight {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    justify-content: center;
+}
+
+.tabbyBenefit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.tabbyBenefitIcon,
+.tabbyBenefitIconGreen,
+.tabbyBenefitIconShield {
+    font-size: 16px;
+}
+
+.tabbyViewOptions {
+    display: inline-block;
+    margin-top: 10px;
+    background: #3fefba;
+    color: #0f172a;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: fit-content;
+}
+
+.tabbyViewOptions:hover {
+    background: #2dd4a0;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+    .tabbyInstallmentsBox {
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+    }
 }

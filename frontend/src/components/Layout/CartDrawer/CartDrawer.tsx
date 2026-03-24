@@ -22,6 +22,7 @@ import {
 import { useRouter } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
+import Script from 'next/script';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useNotification } from '@/context/NotificationContext';
@@ -371,6 +372,33 @@ const CartDrawer = () => {
                                 <div className={styles.finalTotal}>
                                     AED {cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
+
+                                {/* Tabby Promo in Cart
+                                <div className={styles.tabbyPromoCart} style={{ marginTop: '15px' }}>
+                                    <Script
+                                        src="https://checkout.tabby.ai/tabby-promo.js"
+                                        strategy="lazyOnload"
+                                        onLoad={() => {
+                                            if (typeof window !== 'undefined' && (window as any).TabbyPromo) {
+                                                try {
+                                                    new (window as any).TabbyPromo({
+                                                        selector: '#TabbyPromoCart',
+                                                        currency: 'AED',
+                                                        price: cartTotal,
+                                                        installmentsCount: 4,
+                                                        lang: locale === 'ar' ? 'ar' : 'en',
+                                                        source: 'cart',
+                                                        publicKey: process.env.NEXT_PUBLIC_TABBY_PUBLIC_KEY || 'pk_test_b6ac7af8-c300-4eb6-9ba6-a19ae3bf84de',
+                                                        merchantCode: 'MARIOT'
+                                                    });
+                                                } catch (e) {
+                                                    console.error('Tabby Promo Error', e);
+                                                }
+                                            }
+                                        }}
+                                    />
+                                    <div id="TabbyPromoCart"></div>
+                                </div> */}
                             </div>
                         </>
                     )}
