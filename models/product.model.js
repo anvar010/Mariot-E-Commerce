@@ -8,7 +8,8 @@ class Product {
             s.name as seller_name, s.company_name as seller_company, s.id as seller_id,
             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
             COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = p.id), 0) as average_rating,
-            (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as total_reviews
+            (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as total_reviews,
+            COALESCE((SELECT SUM(quantity) FROM order_items WHERE product_id = p.id), 0) as sold_count
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN brands b ON p.brand_id = b.id
@@ -156,7 +157,8 @@ class Product {
             SELECT p.*, c.name as category_name, c.slug as category_slug, b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image, b.description as brand_description, b.description_ar as brand_description_ar,
             s.name as seller_name, s.company_name as seller_company, s.id as seller_id,
             COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = p.id), 0) as average_rating,
-            (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as total_reviews
+            (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as total_reviews,
+            COALESCE((SELECT SUM(quantity) FROM order_items WHERE product_id = p.id), 0) as sold_count
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN brands b ON p.brand_id = b.id
