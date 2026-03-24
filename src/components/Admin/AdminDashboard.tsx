@@ -206,7 +206,7 @@ const AdminDashboard = () => {
                                 {stats?.topProducts?.map((p: any, i: number) => (
                                     <tr key={i}>
                                         <td>{stripHtml(p.name)}</td>
-                                        <td><strong>{p.sold_count}</strong> units</td>
+                                        <td><strong>{p.sold_count}</strong> {p.sold_count === 1 ? 'unit' : 'units'}</td>
                                     </tr>
                                 ))}
                             </tbody>

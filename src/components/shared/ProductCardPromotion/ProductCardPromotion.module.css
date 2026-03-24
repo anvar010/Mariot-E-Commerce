@@ -34,18 +34,41 @@
     flex-direction: column;
     gap: 6px;
     align-items: flex-start;
+    max-width: 60%;
+}
+
+.discountTagWrapper {
+    position: absolute;
+    top: 15px;
+    inset-inline-end: 15px;
+    z-index: 10;
 }
 
 .bestSellerTag {
-    background: #000;
+    background: #337c7f;
     color: #fff;
-    padding: 6px 14px;
+    padding: 4px 10px;
     font-size: 10px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-radius: 12px;
+    border-radius: 20px;
+    text-transform: capitalize;
+    letter-spacing: 0.5px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+}
+
+.discountTag {
+    background-color: #ff3b30;
+    color: white;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(255, 59, 48, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    width: fit-content;
 }
 
 .dealTag {
@@ -71,24 +94,6 @@
     background: #5bb377;
 }
 
-.discountTagWrapper {
-    position: absolute;
-    top: 15px;
-    inset-inline-end: 15px;
-    z-index: 10;
-}
-
-.discountTag {
-    background: #ff3b30;
-    color: white;
-    padding: 6px 14px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
-}
 
 /* Image Container */
 .imageContainer {

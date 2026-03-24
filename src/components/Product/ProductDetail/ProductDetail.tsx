@@ -820,8 +820,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 {product.specifications ? (
                                     <div className={styles.specsGrid}>
                                         {(() => {
-                                            const cleaned = cleanShortcodes(product.specifications);
-                                            const lines = cleaned.split(/<br\/>|\n/).filter(l => l.trim() !== '');
+                                            const cleaned = cleanShortcodes(product.specifications)
+                                                .replace(/<[^>]*>/g, '\n') // Replace HTML tags with newlines
+                                                .replace(/^[•\s✳️✅-]\s*/gm, ''); // Remove bullet points at start of lines
+                                            const lines = cleaned.split(/\n/).filter(l => l.trim() !== '');
 
                                             if (lines.length > 1) {
                                                 return (

@@ -63,6 +63,7 @@
         "addedToWishlist": "Added to wishlist!",
         "removedFromWishlist": "Removed from wishlist",
         "bestSeller": "BEST SELLER",
+        "topSellingProduct": "Top Selling Product",
         "brand": "BRAND",
         "off": "OFF",
         "weeklyDeal": "Weekly Deal",
@@ -196,7 +197,8 @@
         "subtotal": "Subtotal",
         "total": "Total",
         "shipping": "Shipping",
-        "vat": "VAT"
+        "vat": "VAT",
+        "taxableAmount": "Total taxable amount"
     },
     "ticker": {
         "restaurantSupply": "RESTAURANT SUPPLY & KITCHEN EQUIPMENT",

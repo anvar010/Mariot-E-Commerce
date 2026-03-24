@@ -22,29 +22,44 @@
     margin-bottom: 2px;
 }
 
-.badge {
+.tagsWrapper {
     position: absolute;
-    top: 5px;
-    inset-inline-start: 5px;
+    top: 10px;
+    inset-inline-start: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 10;
+    align-items: flex-start;
+    max-width: 60%;
+}
+
+.discountBadgeWrapper {
+    position: absolute;
+    top: 10px;
+    inset-inline-end: 10px;
+    z-index: 10;
+}
+
+.badge {
     background: #3ac672;
     color: white;
-    font-size: 12px;
-    font-weight: 900;
-    padding: 6px 14px;
-    z-index: 2;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(58, 198, 114, 0.2);
+    white-space: nowrap;
 }
 
 .dealTag {
-    position: absolute;
-    bottom: 0;
-    inset-inline-start: 0;
-    padding: 5px 12px;
-    color: white;
-    font-size: 11px;
-    font-weight: 900;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
     text-transform: uppercase;
-    z-index: 3;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .weeklyTag {
@@ -60,8 +75,10 @@
 }
 
 .bestSellerTag {
-    background: #1a237e;
-    bottom: 0;
+    background: #337c7f;
+    color: #fff;
+    text-transform: capitalize;
+    font-weight: 800;
 }
 
 .wishlistBtn {
