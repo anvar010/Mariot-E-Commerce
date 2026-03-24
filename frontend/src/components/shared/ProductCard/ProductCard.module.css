@@ -379,18 +379,23 @@
         padding: 4px;
     }
 
-    .badge {
-        font-size: 8px;
-        padding: 3px 6px;
-        top: 0;
-        inset-inline-start: 0;
+    .badge,
+    .dealTag,
+    .bestSellerTag {
+        font-size: 8px !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
     }
 
-    .dealTag {
-        bottom: 0;
-        inset-inline-start: 0;
-        font-size: 8px;
-        padding: 3px 6px;
+    .tagsWrapper {
+        top: 8px !important;
+        inset-inline-start: 8px !important;
+        max-width: 55% !important;
+    }
+
+    .discountBadgeWrapper {
+        top: 8px !important;
+        inset-inline-end: 8px !important;
     }
 
     .wishlistBtn {

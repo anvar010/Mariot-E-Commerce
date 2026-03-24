@@ -485,4 +485,21 @@
         padding: 2px 10px;
         bottom: -12px;
     }
+
+    .dealTag, .bestSellerTag, .discountTag {
+        font-size: 8px !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+    }
+
+    .tagsWrapperStart {
+        top: 8px !important;
+        inset-inline-start: 8px !important;
+        max-width: 55% !important;
+    }
+
+    .discountTagWrapper {
+        top: 8px !important;
+        inset-inline-end: 8px !important;
+    }
 }
