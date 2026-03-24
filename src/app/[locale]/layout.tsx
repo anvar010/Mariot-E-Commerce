@@ -19,12 +19,6 @@ const alexandria = Alexandria({
 });
 
 export const dynamic = 'force-dynamic';
-export const viewport = {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-};
 
 export function generateStaticParams() {
     return [{ locale: 'en' }, { locale: 'ar' }];
@@ -36,6 +30,12 @@ export async function generateMetadata({ params: { locale } }: { params: { local
     return {
         title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
         description: isArabic ? 'معدات مطابخ فاخرة وتجارية في الإمارات العربية المتحدة' : 'Premium Commercial Kitchen Equipment in UAE',
+        viewport: {
+            width: 'device-width',
+            initialScale: 1,
+            maximumScale: 1,
+            userScalable: false,
+        },
         icons: {
             icon: '/assets/mariot-icon.webp',
             shortcut: '/assets/mariot-icon.webp',

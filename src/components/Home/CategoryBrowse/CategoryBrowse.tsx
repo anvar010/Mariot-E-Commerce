@@ -221,6 +221,7 @@ const CategoryBrowse = () => {
                     <AnimatePresence>
                         {canScrollLeft && (
                             <motion.div 
+                                key="fade-left"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
@@ -229,6 +230,7 @@ const CategoryBrowse = () => {
                         )}
                         {canScrollRight && (
                             <motion.div 
+                                key="fade-right"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}

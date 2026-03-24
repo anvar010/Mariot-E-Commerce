@@ -100,14 +100,14 @@ export default async function Home({ params: { locale } }: { params: { locale: s
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
             <Header />
             <Hero initialSlides={data.heroSlides} />
-            <Reveal><HeroPosters initialPosters={data.heroPosters} /></Reveal>
-            <Reveal><CategoryBrowse /></Reveal>
-            <Reveal><LimitedOffers initialProducts={data.limitedProducts} /></Reveal>
-            <Reveal><WeeklyDeals initialProducts={data.weeklyProducts} /></Reveal>
-            <Reveal><IceMakers initialProducts={data.iceProducts} /></Reveal>
-            <Reveal><CoffeeMakers initialProducts={data.coffeeProducts} /></Reveal>
-            <Reveal><CookingEquipment initialProducts={data.cookingProducts} /></Reveal>
-            <Reveal><AboutSection /></Reveal>
+            <Reveal key="reveal-hero-posters"><HeroPosters initialPosters={data.heroPosters} /></Reveal>
+            <Reveal key="reveal-categories"><CategoryBrowse /></Reveal>
+            <Reveal key="reveal-limited"><LimitedOffers initialProducts={data.limitedProducts} /></Reveal>
+            <Reveal key="reveal-weekly"><WeeklyDeals initialProducts={data.weeklyProducts} /></Reveal>
+            <Reveal key="reveal-ice"><IceMakers initialProducts={data.iceProducts} /></Reveal>
+            <Reveal key="reveal-coffee"><CoffeeMakers initialProducts={data.coffeeProducts} /></Reveal>
+            <Reveal key="reveal-cooking"><CookingEquipment initialProducts={data.cookingProducts} /></Reveal>
+            <Reveal key="reveal-about"><AboutSection /></Reveal>
             <Footer />
             <FloatingActions />
         </main>
