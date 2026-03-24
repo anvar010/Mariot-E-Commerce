@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import styles from './CookingEquipment.module.css';
 import { Link } from '@/i18n/navigation';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
@@ -83,6 +83,12 @@ const CookingEquipment = ({ initialProducts = [] }: CookingEquipmentProps) => {
     return (
         <section id="cooking-equipment-section" className={styles.weeklySection}>
             <div className={styles.container}>
+                <div className={styles.mobileHeader}>
+                    <h2 className={styles.mobileTitle}>Cooking Equipment</h2>
+                    <Link href="/shop?category=cooking-equipment" className={styles.mobileViewAll}>
+                        VIEW ALL <ArrowRight size={16} />
+                    </Link>
+                </div>
                 <div className={styles.dealsContentWrapper}>
                     <div className={styles.navButtons}>
                         <button className={`${styles.navBtn} ${styles.prevBtn}`} onClick={() => scroll('left')} aria-label="Scroll left">
@@ -97,7 +103,7 @@ const CookingEquipment = ({ initialProducts = [] }: CookingEquipmentProps) => {
                         <div className={styles.bannerCard}>
                             <div className={styles.bannerOverlay}>
                                 <h3 className={styles.bannerTitle}>COOKING<br />EQUIPMENT</h3>
-                                <Link href="/en/shop?search=cooking+equipment" className={styles.viewAllBtn}>
+                                <Link href="/shop?category=cooking-equipment" className={styles.viewAllBtn}>
                                     VIEW ALL
                                 </Link>
                             </div>
