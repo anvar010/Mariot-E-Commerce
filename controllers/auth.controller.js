@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const User = require('../models/user.model');
-const { sendPasswordResetEmail } = require('../utils/sendEmail');
+const { sendPasswordResetEmail, sendWelcomeEmail } = require('../utils/sendEmail');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -39,6 +39,10 @@ exports.register = async (req, res, next) => {
 
         const userId = await User.create({ name, email, password });
         const user = { id: userId, name, email, role: 'user', reward_points: 1000 };
+        
+        // Send Welcome Email
+        sendWelcomeEmail(email, name).catch(err => console.error('Failed to send welcome email:', err));
+
         sendTokenResponse(user, 201, res);
     } catch (error) {
         next(error);
@@ -89,6 +93,9 @@ exports.googleLogin = async (req, res, next) => {
             const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
             const userId = await User.create({ name, email, password: randomPassword });
             user = await User.findById(userId);
+            
+            // Send Welcome Email for new Google users
+            sendWelcomeEmail(email, name).catch(err => console.error('Failed to send welcome email (Google):', err));
         }
 
         sendTokenResponse({
