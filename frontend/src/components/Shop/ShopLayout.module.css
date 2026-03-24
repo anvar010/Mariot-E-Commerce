@@ -456,6 +456,7 @@
     cursor: pointer;
     color: #086c7e;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .activeCategoryCard {
@@ -728,20 +729,27 @@
     }
 
     .resultsHeader {
+        display: flex;
         flex-direction: row;
+        flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 16px;
+        gap: 12px;
+        margin-bottom: 20px;
     }
 
     .sortContainer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
         margin-inline-start: auto;
     }
 
     .sortDropdown {
         min-width: unset;
+        width: auto;
         padding: 8px 12px;
+        white-space: nowrap;
     }
 
     .sortLabel {
@@ -827,6 +835,11 @@
 
     .resultsCount {
         font-size: 13px;
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .sortLabel {
@@ -834,8 +847,26 @@
     }
 
     .sortDropdown {
-        padding: 8px 12px;
+        padding: 0 12px;
         font-size: 13px;
+        white-space: nowrap;
+        height: 36px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        display: flex;
+        align-items: center;
+    }
+    
+    .mobileFilterToggle {
+        padding: 0 12px;
+        font-size: 13px;
+        height: 36px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        display: flex;
+        align-items: center;
     }
 
     .categoryCard {
@@ -907,6 +938,25 @@
         width: 32px;
         height: 32px;
         font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .resultsHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .sortContainer {
+        width: 100%;
+        justify-content: space-between;
+        margin-inline-start: 0;
+    }
+    
+    .sortDropdown {
+        flex: 1;
+        justify-content: space-between;
     }
 }
 
@@ -1039,6 +1089,22 @@
 @media (max-width: 1024px) {
     .mobileFilterToggle {
         display: flex !important;
+        height: 40px;
+        padding: 0 16px;
+        align-items: center;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    .sortDropdown {
+        height: 40px;
+        padding: 0 16px;
+        min-width: unset;
+        width: auto;
+        display: flex;
+        align-items: center;
+        box-sizing: border-box;
+        font-size: 14px;
     }
 
     .desktopOnly {
