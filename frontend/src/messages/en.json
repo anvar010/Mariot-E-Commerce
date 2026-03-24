@@ -26,7 +26,8 @@
         "needHelp": "Need help finding parts?",
         "congratsPoints": "Congratulations! You got 1000 points",
         "searching": "Searching",
-        "noResultsFound": "No products found"
+        "noResultsFound": "No products found",
+        "signOut": "Sign Out"
     },
     "product": {
         "inStock": "IN STOCK",

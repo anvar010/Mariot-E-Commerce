@@ -331,12 +331,16 @@
     }
 
     .signOutBtn {
-        margin-top: 15px;
-        padding: 10px;
-        font-size: 14px;
-        width: auto;
-        display: none;
-        /* Maybe hide or move to bottom of list */
+        margin-top: 30px;
+        padding: 12px;
+        font-size: 15px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #fff1f0;
+        border: 1px solid #ffa39e;
+        color: #cf1322;
     }
 
     /* Content Adjustments */

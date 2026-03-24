@@ -26,7 +26,8 @@
         "needHelp": "هل تحتاج مساعدة في إيجاد القطع؟",
         "congratsPoints": "تهانينا! حصلت على 1000 نقطة",
         "searching": "جاري البحث",
-        "noResultsFound": "لم يتم العثور على منتجات"
+        "noResultsFound": "لم يتم العثور على منتجات",
+        "signOut": "تسجيل الخروج"
     },
     "product": {
         "inStock": "متوفر",

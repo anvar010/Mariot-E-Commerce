@@ -1174,4 +1174,25 @@
         right: 15px;
         width: calc(100% - 30px);
     }
+}
+
+.mobileSignOutBtn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 15px 0;
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: inherit;
+    border-top: 1px solid #f5f5f5;
+    margin-top: 5px;
+}
+
+.mobileSignOutBtn svg {
+    color: #ef4444;
 }
