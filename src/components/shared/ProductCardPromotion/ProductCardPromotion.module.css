@@ -438,16 +438,17 @@
         height: auto;
         aspect-ratio: 1;
         /* Keeps it square on mobile */
-        padding: 18px;
-        border-radius: 12px;
-        margin-bottom: 24px;
+        padding: 12px;
+        border-radius: 10px;
+        margin-bottom: 16px;
     }
 
     .productName {
         font-size: 13px;
-        min-height: 54px;
-        -webkit-line-clamp: 3;
-        line-clamp: 3;
+        min-height: 36px;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        margin-bottom: 4px;
     }
 
     .brandLogoBox {
@@ -486,7 +487,9 @@
         bottom: -12px;
     }
 
-    .dealTag, .bestSellerTag, .discountTag {
+    .dealTag,
+    .bestSellerTag,
+    .discountTag {
         font-size: 9px !important;
         padding: 2px 8px !important;
         border-radius: 4px !important;

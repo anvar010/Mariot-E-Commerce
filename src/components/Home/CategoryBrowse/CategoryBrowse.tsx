@@ -10,25 +10,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const categories = [
     { id: 1, name: "Coffee Makers", slug: "coffee-makers", image: "/assets/product_images/coffeemakers.webp" },
-    { id: 2, name: "Ice Equipment", slug: "ice-equipment", image: "/assets/product_images/ice Equipment.webp" },
-    { id: 3, name: "Cooking Equipment", slug: "cooking-equipment", image: "/assets/product_images/CookingEquipment.webp" },
-    { id: 4, name: "Refrigeration", slug: "refrigeration", image: "/assets/product_images/Refrigeration.webp" },
-    { id: 5, name: "Beverage Equipment", slug: "beverage-equipment", image: "/assets/product_images/Beverage Equipment.webp" },
-    { id: 6, name: "Commercial Ovens", slug: "commercial-ovens", image: "/assets/product_images/CommercialOvens.webp" },
-    { id: 7, name: "Food Preparation", slug: "food-preparation", image: "/assets/product_images/FoodPreparation.webp" },
-    { id: 8, name: "Food Holding & Warming", slug: "food-holding-and-warming-line", image: "/assets/product_images/FoodHoldingandWarmingLine.webp" },
-    { id: 9, name: "Delivery & Storage", slug: "delivery-and-storage", image: "/assets/product_images/DeliveryandStorage.webp" },
-    { id: 10, name: "Parts", slug: "parts", image: "/assets/product_images/Parts.webp" },
+    { id: 2, name: "Ice Equipment", slug: "ice-equipment", image: "/assets/product_images/ice-equipment.webp" },
+    { id: 3, name: "Cooking Equipment", slug: "cooking-equipment", image: "/assets/product_images/cooking-equipment.webp" },
+    { id: 4, name: "Refrigeration", slug: "refrigeration", image: "/assets/product_images/refrigeration.webp" },
+    { id: 5, name: "Beverage Equipment", slug: "beverage-equipment", image: "/assets/product_images/beverage-equipment.webp" },
+    { id: 6, name: "Commercial Ovens", slug: "commercial-ovens", image: "/assets/product_images/commercial-ovens.webp" },
+    { id: 7, name: "Food Preparation", slug: "food-preparation", image: "/assets/product_images/food-preparation.webp" },
+    { id: 8, name: "Food Holding & Warming", slug: "food-holding-and-warming-line", image: "/assets/product_images/food-holding-and-warming-line.webp" },
+    { id: 9, name: "Delivery & Storage", slug: "delivery-and-storage", image: "/assets/product_images/delivery-and-storage.webp" },
+    { id: 10, name: "Parts", slug: "parts", image: "/assets/product_images/parts.webp" },
     { id: 11, name: "Used Equipment", slug: "used-equipment", image: "/assets/product_images/coffeemakers.webp" },
-    { id: 12, name: "Dishwashing", slug: "dishwashing", image: "/assets/product_images/Dishwashing.webp" },
-    { id: 13, name: "Stainless Steel Equipment", slug: "stainless-steel-equipment", image: "/assets/product_images/StainlessSteelEquipment.webp" },
-    { id: 14, name: "Janitorial & Safety", slug: "janitorial-safety-supplies", image: "/assets/product_images/Janitorial&SafetySupplies.webp" },
-    { id: 15, name: "Water Treatment", slug: "water-treatment", image: "/assets/product_images/WaterTreatment.webp" },
-    { id: 16, name: "Home Use", slug: "home-use", image: "/assets/product_images/HomeUse.webp" },
-    { id: 17, name: "Dining Room", slug: "dining-room", image: "/assets/product_images/DiningRoom.webp" },
-    { id: 18, name: "Smallwares", slug: "smallwares", image: "/assets/product_images/Smallwares.webp" },
-    { id: 19, name: "Disposables", slug: "disposables", image: "/assets/product_images/Disposables.webp" },
-    { id: 20, name: "Food & Beverage", slug: "food-beverage-ingredients", image: "/assets/product_images/Food&BeverageIngredients.webp" }
+    { id: 12, name: "Dishwashing", slug: "dishwashing", image: "/assets/product_images/dishwashing.webp" },
+    { id: 13, name: "Stainless Steel Equipment", slug: "stainless-steel-equipment", image: "/assets/product_images/stainless-steel-equipment.webp" },
+    { id: 14, name: "Janitorial & Safety", slug: "janitorial-safety-supplies", image: "/assets/product_images/janitorial-safety-supplies.webp" },
+    { id: 15, name: "Water Treatment", slug: "water-treatment", image: "/assets/product_images/water-treatment.webp" },
+    { id: 16, name: "Home Use", slug: "home-use", image: "/assets/product_images/home-use.webp" },
+    { id: 17, name: "Dining Room", slug: "dining-room", image: "/assets/product_images/dining-room.webp" },
+    { id: 18, name: "Smallwares", slug: "smallwares", image: "/assets/product_images/smallwares.webp" },
+    { id: 19, name: "Disposables", slug: "disposables", image: "/assets/product_images/disposables.webp" },
+    { id: 20, name: "Food & Beverage", slug: "food-beverage-ingredients", image: "/assets/product_images/food-beverage-ingredients.webp" }
 ];
 
 const CategoryBrowse = () => {
