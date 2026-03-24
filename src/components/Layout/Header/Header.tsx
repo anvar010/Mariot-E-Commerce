@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Search, ShoppingCart, User, Coins, Menu, Globe, Phone, MessageCircle, HelpCircle, ChevronDown, X, Shield, Heart, Trophy } from 'lucide-react';
+import { Search, ShoppingCart, User, Coins, Menu, Globe, Phone, MessageCircle, HelpCircle, ChevronDown, X, Shield, Heart, Trophy, LogOut } from 'lucide-react';
 import styles from './Header.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -14,7 +14,7 @@ import { API_BASE_URL } from '@/config';
 
 const Header = () => {
 
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const { cartCount, setIsDrawerOpen } = useCart();
     const pathname = usePathname();
     const router = useRouter();
@@ -426,6 +426,20 @@ const Header = () => {
                             <li className={styles.mobileOnly}><Link href="/rewards" onClick={() => setIsMenuOpen(false)}>{t('rewardPointsNav')}</Link></li>
                             {user?.role === 'admin' && (
                                 <li className={styles.mobileOnly}><Link href="/admin" onClick={() => setIsMenuOpen(false)}>{t('adminDashboard')}</Link></li>
+                            )}
+                            {user && (
+                                <li className={styles.mobileOnly}>
+                                    <button
+                                        onClick={() => {
+                                            logout();
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className={styles.mobileSignOutBtn}
+                                    >
+                                        <LogOut size={20} />
+                                        <span>{t('signOut')}</span>
+                                    </button>
+                                </li>
                             )}
                         </ul>
 
