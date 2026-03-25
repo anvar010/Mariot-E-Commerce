@@ -33,8 +33,9 @@ class Product {
         }
 
         if (stockStatus === 'in_stock') {
-            whereClauses.push('(p.stock_quantity > 0)');
-            whereClauses.push('(p.stock_quantity <= 0)');
+            whereClauses.push('(p.stock_quantity > 0 OR p.track_inventory = 0)');
+        } else if (stockStatus === 'out_of_stock') {
+            whereClauses.push('(p.stock_quantity <= 0 AND p.track_inventory = 1)');
         }
 
         const isTrue = (val) => val === 'true' || val === 1 || val === '1' || val === true;
@@ -222,7 +223,9 @@ class Product {
             const is_featured = isTrue(data.is_featured) ? 1 : 0;
             let is_weekly_deal = isTrue(data.is_weekly_deal) ? 1 : 0;
             let is_limited_offer = isTrue(data.is_limited_offer) ? 1 : 0;
+            const is_daily_offer = isTrue(data.is_daily_offer) ? 1 : 0;
             const is_best_seller = isTrue(data.is_best_seller) ? 1 : 0;
+            const track_inventory = isTrue(data.track_inventory) ? 1 : 0;
 
             const status = data.status || 'active';
             const product_group = data.product_group || data.heading || null;
@@ -244,6 +247,7 @@ class Product {
                 discount_percentage,
                 offer_price,
                 stock_quantity,
+                track_inventory,
                 category_id,
                 brand_id,
                 seller_id,
@@ -263,7 +267,7 @@ class Product {
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -295,7 +299,7 @@ class Product {
     static async update(id, data) {
         const allowedColumns = [
             'name', 'name_ar', 'slug', 'description', 'description_ar', 'short_description', 'short_description_ar', 'specifications', 'price', 'discount_percentage', 'offer_price',
-            'stock_quantity', 'category_id', 'brand_id', 'seller_id',
+            'stock_quantity', 'track_inventory', 'category_id', 'brand_id', 'seller_id',
             'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'status',
             'product_group', 'sub_category', 'model', 'youtube_video_link', 'resources', 'offer_start', 'offer_end'
         ];
@@ -320,7 +324,7 @@ class Product {
 
         Object.keys(data).forEach(key => {
             if (allowedColumns.includes(key) && data[key] !== undefined && key !== 'slug') {
-                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active'].includes(key)) {
+                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'track_inventory'].includes(key)) {
                     const val = data[key];
                     cleanData[key] = (val === true || val === 'true' || val === 1 || val === '1') ? 1 : 0;
                 } else if (['category_id', 'brand_id'].includes(key)) {
