@@ -336,6 +336,18 @@ class Product {
                         const parsed = parseInt(val);
                         cleanData[key] = isNaN(parsed) ? null : parsed;
                     }
+                } else if (['offer_start', 'offer_end'].includes(key)) {
+                    // Handle datetime columns: empty string -> null (strict MySQL rejects '')
+                    cleanData[key] = (data[key] && data[key] !== '') ? data[key] : null;
+                } else if (['offer_price', 'price', 'discount_percentage', 'stock_quantity'].includes(key)) {
+                    // Handle numeric columns: empty string -> null
+                    const val = data[key];
+                    if (val === '' || val === null || val === undefined) {
+                        cleanData[key] = null;
+                    } else {
+                        const parsed = parseFloat(val);
+                        cleanData[key] = isNaN(parsed) ? null : parsed;
+                    }
                 } else {
                     cleanData[key] = data[key] === null ? null : data[key];
                 }
@@ -400,6 +412,18 @@ class Product {
                 if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active'].includes(key)) {
                     const val = data[key];
                     cleanData[key] = (val === true || val === 'true' || val === 1 || val === '1') ? 1 : 0;
+                } else if (['offer_start', 'offer_end'].includes(key)) {
+                    // Handle datetime columns: empty string -> null (strict MySQL rejects '')
+                    cleanData[key] = (data[key] && data[key] !== '') ? data[key] : null;
+                } else if (['discount_percentage', 'price'].includes(key)) {
+                    // Handle numeric columns: empty string -> null
+                    const val = data[key];
+                    if (val === '' || val === null || val === undefined) {
+                        cleanData[key] = null;
+                    } else {
+                        const parsed = parseFloat(val);
+                        cleanData[key] = isNaN(parsed) ? null : parsed;
+                    }
                 } else {
                     cleanData[key] = data[key];
                 }
