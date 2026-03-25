@@ -19,9 +19,7 @@ export async function generateMetadata({ params: { locale } }: { params: { local
     };
 }
 
-import { API_BASE_URL } from '@/config';
-
-const API_BASE_URL_SERVER = API_BASE_URL;
+const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 async function getShopData(locale: string, searchParams: { [key: string]: string | string[] | undefined }) {
     const category = searchParams.category as string | undefined;

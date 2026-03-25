@@ -52,7 +52,11 @@ export const authApi = {
             headers: getAuthHeaders()
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Failed to fetch user');
+        if (!response.ok) {
+            const err: any = new Error(data.message || 'Failed to fetch user');
+            err.status = response.status;
+            throw err;
+        }
         return data;
     },
 

@@ -7,7 +7,6 @@ import { useCart } from '@/context/CartContext';
 import { getBrandLogo } from '@/utils/brandLogos';
 import { BASE_URL } from '@/config';
 import { useLocale, useTranslations } from 'next-intl';
-import { resolveUrl as sharedResolveUrl } from '@/utils/urlHelper';
 
 interface ProductCardPromotionProps {
     product: {
@@ -37,10 +36,17 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     const isArabic = locale === 'ar';
     const displayBrand = product.brand_name || (product as any)?.brand || 'RATIONAL';
     const localBrandLogo = getBrandLogo(displayBrand);
+    const resolveUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.includes('localhost:5000')) {
+            return url.replace('http://localhost:5000', BASE_URL);
+        }
+        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
+        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
 
-
-    const displayBrandImage = localBrandLogo || sharedResolveUrl(product.brand_image || (product as any)?.brand_logo);
-    const displayImage = sharedResolveUrl(product.primary_image) || '/assets/placeholder-image.webp';
+    const displayBrandImage = localBrandLogo || resolveUrl(product.brand_image || (product as any)?.brand_logo);
+    const displayImage = resolveUrl(product.primary_image) || '/assets/placeholder-image.webp';
     const formatTime = (num: number) => num.toString().padStart(2, '0');
     const isInventoryTracked = product.track_inventory === 1 || product.track_inventory === '1' || product.track_inventory === true;
     const isInStock = !isInventoryTracked || product.stock_quantity === undefined || product.stock_quantity > 0;
@@ -115,7 +121,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                 id: product.id,
                 name: product.name,
                 price: displayPrice,
-                image: sharedResolveUrl(product.primary_image),
+                image: resolveUrl(product.primary_image),
                 brand: product.brand_name,
                 slug: product.slug,
                 stock_quantity: product.stock_quantity,

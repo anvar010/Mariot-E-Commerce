@@ -4,9 +4,7 @@ import Footer from '@/components/Layout/Footer/Footer';
 import ShopLayout from '@/components/Shop/ShopLayout';
 import Loader from '@/components/shared/Loader/Loader';
 
-import { API_BASE_URL } from '@/config';
-
-const API_BASE_URL_SERVER = API_BASE_URL;
+const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 async function getShopNowData() {
     try {

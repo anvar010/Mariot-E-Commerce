@@ -4,9 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import { API_BASE_URL } from '@/config';
-import { useTranslations } from 'next-intl';
 import { getAuthHeaders } from '@/utils/authHeaders';
-import { resolveUrl } from '@/utils/urlHelper';
+import { useTranslations } from 'next-intl';
 
 interface WishlistItem {
     id: string | number;
@@ -78,7 +77,8 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             }
         };
 
-        handleWishlistSync();
+        const timeoutId = setTimeout(handleWishlistSync, 2000);
+        return () => clearTimeout(timeoutId);
     }, [token]);
 
     // 2. Persistence loop for guests
@@ -103,7 +103,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     id: item.product_id,
                     name: item.name,
                     price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price || 0),
-                    image: resolveUrl(item.image || item.primary_image || ''),
+                    image: item.image || item.primary_image || '',
                     brand: item.brand_name,
                     stock_quantity: item.stock_quantity
                 })));
