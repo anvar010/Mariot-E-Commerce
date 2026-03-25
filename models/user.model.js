@@ -57,7 +57,7 @@ class User {
     static async create({ name, email, password }) {
         const hashedPassword = await bcrypt.hash(password, 10);
         const [result] = await db.execute(
-            'INSERT INTO users (name, email, password, role_id, reward_points) VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = "user"), 1000)',
+            "INSERT INTO users (name, email, password, role_id, reward_points) VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = 'user'), 1000)",
             [name, email, hashedPassword]
         );
         return result.insertId;
