@@ -2,10 +2,12 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 
 const protect = async (req, res, next) => {
-    let token = req.cookies.token;
+    let token;
 
-    if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies && req.cookies.token) {
+        token = req.cookies.token;
     }
 
     if (!token || token === 'none') {
@@ -47,10 +49,12 @@ const authorize = (...roles) => {
 
 // Like protect, but doesn't block if no token — just sets req.user if possible
 const optionalProtect = async (req, res, next) => {
-    let token = req.cookies.token;
+    let token;
 
-    if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies && req.cookies.token) {
+        token = req.cookies.token;
     }
 
     if (!token || token === 'none') {
