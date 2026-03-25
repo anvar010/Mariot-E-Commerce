@@ -264,7 +264,7 @@
 }
 
 .priceSection {
-    margin-bottom: 25px;
+    margin-bottom: 12px;
 }
 
 .currentPrice {
@@ -295,9 +295,9 @@
 }
 
 .shortDescriptionWrapper {
-    margin-bottom: 25px;
+    margin-bottom: 15px;
     border-top: 1px dashed #eee;
-    padding-top: 15px;
+    padding-top: 8px;
 }
 
 .shortDescription {
@@ -691,38 +691,56 @@
     gap: 12px;
 }
 
-.fullWidthDescription {
-    width: 100%;
-    margin-top: 0px;
-    margin-bottom: 12px;
-}
-
-.splitLayout {
+.detailsLayoutGrid {
     display: grid;
     grid-template-columns: 1fr 700px;
-    gap: 40px;
-    margin-top: 0;
+    grid-template-areas:
+        "desc desc"
+        "accordions video";
+    gap: 12px 40px;
+    margin-top: 20px;
     align-items: start;
 }
 
-.fullWidthLayout {
-    grid-template-columns: 1fr !important;
-    gap: 0 !important;
+.detailsLayoutGrid.noVideo {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "desc"
+        "accordions";
+    gap: 12px;
 }
 
-.noBottomGap {
-    margin-bottom: 12px !important;
+@media (max-width: 1200px) {
+    .detailsLayoutGrid {
+        grid-template-columns: 1fr !important;
+        grid-template-areas:
+            "video"
+            "desc"
+            "accordions" !important;
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .detailsLayoutGrid.noVideo {
+        grid-template-areas:
+            "desc"
+            "accordions" !important;
+    }
 }
 
-.fullWidthLayout {
-    margin-top: 0 !important;
+.fullWidthDescription {
+    grid-area: desc;
+    width: 100%;
+    margin-top: 0px;
 }
 
 .accordionsColumn {
+    grid-area: accordions;
     width: 100%;
 }
 
 .videoColumn {
+    grid-area: video;
     width: 100%;
 }
 

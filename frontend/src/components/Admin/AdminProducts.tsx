@@ -907,7 +907,7 @@ const AdminProducts = () => {
     const handleBulkDelete = async () => {
         if (selectedIds.length === 0) return;
         if (!confirm(`Are you sure you want to delete ${selectedIds.length} products? This cannot be undone.`)) return;
-        
+
         setLoading(true);
         try {
             const res = await fetch(`${API_BASE_URL}/products/bulk-delete`, {
