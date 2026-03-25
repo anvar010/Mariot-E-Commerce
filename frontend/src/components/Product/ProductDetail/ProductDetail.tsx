@@ -35,9 +35,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useNotification } from '@/context/NotificationContext';
 import Loader from '@/components/shared/Loader/Loader';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
-import Link from 'next/link';
 import { MessageSquare, Phone } from 'lucide-react';
 import Script from 'next/script';
+import { getAuthHeaders } from '@/utils/authHeaders';
+import { resolveUrl } from '@/utils/urlHelper';
+import { Link } from '@/i18n/navigation';
 
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -194,7 +196,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     useEffect(() => {
         const fetchProduct = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/products/${encodeURIComponent(id)}`, { credentials: "include" });
+                const res = await fetch(`${API_BASE_URL}/products/${encodeURIComponent(id)}`, { 
+                    credentials: "include",
+                    headers: getAuthHeaders()
+                });
                 const data = await res.json();
                 if (data.success) {
                     setProduct(data.data);
@@ -213,7 +218,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         const fetchRelated = async (cat: string, currentProductId: number) => {
             if (!cat) return;
             try {
-                const res = await fetch(`${API_BASE_URL}/products?category=${cat}&limit=16`, { credentials: "include" });
+                const res = await fetch(`${API_BASE_URL}/products?category=${cat}&limit=16`, { 
+                    credentials: "include",
+                    headers: getAuthHeaders()
+                });
                 const data = await res.json();
                 if (data.success) {
                     setRelatedProducts(data.data.filter((p: any) => p.id !== currentProductId));
@@ -225,7 +233,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
         const fetchReviews = async (productId: number) => {
             try {
-                const res = await fetch(`${API_BASE_URL}/reviews/${productId}`, { credentials: "include" });
+                const res = await fetch(`${API_BASE_URL}/reviews/${productId}`, { 
+                    credentials: "include",
+                    headers: getAuthHeaders()
+                });
                 const data = await res.json();
                 if (data.success) {
                     setReviews(data.data || []);
@@ -254,6 +265,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 credentials: "include",
                 method: 'POST',
                 headers: {
+                    ...getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -269,7 +281,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 setComment('');
                 setRating(5);
                 // Refresh reviews
-                const reviewRes = await fetch(`${API_BASE_URL}/reviews/${product.id}`, { credentials: "include" });
+                const reviewRes = await fetch(`${API_BASE_URL}/reviews/${product.id}`, { 
+                    credentials: "include",
+                    headers: getAuthHeaders()
+                });
                 const reviewData = await reviewRes.json();
                 if (reviewData.success) {
                     setReviews(reviewData.data || []);
@@ -301,7 +316,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             const data = await res.json();
             if (data.success) {
                 // Refresh reviews
-                const reviewRes = await fetch(`${API_BASE_URL}/reviews/${product.id}`, { credentials: "include" });
+                const reviewRes = await fetch(`${API_BASE_URL}/reviews/${product.id}`, { 
+                    credentials: "include",
+                    headers: getAuthHeaders()
+                });
                 const reviewData = await reviewRes.json();
                 if (reviewData.success) {
                     setReviews(reviewData.data || []);
@@ -434,14 +452,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
     const isFav = isInWishlist(product.id);
 
-    const resolveUrl = (url?: string) => {
-        if (!url) return '';
-        if (url.includes('localhost:5000')) {
-            return url.replace('http://localhost:5000', BASE_URL);
-        }
-        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
-        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-    };
+
 
     const images = product.images?.length > 0
         ? product.images.map((img: any) => resolveUrl(img.image_url))

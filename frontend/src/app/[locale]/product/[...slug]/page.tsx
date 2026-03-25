@@ -5,7 +5,10 @@ import Footer from '@/components/Layout/Footer/Footer';
 import ProductDetail from '@/components/Product/ProductDetail/ProductDetail';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 
-const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
+import { API_BASE_URL } from '@/config';
+import { resolveUrl } from '@/utils/urlHelper';
+
+const API_BASE_URL_SERVER = API_BASE_URL;
 
 export async function generateMetadata({ params }: { params: { slug: string | string[], locale: string } }): Promise<Metadata> {
     const slugArray = Array.isArray(params.slug) ? params.slug : [params.slug];
@@ -27,7 +30,7 @@ export async function generateMetadata({ params }: { params: { slug: string | st
                 openGraph: {
                     title: `${title} | Mariot Store`,
                     description: description || `Buy ${title} at the best price in UAE only at Mariot Store.`,
-                    images: product.primary_image ? [{ url: product.primary_image }] : [],
+                    images: product.primary_image ? [{ url: resolveUrl(product.primary_image) }] : [],
                 },
             };
         }

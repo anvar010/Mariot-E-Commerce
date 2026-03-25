@@ -9,6 +9,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import Image from 'next/image';
 
 import { API_BASE_URL } from '@/config';
+import { resolveUrl as sharedResolveUrl } from '@/utils/urlHelper';
 
 const defaultSlides = [
     {
@@ -38,19 +39,11 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
     const locale = useLocale();
     const router = useRouter();
 
-    const resolveUrl = (url?: string) => {
-        if (!url) return '';
-        if (url.includes('localhost:5000')) {
-            return url.replace('http://localhost:5000', API_BASE_URL.replace('/api/v1', ''));
-        }
-        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
-        const cleanBaseUrl = API_BASE_URL.replace('/api/v1', '');
-        return `${cleanBaseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-    };
+
 
     const [slides, setSlides] = React.useState(
         initialSlides.length > 0
-            ? initialSlides.map(s => ({ ...s, image: resolveUrl(s.image) }))
+            ? initialSlides.map(s => ({ ...s, image: sharedResolveUrl(s.image) }))
             : defaultSlides
     );
     const [currentSlide, setCurrentSlide] = React.useState(0);
@@ -75,7 +68,7 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                             title: isRtl && slide.title_ar ? slide.title_ar : slide.title,
                             subtitle: "",
                             description: isRtl && slide.description_ar ? slide.description_ar : slide.description,
-                            image: resolveUrl(slide.image),
+                            image: sharedResolveUrl(slide.image),
                             accent: slide.accent || "#4c6ef5",
                             link: slide.link || "/shopnow",
                             btnText: isRtl && slide.btnText_ar ? slide.btnText_ar : (slide.btnText || "Shop Now")

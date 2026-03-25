@@ -32,6 +32,8 @@ import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL, BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
+import { resolveUrl } from '@/utils/urlHelper';
 
 const UserDashboard = () => {
     const t = useTranslations('userDashboard');
@@ -57,14 +59,7 @@ const UserDashboard = () => {
 
     const [saving, setSaving] = useState(false);
 
-    const resolveUrl = (url?: string) => {
-        if (!url) return '';
-        if (url.includes('localhost:5000')) {
-            return url.replace('http://localhost:5000', BASE_URL);
-        }
-        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
-        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-    };
+
 
     // Update formData when user changes (after context update)
     useEffect(() => {
@@ -93,7 +88,8 @@ const UserDashboard = () => {
         setLoadingOrders(true);
         try {
             const response = await fetch(`${API_BASE_URL}/orders`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await response.json();
             if (data.success) {
@@ -110,7 +106,8 @@ const UserDashboard = () => {
         setLoadingQuotations(true);
         try {
             const response = await fetch(`${API_BASE_URL}/quotations/my-quotations`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await response.json();
             if (data.success) {
@@ -129,7 +126,8 @@ const UserDashboard = () => {
         try {
             const response = await fetch(`${API_BASE_URL}/quotations/${id}`, {
                 method: 'DELETE',
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await response.json();
             if (data.success) {
@@ -170,7 +168,8 @@ const UserDashboard = () => {
         setLoadingAddresses(true);
         try {
             const response = await fetch(`${API_BASE_URL}/users/addresses`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await response.json();
             if (data.success) {
@@ -194,7 +193,10 @@ const UserDashboard = () => {
 
             const response = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json' 
+                },
                 body: JSON.stringify(addressForm),
                 credentials: "include"
             });
@@ -254,7 +256,8 @@ const UserDashboard = () => {
         try {
             const response = await fetch(`${API_BASE_URL}/users/addresses/${id}`, {
                 method: 'DELETE',
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await response.json();
             if (data.success) {

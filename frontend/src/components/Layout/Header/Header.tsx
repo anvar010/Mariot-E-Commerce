@@ -14,7 +14,7 @@ import { API_BASE_URL } from '@/config';
 
 const Header = () => {
 
-    const { user, logout } = useAuth();
+    const { user, loading, logout } = useAuth();
     const { cartCount, setIsDrawerOpen } = useCart();
     const pathname = usePathname();
     const router = useRouter();
@@ -300,7 +300,13 @@ const Header = () => {
                                 <div className={styles.actionText}>
                                     <span className={styles.label}>{t('account')}</span>
                                     <span className={styles.userName}>
-                                        {user ? t('hello', { name: user.name.split(' ')[0] }) : t('signIn')}
+                                        {loading ? (
+                                            <span className={styles.loadingDots}>...</span>
+                                        ) : user ? (
+                                            t('hello', { name: user.name?.split(' ')[0] || 'User' })
+                                        ) : (
+                                            t('signIn')
+                                        )}
                                     </span>
                                 </div>
                             </Link>
