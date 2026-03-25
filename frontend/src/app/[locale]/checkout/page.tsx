@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import styles from './checkout.module.css';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -112,7 +113,10 @@ function CheckoutContent() {
         if (!user) return;
         setLoadingAddresses(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/users/addresses`, { credentials: "include" });
+            const res = await fetch(`${API_BASE_URL}/users/addresses`, {
+                credentials: "include",
+                headers: getAuthHeaders()
+            });
             const data = await res.json();
             if (data.success) {
                 setUserAddresses(data.data || []);
@@ -141,7 +145,10 @@ function CheckoutContent() {
     const fetchCoupons = async () => {
         setIsLoadingCoupons(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/coupons`, { credentials: "include" });
+            const res = await fetch(`${API_BASE_URL}/coupons`, {
+                credentials: "include",
+                headers: getAuthHeaders()
+            });
             const data = await res.json();
             if (data.success) {
                 setAvailableCoupons(data.data || []);
@@ -323,6 +330,7 @@ function CheckoutContent() {
                 credentials: "include",
                 method: 'POST',
                 headers: {
+                    ...getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(orderData)
