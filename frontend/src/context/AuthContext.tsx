@@ -36,8 +36,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const loadUser = async () => {
         const savedToken = localStorage.getItem('token');
-        if (!savedToken) {
+        if (!savedToken || savedToken === 'undefined' || savedToken === 'null' || savedToken === 'none') {
             setLoading(false);
+            if (savedToken === 'undefined' || savedToken === 'null' || savedToken === 'none') {
+                 localStorage.removeItem('token');
+            }
             return;
         }
 

@@ -4,7 +4,7 @@ export const getAuthHeaders = (): HeadersInit => {
     // Only access localStorage if we are in the browser
     if (typeof window !== 'undefined') {
         const token = localStorage.getItem('token');
-        if (token) {
+        if (token && token !== 'undefined' && token !== 'null' && token !== 'none') {
             headers['Authorization'] = `Bearer ${token}`;
         }
     }
