@@ -816,22 +816,24 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                 </div>
 
-                <div className={`${styles.fullWidthDescription} ${!hasVideo ? styles.noBottomGap : ''}`}>
-                    <AccordionItem
-                        title={t('description')}
-                        isOpen={!!expandedAccordions['description']}
-                        onToggle={() => toggleAccordion('description')}
-                    >
-                        <div
-                            className={styles.descriptionText}
-                            dangerouslySetInnerHTML={{
-                                __html: cleanShortcodes(getLocalizedField('description', 'description_ar')) || `<p>${t('noDescription')}</p>`
-                            }}
-                        />
-                    </AccordionItem>
-                </div>
+                <div className={`${styles.detailsLayoutGrid} ${!hasVideo ? styles.noVideo : ''}`}>
+                    {/* Description Accordion (area: desc) */}
+                    <div className={styles.fullWidthDescription}>
+                        <AccordionItem
+                            title={t('description')}
+                            isOpen={!!expandedAccordions['description']}
+                            onToggle={() => toggleAccordion('description')}
+                        >
+                            <div
+                                className={styles.descriptionText}
+                                dangerouslySetInnerHTML={{
+                                    __html: cleanShortcodes(getLocalizedField('description', 'description_ar')) || `<p>${t('noDescription')}</p>`
+                                }}
+                            />
+                        </AccordionItem>
+                    </div>
 
-                <div className={`${styles.splitLayout} ${!hasVideo ? styles.fullWidthLayout : ''}`}>
+                    {/* Left Column: Accordions (area: accordions) */}
                     <div className={styles.accordionsColumn}>
                         <div className={styles.accordions}>
                             <AccordionItem
@@ -990,7 +992,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         </div>
                     </div>
 
-                    {/* Right column: Featured Video */}
+                    {/* Right column: Featured Video (area: video) */}
                     {hasVideo && (
                         <div className={styles.videoColumn}>
                             {(() => {
