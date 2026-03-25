@@ -251,7 +251,7 @@ const BrandsLayout = () => {
 
     return (
         <div className={styles.brandsPage}>
-            <div className={styles.container}>
+            <div className={styles.fullWidthContainer}>
                 <div
                     className={styles.categoryFilters}
                     ref={filterScrollRef}
@@ -296,7 +296,9 @@ const BrandsLayout = () => {
                         );
                     })}
                 </div>
+            </div>
 
+            <div className={styles.container}>
                 <div className={styles.aboutSection}>
                     <div className={styles.aboutHeader}>
                         <div className={styles.aboutText}>
@@ -345,6 +347,7 @@ const BrandsLayout = () => {
             </div>
         </div>
     );
+
 };
 
 export default BrandsLayout;

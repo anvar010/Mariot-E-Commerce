@@ -708,7 +708,8 @@
     }
 
     .formCard {
-        padding: 30px 20px;
+        /* Remove incorrect padding that was here before */
+        padding: 0;
     }
 
     .locationsRow {
@@ -727,5 +728,105 @@
 
     .pageTitle {
         font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 30px 20px;
+    }
+
+    .pageTitle {
+        font-size: 1.8rem;
+    }
+
+    .pageSubtitle {
+        font-size: 0.95rem;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+    }
+
+    /* Contact Grid */
+    .contactGrid {
+        gap: 30px;
+    }
+
+    /* Info Section */
+    .companyInfo {
+        gap: 25px;
+    }
+
+    .infoCard {
+        padding: 25px 20px;
+    }
+
+    .contactItemIcon {
+        width: 38px;
+        height: 38px;
+    }
+
+    .contactItemDetails span,
+    .contactItemDetails a {
+        font-size: 0.95rem;
+    }
+
+    /* Form Section */
+    .formHeader {
+        padding: 25px 20px;
+    }
+
+    .formHeader h3 {
+        font-size: 1.25rem;
+    }
+
+    .formHeaderIcon {
+        width: 44px;
+        height: 44px;
+    }
+
+    .formBody {
+        padding: 25px 20px;
+    }
+
+    .formGroup {
+        margin-bottom: 15px;
+    }
+
+    .formGroup label {
+        font-size: 0.75rem;
+    }
+
+    .formGroup input,
+    .formGroup textarea,
+    .countryCodeBtn,
+    .subjectBtn {
+        font-size: 0.9rem;
+        padding: 12px 14px;
+    }
+
+    .phoneInput {
+        padding: 12px 14px;
+    }
+
+    .submitBtn {
+        padding: 14px 20px;
+        font-size: 0.95rem;
+    }
+
+    .locationsSection {
+        margin-top: 40px;
+    }
+
+    .locationsSectionTitle {
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+    }
+
+    .locationCard {
+        padding: 15px;
+    }
+
+    .miniMap {
+        height: 200px;
     }
 }

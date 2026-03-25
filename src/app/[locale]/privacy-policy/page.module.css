@@ -17,19 +17,16 @@
     padding: 60px;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     width: 100%;
-    text-align: center !important;
 }
 
 .mainTitle {
     font-size: 2.5rem;
     color: #1a1a1a;
-    margin-bottom: 10px;
-    text-align: center !important;
+    margin-bottom: 20px;
     font-weight: 700;
 }
 
 .lastUpdated {
-    text-align: center !important;
     color: #64748b;
     font-size: 0.9rem;
     margin-bottom: 40px;
@@ -41,7 +38,6 @@
     color: #334155;
     line-height: 1.8;
     font-size: 1.05rem;
-    text-align: center !important;
 }
 
 .intro {
@@ -55,7 +51,6 @@
     box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
     line-height: 1.8;
     position: relative;
-    text-align: center !important;
 }
 
 .noticeLabel {
@@ -64,7 +59,6 @@
     color: #0f172a;
     margin-bottom: 12px;
     font-size: 1.2rem;
-    text-align: center !important;
 }
 
 .section {
@@ -77,12 +71,10 @@
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 2px solid #f1f5f9;
-    text-align: center !important;
 }
 
 .section p {
     margin-bottom: 16px;
-    text-align: center !important;
 }
 
 @media (max-width: 768px) {
@@ -92,5 +84,53 @@
 
     .mainTitle {
         font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 20px 0;
+    }
+
+    .contentWrapper {
+        padding: 40px 20px;
+        box-shadow: none;
+        border-top: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .mainTitle {
+        font-size: 1.75rem;
+        line-height: 1.2;
+    }
+
+    .lastUpdated {
+        font-size: 0.85rem;
+        margin-bottom: 30px;
+    }
+
+    .intro {
+        padding: 24px 20px;
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+
+    .noticeLabel {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+
+    .section {
+        margin-bottom: 30px;
+    }
+
+    .section h2 {
+        font-size: 1.25rem;
+        margin-bottom: 15px;
+    }
+
+    .documentBody p {
+        font-size: 0.95rem;
+        line-height: 1.7;
     }
 }

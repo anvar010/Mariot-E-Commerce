@@ -1562,22 +1562,44 @@
 }
 
 @media (max-width: 576px) {
+    .relatedSection {
+        width: calc(100% + 40px);
+        margin-left: -20px;
+        margin-right: -20px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        padding: 25px 0;
+        margin-top: 40px;
+    }
+
+    .relatedSection .sectionTitle {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
     .relatedGrid {
         display: grid;
         grid-auto-flow: column;
-        grid-auto-columns: calc(50% - 5px);
-        gap: 10px;
+        grid-auto-columns: 50%;
+        gap: 0px;
         padding: 10px 0;
         overflow-x: auto;
         overscroll-behavior-x: contain;
         scroll-snap-type: x mandatory;
         scrollbar-width: none;
+        margin: 0;
     }
 
     .relatedGrid>div {
         flex: none;
         width: 100%;
         scroll-snap-align: start;
+        border-right: 1px solid #f0f0f0;
+    }
+
+    .relatedGrid>div:last-child {
+        border-right: none;
     }
 }
 

@@ -22,13 +22,11 @@
 .mainTitle {
     font-size: 2.5rem;
     color: #1a1a1a;
-    margin-bottom: 10px;
-    text-align: center;
+    margin-bottom: 20px;
     font-weight: 700;
 }
 
 .lastUpdated {
-    text-align: center;
     color: #64748b;
     font-size: 0.9rem;
     margin-bottom: 40px;
@@ -61,7 +59,6 @@
     color: #0f172a;
     margin-bottom: 12px;
     font-size: 1.2rem;
-    text-align: center !important;
 }
 
 .section {
@@ -78,7 +75,6 @@
 
 .section p {
     margin-bottom: 16px;
-    text-align: center !important;
 }
 
 .section ul {
@@ -192,5 +188,70 @@
 
     .mainTitle {
         font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 20px 0;
+    }
+
+    .contentWrapper {
+        padding: 40px 20px;
+        box-shadow: none;
+        border-top: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
+        border-radius: 0;
+    }
+
+    .mainTitle {
+        font-size: 1.75rem;
+        line-height: 1.2;
+    }
+
+    .lastUpdated {
+        font-size: 0.85rem;
+        margin-bottom: 30px;
+    }
+
+    .intro {
+        padding: 24px 20px;
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+
+    .noticeLabel {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+
+    .section {
+        margin-bottom: 30px;
+    }
+
+    .section h2 {
+        font-size: 1.25rem;
+        margin-bottom: 15px;
+    }
+
+    .documentBody p,
+    .documentBody li {
+        font-size: 0.95rem;
+        line-height: 1.7;
+    }
+
+    .priceTable th,
+    .priceTable td {
+        padding: 12px 15px;
+        font-size: 0.85rem;
+    }
+
+    .priceTable td:last-child {
+        font-size: 0.95rem;
+    }
+
+    .contactInfoBlock {
+        padding: 20px 15px;
+        font-size: 0.9rem;
     }
 }

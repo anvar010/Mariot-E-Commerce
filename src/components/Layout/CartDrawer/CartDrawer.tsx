@@ -71,11 +71,24 @@ const CartDrawer = () => {
     const [showQuotationPopup, setShowQuotationPopup] = useState(false);
     const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
     const [quotationForm, setQuotationForm] = useState({
-        name: user?.full_name || '',
+        name: user?.name || '',
         email: user?.email || '',
         phone: user?.phone_number || '',
         vat_number: user?.vat_number || ''
     });
+
+    // Update quotation form when user data loads or changes
+    useEffect(() => {
+        if (user) {
+            setQuotationForm(prev => ({
+                ...prev,
+                name: prev.name || user.name || '',
+                email: prev.email || user.email || '',
+                phone: prev.phone || user.phone_number || '',
+                vat_number: prev.vat_number || user.vat_number || ''
+            }));
+        }
+    }, [user]);
 
     // Sync points input with pointsToUse from context
     useEffect(() => {
