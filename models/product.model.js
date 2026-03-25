@@ -32,11 +32,9 @@ class Product {
             whereClauses.push('p.is_active = 1');
         }
 
-        // Handle Stock Status
         if (stockStatus === 'in_stock') {
-            whereClauses.push('(p.track_inventory = 0 OR p.stock_quantity > 0)');
-        } else if (stockStatus === 'out_of_stock') {
-            whereClauses.push('p.track_inventory = 1 AND p.stock_quantity <= 0');
+            whereClauses.push('(p.stock_quantity > 0)');
+            whereClauses.push('(p.stock_quantity <= 0)');
         }
 
         const isTrue = (val) => val === 'true' || val === 1 || val === '1' || val === true;
@@ -232,7 +230,6 @@ class Product {
             const seller_id = (data.seller_id && !isNaN(parseInt(data.seller_id))) ? parseInt(data.seller_id) : null;
             const offer_start = data.offer_start || null;
             const offer_end = data.offer_end || null;
-            const track_inventory = isTrue(data.track_inventory) ? 1 : 0;
 
             const params = [
                 name,
@@ -262,12 +259,11 @@ class Product {
                 youtube_video_link,
                 resources,
                 offer_start,
-                offer_end,
-                track_inventory
+                offer_end
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, track_inventory) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -301,7 +297,7 @@ class Product {
             'name', 'name_ar', 'slug', 'description', 'description_ar', 'short_description', 'short_description_ar', 'specifications', 'price', 'discount_percentage', 'offer_price',
             'stock_quantity', 'category_id', 'brand_id', 'seller_id',
             'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'status',
-            'product_group', 'sub_category', 'model', 'youtube_video_link', 'resources', 'offer_start', 'offer_end', 'track_inventory'
+            'product_group', 'sub_category', 'model', 'youtube_video_link', 'resources', 'offer_start', 'offer_end'
         ];
 
         const productId = parseInt(id);
@@ -324,7 +320,7 @@ class Product {
 
         Object.keys(data).forEach(key => {
             if (allowedColumns.includes(key) && data[key] !== undefined && key !== 'slug') {
-                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'track_inventory'].includes(key)) {
+                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active'].includes(key)) {
                     const val = data[key];
                     cleanData[key] = (val === true || val === 'true' || val === 1 || val === '1') ? 1 : 0;
                 } else if (['category_id', 'brand_id'].includes(key)) {
@@ -391,13 +387,13 @@ class Product {
 
         const allowedColumns = [
             'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer',
-            'is_active', 'status', 'offer_start', 'offer_end', 'discount_percentage', 'price', 'track_inventory'
+            'is_active', 'status', 'offer_start', 'offer_end', 'discount_percentage', 'price'
         ];
 
         const cleanData = {};
         Object.keys(data).forEach(key => {
             if (allowedColumns.includes(key) && data[key] !== undefined) {
-                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'track_inventory'].includes(key)) {
+                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active'].includes(key)) {
                     const val = data[key];
                     cleanData[key] = (val === true || val === 'true' || val === 1 || val === '1') ? 1 : 0;
                 } else {
