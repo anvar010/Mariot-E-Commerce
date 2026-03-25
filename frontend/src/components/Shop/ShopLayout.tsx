@@ -10,8 +10,6 @@ import { API_BASE_URL, BASE_URL } from '@/config';
 import Loader from '@/components/shared/Loader/Loader';
 import ProductCardSkeleton from '@/components/shared/ProductCardPromotion/ProductCardSkeleton';
 import { useTranslations, useLocale } from 'next-intl';
-import { getAuthHeaders } from '@/utils/authHeaders';
-import { resolveUrl as sharedResolveUrl } from '@/utils/urlHelper';
 
 import DefaultShopFilter from '../Filters/DefaultShopFilter';
 import FilterShopByBrand from '../Filters/FilterShopByBrand';
@@ -131,7 +129,14 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const locale = useLocale();
     const isArabic = locale === 'ar';
 
-
+    const resolveUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.includes('localhost:5000')) {
+            return url.replace('http://localhost:5000', BASE_URL);
+        }
+        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
+        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
 
     const getBrandDisplayName = () => {
         if (!brandParam) return null;
@@ -186,10 +191,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 const url = activeCategory
                     ? `${API_BASE_URL}/brands?category=${activeCategory}`
                     : `${API_BASE_URL}/brands`;
-                const res = await fetch(url, { 
-                    credentials: "include",
-                    headers: getAuthHeaders()
-                });
+                const res = await fetch(url, { credentials: "include" });
                 const data = await res.json();
                 if (data.success) {
                     const activeBrands = data.data.filter((b: any) => b.is_active === 1 || b.is_active === true || String(b.is_active) === '1');
@@ -220,10 +222,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                     };
                 });
 
-                const res = await fetch(`${API_BASE_URL}/categories`, { 
-                    credentials: "include",
-                    headers: getAuthHeaders()
-                });
+                const res = await fetch(`${API_BASE_URL}/categories`, { credentials: "include" });
                 const data = await res.json();
                 if (data.success && data.data.length > 0) {
                     setAllCategories(requestedCategories);
@@ -266,10 +265,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             else if (sortBy === 'price_desc') url += `&sort=price_desc`;
             else if (sortBy === 'newest') url += `&sort=newest`;
 
-            const res = await fetch(url, { 
-                credentials: "include",
-                headers: getAuthHeaders()
-            });
+            const res = await fetch(url, { credentials: "include" });
             const data = await res.json();
             if (data.success) {
                 setProducts(data.data);
@@ -371,7 +367,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             {brandParam && activeBrandInfo && (
                 <div className={styles.brandBanner}>
                     <img
-                        src={sharedResolveUrl(activeBrandInfo.banner || activeBrandInfo.image) || 'https://images.unsplash.com/photo-1557821552-17105176677c?q=80&w=1600&auto=format&fit=crop'}
+                        src={resolveUrl(activeBrandInfo.banner || activeBrandInfo.image) || 'https://images.unsplash.com/photo-1557821552-17105176677c?q=80&w=1600&auto=format&fit=crop'}
                         alt={getBrandDisplayName() || ""}
                         className={styles.brandBannerImg}
                         onError={(e) => {
@@ -598,7 +594,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                                 {activeBrandInfo.image_url && (
                                     <div className={styles.brandBioLogoBox}>
                                         <img
-                                            src={sharedResolveUrl(activeBrandInfo.image_url)}
+                                            src={resolveUrl(activeBrandInfo.image_url)}
                                             alt={activeBrandInfo.name}
                                             className={styles.brandBioLogoImg}
                                         />

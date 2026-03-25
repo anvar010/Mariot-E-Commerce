@@ -4,9 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import { API_BASE_URL } from '@/config';
-import { useTranslations } from 'next-intl';
 import { getAuthHeaders } from '@/utils/authHeaders';
-import { resolveUrl } from '@/utils/urlHelper';
+import { useTranslations } from 'next-intl';
 
 interface CartItem {
     id: string | number;
@@ -135,7 +134,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             prevToken.current = token;
         };
 
-        handleCartSync();
+        const timeoutId = setTimeout(handleCartSync, token ? 1500 : 0);
+        return () => clearTimeout(timeoutId);
     }, [token]);
 
     // 2. Persistence loop for guests
@@ -159,7 +159,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     name: item.name || item.product?.name || 'Product',
                     slug: item.slug || item.product?.slug || '',
                     price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price || item.product?.price || 0),
-                    image: resolveUrl(item.image || item.product?.image_url || ''),
+                    image: item.image || item.product?.image_url || '',
                     quantity: Number(item.quantity),
                     brand: item.brand || item.brand_name || item.product?.brand?.name || '',
                     stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined,

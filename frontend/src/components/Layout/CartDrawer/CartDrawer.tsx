@@ -27,6 +27,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
 import styles from './CartDrawer.module.css';
 import qStyles from './CartDrawer.quotation.module.css';
@@ -111,7 +112,7 @@ const CartDrawer = () => {
         if (showCoupons) {
             const fetchCoupons = async () => {
                 try {
-                    const res = await fetch(`${API_BASE_URL}/coupons/available`, { credentials: "include" });
+                    const res = await fetch(`${API_BASE_URL}/coupons/available`, { credentials: "include", headers: getAuthHeaders() });
                     const data = await res.json();
                     if (data.success) {
                         setAvailableCoupons(data.data);
@@ -153,7 +154,10 @@ const CartDrawer = () => {
             const res = await fetch(`${API_BASE_URL}/quotations`, {
                 credentials: "include",
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     customer_name: quotationForm.name,
                     customer_email: quotationForm.email,

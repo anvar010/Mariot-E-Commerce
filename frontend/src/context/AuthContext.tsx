@@ -50,9 +50,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setToken(savedToken);
         } catch (err: any) {
             console.error('Failed to load user', err);
-            setError(err.message || 'Failed to load user');
-            setToken(null);
-            localStorage.removeItem('token');
+            // Only clear token on explicit 401 (unauthorized) from backend.
+            // Network/CORS errors should NOT log the user out — keep the token
+            // so it can be retried on next navigation or refresh.
+            if (err.status === 401) {
+                setToken(null);
+                localStorage.removeItem('token');
+            } else {
+                // Keep the token — the error is likely a network/CORS issue.
+                // Set the user to null but preserve the token for retry.
+                setToken(savedToken);
+            }
         } finally {
             setLoading(false);
         }
