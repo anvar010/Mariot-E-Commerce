@@ -10,6 +10,7 @@ import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { getBrandLogo } from '@/utils/brandLogos';
 import { BASE_URL } from '@/config';
+import { resolveUrl } from '@/utils/urlHelper';
 
 export interface Product {
     id: string | number;
@@ -88,16 +89,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     // Support all possible image property names from backend/frontend
     let displayImage = product?.primary_image || product?.image_url || product?.image || image;
 
-    // Ensure absolute URL for relative paths (e.g., from backend uploads)
-    if (displayImage) {
-        if (displayImage.includes('localhost:5000')) {
-            displayImage = displayImage.replace('http://localhost:5000', BASE_URL);
-        } else if (!displayImage.startsWith('http') && !displayImage.startsWith('data:') && !displayImage.startsWith('/assets/')) {
-            displayImage = `${BASE_URL}${displayImage.startsWith('/') ? '' : '/'}${displayImage}`;
-        }
-    } else {
-        displayImage = 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?q=80&w=1470&auto=format&fit=crop';
-    }
+    displayImage = resolveUrl(displayImage || 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?q=80&w=1470&auto=format&fit=crop');
 
     const displayBrand = isArabic && product?.brand_name_ar ? product.brand_name_ar : (product?.brand_name || product?.brand || brand);
     const localBrandLogo = getBrandLogo(displayBrand);

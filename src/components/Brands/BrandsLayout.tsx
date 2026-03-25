@@ -6,6 +6,8 @@ import { Link } from '@/i18n/navigation';
 import { Truck, ShieldCheck, Award } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { API_BASE_URL, BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
+import { resolveUrl as sharedResolveUrl } from '@/utils/urlHelper';
 
 const categories = [
     "All", "Cooking", "Refrigeration-line", "Coffee & Bar", "Bakery", "Food Processing", "Snack Maker", "Laundry & Dish Washer", "Super Market", "Dry Store"
@@ -211,7 +213,10 @@ const BrandsLayout = () => {
         const fetchBrands = async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include" });
+                const res = await fetch(`${API_BASE_URL}/brands`, { 
+                    credentials: "include",
+                    headers: getAuthHeaders()
+                });
                 const data = await res.json();
                 if (data.success) {
                     setBrands(data.data);
@@ -226,17 +231,10 @@ const BrandsLayout = () => {
         fetchBrands();
     }, []);
 
-    const resolveUrl = (url?: string) => {
-        if (!url) return '';
-        if (url.includes('localhost:5000')) {
-            return url.replace('http://localhost:5000', BASE_URL);
-        }
-        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
-        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-    };
+
 
     const getLogo = (brand: any) => {
-        return resolveUrl(brand.image_url || brand.logo);
+        return sharedResolveUrl(brand.image_url || brand.logo);
     };
 
     const activeBrands = brands.filter(b => b.is_active === 1 || b.is_active === true || String(b.is_active) === '1');

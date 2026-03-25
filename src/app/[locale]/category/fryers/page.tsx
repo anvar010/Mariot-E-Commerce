@@ -10,7 +10,9 @@ export const metadata: Metadata = {
     description: 'Buy high-quality commercial fryers for your restaurant or kitchen. We offer top brands and reliable deep frying equipment in UAE.',
 };
 
-const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
+import { API_BASE_URL } from '@/config';
+
+const API_BASE_URL_SERVER = API_BASE_URL;
 
 async function getCategoryData(slug: string) {
     try {

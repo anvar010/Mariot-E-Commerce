@@ -5,6 +5,8 @@ import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { useTranslations } from 'next-intl';
+import { getAuthHeaders } from '@/utils/authHeaders';
+import { resolveUrl } from '@/utils/urlHelper';
 
 interface WishlistItem {
     id: string | number;
@@ -48,6 +50,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                                     credentials: "include",
                                     method: 'POST',
                                     headers: {
+                                        ...getAuthHeaders(),
                                         'Content-Type': 'application/json'
                                     },
                                     body: JSON.stringify({ product_id: item.id })
@@ -75,8 +78,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             }
         };
 
-        const timeoutId = setTimeout(handleWishlistSync, 2000);
-        return () => clearTimeout(timeoutId);
+        handleWishlistSync();
     }, [token]);
 
     // 2. Persistence loop for guests
@@ -91,7 +93,8 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setLoading(true);
         try {
             const res = await fetch(`${API_BASE_URL}/wishlist`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success && Array.isArray(data.data)) {
@@ -100,7 +103,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     id: item.product_id,
                     name: item.name,
                     price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price || 0),
-                    image: item.image || item.primary_image || '',
+                    image: resolveUrl(item.image || item.primary_image || ''),
                     brand: item.brand_name,
                     stock_quantity: item.stock_quantity
                 })));
@@ -141,6 +144,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     credentials: "include",
                     method: 'POST',
                     headers: {
+                        ...getAuthHeaders(),
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ product_id: product.id })
@@ -159,7 +163,8 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             try {
                 await fetch(`${API_BASE_URL}/wishlist/${productId}`, {
                     method: 'DELETE',
-                    credentials: "include"
+                    credentials: "include",
+                    headers: getAuthHeaders()
                 });
             } catch (error) {
                 console.error('Remove from wishlist failed backend', error);

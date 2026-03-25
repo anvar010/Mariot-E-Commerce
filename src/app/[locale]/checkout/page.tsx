@@ -6,6 +6,8 @@ import { useRouter } from '@/i18n/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useNotification } from '@/context/NotificationContext';
+import { BASE_URL, API_BASE_URL } from '@/config';
+import { resolveUrl } from '@/utils/urlHelper';
 import { useTranslations, useLocale } from 'next-intl';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
@@ -30,7 +32,7 @@ import {
     X as CloseIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { API_BASE_URL, BASE_URL } from '@/config';
+
 import styles from './checkout.module.css';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -238,14 +240,7 @@ function CheckoutContent() {
         }
     };
 
-    const resolveUrl = (url?: string) => {
-        if (!url) return '';
-        if (url.includes('localhost:5000')) {
-            return url.replace('http://localhost:5000', BASE_URL);
-        }
-        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
-        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-    };
+
 
     const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let { name, value } = e.target;

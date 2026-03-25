@@ -5,6 +5,8 @@ import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { useTranslations } from 'next-intl';
+import { getAuthHeaders } from '@/utils/authHeaders';
+import { resolveUrl } from '@/utils/urlHelper';
 
 interface CartItem {
     id: string | number;
@@ -89,6 +91,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                     credentials: "include",
                                     method: 'POST',
                                     headers: {
+                                        ...getAuthHeaders(),
                                         'Content-Type': 'application/json'
                                     },
                                     body: JSON.stringify({
@@ -132,8 +135,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             prevToken.current = token;
         };
 
-        const timeoutId = setTimeout(handleCartSync, token ? 1500 : 0);
-        return () => clearTimeout(timeoutId);
+        handleCartSync();
     }, [token]);
 
     // 2. Persistence loop for guests
@@ -147,7 +149,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!token) return;
         try {
             const res = await fetch(`${API_BASE_URL}/cart`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success && Array.isArray(data.data)) {
@@ -156,7 +159,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     name: item.name || item.product?.name || 'Product',
                     slug: item.slug || item.product?.slug || '',
                     price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price || item.product?.price || 0),
-                    image: item.image || item.product?.image_url || '',
+                    image: resolveUrl(item.image || item.product?.image_url || ''),
                     quantity: Number(item.quantity),
                     brand: item.brand || item.brand_name || item.product?.brand?.name || '',
                     stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined,
@@ -249,6 +252,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     credentials: "include",
                     method: 'POST',
                     headers: {
+                        ...getAuthHeaders(),
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -275,7 +279,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 await fetch(`${API_BASE_URL}/cart/${productId}`, {
                     method: 'DELETE',
-                    credentials: "include"
+                    credentials: "include",
+                    headers: getAuthHeaders()
                 });
             } catch (error) {
                 console.error('Failed to remove from cart backend', error);
@@ -309,6 +314,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     credentials: "include",
                     method: 'PUT',
                     headers: {
+                        ...getAuthHeaders(),
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -334,7 +340,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 await fetch(`${API_BASE_URL}/cart`, {
                     method: 'DELETE',
-                    credentials: "include"
+                    credentials: "include",
+                    headers: getAuthHeaders()
                 });
             } catch (error) {
                 console.error('Failed to clear cart backend', error);
@@ -357,6 +364,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 credentials: "include",
                 method: 'POST',
                 headers: {
+                    ...getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -438,6 +446,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         credentials: "include",
                         method: 'POST',
                         headers: {
+                            ...getAuthHeaders(),
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
