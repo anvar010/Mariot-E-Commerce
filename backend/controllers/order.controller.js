@@ -18,7 +18,8 @@ exports.createOrder = async (req, res, next) => {
 
         // Final Stock Validation
         for (const item of items) {
-            if (item.quantity > item.stock_quantity) {
+            const isTracked = item.track_inventory === 1 || item.track_inventory === true;
+            if (isTracked && item.quantity > item.stock_quantity) {
                 return res.status(400).json({
                     success: false,
                     message: `Product "${item.name}" is out of stock or requested quantity exceeds available stock (${item.stock_quantity}).`
