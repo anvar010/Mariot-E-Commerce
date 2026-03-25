@@ -13,7 +13,7 @@ class Cart {
     static async getCartItems(userId) {
         const cartId = await this.getOrCreateCart(userId);
         const [items] = await db.execute(`
-            SELECT ci.product_id, ci.quantity, p.name, p.price, p.offer_price, p.slug, p.stock_quantity, b.name as brand_name,
+            SELECT ci.product_id, ci.quantity, p.name, p.price, p.offer_price, p.slug, p.stock_quantity, p.track_inventory, b.name as brand_name,
             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image
             FROM cart_items ci
             JOIN products p ON p.id = ci.product_id
