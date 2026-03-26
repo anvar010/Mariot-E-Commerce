@@ -5,6 +5,8 @@ const createTransporter = () => {
         host: 'smtp.gmail.com',
         port: 587,
         secure: false,
+        requireTLS: true,
+        family: 4,
         tls: {
             rejectUnauthorized: false
         },
