@@ -15,6 +15,25 @@ const createTransporter = () => {
     });
 };
 
+// Verify SMTP connection on first use
+const verifySmtpConnection = async () => {
+    if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
+        console.error('[EMAIL] ❌ SMTP_EMAIL or SMTP_PASSWORD env vars are missing!');
+        return false;
+    }
+    console.log(`[EMAIL] SMTP_EMAIL: ${process.env.SMTP_EMAIL}`);
+    console.log(`[EMAIL] SMTP_PASSWORD length: ${process.env.SMTP_PASSWORD?.length} chars`);
+    try {
+        const transporter = createTransporter();
+        await transporter.verify();
+        console.log('[EMAIL] ✅ SMTP connection verified successfully');
+        return true;
+    } catch (error) {
+        console.error('[EMAIL] ❌ SMTP connection failed:', error.message);
+        return false;
+    }
+};
+
 /**
  * Send a password reset email to the user
  * @param {string} toEmail - Recipient email
@@ -89,8 +108,13 @@ const sendPasswordResetEmail = async (toEmail, userName, resetUrl) => {
         `
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Password reset email sent to ${toEmail}`);
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[EMAIL] ✅ Password reset email sent to ${toEmail}`);
+    } catch (error) {
+        console.error(`[EMAIL] ❌ Failed to send password reset email to ${toEmail}:`, error.message);
+        throw error;
+    }
 };
 
 /**
@@ -235,8 +259,13 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
         `
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Order confirmation email sent to ${toEmail}`);
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[EMAIL] ✅ Order confirmation email sent to ${toEmail}`);
+    } catch (error) {
+        console.error(`[EMAIL] ❌ Failed to send order confirmation email to ${toEmail}:`, error.message);
+        throw error;
+    }
 };
 
 /**
@@ -302,5 +331,6 @@ const sendWelcomeEmail = async (toEmail, userName) => {
 module.exports = {
     sendPasswordResetEmail,
     sendOrderConfirmationEmail,
-    sendWelcomeEmail
+    sendWelcomeEmail,
+    verifySmtpConnection
 };
