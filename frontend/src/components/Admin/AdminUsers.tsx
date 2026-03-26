@@ -172,9 +172,9 @@ const AdminUsers = () => {
                                         </div>
                                     </td>
                                     <td>
-                                        <span className={`${styles.roleBadge} ${user.role === 'admin' ? styles.admin : styles.user}`}>
-                                            {user.role === 'admin' && <Shield size={12} style={{ marginInlineEnd: '6px' }} />}
-                                            {user.role.toUpperCase()}
+                                        <span className={`${styles.roleBadge} ${(user.role || 'user').toLowerCase() === 'admin' ? styles.admin : styles.user}`}>
+                                            {(user.role || 'user').toLowerCase() === 'admin' && <Shield size={12} style={{ marginInlineEnd: '6px' }} />}
+                                            {(user.role || 'USER').toUpperCase()}
                                         </span>
                                     </td>
                                     <td>

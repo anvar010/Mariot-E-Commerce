@@ -169,9 +169,9 @@ exports.getDashboardStats = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
     try {
         const [users] = await db.query(`
-            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, u.role_id, r.name as role 
+            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, u.role_id, COALESCE(r.name, 'user') as role 
             FROM users u 
-            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN roles r ON u.role_id = r.id
         `);
         res.json({ success: true, data: users });
     } catch (error) {
