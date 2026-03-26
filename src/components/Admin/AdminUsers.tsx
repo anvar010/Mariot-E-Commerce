@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminUsers.module.css';
-import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar } from 'lucide-react';
+import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar, Ban, CheckCircle } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -76,6 +76,27 @@ const AdminUsers = () => {
             }
         } catch (error) {
             showNotification('Failed to delete user', 'error');
+        }
+    };
+
+    const handleToggleStatus = async (id: number, currentStatus: string) => {
+        const action = currentStatus === 'active' ? 'suspend' : 'activate';
+        if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/admin/users/${id}/status`, {
+                method: 'PATCH',
+                credentials: "include",
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
+            if (data.success) {
+                showNotification(data.message);
+                fetchUsers();
+            } else {
+                showNotification(data.message || 'Failed to update status', 'error');
+            }
+        } catch (error) {
+            showNotification('Failed to update user status', 'error');
         }
     };
 
@@ -153,15 +174,16 @@ const AdminUsers = () => {
                         <tr>
                             <th>User Details</th>
                             <th>Role</th>
+                            <th>Status</th>
                             <th>Joined Date</th>
                             <th style={{ textAlign: 'right' }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={4} style={{ textAlign: 'center', padding: '60px' }}>Loading member directory...</td></tr>
+                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}>Loading member directory...</td></tr>
                         ) : filteredUsers.length === 0 ? (
-                            <tr><td colSpan={4} style={{ textAlign: 'center', padding: '60px' }}>No users found Matching your search.</td></tr>
+                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}>No users found Matching your search.</td></tr>
                         ) : (
                             filteredUsers.map((user) => (
                                 <tr key={user.id}>
@@ -183,6 +205,23 @@ const AdminUsers = () => {
                                         </span>
                                     </td>
                                     <td>
+                                        <span style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '4px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            background: (user.status || 'active') === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                            color: (user.status || 'active') === 'active' ? '#16a34a' : '#dc2626',
+                                            border: `1px solid ${(user.status || 'active') === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                                        }}>
+                                            {(user.status || 'active') === 'active' ? <CheckCircle size={12} /> : <Ban size={12} />}
+                                            {(user.status || 'active').toUpperCase()}
+                                        </span>
+                                    </td>
+                                    <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
                                             <Calendar size={14} />
                                             {new Date(user.created_at).toLocaleDateString()}
@@ -198,10 +237,28 @@ const AdminUsers = () => {
                                                 <Edit2 size={16} />
                                             </button>
                                             <button
+                                                style={{
+                                                    background: (user.status || 'active') === 'active' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(34, 197, 94, 0.08)',
+                                                    color: (user.status || 'active') === 'active' ? '#dc2626' : '#16a34a',
+                                                    border: `1px solid ${(user.status || 'active') === 'active' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`,
+                                                    borderRadius: '8px',
+                                                    padding: '6px 8px',
+                                                    cursor: (user.role || 'user').toLowerCase() === 'admin' ? 'not-allowed' : 'pointer',
+                                                    opacity: (user.role || 'user').toLowerCase() === 'admin' ? 0.4 : 1,
+                                                    display: 'flex',
+                                                    alignItems: 'center'
+                                                }}
+                                                onClick={() => handleToggleStatus(user.id, user.status || 'active')}
+                                                disabled={(user.role || 'user').toLowerCase() === 'admin'}
+                                                title={(user.role || 'user').toLowerCase() === 'admin' ? "Admin accounts cannot be suspended" : ((user.status || 'active') === 'active' ? 'Suspend User' : 'Activate User')}
+                                            >
+                                                {(user.status || 'active') === 'active' ? <Ban size={16} /> : <CheckCircle size={16} />}
+                                            </button>
+                                            <button
                                                 className={styles.deleteBtn}
                                                 onClick={() => handleDeleteUser(user.id)}
-                                                disabled={user.role === 'admin'}
-                                                title={user.role === 'admin' ? "Admin accounts cannot be deleted here" : "Delete Account"}
+                                                disabled={(user.role || 'user').toLowerCase() === 'admin'}
+                                                title={(user.role || 'user').toLowerCase() === 'admin' ? "Admin accounts cannot be deleted here" : "Delete Account"}
                                             >
                                                 <Trash2 size={16} />
                                             </button>

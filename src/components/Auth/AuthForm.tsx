@@ -19,6 +19,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [formError, setFormError] = useState<string | null>(null);
+    const [isSuspended, setIsSuspended] = useState(false);
 
     const { login, googleLogin, register, loading, error: authError } = useAuth();
     const { showNotification } = useNotification();
@@ -29,6 +30,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormError(null);
+        setIsSuspended(false);
 
         try {
             if (isSignIn) {
@@ -39,9 +41,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                 showNotification(t('authRegister'), 'success', { title: t('success') });
             }
         } catch (err: any) {
-            const displayMsg = isSignIn ? t('authError') : (err.message || t('error'));
-            setFormError(displayMsg);
-            showNotification(displayMsg, 'error', { title: t('error') });
+            if (err.message?.includes('suspended')) {
+                setIsSuspended(true);
+                setFormError('Your account has been suspended. Please contact admin for more details.');
+            } else {
+                const displayMsg = isSignIn ? t('authError') : (err.message || t('error'));
+                setFormError(displayMsg);
+                showNotification(displayMsg, 'error', { title: t('error') });
+            }
         }
     };
 
@@ -54,8 +61,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                 showNotification(t('googleSuccess'), 'success', { title: 'Google Login' });
             } catch (err: any) {
                 console.error(err);
-                setFormError(t('googleError'));
-                showNotification(t('googleError'), 'error', { title: 'Google Login' });
+                if (err.message?.includes('suspended')) {
+                    setIsSuspended(true);
+                    setFormError('Your account has been suspended. Please contact admin for more details.');
+                } else {
+                    setFormError(t('googleError'));
+                    showNotification(t('googleError'), 'error', { title: 'Google Login' });
+                }
             }
         },
         onError: () => {
@@ -86,7 +98,22 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                         )}
                     </p>
 
-                    {(formError || authError) && (
+                    {isSuspended ? (
+                        <div style={{
+                            background: 'linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%)',
+                            border: '1px solid #fca5a5',
+                            borderRadius: '12px',
+                            padding: '20px',
+                            marginBottom: '20px',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{ fontSize: '32px', marginBottom: '8px' }}>🚫</div>
+                            <h3 style={{ color: '#dc2626', fontSize: '16px', fontWeight: 700, margin: '0 0 6px 0' }}>Account Suspended</h3>
+                            <p style={{ color: '#7c2d12', fontSize: '13px', margin: 0, lineHeight: 1.5 }}>
+                                Your account has been suspended. Please contact admin for more details.
+                            </p>
+                        </div>
+                    ) : (formError || authError) && (
                         <div style={{ color: '#ef4444', backgroundColor: '#fee2e2', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500', textAlign: 'center' }}>
                             {(formError?.toLowerCase() === 'not authorized' || authError?.toLowerCase() === 'not authorized')
                                 ? t('authError')
