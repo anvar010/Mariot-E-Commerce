@@ -81,8 +81,13 @@ app.use(cors({
     credentials: true,
 }));
 
-// Serve static files from uploads directory
+// Serve static files from uploads directory with cross-origin policy
+app.use(['/uploads', '/product_images'], (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+});
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/product_images', express.static(path.join(__dirname, 'uploads')));
 
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {

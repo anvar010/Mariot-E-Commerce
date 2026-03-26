@@ -28,7 +28,8 @@ exports.uploadImage = async (req, res, next) => {
             filename = optimizedFilename;
         }
 
-        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+        const relativePath = req.query.folder ? `${req.query.folder}/${filename}` : filename;
+        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${relativePath}`;
 
         res.status(200).json({
             success: true,
@@ -38,7 +39,8 @@ exports.uploadImage = async (req, res, next) => {
     } catch (error) {
         console.error('Image processing error:', error);
         // Fallback to original file
-        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+        const relativePath = req.query.folder ? `${req.query.folder}/${filename}` : filename;
+        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${relativePath}`;
         res.status(200).json({
             success: true,
             data: fileUrl,
@@ -52,7 +54,8 @@ exports.uploadFile = (req, res, next) => {
         return res.status(400).json({ success: false, message: 'Please upload a file' });
     }
 
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    const relativePath = req.query.folder ? `${req.query.folder}/${req.file.filename}` : req.file.filename;
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${relativePath}`;
 
     res.status(200).json({
         success: true,
@@ -90,7 +93,8 @@ exports.uploadImages = async (req, res, next) => {
                     // Keep original filename if optimization fails
                 }
             }
-            return `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+            const relativePath = req.query.folder ? `${req.query.folder}/${filename}` : filename;
+            return `${req.protocol}://${req.get('host')}/uploads/${relativePath}`;
         }));
 
         res.status(200).json({

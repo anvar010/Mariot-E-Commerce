@@ -29,6 +29,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
 import { API_BASE_URL, BASE_URL } from '@/config';
+import { resolveUrl } from '@/utils/resolveUrl';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
@@ -437,14 +438,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
     const isFav = isInWishlist(product.id);
 
-    const resolveUrl = (url?: string) => {
-        if (!url) return '';
-        if (url.includes('localhost:5000')) {
-            return url.replace('http://localhost:5000', BASE_URL);
-        }
-        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
-        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-    };
+    const resolveUrlLocal = resolveUrl;
 
     const images = product.images?.length > 0
         ? product.images.map((img: any) => resolveUrl(img.image_url))
@@ -805,7 +799,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         <div className={styles.paymentMethods}>
                             <div className={styles.paymentTitle}>{t('weAcceptPayment')}</div>
                             <div className={styles.paymentLogos}>
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png" alt="Visa" />
+                                <img src="/assets/visa-logo.svg" alt="Visa" />
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" />
                                 <img src="/assets/Tabby.webp" alt="Tabby" />
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Apple_Pay_logo.svg" alt="ApplePay" />

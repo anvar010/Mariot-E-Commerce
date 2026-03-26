@@ -9,6 +9,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import Image from 'next/image';
 
 import { API_BASE_URL } from '@/config';
+import { resolveUrl } from '@/utils/resolveUrl';
 
 const defaultSlides = [
     {
@@ -235,7 +236,7 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                 {/* Right side brand badge */}
                 <div className={styles.brandBadge}>
                     <img
-                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Rational_AG_logo.svg/1200px-Rational_AG_logo.svg.png"
+                        src={resolveUrl('/uploads/brands/rational.jpg.webp')}
                         alt="Brand Partner"
                         className={styles.brandLogo}
                     />

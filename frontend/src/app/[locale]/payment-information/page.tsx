@@ -28,7 +28,7 @@ export default function PaymentInformationPage() {
                                 {t('cardDesc')}
                             </p>
                             <div className={styles.cardLogos}>
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png" alt="Visa" className={styles.payLogo} />
+                                <img src="/assets/visa-logo.svg" alt="Visa" className={styles.payLogo} />
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className={styles.payLogo} />
                             </div>
                         </div>
