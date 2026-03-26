@@ -6,6 +6,7 @@ import { FileText, Search, Printer, Trash2, Eye, X, Calendar, User, Phone, Mail,
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminQuotations = () => {
     const [quotations, setQuotations] = useState<any[]>([]);
@@ -15,6 +16,23 @@ const AdminQuotations = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPrinting, setIsPrinting] = useState(false);
     const { showNotification } = useNotification();
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'danger'
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     useEffect(() => {
         fetchQuotations();
@@ -36,23 +54,35 @@ const AdminQuotations = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this quotation?')) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/quotations/${id}`, {
-                method: 'DELETE',
-                credentials: "include"
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification('Quotation deleted successfully');
-                setQuotations(prev => prev.filter(q => q.id !== id));
-            } else {
-                showNotification(data.message || 'Failed to delete quotation', 'error');
+    const handleDelete = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Quotation',
+            message: 'Are you sure you want to delete this quotation?',
+            type: 'danger',
+            confirmLabel: 'Delete',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/quotations/${id}`, {
+                        method: 'DELETE',
+                        credentials: "include"
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification('Quotation deleted successfully');
+                        setQuotations(prev => prev.filter(q => q.id !== id));
+                    } else {
+                        showNotification(data.message || 'Failed to delete quotation', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error deleting quotation', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('Error deleting quotation', 'error');
-        }
+        });
     };
 
     const handleViewDetails = (quotation: any) => {
@@ -257,6 +287,17 @@ const AdminQuotations = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+            />
         </div>
     );
 };

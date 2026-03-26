@@ -6,12 +6,30 @@ import { Trash2, Search, Star, Loader2, MessageSquare } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { stripHtml } from '@/utils/formatters';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminReviews = () => {
     const [reviews, setReviews] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const { showNotification } = useNotification();
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'danger'
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     useEffect(() => {
         fetchReviews();
@@ -47,23 +65,35 @@ const AdminReviews = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this review?')) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/reviews/${id}`, {
-                method: 'DELETE',
-                credentials: "include"
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification('Review deleted successfully');
-                setReviews(prev => prev.filter(r => r.id !== id));
-            } else {
-                showNotification(data.message || 'Failed to delete review', 'error');
+    const handleDelete = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Review',
+            message: 'Are you sure you want to delete this customer review? This action cannot be undone.',
+            type: 'danger',
+            confirmLabel: 'Delete Review',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/reviews/${id}`, {
+                        method: 'DELETE',
+                        credentials: "include"
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification('Review deleted successfully');
+                        setReviews(prev => prev.filter(r => r.id !== id));
+                    } else {
+                        showNotification(data.message || 'Failed to delete review', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error deleting review', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('Error deleting review', 'error');
-        }
+        });
     };
 
     const filteredReviews = reviews.filter(r =>
@@ -169,6 +199,17 @@ const AdminReviews = () => {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+            />
         </div>
     );
 };

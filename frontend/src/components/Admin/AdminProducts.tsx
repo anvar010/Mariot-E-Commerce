@@ -11,6 +11,7 @@ import { API_BASE_URL, BASE_URL } from '@/config';
 import { CATEGORIES_STRUCTURE } from '@/data/categories';
 import { stripHtml } from '@/utils/formatters';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 // Searchable Select Component
 const SearchableSelect = ({ label, name, options, value, onChange, placeholder = "Search..." }: any) => {
@@ -108,6 +109,23 @@ const AdminProducts = () => {
         offer_end: ''
     });
     const [bulkUpdating, setBulkUpdating] = useState(false);
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'danger'
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     const handleDownloadTemplate = async () => {
         const workbook = new ExcelJS.Workbook();
@@ -872,22 +890,34 @@ const AdminProducts = () => {
         }
     };
 
-    const handleDeleteProduct = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this product?')) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/products/${id}`, {
-                method: 'DELETE',
-                credentials: "include",
-                headers: getAuthHeaders()
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification('Product deleted');
-                fetchProducts();
+    const handleDeleteProduct = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Product',
+            message: 'Are you sure you want to delete this product? This action cannot be undone.',
+            type: 'danger',
+            confirmLabel: 'Delete',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+                        method: 'DELETE',
+                        credentials: "include",
+                        headers: getAuthHeaders()
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification('Product deleted');
+                        fetchProducts();
+                    }
+                } catch (error) {
+                    showNotification('Failed to delete product', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('Failed to delete product', 'error');
-        }
+        });
     };
 
     const toggleSelectAll = () => {
@@ -904,34 +934,43 @@ const AdminProducts = () => {
         );
     };
 
-    const handleBulkDelete = async () => {
+    const handleBulkDelete = () => {
         if (selectedIds.length === 0) return;
-        if (!confirm(`Are you sure you want to delete ${selectedIds.length} products? This cannot be undone.`)) return;
-
-        setLoading(true);
-        try {
-            const res = await fetch(`${API_BASE_URL}/products/bulk-delete`, {
-                method: 'DELETE',
-                credentials: "include",
-                headers: {
-                    ...getAuthHeaders(),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ ids: selectedIds })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification(`Successfully deleted ${selectedIds.length} products`);
-                setSelectedIds([]);
-                fetchProducts();
-            } else {
-                showNotification(data.message || 'Bulk delete failed', 'error');
+        
+        setConfirmModal({
+            isOpen: true,
+            title: 'Bulk Delete Products',
+            message: `Are you sure you want to delete ${selectedIds.length} products? This action cannot be undone.`,
+            type: 'danger',
+            confirmLabel: 'Delete All',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/products/bulk-delete`, {
+                        method: 'DELETE',
+                        credentials: "include",
+                        headers: {
+                            ...getAuthHeaders(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ ids: selectedIds })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification(`Successfully deleted ${selectedIds.length} products`);
+                        setSelectedIds([]);
+                        fetchProducts();
+                    } else {
+                        showNotification(data.message || 'Bulk delete failed', 'error');
+                    }
+                } catch (error) {
+                    showNotification('An error occurred during bulk delete', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('An error occurred during bulk delete', 'error');
-        } finally {
-            setLoading(false);
-        }
+        });
     };
 
     const handleBulkUpdate = async () => {
@@ -1866,6 +1905,17 @@ const AdminProducts = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+            />
         </div>
     );
 };

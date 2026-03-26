@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Save, RefreshCw, Layout, Megaphone, Plus, Trash2, ChevronLeft, ChevronRight, ShoppingBag, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNotification } from '@/context/NotificationContext';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminCMS = () => {
     const { token } = useAuth();
@@ -21,6 +22,23 @@ const AdminCMS = () => {
     const { showNotification } = useNotification();
     const [activeSlide, setActiveSlide] = useState(0);
     const [activePoster, setActivePoster] = useState(0);
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'danger'
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     const defaultSlide = {
         tagline: "NEW ARRIVAL",
@@ -169,7 +187,7 @@ const AdminCMS = () => {
         }
     };
 
-    const deleteSlideFromDB = async (index: number) => {
+    const deleteSlideFromDB = (index: number) => {
         const slide = cmsData.hero[index];
         if (!slide.id) {
             const newHero = cmsData.hero.filter((_: any, i: number) => i !== index);
@@ -178,26 +196,37 @@ const AdminCMS = () => {
             return;
         }
 
-        if (!window.confirm("Delete this slide permanently?")) return;
-
-        setSaving(true);
-        try {
-            const res = await fetch(`${API_BASE_URL}/admin/cms/hero-slides/${slide.id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` },
-                credentials: "include"
-            });
-            const result = await res.json();
-            if (result.success) {
-                showNotification('Slide deleted!', 'success');
-                fetchCMSData(true);
-                setActiveSlide(Math.max(0, index - 1));
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Slide',
+            message: 'Are you sure you want to delete this hero slide permanently? This will remove it from the homepage slider.',
+            type: 'danger',
+            confirmLabel: 'Delete Slide',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    setSaving(true);
+                    const res = await fetch(`${API_BASE_URL}/admin/cms/hero-slides/${slide.id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        credentials: "include"
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        showNotification('Slide deleted!', 'success');
+                        fetchCMSData(true);
+                        setActiveSlide(Math.max(0, index - 1));
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showNotification('Error deleting slide', 'error');
+                } finally {
+                    setSaving(false);
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setSaving(false);
-        }
+        });
     };
 
     const handleSlideImageUpload = async (index: number, file: File) => {
@@ -304,7 +333,7 @@ const AdminCMS = () => {
         }
     };
 
-    const deletePosterFromDB = async (index: number) => {
+    const deletePosterFromDB = (index: number) => {
         const poster = cmsData.posters[index];
         if (!poster.id) {
             const newPosters = cmsData.posters.filter((_: any, i: number) => i !== index);
@@ -313,26 +342,37 @@ const AdminCMS = () => {
             return;
         }
 
-        if (!window.confirm("Delete this poster permanently?")) return;
-
-        setSaving(true);
-        try {
-            const res = await fetch(`${API_BASE_URL}/admin/cms/hero-posters/${poster.id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` },
-                credentials: "include"
-            });
-            const result = await res.json();
-            if (result.success) {
-                showNotification('Poster deleted!', 'success');
-                fetchCMSData(true);
-                setActivePoster(Math.max(0, index - 1));
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Poster',
+            message: 'Are you sure you want to delete this promotional poster permanently? This will remove it from the homepage.',
+            type: 'danger',
+            confirmLabel: 'Delete Poster',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    setSaving(true);
+                    const res = await fetch(`${API_BASE_URL}/admin/cms/hero-posters/${poster.id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        credentials: "include"
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        showNotification('Poster deleted!', 'success');
+                        fetchCMSData(true);
+                        setActivePoster(Math.max(0, index - 1));
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showNotification('Error deleting poster', 'error');
+                } finally {
+                    setSaving(false);
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setSaving(false);
-        }
+        });
     };
 
     const addSlide = () => {
@@ -392,6 +432,17 @@ const AdminCMS = () => {
                     Retry Loading
                 </button>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+            />
         </div>
     );
 

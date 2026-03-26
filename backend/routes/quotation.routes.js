@@ -1,5 +1,5 @@
 const express = require('express');
-const { createQuotation, getMyQuotations, deleteQuotation, getQuotations } = require('../controllers/quotationController');
+const { createQuotation, getMyQuotations, deleteQuotation, getQuotations } = require('../controllers/quotation.controller');
 const { protect, authorize, optionalProtect } = require('../middlewares/auth.middleware');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();

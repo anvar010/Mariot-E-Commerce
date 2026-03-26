@@ -33,6 +33,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const UserDashboard = () => {
     const t = useTranslations('userDashboard');
@@ -126,26 +127,39 @@ const UserDashboard = () => {
         }
     };
 
-    const handleDeleteQuotation = async (id: number) => {
-        if (!window.confirm(t('quotations.confirmDelete'))) return;
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/quotations/${id}`, {
-                method: 'DELETE',
-                credentials: "include",
-                headers: getAuthHeaders()
-            });
-            const data = await response.json();
-            if (data.success) {
-                setQuotations(quotations.filter(q => q.id !== id));
+    const handleDeleteQuotation = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: t('quotations.deleteTitle') || 'Delete Quotation',
+            message: t('quotations.confirmDelete'),
+            type: 'danger',
+            confirmLabel: t('quotations.delete') || 'Delete',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const response = await fetch(`${API_BASE_URL}/quotations/${id}`, {
+                        method: 'DELETE',
+                        credentials: "include",
+                        headers: getAuthHeaders()
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        setQuotations(quotations.filter(q => q.id !== id));
+                        showNotification('Quotation deleted successfully');
+                    }
+                } catch (error) {
+                    console.error('Error deleting quotation:', error);
+                    showNotification('Failed to delete quotation', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            console.error('Error deleting quotation:', error);
-        }
+        });
     };
 
     const handleDownloadQuotation = async (quotation: any) => {
-        setViewingId(quotation.id);
+        setIsDownloadingId(quotation.id);
         try {
             const { generateQuotationPDF } = await import('@/utils/pdfGenerator');
             await generateQuotationPDF(quotation, true);
@@ -153,12 +167,12 @@ const UserDashboard = () => {
             console.error('Error downloading quotation:', error);
             showNotification(t('profile.pdfGenerateError'), 'error');
         } finally {
-            setViewingId(null);
+            setIsDownloadingId(null);
         }
     };
 
     const handleViewQuotation = async (quotation: any) => {
-        setViewingId(quotation.id);
+        setIsViewingId(quotation.id);
         try {
             const { generateQuotationPDF } = await import('@/utils/pdfGenerator');
             await generateQuotationPDF(quotation);
@@ -166,7 +180,7 @@ const UserDashboard = () => {
             console.error('Error viewing quotation:', error);
             showNotification(t('profile.pdfGenerateError'), 'error');
         } finally {
-            setViewingId(null);
+            setIsViewingId(null);
         }
     };
 
@@ -257,21 +271,35 @@ const UserDashboard = () => {
         setShowAddressForm(true);
     };
 
-    const handleDeleteAddress = async (id: number) => {
-        if (!window.confirm(t('addresses.confirmDelete'))) return;
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/addresses/${id}`, {
-                method: 'DELETE',
-                credentials: "include",
-                headers: getAuthHeaders()
-            });
-            const data = await response.json();
-            if (data.success) {
-                setAddresses(addresses.filter(a => a.id !== id));
+    const handleDeleteAddress = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: t('addresses.deleteTitle') || 'Delete Address',
+            message: t('addresses.confirmDelete'),
+            type: 'danger',
+            confirmLabel: t('addresses.delete') || 'Delete',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const response = await fetch(`${API_BASE_URL}/users/addresses/${id}`, {
+                        method: 'DELETE',
+                        credentials: "include",
+                        headers: getAuthHeaders()
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        setAddresses(addresses.filter(a => a.id !== id));
+                        showNotification('Address removed successfully');
+                    }
+                } catch (error) {
+                    console.error('Error deleting address:', error);
+                    showNotification('Failed to remove address', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            console.error('Error deleting address:', error);
-        }
+        });
     };
 
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -279,7 +307,8 @@ const UserDashboard = () => {
     const [orders, setOrders] = useState<any[]>([]);
     const [loadingQuotations, setLoadingQuotations] = useState(false);
     const [loadingOrders, setLoadingOrders] = useState(false);
-    const [viewingId, setViewingId] = useState<number | null>(null);
+    const [isViewingId, setIsViewingId] = useState<number | null>(null);
+    const [isDownloadingId, setIsDownloadingId] = useState<number | null>(null);
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
     const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
     const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
@@ -296,6 +325,23 @@ const UserDashboard = () => {
         phone: '',
         is_default: false
     });
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'danger'
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     const tabs = ['All Orders', 'Open', 'Cancelled', 'Delivered'];
     const tabTranslations: Record<string, string> = {
@@ -734,52 +780,59 @@ const UserDashboard = () => {
                         <div className={styles.quotationsList}>
                             {quotations.map((q) => (
                                     <div className={styles.premiumQuotationCard}>
-                                        <div className={styles.quotationTop}>
-                                            <div className={styles.docIconWrapper}>
-                                                <FileText size={24} color="#56cfe1" />
+                                        <div className={styles.quotationInfoMain}>
+                                            <div className={styles.docIconWrapperPremium}>
+                                                <FileText size={24} />
+                                                <div className={styles.iconGloss}></div>
                                             </div>
-                                            <div className={styles.quotationDetails}>
-                                                <div className={styles.refRow}>
-                                                    <span className={styles.refLabel}>{t('quotations.refNumber')}</span>
-                                                    <span className={styles.refValue}>{q.quotation_ref}</span>
+                                            
+                                            <div className={styles.quotationData}>
+                                                <div className={styles.quotationRefBadge}>
+                                                    <span className={styles.refLabelText}>{t('quotations.refNumber')}</span>
+                                                    <span className={styles.refValueText}>{q.quotation_ref}</span>
                                                 </div>
-                                                <div className={styles.metaRow}>
-                                                    <span className={styles.metaItem}>
+                                                
+                                                <div className={styles.quotationMetaGroup}>
+                                                    <div className={styles.metaBadge}>
                                                         <Calendar size={14} />
-                                                        {new Date(q.created_at).toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-GB', {
+                                                        <span>{new Date(q.created_at).toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-GB', {
                                                             day: '2-digit', month: 'short', year: 'numeric'
-                                                        })}
-                                                    </span>
+                                                        })}</span>
+                                                    </div>
+                                                    
                                                     {q.total_amount && (
-                                                        <span className={styles.amountItem}>
-                                                            AED {parseFloat(q.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                        </span>
+                                                        <div className={styles.amountPillPremium}>
+                                                            <span className={styles.currencyLabel}>AED</span>
+                                                            <span className={styles.amountValueText}>{parseFloat(q.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className={styles.dividerDashed}></div>
-
-                                        <div className={styles.quotationActionsPremium}>
-                                            <div className={styles.mainQuotationActions}>
+                                        <div className={styles.actionsGroupPremium}>
+                                            <div className={styles.actionButtonsWrapper}>
                                                 <button
-                                                    className={styles.premiumViewBtn}
+                                                    className={styles.sleekViewBtn}
                                                     onClick={() => handleViewQuotation(q)}
-                                                    disabled={viewingId === q.id}
+                                                    disabled={isViewingId === q.id || isDownloadingId === q.id}
+                                                    title={t('quotations.view')}
                                                 >
-                                                    {viewingId === q.id ? <div className={styles.miniLoader}></div> : <><FileText size={18} /><span>{t('quotations.view')}</span></>}
+                                                    {isViewingId === q.id ? <div className={styles.miniLoaderTeal}></div> : <><FileText size={18} /><span>{t('quotations.view')}</span></>}
                                                 </button>
+                                                
                                                 <button
-                                                    className={styles.premiumDownloadBtn}
+                                                    className={styles.sleekDownloadBtn}
                                                     onClick={() => handleDownloadQuotation(q)}
-                                                    disabled={viewingId === q.id}
+                                                    disabled={isViewingId === q.id || isDownloadingId === q.id}
+                                                    title={t('quotations.download')}
                                                 >
-                                                    {viewingId === q.id ? <div className={styles.miniLoader}></div> : <><Download size={18} /><span>{t('quotations.download')}</span></>}
+                                                    {isDownloadingId === q.id ? <div className={styles.miniLoaderWhite}></div> : <><Download size={18} /><span>{t('quotations.download')}</span></>}
                                                 </button>
                                             </div>
+                                            
                                             <button
-                                                className={styles.premiumDeleteBtn}
+                                                className={styles.sleekDeleteBtn}
                                                 onClick={() => handleDeleteQuotation(q.id)}
                                                 title={t('quotations.delete')}
                                             >
@@ -1099,6 +1152,17 @@ const UserDashboard = () => {
                     {renderContent()}
                 </main>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+            />
         </div>
     );
 };

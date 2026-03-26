@@ -1,3 +1,4 @@
+require('dotenv').config();
 const mysql = require('mysql2/promise');
 
 async function fixDb() {
@@ -5,7 +6,7 @@ async function fixDb() {
     host: 'mysql-aceb4f7-anvarshaknavas123-2aa6.f.aivencloud.com',
     port: 15790,
     user: 'avnadmin',
-    password: process.env.DB_PASSWORD,
+    password: process.env.DB_PASS,
     database: 'defaultdb',
     ssl: {
       rejectUnauthorized: false

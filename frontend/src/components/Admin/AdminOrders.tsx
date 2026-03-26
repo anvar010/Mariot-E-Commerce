@@ -5,12 +5,30 @@ import styles from './AdminOrders.module.css';
 import { Search, Eye, Truck, Check, Package, XCircle, Clock, Download } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminOrders = () => {
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     const { showNotification } = useNotification();
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'info'
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     const handleExport = async () => {
         try {
@@ -67,50 +85,74 @@ const AdminOrders = () => {
         }
     };
 
-    const handleStatusChange = async (orderId: number, newStatus: string) => {
-        if (!confirm(`Are you sure you want to change status to ${newStatus}?`)) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
-                credentials: "include",
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ status: newStatus })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification(`Order #${orderId} status updated to ${newStatus}`);
-                fetchOrders();
-            } else {
-                showNotification(data.message || 'Failed to update status', 'error');
+    const handleStatusChange = (orderId: number, newStatus: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Update Order Status',
+            message: `Are you sure you want to change the status of Order #${orderId} to ${newStatus.toUpperCase()}?`,
+            type: 'info',
+            confirmLabel: 'Update Status',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+                        credentials: "include",
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification(`Order #${orderId} status updated to ${newStatus}`);
+                        fetchOrders();
+                    } else {
+                        showNotification(data.message || 'Failed to update status', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error updating order', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('Error updating order', 'error');
-        }
+        });
     };
 
-    const handlePaymentStatusChange = async (orderId: number, newStatus: string) => {
-        if (!confirm(`Are you sure you want to change payment status to ${newStatus}?`)) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
-                credentials: "include",
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ payment_status: newStatus })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification(`Order #${orderId} payment status updated to ${newStatus}`);
-                fetchOrders();
-            } else {
-                showNotification(data.message || 'Failed to update payment status', 'error');
+    const handlePaymentStatusChange = (orderId: number, newStatus: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Update Payment Status',
+            message: `Are you sure you want to change the payment status of Order #${orderId} to ${newStatus.toUpperCase()}?`,
+            type: 'warning',
+            confirmLabel: 'Update Payment',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+                        credentials: "include",
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ payment_status: newStatus })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification(`Order #${orderId} payment status updated to ${newStatus}`);
+                        fetchOrders();
+                    } else {
+                        showNotification(data.message || 'Failed to update payment status', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error updating payment status', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('Error updating payment status', 'error');
-        }
+        });
     };
 
     const getStatusStyle = (status: string) => {
@@ -229,6 +271,17 @@ const AdminOrders = () => {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+            />
         </div>
     );
 };

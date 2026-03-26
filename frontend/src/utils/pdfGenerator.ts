@@ -15,7 +15,14 @@ const imageToBase64 = async (url: string): Promise<string> => {
         // Provide current window origin so API handles relative URLs flawlessly
         const fullUrl = url.startsWith('http') ? url : new URL(url, window.location.origin).toString();
 
-        const response = await fetch(`/api/proxy-image?url=${encodeURIComponent(fullUrl)}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+        const response = await fetch(`/api/proxy-image?url=${encodeURIComponent(fullUrl)}`, {
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             console.warn(`imageToBase64: proxy failed with ${response.status} for ${url}`);
@@ -26,8 +33,12 @@ const imageToBase64 = async (url: string): Promise<string> => {
         if (data.success && data.base64) {
             return data.base64;
         }
-    } catch (error) {
-        console.error('imageToBase64 fell back to placeholder due to error:', error, 'for URL:', url);
+    } catch (error: any) {
+        if (error.name === 'AbortError') {
+            console.error('imageToBase64 timed out for URL:', url);
+        } else {
+            console.error('imageToBase64 fell back to placeholder due to error:', error, 'for URL:', url);
+        }
     }
 
     return '/assets/placeholder-image.webp';

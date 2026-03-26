@@ -345,7 +345,7 @@ exports.stripeWebhook = async (req, res) => {
         // CRITICAL: Verify webhook signature to prevent spoofing
         if (stripe && process.env.STRIPE_WEBHOOK_SECRET && !process.env.STRIPE_WEBHOOK_SECRET.includes('REPLACE_WITH')) {
             const sig = req.headers['stripe-signature'];
-            event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+            event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
         } else {
             // Dev fallback - parse raw body
             event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;

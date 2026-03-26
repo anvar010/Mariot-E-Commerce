@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './AdminUsers.module.css';
 import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar, Ban, CheckCircle } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 
@@ -22,6 +23,23 @@ const AdminUsers = () => {
         email: '',
         role_id: ''
     });
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'danger'
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -61,43 +79,67 @@ const AdminUsers = () => {
         }
     };
 
-    const handleDeleteUser = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this user?')) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
-                method: 'DELETE',
-                credentials: "include",
-                headers: getAuthHeaders()
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification('User account removed');
-                fetchUsers();
+    const handleDeleteUser = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete User Account',
+            message: 'Are you sure you want to permanently delete this user? This action cannot be undone.',
+            type: 'danger',
+            confirmLabel: 'Delete Account',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+                        method: 'DELETE',
+                        credentials: "include",
+                        headers: getAuthHeaders()
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification('User account removed');
+                        fetchUsers();
+                    }
+                } catch (error) {
+                    showNotification('Failed to delete user', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('Failed to delete user', 'error');
-        }
+        });
     };
 
-    const handleToggleStatus = async (id: number, currentStatus: string) => {
+    const handleToggleStatus = (id: number, currentStatus: string) => {
         const action = currentStatus === 'active' ? 'suspend' : 'activate';
-        if (!confirm(`Are you sure you want to ${action} this user?`)) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/admin/users/${id}/status`, {
-                method: 'PATCH',
-                credentials: "include",
-                headers: getAuthHeaders()
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification(data.message);
-                fetchUsers();
-            } else {
-                showNotification(data.message || 'Failed to update status', 'error');
+        setConfirmModal({
+            isOpen: true,
+            title: `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
+            message: `Are you sure you want to ${action} this user?`,
+            type: action === 'suspend' ? 'warning' : 'info',
+            confirmLabel: action.charAt(0).toUpperCase() + action.slice(1),
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/admin/users/${id}/status`, {
+                        method: 'PATCH',
+                        credentials: "include",
+                        headers: getAuthHeaders()
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification(data.message);
+                        fetchUsers();
+                    } else {
+                        showNotification(data.message || 'Failed to update status', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Failed to update user status', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('Failed to update user status', 'error');
-        }
+        });
     };
 
     const handleEditClick = (user: any) => {
@@ -335,6 +377,17 @@ const AdminUsers = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+            />
         </div>
     );
 };
