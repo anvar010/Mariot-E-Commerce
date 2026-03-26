@@ -36,15 +36,15 @@ const app = express();
 // Trust proxy (required for Render, Heroku, etc. behind reverse proxy)
 app.set('trust proxy', 1);
 
-// ===================================================================
-// STRIPE WEBHOOK - MUST be before express.json() for raw body access
-// Stripe requires the raw body to verify webhook signatures
-// ===================================================================
-const { stripeWebhook } = require('./controllers/order.controller');
-app.post('/api/v1/orders/webhook/stripe', express.raw({ type: 'application/json' }), stripeWebhook);
 
-// Body parser (AFTER Stripe webhook route)
-app.use(express.json());
+// Body parser with raw body support for Stripe webhooks
+app.use(express.json({
+    verify: (req, res, buf) => {
+        if (req.originalUrl.startsWith('/api/v1/orders/webhook/stripe')) {
+            req.rawBody = buf;
+        }
+    }
+}));
 
 // Set security headers
 app.use(helmet());
