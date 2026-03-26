@@ -11,22 +11,37 @@ import { BASE_URL } from '@/config';
 export const resolveUrl = (url?: string): string => {
     if (!url) return '';
 
-    // 1. Return already absolute or data URLs as-is
-    if (url.startsWith('http') || url.startsWith('data:')) {
-        // Optional: Replace localhost with standard BASE_URL if needed
-        if (url.includes('localhost:5000')) {
-            return url.replace('http://localhost:5000', BASE_URL);
+    // Normalize Windows-style backslashes to forward slashes
+    let normalizedUrl = url.replace(/\\/g, '/');
+
+    // Remove leading /public/ or public/ if it exists (some backend versions prepend it)
+    normalizedUrl = normalizedUrl.replace(/^(\/)?public\//, '');
+
+    // If it's already an absolute URL (http, https, data, or blob)
+    if (
+        normalizedUrl.startsWith('http') ||
+        normalizedUrl.startsWith('data:') ||
+        normalizedUrl.startsWith('blob:')
+    ) {
+        // Fix for old/local domains still in DB
+        if (normalizedUrl.includes('localhost:5000')) {
+            return normalizedUrl.replace(/http:\/\/localhost:5000/g, BASE_URL);
         }
-        return url;
+        if (normalizedUrl.includes('mariot-backend.onrender.com')) {
+            return normalizedUrl.replace(/https:\/\/mariot-backend.onrender.com/g, BASE_URL);
+        }
+        if (normalizedUrl.includes('mariot-api.onrender.com')) {
+            return normalizedUrl.replace(/https:\/\/mariot-api.onrender.com/g, BASE_URL);
+        }
+        return normalizedUrl;
     }
 
-    // 2. Static frontend assets served by Next.js from public/
-    if (url.startsWith('/assets/') || url.startsWith('/images/')) {
-        return url;
+    // Handle internal project assets
+    if (normalizedUrl.startsWith('/assets/') || normalizedUrl.startsWith('/images/')) {
+        return normalizedUrl;
     }
 
-    // 3. Backend uploads or relative paths
-    // Prepend BASE_URL and ensure proper slashes
-    const cleanPath = url.startsWith('/') ? url : `/${url}`;
-    return `${BASE_URL}${cleanPath}`;
+    // Default: Prepend BASE_URL
+    const separator = normalizedUrl.startsWith('/') ? '' : '/';
+    return `${BASE_URL}${separator}${normalizedUrl}`;
 };
