@@ -5,6 +5,7 @@ import styles from './AdminUsers.module.css';
 import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 
 const AdminUsers = () => {
     const [users, setUsers] = useState<any[]>([]);
@@ -30,7 +31,8 @@ const AdminUsers = () => {
     const fetchRoles = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/admin/roles`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success) {
@@ -45,7 +47,8 @@ const AdminUsers = () => {
         try {
             setLoading(true);
             const res = await fetch(`${API_BASE_URL}/admin/users`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success) {
@@ -63,7 +66,8 @@ const AdminUsers = () => {
         try {
             const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
                 method: 'DELETE',
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success) {
@@ -92,6 +96,7 @@ const AdminUsers = () => {
                 credentials: "include",
                 method: 'PUT',
                 headers: {
+                    ...getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(formData)
