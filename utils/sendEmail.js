@@ -1,56 +1,41 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const createTransporter = () => {
-    return nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        requireTLS: true,
-        family: 4,
-        tls: {
-            rejectUnauthorized: false
-        },
-        auth: {
-            user: process.env.SMTP_EMAIL,
-            pass: process.env.SMTP_PASSWORD
-        }
-    });
+const getResend = () => {
+    return new Resend(process.env.RESEND_API_KEY);
 };
 
-// Verify SMTP connection on first use
+// Verify Resend API connection on startup
 const verifySmtpConnection = async () => {
-    if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
-        console.error('[EMAIL] ❌ SMTP_EMAIL or SMTP_PASSWORD env vars are missing!');
+    if (!process.env.RESEND_API_KEY) {
+        console.error('[EMAIL] ❌ RESEND_API_KEY env var is missing!');
         return false;
     }
-    console.log(`[EMAIL] SMTP_EMAIL: ${process.env.SMTP_EMAIL}`);
-    console.log(`[EMAIL] SMTP_PASSWORD length: ${process.env.SMTP_PASSWORD?.length} chars`);
     try {
-        const transporter = createTransporter();
-        await transporter.verify();
-        console.log('[EMAIL] ✅ SMTP connection verified successfully');
+        const resend = getResend();
+        // Send a test API call to verify the key works
+        await resend.domains.list();
+        console.log('[EMAIL] ✅ Resend API connection verified successfully');
         return true;
     } catch (error) {
-        console.error('[EMAIL] ❌ SMTP connection failed:', error.message);
+        console.error('[EMAIL] ❌ Resend API connection failed:', error.message);
         return false;
     }
 };
 
 /**
  * Send a password reset email to the user
- * @param {string} toEmail - Recipient email
- * @param {string} userName - User's display name
- * @param {string} resetUrl - Full reset URL with token
  */
 const sendPasswordResetEmail = async (toEmail, userName, resetUrl) => {
-    const transporter = createTransporter();
+    const resend = getResend();
+    const fromEmail = process.env.SMTP_EMAIL || 'onboarding@resend.dev';
 
-    const mailOptions = {
-        from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
-        to: toEmail,
-        subject: 'Reset Your Password — Mariot Store',
-        text: `Hi ${userName},\n\nYou requested a password reset for your Mariot Store account.\n\nPlease click the link below to set a new password. This link will expire in 15 minutes.\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.\n\nBest regards,\nMariot Store Team`,
-        html: `
+    try {
+        await resend.emails.send({
+            from: `Mariot Store <${fromEmail}>`,
+            to: [toEmail],
+            subject: 'Reset Your Password — Mariot Store',
+            text: `Hi ${userName},\n\nYou requested a password reset for your Mariot Store account.\n\nPlease click the link below to set a new password. This link will expire in 15 minutes.\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.\n\nBest regards,\nMariot Store Team`,
+            html: `
             <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
                 <!-- Header -->
                 <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px 30px; text-align: center;">
@@ -108,10 +93,7 @@ const sendPasswordResetEmail = async (toEmail, userName, resetUrl) => {
                 </div>
             </div>
         `
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
+        });
         console.log(`[EMAIL] ✅ Password reset email sent to ${toEmail}`);
     } catch (error) {
         console.error(`[EMAIL] ❌ Failed to send password reset email to ${toEmail}:`, error.message);
@@ -123,7 +105,8 @@ const sendPasswordResetEmail = async (toEmail, userName, resetUrl) => {
  * Send an order confirmation email to the user
  */
 const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmount, orderItems = [], orderData = {}) => {
-    const transporter = createTransporter();
+    const resend = getResend();
+    const fromEmail = process.env.SMTP_EMAIL || 'onboarding@resend.dev';
     
     const subtotal = Number(orderData.total_amount || 0).toFixed(2);
     const vat = Number(orderData.vat_amount || 0).toFixed(2);
@@ -131,7 +114,6 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
     const paymentMethod = orderData.payment_method || 'N/A';
     const billing = orderData.billing_details || {};
 
-    // Map payment method display names
     const paymentDisplay = {
         'bank_transfer': 'Direct bank transfer',
         'cod': 'Cash on delivery',
@@ -139,7 +121,6 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
         'card': 'Credit/Debit Card'
     }[paymentMethod] || paymentMethod;
 
-    // Generate product table rows
     const itemRows = orderItems.map(item => `
         <tr>
             <td style="padding: 15px 0; border-bottom: 1px solid #eeeeee; width: 60px;">
@@ -157,7 +138,6 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
         </tr>
     `).join('');
 
-    // Conditional Bank Details
     const bankDetailsHtml = paymentMethod === 'bank_transfer' ? `
         <div style="margin-top: 25px; color: #444444; font-size: 14px; line-height: 1.6;">
             <p>Make your payment directly into our bank account. Please use your <strong>Order ID</strong> as the payment reference. Your <strong>order</strong> will not be shipped until the funds have cleared in our account.</p>
@@ -172,12 +152,13 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
         </div>
     ` : '';
 
-    const mailOptions = {
-        from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
-        to: toEmail,
-        subject: `Order Confirmation #${orderId} — Mariot Store`,
-        text: `Hi ${userName},\n\nThank you for your order!\n\nYour order #${orderId} has been successfully placed. Your total is AED ${total}.\n\nBest regards,\nMariot Store Team`,
-        html: `
+    try {
+        await resend.emails.send({
+            from: `Mariot Store <${fromEmail}>`,
+            to: [toEmail],
+            subject: `Order Confirmation #${orderId} — Mariot Store`,
+            text: `Hi ${userName},\n\nThank you for your order!\n\nYour order #${orderId} has been successfully placed. Your total is AED ${total}.\n\nBest regards,\nMariot Store Team`,
+            html: `
             <div style="background-color: #f4f4f4; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; color: #000000; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                     
@@ -259,10 +240,7 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
             </div> <!-- Close inner white container -->
         </div> <!-- Close outer gray background -->
         `
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
+        });
         console.log(`[EMAIL] ✅ Order confirmation email sent to ${toEmail}`);
     } catch (error) {
         console.error(`[EMAIL] ❌ Failed to send order confirmation email to ${toEmail}:`, error.message);
@@ -274,14 +252,16 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
  * Send a welcome email to the new user
  */
 const sendWelcomeEmail = async (toEmail, userName) => {
-    const transporter = createTransporter();
+    const resend = getResend();
+    const fromEmail = process.env.SMTP_EMAIL || 'onboarding@resend.dev';
 
-    const mailOptions = {
-        from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
-        to: toEmail,
-        subject: `Welcome to Mariot Store, ${userName.split(' ')[0]}! 🥳`,
-        text: `Hi ${userName},\n\nWelcome to Mariot Store! We're thrilled to have you with us.\n\nBest regards,\nMariot Store Team`,
-        html: `
+    try {
+        await resend.emails.send({
+            from: `Mariot Store <${fromEmail}>`,
+            to: [toEmail],
+            subject: `Welcome to Mariot Store, ${userName.split(' ')[0]}! 🥳`,
+            text: `Hi ${userName},\n\nWelcome to Mariot Store! We're thrilled to have you with us.\n\nBest regards,\nMariot Store Team`,
+            html: `
             <div style="background-color: #f4f4f4; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; color: #000000; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                     
@@ -320,13 +300,10 @@ const sendWelcomeEmail = async (toEmail, userName) => {
                 </div> <!-- Close inner white container -->
             </div> <!-- Close outer gray background -->
         `
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
-        console.log(`Welcome email sent to ${toEmail}`);
+        });
+        console.log(`[EMAIL] ✅ Welcome email sent to ${toEmail}`);
     } catch (error) {
-        console.error(`Failed to send welcome email to ${toEmail}:`, error);
+        console.error(`[EMAIL] ❌ Failed to send welcome email to ${toEmail}:`, error.message);
     }
 };
 
