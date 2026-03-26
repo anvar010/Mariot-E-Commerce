@@ -16,6 +16,8 @@ const Header = () => {
 
     const { user, logout } = useAuth();
     const { cartCount, setIsDrawerOpen } = useCart();
+    const headerRef = React.useRef<HTMLDivElement>(null);
+    const [headerHeight, setHeaderHeight] = useState(160);
     const pathname = usePathname();
     const router = useRouter();
     const locale = useLocale();
@@ -95,13 +97,28 @@ const Header = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+    // {updated height}
+    useEffect(() => {
+        const updateHeight = () => {
+            if (!isSticky && headerRef.current) {
+                const h = headerRef.current.offsetHeight;
+                if (h > 0) setHeaderHeight(h);
+            }
+        };
+
+        updateHeight();
+        window.addEventListener('resize', updateHeight);
+        return () => window.removeEventListener('resize', updateHeight);
+    }, [isSticky, announcement, user]);
 
     useEffect(() => {
         let ticking = false;
         const handleScroll = () => {
             if (!ticking) {
                 window.requestAnimationFrame(() => {
-                    setIsSticky(window.scrollY > 150);
+                    const currentScroll = window.scrollY;
+                    const threshold = headerHeight > 0 ? headerHeight + 10 : 200;
+                    setIsSticky(currentScroll > threshold);
                     ticking = false;
                 });
                 ticking = true;
@@ -113,14 +130,14 @@ const Header = () => {
         window.addEventListener('scroll', handleScroll, { passive: true });
         window.addEventListener('OPEN_CART_DRAWER', handleOpenCart);
 
-        // Initial check without animation frame
-        setIsSticky(window.scrollY > 150);
+        // Initial check
+        setIsSticky(window.scrollY > (headerHeight > 0 ? headerHeight + 10 : 200));
 
         return () => {
             window.removeEventListener('scroll', handleScroll);
             window.removeEventListener('OPEN_CART_DRAWER', handleOpenCart);
         };
-    }, [setIsDrawerOpen]);
+    }, [setIsDrawerOpen, headerHeight]);
 
     const toggleLang = () => setIsLangOpen(!isLangOpen);
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -147,7 +164,10 @@ const Header = () => {
 
     return (
         <>
-            <header className={`${styles.header} ${isSticky ? styles.sticky : ''}`}>
+            <header
+                ref={headerRef}
+                className={`${styles.header} ${isSticky ? styles.sticky : ''}`}
+            >
                 <div className={styles.topBanner}>
                     <div className={styles.container}>
                         <div className={styles.topBannerLeft} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -522,8 +542,7 @@ const Header = () => {
                     </div>
                 </div>
             </header >
-            {isSticky && <div style={{ height: '160px' }} className={styles.desktopOnly} />
-            }
+            {isSticky && <div style={{ height: `${headerHeight}px` }} />}
         </>
     );
 };

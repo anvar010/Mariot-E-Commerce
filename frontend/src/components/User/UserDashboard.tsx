@@ -733,57 +733,60 @@ const UserDashboard = () => {
                     ) : (
                         <div className={styles.quotationsList}>
                             {quotations.map((q) => (
-                                <div key={q.id} className={styles.premiumQuotationCard}>
-                                    <div className={styles.quotationMain}>
-                                        <div className={styles.docIconWrapper}>
-                                            <FileText size={24} color="#56cfe1" />
-                                        </div>
-                                        <div className={styles.quotationDetails}>
-                                            <div className={styles.refRow}>
-                                                <span className={styles.refLabel}>{t('quotations.refNumber')}</span>
-                                                <span className={styles.refValue}>{q.quotation_ref}</span>
+                                    <div className={styles.premiumQuotationCard}>
+                                        <div className={styles.quotationTop}>
+                                            <div className={styles.docIconWrapper}>
+                                                <FileText size={24} color="#56cfe1" />
                                             </div>
-                                            <div className={styles.metaRow}>
-                                                <span className={styles.metaItem}>
-                                                    <Calendar size={14} />
-                                                    {new Date(q.created_at).toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-GB', {
-                                                        day: '2-digit', month: 'short', year: 'numeric'
-                                                    })}
-                                                </span>
-                                                {q.total_amount && (
-                                                    <span className={styles.amountItem}>
-                                                        AED {parseFloat(q.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            <div className={styles.quotationDetails}>
+                                                <div className={styles.refRow}>
+                                                    <span className={styles.refLabel}>{t('quotations.refNumber')}</span>
+                                                    <span className={styles.refValue}>{q.quotation_ref}</span>
+                                                </div>
+                                                <div className={styles.metaRow}>
+                                                    <span className={styles.metaItem}>
+                                                        <Calendar size={14} />
+                                                        {new Date(q.created_at).toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-GB', {
+                                                            day: '2-digit', month: 'short', year: 'numeric'
+                                                        })}
                                                     </span>
-                                                )}
+                                                    {q.total_amount && (
+                                                        <span className={styles.amountItem}>
+                                                            AED {parseFloat(q.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div className={styles.quotationActionsPremium}>
-                                        <button
-                                            className={styles.premiumDownloadBtn}
-                                            onClick={() => handleDownloadQuotation(q)}
-                                            disabled={viewingId === q.id}
-                                            title={t('quotations.download')}
-                                        >
-                                            {viewingId === q.id ? (
-                                                <div className={styles.miniLoader}></div>
-                                            ) : (
-                                                <>
-                                                    <Download size={18} />
-                                                    <span>{t('quotations.download')}</span>
-                                                </>
-                                            )}
-                                        </button>
-                                        <button
-                                            className={styles.premiumDeleteBtn}
-                                            onClick={() => handleDeleteQuotation(q.id)}
-                                            title={t('quotations.delete')}
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
+                                        <div className={styles.dividerDashed}></div>
+
+                                        <div className={styles.quotationActionsPremium}>
+                                            <div className={styles.mainQuotationActions}>
+                                                <button
+                                                    className={styles.premiumViewBtn}
+                                                    onClick={() => handleViewQuotation(q)}
+                                                    disabled={viewingId === q.id}
+                                                >
+                                                    {viewingId === q.id ? <div className={styles.miniLoader}></div> : <><FileText size={18} /><span>{t('quotations.view')}</span></>}
+                                                </button>
+                                                <button
+                                                    className={styles.premiumDownloadBtn}
+                                                    onClick={() => handleDownloadQuotation(q)}
+                                                    disabled={viewingId === q.id}
+                                                >
+                                                    {viewingId === q.id ? <div className={styles.miniLoader}></div> : <><Download size={18} /><span>{t('quotations.download')}</span></>}
+                                                </button>
+                                            </div>
+                                            <button
+                                                className={styles.premiumDeleteBtn}
+                                                onClick={() => handleDeleteQuotation(q.id)}
+                                                title={t('quotations.delete')}
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
                             ))}
                         </div>
                     )}

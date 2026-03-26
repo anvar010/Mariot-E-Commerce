@@ -29,6 +29,26 @@
         "noResultsFound": "لم يتم العثور على منتجات",
         "signOut": "تسجيل الخروج"
     },
+    "auth": {
+        "forgotPasswordTitle": "هل نسيت كلمة المرور؟",
+        "forgotPasswordSubtitle": "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور الخاصة بك.",
+        "emailLabel": "البريد الإلكتروني",
+        "emailPlaceholder": "أدخل بريدك المسجل",
+        "resetButton": "إرسال رابط التعيين",
+        "sendingLink": "جاري الإرسال...",
+        "backToSignIn": "العودة لتسجيل الدخول",
+        "resetPasswordTitle": "إعادة تعيين كلمة المرور",
+        "resetPasswordSubtitle": "اختر كلمة مرور جديدة لحسابك.",
+        "newPasswordLabel": "كلمة مرور جديدة",
+        "confirmPasswordLabel": "تأكيد كلمة المرور",
+        "updatePasswordButton": "تحديث كلمة المرور",
+        "updating": "جاري التحديث...",
+        "passwordResetSuccess": "تمت إعادة تعيين كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول.",
+        "welcomeBack": "مرحباً بك مجدداً",
+        "createAccount": "إنشاء حساب",
+        "signIn": "تسجيل دخول",
+        "signUp": "تسجيل جديد"
+    },
     "product": {
         "inStock": "متوفر",
         "outOfStock": "غير متوفر",
