@@ -1,7 +1,0 @@
-﻿[dotenv@17.2.4] injecting env (10) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
-[dotenv@17.2.4] injecting env (0) from .env -- tip: ≡ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
-Database connected successfully
-PID: 30 WD: 0 LO: 0 F: 0 NAME: Rational
-PID: 31 WD: 0 LO: 0 F: 0 NAME: tyhh
-PID: 32 WD: 0 LO: 0 F: 0 NAME: Rational
-PID: 33 WD: 0 LO: 0 F: 0 NAME: Rational 123
