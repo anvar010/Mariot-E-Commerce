@@ -8,6 +8,7 @@ import { Save, RefreshCw, Layout, Megaphone, Plus, Trash2, ChevronLeft, ChevronR
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNotification } from '@/context/NotificationContext';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
+import { getAuthHeaders } from '@/utils/authHeaders';
 
 const AdminCMS = () => {
     const { token } = useAuth();
@@ -69,11 +70,11 @@ const AdminCMS = () => {
             // 1. Fetch data with separate try-catch for each part or check ok status
             const responses = await Promise.allSettled([
                 fetch(`${API_BASE_URL}/admin/cms/hero-slides`, {
-                    headers: { 'Authorization': `Bearer ${token}` },
+                    headers: getAuthHeaders(),
                     credentials: "include"
                 }),
                 fetch(`${API_BASE_URL}/admin/cms/hero-posters`, {
-                    headers: { 'Authorization': `Bearer ${token}` },
+                    headers: getAuthHeaders(),
                     credentials: "include"
                 }),
                 fetch(`${API_BASE_URL}/cms/homepage`)
@@ -146,7 +147,7 @@ const AdminCMS = () => {
 
             const res = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                 body: JSON.stringify(slide),
                 credentials: "include"
             });
@@ -170,7 +171,7 @@ const AdminCMS = () => {
         try {
             const res = await fetch(`${API_BASE_URL}/admin/cms/homepage`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                 body: JSON.stringify({ section: 'announcement', data: cmsData.announcement }),
                 credentials: "include"
             });
@@ -208,7 +209,7 @@ const AdminCMS = () => {
                     setSaving(true);
                     const res = await fetch(`${API_BASE_URL}/admin/cms/hero-slides/${slide.id}`, {
                         method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` },
+                        headers: { ...getAuthHeaders() },
                         credentials: "include"
                     });
                     const result = await res.json();
@@ -235,7 +236,7 @@ const AdminCMS = () => {
             formData.append('image', file);
             const res = await fetch(`${API_BASE_URL}/upload/image`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { ...getAuthHeaders() },
                 body: formData,
                 credentials: 'include'
             });
@@ -257,7 +258,7 @@ const AdminCMS = () => {
             formData.append('image', file);
             const res = await fetch(`${API_BASE_URL}/upload/image`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { ...getAuthHeaders() },
                 body: formData,
                 credentials: 'include'
             });
@@ -314,7 +315,7 @@ const AdminCMS = () => {
 
             const res = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                 body: JSON.stringify(payload),
                 credentials: 'include'
             });
@@ -354,7 +355,7 @@ const AdminCMS = () => {
                     setSaving(true);
                     const res = await fetch(`${API_BASE_URL}/admin/cms/hero-posters/${poster.id}`, {
                         method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` },
+                        headers: { ...getAuthHeaders() },
                         credentials: "include"
                     });
                     const result = await res.json();

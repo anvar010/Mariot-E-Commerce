@@ -5,6 +5,7 @@ import styles from './AdminOrders.module.css';
 import { Search, Eye, Truck, Check, Package, XCircle, Clock, Download } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminOrders = () => {
@@ -34,7 +35,8 @@ const AdminOrders = () => {
         try {
             setExporting(true);
             const response = await fetch(`${API_BASE_URL}/admin/export/orders`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
 
             if (!response.ok) throw new Error('Export failed');
@@ -72,7 +74,8 @@ const AdminOrders = () => {
     const fetchOrders = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/admin/orders`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success) {
@@ -99,6 +102,7 @@ const AdminOrders = () => {
                         credentials: "include",
                         method: 'PUT',
                         headers: {
+                            ...getAuthHeaders(),
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({ status: newStatus })
@@ -134,6 +138,7 @@ const AdminOrders = () => {
                         credentials: "include",
                         method: 'PUT',
                         headers: {
+                            ...getAuthHeaders(),
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({ payment_status: newStatus })

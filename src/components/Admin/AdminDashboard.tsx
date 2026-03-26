@@ -23,6 +23,7 @@ import {
 import { useNotification } from '@/context/NotificationContext';
 import { useRouter } from 'next/navigation';
 import { stripHtml } from '@/utils/formatters';
+import { getAuthHeaders } from '@/utils/authHeaders';
 
 const AdminDashboard = () => {
     const { user, token } = useAuth();
@@ -51,7 +52,8 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/admin/stats`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success) {
@@ -82,7 +84,8 @@ const AdminDashboard = () => {
                     setIsActionLoading(true);
                     const res = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
                         method: 'DELETE',
-                        credentials: "include"
+                        credentials: "include",
+                        headers: getAuthHeaders()
                     });
 
                     const data = await res.json();

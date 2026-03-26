@@ -12,6 +12,7 @@ import {
     Wallet
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 
 const AdminHeader = () => {
     const [counts, setCounts] = useState({ notifications: 0, messages: 0 });
@@ -24,7 +25,8 @@ const AdminHeader = () => {
         const fetchCountsAndNotifications = async () => {
             try {
                 const res = await fetch(`${API_BASE_URL}/admin/stats`, {
-                    credentials: "include"
+                    credentials: "include",
+                    headers: getAuthHeaders()
                 });
                 const data = await res.json();
                 if (data.success) {
