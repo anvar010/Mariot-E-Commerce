@@ -47,7 +47,9 @@
         "welcomeBack": "Welcome Back",
         "createAccount": "Create Account",
         "signIn": "Sign In",
-        "signUp": "Sign Up"
+        "signUp": "Sign Up",
+        "resetSuccessTitle": "Check your email",
+        "resetSuccessMessage": "We've sent a password reset link to {email}. Please check your inbox and spam folder."
     },
     "product": {
         "inStock": "IN STOCK",
