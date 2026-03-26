@@ -1,14 +1,8 @@
 /** Triggering fresh production build with synced database data (Aiven) */
 const getBaseUrl = () => {
-    // Use environment variable if set (for production/Vercel)
-    if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-        return process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api/v1', '');
-    }
-    // Fallback: local development
-    if (typeof window !== 'undefined') {
-        return `http://${window.location.hostname}:5000`;
-    }
-    return 'http://localhost:5000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+    // Clean up: remove /api/v1 suffix and trailing slash
+    return apiUrl.replace(/\/api\/v1(\/)?$/, '').replace(/\/$/, '');
 };
 
 export const BASE_URL = getBaseUrl();
