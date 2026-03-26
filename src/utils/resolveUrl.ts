@@ -9,10 +9,15 @@ import { BASE_URL } from '@/config';
  * - Localhost cleanup
  */
 export const resolveUrl = (url?: string): string => {
-    if (!url) return '';
+    if (!url || typeof url !== 'string') return '';
 
     // Normalize Windows-style backslashes to forward slashes
     let normalizedUrl = url.replace(/\\/g, '/');
+    
+    // Legacy database migration fix: intercept frontend /assets/brands/ and map to backend /uploads/brands/
+    if (normalizedUrl.includes('/assets/brands/')) {
+        normalizedUrl = normalizedUrl.replace(/\/assets\/brands\//g, '/uploads/brands/');
+    }
 
     // Remove leading /public/ or public/ if it exists (some backend versions prepend it)
     normalizedUrl = normalizedUrl.replace(/^(\/)?public\//, '');
