@@ -8,7 +8,12 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const response = await fetch(url);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
             return NextResponse.json({ error: 'Failed to fetch image proxy' }, { status: response.status });
         }

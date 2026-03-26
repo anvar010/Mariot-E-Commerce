@@ -5,6 +5,7 @@ import styles from './AdminDashboard.module.css';
 import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import {
     TrendingUp,
     ArrowRight,
@@ -30,6 +31,23 @@ const AdminDashboard = () => {
     const { showNotification } = useNotification();
     const router = useRouter();
 
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'danger'
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
+
     const fetchStats = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/admin/stats`, {
@@ -50,26 +68,39 @@ const AdminDashboard = () => {
         fetchStats();
     }, []);
 
-    const handleDeleteReview = async (reviewId: number) => {
+    const handleDeleteReview = (reviewId: number) => {
         if (!token) return;
-        if (!window.confirm('Are you sure you want to delete this review?')) return;
 
-        try {
-            const res = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
-                method: 'DELETE',
-                credentials: "include"
-            });
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Review',
+            message: 'Are you sure you want to delete this review?',
+            type: 'danger',
+            confirmLabel: 'Delete',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
+                        method: 'DELETE',
+                        credentials: "include"
+                    });
 
-            const data = await res.json();
-            if (data.success) {
-                fetchStats(); // Refresh dashboard
-            } else {
-                alert(data.message || 'Failed to delete review');
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification('Review deleted successfully');
+                        fetchStats(); // Refresh dashboard
+                    } else {
+                        showNotification(data.message || 'Failed to delete review', 'error');
+                    }
+                } catch (err) {
+                    console.error('Error deleting review:', err);
+                    showNotification('Something went wrong', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (err) {
-            console.error('Error deleting review:', err);
-            alert('Something went wrong');
-        }
+        });
     };
 
     if (loading) {
@@ -403,6 +434,17 @@ const AdminDashboard = () => {
                     </table>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+            />
         </div>
     );
 };

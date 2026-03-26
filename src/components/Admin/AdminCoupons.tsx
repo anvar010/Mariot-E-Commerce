@@ -5,6 +5,7 @@ import styles from './AdminCoupons.module.css';
 import { Tag, Plus, Search, Edit2, Trash2, X, Calendar, Percent, Package } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminCoupons = () => {
     const [coupons, setCoupons] = useState<any[]>([]);
@@ -15,6 +16,23 @@ const AdminCoupons = () => {
     const [products, setProducts] = useState<any[]>([]);
     const [productSearch, setProductSearch] = useState('');
     const { showNotification } = useNotification();
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'danger'
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -160,23 +178,35 @@ const AdminCoupons = () => {
         }
     };
 
-    const handleDeleteCoupon = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this coupon?')) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/coupons/${id}`, {
-                method: 'DELETE',
-                credentials: "include"
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification('Coupon deleted');
-                fetchCoupons(); // Refresh
-            } else {
-                showNotification('Failed to delete coupon', 'error');
+    const handleDeleteCoupon = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Coupon',
+            message: 'Are you sure you want to delete this discount coupon? This action cannot be undone.',
+            type: 'danger',
+            confirmLabel: 'Delete',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/coupons/${id}`, {
+                        method: 'DELETE',
+                        credentials: "include"
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification('Coupon deleted');
+                        fetchCoupons(); // Refresh
+                    } else {
+                        showNotification('Failed to delete coupon', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Failed to delete coupon', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('Failed to delete coupon', 'error');
-        }
+        });
     };
 
     const toggleBrand = (brandName: string) => {
@@ -466,6 +496,17 @@ const AdminCoupons = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+            />
         </div>
     );
 };

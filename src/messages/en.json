@@ -685,6 +685,7 @@
             "download": "Download PDF",
             "generating": "Generating...",
             "delete": "Delete",
+            "deleteTitle": "Delete Quotation",
             "confirmDelete": "Are you sure you want to delete this quotation?"
         },
         "addresses": {
@@ -696,6 +697,7 @@
             "default": "Default",
             "edit": "Edit Address",
             "delete": "Delete Address",
+            "deleteTitle": "Delete Address",
             "confirmDelete": "Are you sure you want to delete this address?",
             "line1": "Address Line 1",
             "line2": "Address Line 2 (Optional)",
