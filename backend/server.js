@@ -25,6 +25,10 @@ const db = require('./config/db');
     }
 })();
 
+// Verify SMTP email connection on startup
+const { verifySmtpConnection } = require('./utils/sendEmail');
+verifySmtpConnection();
+
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
     console.log(`Error: ${err.message}`);
