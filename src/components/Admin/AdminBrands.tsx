@@ -5,6 +5,7 @@ import styles from './AdminBrands.module.css';
 import { Plus, Edit2, Trash2, X, Image as ImageIcon, ExternalLink, Globe, Search, Filter } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import { resolveUrl } from '@/utils/resolveUrl';
 
 const AdminBrands = () => {
     const [brands, setBrands] = useState<any[]>([]);
@@ -128,7 +129,7 @@ const AdminBrands = () => {
                 const uploadFormData = new FormData();
                 uploadFormData.append('image', logoFile);
 
-                const uploadRes = await fetch(`${API_BASE_URL}/upload/image`, {
+                const uploadRes = await fetch(`${API_BASE_URL}/upload/image?folder=brands`, {
                     method: 'POST',
                     credentials: "include",
                     body: uploadFormData
@@ -370,7 +371,7 @@ const AdminBrands = () => {
                                     <td>
                                         <div className={styles.brandLogo}>
                                             {brand.image_url ? (
-                                                <img src={brand.image_url} alt={brand.name} />
+                                                <img src={resolveUrl(brand.image_url)} alt={brand.name} />
                                             ) : (
                                                 <ImageIcon size={20} color="#adb5bd" />
                                             )}
@@ -471,7 +472,7 @@ const AdminBrands = () => {
                                 <div className={styles.fileUploadWrapper}>
                                     {logoPreview ? (
                                         <div className={styles.previewContainer}>
-                                            <img src={logoPreview} alt="Preview" className={styles.previewImage} />
+                                            <img src={resolveUrl(logoPreview)} alt="Preview" className={styles.previewImage} />
                                             <button
                                                 type="button"
                                                 onClick={() => { setLogoPreview(null); setLogoFile(null); }}
