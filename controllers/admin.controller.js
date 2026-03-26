@@ -169,7 +169,7 @@ exports.getDashboardStats = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
     try {
         const [users] = await db.query(`
-            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, u.role_id, COALESCE(r.name, 'user') as role 
+            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, u.role_id, COALESCE(u.status, 'active') as status, COALESCE(r.name, 'user') as role 
             FROM users u 
             LEFT JOIN roles r ON u.role_id = r.id
         `);
@@ -224,6 +224,26 @@ exports.deleteUser = async (req, res, next) => {
     try {
         await db.query('DELETE FROM users WHERE id = ?', [req.params.id]);
         res.json({ success: true, message: 'User deleted' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Toggle user status (active/suspended)
+// @route   PATCH /api/v1/admin/users/:id/status
+// @access  Private/Admin
+exports.toggleUserStatus = async (req, res, next) => {
+    try {
+        const [rows] = await db.query('SELECT status FROM users WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const currentStatus = rows[0].status || 'active';
+        const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+
+        await db.query('UPDATE users SET status = ? WHERE id = ?', [newStatus, req.params.id]);
+        res.json({ success: true, message: `User ${newStatus === 'suspended' ? 'suspended' : 'activated'} successfully`, data: { status: newStatus } });
     } catch (error) {
         next(error);
     }
