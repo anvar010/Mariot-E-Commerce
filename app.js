@@ -33,6 +33,9 @@ const cookieParser = require('cookie-parser');
 
 const app = express();
 
+// Trust proxy (required for Render, Heroku, etc. behind reverse proxy)
+app.set('trust proxy', 1);
+
 // ===================================================================
 // STRIPE WEBHOOK - MUST be before express.json() for raw body access
 // Stripe requires the raw body to verify webhook signatures
