@@ -29,6 +29,26 @@
         "noResultsFound": "No products found",
         "signOut": "Sign Out"
     },
+    "auth": {
+        "forgotPasswordTitle": "Forgot Password?",
+        "forgotPasswordSubtitle": "Enter your email address and we'll send you a link to reset your password.",
+        "emailLabel": "Email Address",
+        "emailPlaceholder": "Enter your registered email",
+        "resetButton": "Send Reset Link",
+        "sendingLink": "Sending...",
+        "backToSignIn": "Back to Sign In",
+        "resetPasswordTitle": "Reset Password",
+        "resetPasswordSubtitle": "Choose a new password for your account.",
+        "newPasswordLabel": "New Password",
+        "confirmPasswordLabel": "Confirm Password",
+        "updatePasswordButton": "Update Password",
+        "updating": "Updating...",
+        "passwordResetSuccess": "Password reset successfully! You can now sign in.",
+        "welcomeBack": "Welcome Back",
+        "createAccount": "Create Account",
+        "signIn": "Sign In",
+        "signUp": "Sign Up"
+    },
     "product": {
         "inStock": "IN STOCK",
         "outOfStock": "OUT OF STOCK",
