@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 class User {
     static async findByEmail(email) {
         const [rows] = await db.execute(
-            'SELECT u.*, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.email = ?',
+            'SELECT u.*, COALESCE(u.status, \'active\') as status, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.email = ?',
             [email]
         );
         return rows[0];

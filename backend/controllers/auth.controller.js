@@ -58,6 +58,15 @@ exports.login = async (req, res, next) => {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
+        // Check if user is suspended
+        if (user.status === 'suspended') {
+            return res.status(403).json({
+                success: false,
+                type: 'ACCOUNT_SUSPENDED',
+                message: 'Your account has been suspended. Please contact admin for more details.'
+            });
+        }
+
         sendTokenResponse({
             id: user.id,
             name: user.name,
@@ -96,6 +105,15 @@ exports.googleLogin = async (req, res, next) => {
             
             // Send Welcome Email for new Google users
             sendWelcomeEmail(email, name).catch(err => console.error('Failed to send welcome email (Google):', err));
+        }
+
+        // Check if user is suspended
+        if (user.status === 'suspended') {
+            return res.status(403).json({
+                success: false,
+                type: 'ACCOUNT_SUSPENDED',
+                message: 'Your account has been suspended. Please contact admin for more details.'
+            });
         }
 
         sendTokenResponse({
