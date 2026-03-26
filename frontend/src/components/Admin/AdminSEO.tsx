@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AdminSEO.module.css';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import {
     Search,
     Globe,
@@ -33,7 +34,8 @@ const AdminSEO = () => {
 
         try {
             const res = await fetch(`${API_BASE_URL}/admin/stats`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success) {

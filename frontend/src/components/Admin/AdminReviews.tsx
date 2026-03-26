@@ -5,6 +5,7 @@ import styles from './AdminReviews.module.css';
 import { Trash2, Search, Star, Loader2, MessageSquare } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import { stripHtml } from '@/utils/formatters';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
@@ -38,7 +39,8 @@ const AdminReviews = () => {
     const fetchReviews = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/admin/reviews`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
 
             if (!res.ok) {
@@ -77,7 +79,8 @@ const AdminReviews = () => {
                     setIsActionLoading(true);
                     const res = await fetch(`${API_BASE_URL}/reviews/${id}`, {
                         method: 'DELETE',
-                        credentials: "include"
+                        credentials: "include",
+                        headers: getAuthHeaders()
                     });
                     const data = await res.json();
                     if (data.success) {

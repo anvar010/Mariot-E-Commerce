@@ -5,6 +5,7 @@ import styles from './AdminQuotations.module.css';
 import { FileText, Search, Printer, Trash2, Eye, X, Calendar, User, Phone, Mail, Hash, Loader2 } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
@@ -41,7 +42,8 @@ const AdminQuotations = () => {
     const fetchQuotations = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/quotations`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success) {
@@ -66,7 +68,8 @@ const AdminQuotations = () => {
                     setIsActionLoading(true);
                     const res = await fetch(`${API_BASE_URL}/quotations/${id}`, {
                         method: 'DELETE',
-                        credentials: "include"
+                        credentials: "include",
+                        headers: getAuthHeaders()
                     });
                     const data = await res.json();
                     if (data.success) {

@@ -5,6 +5,7 @@ import styles from './AdminCoupons.module.css';
 import { Tag, Plus, Search, Edit2, Trash2, X, Calendar, Percent, Package } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminCoupons = () => {
@@ -55,7 +56,7 @@ const AdminCoupons = () => {
 
     const fetchBrands = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include" });
+            const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) {
                 setBrands(data.data);
@@ -67,7 +68,7 @@ const AdminCoupons = () => {
 
     const fetchProducts = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/products?limit=1000`, { credentials: "include" });
+            const res = await fetch(`${API_BASE_URL}/products?limit=1000`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) {
                 setProducts(data.data);
@@ -80,7 +81,8 @@ const AdminCoupons = () => {
     const fetchCoupons = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/coupons`, {
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
 
@@ -147,6 +149,7 @@ const AdminCoupons = () => {
                 credentials: "include",
                 method,
                 headers: {
+                    ...getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -190,7 +193,8 @@ const AdminCoupons = () => {
                     setIsActionLoading(true);
                     const res = await fetch(`${API_BASE_URL}/coupons/${id}`, {
                         method: 'DELETE',
-                        credentials: "include"
+                        credentials: "include",
+                        headers: getAuthHeaders()
                     });
                     const data = await res.json();
                     if (data.success) {

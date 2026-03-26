@@ -5,6 +5,7 @@ import styles from './AdminCategories.module.css';
 import { Plus, Edit2, Trash2, X, Search, FolderTree, Image as ImageIcon, Filter } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 
 const AdminCategories = () => {
     const [categories, setCategories] = useState<any[]>([]);
@@ -31,7 +32,7 @@ const AdminCategories = () => {
     const fetchCategories = async () => {
         try {
             setLoading(true);
-            const res = await fetch(`${API_BASE_URL}/categories`, { credentials: "include" });
+            const res = await fetch(`${API_BASE_URL}/categories`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) {
                 setCategories(data.data);
@@ -85,6 +86,7 @@ const AdminCategories = () => {
                 credentials: "include",
                 method,
                 headers: {
+                    ...getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -112,7 +114,8 @@ const AdminCategories = () => {
         try {
             const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
                 method: 'DELETE',
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success) {
@@ -150,6 +153,7 @@ const AdminCategories = () => {
                     credentials: "include",
                     method: 'PUT',
                     headers: {
+                        ...getAuthHeaders(),
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ is_active: active ? 1 : 0 })

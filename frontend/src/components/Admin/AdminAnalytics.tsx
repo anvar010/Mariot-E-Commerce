@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AdminAnalytics.module.css';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import {
     TrendingUp,
     Users,
@@ -23,7 +24,8 @@ const AdminAnalytics = () => {
         const fetchAnalytics = async () => {
             try {
                 const res = await fetch(`${API_BASE_URL}/admin/stats?timeRange=${timeRange}`, {
-                    credentials: "include"
+                    credentials: "include",
+                    headers: getAuthHeaders()
                 });
                 const data = await res.json();
                 if (data.success) {

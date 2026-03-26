@@ -5,6 +5,7 @@ import styles from './AdminBrands.module.css';
 import { Plus, Edit2, Trash2, X, Image as ImageIcon, ExternalLink, Globe, Search, Filter } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import { resolveUrl } from '@/utils/resolveUrl';
 
 const AdminBrands = () => {
@@ -42,7 +43,7 @@ const AdminBrands = () => {
     const fetchBrands = async () => {
         try {
             setLoading(true);
-            const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include" });
+            const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) {
                 setBrands(data.data);
@@ -132,7 +133,8 @@ const AdminBrands = () => {
                 const uploadRes = await fetch(`${API_BASE_URL}/upload/image?folder=brands`, {
                     method: 'POST',
                     credentials: "include",
-                    body: uploadFormData
+                    body: uploadFormData,
+                    headers: getAuthHeaders()
                 });
 
                 const uploadData = await uploadRes.json();
@@ -154,6 +156,7 @@ const AdminBrands = () => {
                 credentials: "include",
                 method,
                 headers: {
+                    ...getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -185,7 +188,8 @@ const AdminBrands = () => {
         try {
             const res = await fetch(`${API_BASE_URL}/brands/${id}`, {
                 method: 'DELETE',
-                credentials: "include"
+                credentials: "include",
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (data.success) {
@@ -209,6 +213,7 @@ const AdminBrands = () => {
                 method: 'DELETE',
                 credentials: "include",
                 headers: {
+                    ...getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ ids: selectedIds })
@@ -254,6 +259,7 @@ const AdminBrands = () => {
                     credentials: "include",
                     method: 'PUT',
                     headers: {
+                        ...getAuthHeaders(),
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ is_active: active ? 1 : 0 })

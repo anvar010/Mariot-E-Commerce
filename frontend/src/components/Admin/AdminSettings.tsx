@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AdminSettings.module.css';
 import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import { 
     Settings, 
     Save, 
@@ -24,7 +25,7 @@ const AdminSettings = () => {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/settings`);
+                const res = await fetch(`${API_BASE_URL}/settings`, { credentials: 'include', headers: getAuthHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     setSettings({
@@ -47,6 +48,7 @@ const AdminSettings = () => {
             const res = await fetch(`${API_BASE_URL}/settings`, {
                 method: 'PUT',
                 headers: {
+                    ...getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ settings }),
