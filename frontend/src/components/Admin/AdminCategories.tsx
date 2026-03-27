@@ -6,6 +6,7 @@ import { Plus, Edit2, Trash2, X, Search, FolderTree, Image as ImageIcon, Filter 
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminCategories = () => {
     const [categories, setCategories] = useState<any[]>([]);
@@ -28,6 +29,23 @@ const AdminCategories = () => {
     useEffect(() => {
         fetchCategories();
     }, []);
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'danger'
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     const fetchCategories = async () => {
         try {
@@ -109,24 +127,36 @@ const AdminCategories = () => {
         }
     };
 
-    const handleDeleteCategory = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this category? All related products might be affected.')) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
-                method: 'DELETE',
-                credentials: "include",
-                headers: getAuthHeaders()
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification('Category deleted successfully');
-                fetchCategories();
-            } else {
-                showNotification(data.message || 'Failed to delete category', 'error');
+    const handleDeleteCategory = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Category',
+            message: 'Are you sure you want to delete this category? All related products might be affected. This action cannot be undone.',
+            type: 'danger',
+            confirmLabel: 'Delete',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
+                        method: 'DELETE',
+                        credentials: "include",
+                        headers: getAuthHeaders()
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification('Category deleted successfully');
+                        fetchCategories();
+                    } else {
+                        showNotification(data.message || 'Failed to delete category', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Failed to delete category', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('Failed to delete category', 'error');
-        }
+        });
     };
 
     const toggleSelectAll = () => {
@@ -361,6 +391,17 @@ const AdminCategories = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+            />
         </div>
     );
 };

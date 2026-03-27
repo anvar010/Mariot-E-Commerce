@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import styles from './Auth.module.css';
-import { EyeOff, Eye, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { EyeOff, Eye, Mail, Lock, User as UserIcon, ShoppingCart } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useNotification } from '@/context/NotificationContext';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 
 interface AuthFormProps {
     type: 'signin' | 'signup';
@@ -24,6 +25,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
     const { login, googleLogin, register, loading, error: authError } = useAuth();
     const { showNotification } = useNotification();
     const t = useTranslations('notifications');
+    const searchParams = useSearchParams();
+
+    const redirectTo = searchParams.get('redirectTo') || '/';
+    const reason = searchParams.get('reason');
 
     const isSignIn = type === 'signin';
 
@@ -34,10 +39,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
 
         try {
             if (isSignIn) {
-                await login({ email, password });
+                await login({ email, password }, redirectTo);
                 showNotification(t('authSuccess'), 'success', { title: t('success') });
             } else {
-                await register({ name, email, password });
+                await register({ name, email, password }, redirectTo);
                 showNotification(t('authRegister'), 'success', { title: t('success') });
             }
         } catch (err: any) {
@@ -57,7 +62,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
         prompt: 'select_account',
         onSuccess: async (tokenResponse) => {
             try {
-                await googleLogin(tokenResponse.access_token);
+                await googleLogin(tokenResponse.access_token, redirectTo);
                 showNotification(t('googleSuccess'), 'success', { title: 'Google Login' });
             } catch (err: any) {
                 console.error(err);
@@ -92,11 +97,43 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
 
                     <p className={styles.authSubtitle}>
                         {isSignIn ? (
-                            <>New to Mariot? <Link href="/signup" className={styles.link}>Create an account</Link></>
+                            <>New to Mariot? <Link href={`/signup${redirectTo !== '/' ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}${reason ? `${redirectTo !== '/' ? '&' : '?'}reason=${reason}` : ''}`} className={styles.link}>Create an account</Link></>
                         ) : (
-                            <>Already have an account? <Link href="/signin" className={styles.link}>Sign in</Link></>
+                            <>Already have an account? <Link href={`/signin${redirectTo !== '/' ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}${reason ? `${redirectTo !== '/' ? '&' : '?'}reason=${reason}` : ''}`} className={styles.link}>Sign in</Link></>
                         )}
                     </p>
+
+                    {reason === 'purchase' && (
+                        <div style={{
+                            background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                            border: '1px solid #fcd34d',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            marginBottom: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+                        }}>
+                            <div style={{
+                                background: '#f59e0b',
+                                color: 'white',
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                            }}>
+                                <ShoppingCart size={20} />
+                            </div>
+                            <div>
+                                <h4 style={{ color: '#92400e', fontSize: '14px', fontWeight: 700, margin: '0 0 2px 0' }}>One last step</h4>
+                                <p style={{ color: '#b45309', fontSize: '13px', margin: 0, fontWeight: 500 }}>Please sign in to continue your purchase</p>
+                            </div>
+                        </div>
+                    )}
 
                     {isSuspended ? (
                         <div style={{
