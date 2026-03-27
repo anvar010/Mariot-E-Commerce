@@ -23,34 +23,43 @@ const initDb = async () => {
         `);
         console.log('[DB] contact_submissions table verified');
 
-        // 2. User Status Migration (if column doesn't exist)
+        // 2. User Status Migration
         try {
-            await db.query("ALTER TABLE users ADD COLUMN status ENUM('active', 'suspended') DEFAULT 'active' AFTER role_id");
-            console.log('[DB] Migration: Added status column to users table');
+            const [columns] = await db.query("SHOW COLUMNS FROM users LIKE 'status'");
+            if (columns.length === 0) {
+                await db.query("ALTER TABLE users ADD COLUMN status ENUM('active', 'suspended') DEFAULT 'active' AFTER role_id");
+                console.log('[DB] Migration: Added status column to users table');
+            }
         } catch (err) {
-            if (err.code !== 'ER_DUP_COLUMN_NAME') throw err;
+            console.error('[DB] Error migrating users table:', err.message);
         }
 
         // 3. Address Table Migrations
-        const addressColumns = [
-            { name: 'first_name', definition: "VARCHAR(255) AFTER user_id" },
-            { name: 'last_name', definition: "VARCHAR(255) AFTER first_name" },
-            { name: 'company_name', definition: "VARCHAR(255) AFTER last_name" },
-            { name: 'email', definition: "VARCHAR(255) AFTER company_name" }
-        ];
+        try {
+            const [columns] = await db.query("SHOW COLUMNS FROM addresses");
+            const columnNames = columns.map(c => c.Field);
 
-        for (const col of addressColumns) {
-            try {
-                await db.query(`ALTER TABLE addresses ADD COLUMN ${col.name} ${col.definition}`);
-                console.log(`[DB] Migration: Added ${col.name} column to addresses table`);
-            } catch (err) {
-                if (err.code !== 'ER_DUP_COLUMN_NAME') throw err;
+            const addressColumns = [
+                { name: 'first_name', definition: "VARCHAR(255) AFTER user_id" },
+                { name: 'last_name', definition: "VARCHAR(255) AFTER first_name" },
+                { name: 'company_name', definition: "VARCHAR(255) AFTER last_name" },
+                { name: 'email', definition: "VARCHAR(255) AFTER company_name" }
+            ];
+
+            for (const col of addressColumns) {
+                if (!columnNames.includes(col.name)) {
+                    await db.query(`ALTER TABLE addresses ADD COLUMN ${col.name} ${col.definition}`);
+                    console.log(`[DB] Migration: Added ${col.name} column to addresses table`);
+                }
             }
+        } catch (err) {
+            console.error('[DB] Error migrating addresses table:', err.message);
         }
 
         console.log('[DB] Initialization complete');
     } catch (error) {
-        console.error('[DB] Initialization Error:', error.message);
+        console.error('[DB] Fatal Initialization Error:', error.message);
+        throw error; // Rethrow to stop server startup if initialization fails
     }
 };
 
