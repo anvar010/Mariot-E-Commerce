@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@/i18n/navigation';
 import styles from './CategoriesLayout.module.css';
 import { API_BASE_URL } from '@/config';
@@ -63,6 +63,22 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
     const [activeIndex, setActiveIndex] = useState(0);
     const [brands, setBrands] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const contentRef = useRef<HTMLDivElement>(null);
+
+    const handleCategoryClick = (idx: number) => {
+        setActiveIndex(idx);
+        if (window.innerWidth <= 768 && contentRef.current) {
+            // Wait for React to update the DOM if necessary, though it's already there
+            const headerOffset = 90; // Approximate fixed header height
+            const elementPosition = contentRef.current.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
+        }
+    };
 
     const brandMap: { [key: string]: { name: string, logo: string }[] } = {
         'coffee-makers': [
@@ -519,6 +535,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                                     key={idx}
                                     className={`${styles.sidebarItem} ${activeIndex === idx ? styles.activeItem : ''}`}
                                     onMouseEnter={() => setActiveIndex(idx)}
+                                    onClick={() => handleCategoryClick(idx)}
                                 >
                                     <div className={styles.labelWrapper}>
                                         {item.icon && <item.icon size={18} className={styles.sidebarIcon} />}
@@ -529,7 +546,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                             ))}
                         </ul>
                     </div>
-                    <div className={styles.mainContent}>
+                    <div className={styles.mainContent} ref={contentRef}>
                         <div className={styles.contentGrid}>
                             <div className={styles.contentColumn} key={activeCategory.slug}>
                                 {activeCategory && (

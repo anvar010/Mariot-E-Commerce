@@ -6,8 +6,8 @@
 
 .topInfo {
     width: 100%;
-    padding: 40px 40px 25px 40px;
-    margin-bottom: 25px;
+    padding: 40px 40px 10px 40px;
+    margin-bottom: 15px;
 }
 
 .breadcrumbs {
@@ -51,8 +51,8 @@
     max-width: 100%;
     margin: 0 auto;
     display: flex;
-    gap: 20px;
-    padding: 0 40px;
+    gap: 30px;
+    padding: 0 30px;
 }
 
 /* Sidebar Styling */
@@ -228,7 +228,7 @@
 
 .categoryGridWrapper {
     position: relative;
-    margin-bottom: 25px;
+    margin-bottom: 15px;
     background: transparent;
     width: 100%;
 }
@@ -240,7 +240,7 @@
     gap: 15px;
     scroll-behavior: smooth;
     width: 100%;
-    padding: 10px 0;
+    padding: 10px 15px;
     user-select: none;
     scrollbar-width: none;
     /* Hide scrollbar for Firefox */
@@ -354,11 +354,11 @@
 }
 
 .scrollBtn:first-of-type {
-    inset-inline-start: -20px;
+    inset-inline-start: -10px;
 }
 
 .scrollBtn:last-of-type {
-    inset-inline-end: -20px;
+    inset-inline-end: -10px;
 }
 
 @media (hover: hover) {
@@ -381,7 +381,7 @@
 
 .categoryCard {
     background: white;
-    padding: 15px;
+    padding: 12px;
     text-align: center;
     border-radius: 8px;
     width: 180px;
@@ -393,7 +393,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    height: 160px;
+    height: 175px;
     text-decoration: none;
     scroll-snap-align: start;
     /* Snap point for mobile */
@@ -407,8 +407,8 @@
 }
 
 .categoryImage {
-    height: 120px;
-    margin-bottom: 15px;
+    height: 100px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -703,7 +703,7 @@
 
     .categoryCard {
         width: 160px;
-        height: 150px;
+        height: 175px;
         padding: 12px;
     }
 
@@ -794,7 +794,7 @@
 
     .categoryCard {
         width: 140px;
-        height: 140px;
+        height: 165px;
         padding: 10px;
         scroll-snap-align: center;
         /* Center snap on mobile for better focus */
