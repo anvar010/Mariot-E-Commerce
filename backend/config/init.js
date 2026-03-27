@@ -28,10 +28,23 @@ const initDb = async () => {
             await db.query("ALTER TABLE users ADD COLUMN status ENUM('active', 'suspended') DEFAULT 'active' AFTER role_id");
             console.log('[DB] Migration: Added status column to users table');
         } catch (err) {
-            if (err.code === 'ER_DUP_COLUMN_NAME') {
-                // Ignore if column already exists
-            } else {
-                throw err;
+            if (err.code !== 'ER_DUP_COLUMN_NAME') throw err;
+        }
+
+        // 3. Address Table Migrations
+        const addressColumns = [
+            { name: 'first_name', definition: "VARCHAR(255) AFTER user_id" },
+            { name: 'last_name', definition: "VARCHAR(255) AFTER first_name" },
+            { name: 'company_name', definition: "VARCHAR(255) AFTER last_name" },
+            { name: 'email', definition: "VARCHAR(255) AFTER company_name" }
+        ];
+
+        for (const col of addressColumns) {
+            try {
+                await db.query(`ALTER TABLE addresses ADD COLUMN ${col.name} ${col.definition}`);
+                console.log(`[DB] Migration: Added ${col.name} column to addresses table`);
+            } catch (err) {
+                if (err.code !== 'ER_DUP_COLUMN_NAME') throw err;
             }
         }
 
