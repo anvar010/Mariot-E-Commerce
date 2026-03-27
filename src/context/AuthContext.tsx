@@ -9,9 +9,9 @@ interface AuthContextType {
     user: any;
     token: string | null;
     loading: boolean;
-    login: (credentials: any) => Promise<void>;
-    googleLogin: (token: string) => Promise<void>;
-    register: (userData: any) => Promise<void>;
+    login: (credentials: any, redirectTo?: string) => Promise<void>;
+    googleLogin: (token: string, redirectTo?: string) => Promise<void>;
+    register: (userData: any, redirectTo?: string) => Promise<void>;
     logout: () => void;
     updateUser: (userData: any) => Promise<void>;
     error: string | null;
@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!savedToken || savedToken === 'undefined' || savedToken === 'null' || savedToken === 'none') {
             setLoading(false);
             if (savedToken === 'undefined' || savedToken === 'null' || savedToken === 'none') {
-                 localStorage.removeItem('token');
+                localStorage.removeItem('token');
             }
             return;
         }
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const login = async (credentials: any) => {
+    const login = async (credentials: any, redirectTo?: string) => {
         setLoading(true);
         setError(null);
         try {
@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setToken(data.token);
             localStorage.setItem('token', data.token);
             setUser(data.user);
-            router.push('/');
+            router.push(redirectTo || '/');
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const googleLogin = async (token: string) => {
+    const googleLogin = async (token: string, redirectTo?: string) => {
         setLoading(true);
         setError(null);
         try {
@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setToken(data.token);
             localStorage.setItem('token', data.token);
             setUser(data.user);
-            router.push('/');
+            router.push(redirectTo || '/');
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -100,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const register = async (userData: any) => {
+    const register = async (userData: any, redirectTo?: string) => {
         setLoading(true);
         setError(null);
         try {
@@ -108,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setToken(data.token);
             localStorage.setItem('token', data.token);
             setUser(data.user);
-            router.push('/');
+            router.push(redirectTo || '/');
         } catch (err: any) {
             setError(err.message);
             throw err;

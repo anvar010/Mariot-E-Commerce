@@ -74,7 +74,8 @@
     font-weight: 600;
     color: #10b981;
     text-decoration: none;
-    transition: none; /* No hover animation */
+    transition: none;
+    /* No hover animation */
     white-space: nowrap;
     position: relative;
 }
@@ -87,11 +88,13 @@
     width: 0;
     height: 1.5px;
     background: currentColor;
-    transition: none; /* No hover animation */
+    transition: none;
+    /* No hover animation */
 }
 
 .viewAllLink:hover {
-    color: #10b981; /* Keep same color */
+    color: #10b981;
+    /* Keep same color */
 }
 
 .navBtns {
@@ -110,7 +113,8 @@
     justify-content: center;
     color: #334155;
     cursor: pointer;
-    transition: none; /* Removed transition */
+    transition: none;
+    /* Removed transition */
 }
 
 .navBtn:hover {
@@ -143,6 +147,8 @@
     scrollbar-width: none;
     -ms-overflow-style: none;
     user-select: none;
+    scroll-snap-type: x mandatory;
+    /* Ultra-smooth mobile snapping */
 }
 
 .categoryGrid::-webkit-scrollbar {
@@ -172,16 +178,20 @@
 
 /* ===== Category Card (Absolute Uniformity) ===== */
 .categoryCardWrapper {
-    flex: 0 0 155px; /* Hard flex basis */
+    flex: 0 0 155px;
     width: 155px;
     min-width: 155px;
     display: flex;
+    scroll-snap-align: start;
+    /* Snap point for mobile */
 }
 
 .categoryCard {
-    width: 155px; /* Hard fixed width */
+    width: 155px;
+    /* Hard fixed width */
     min-width: 155px;
-    height: 210px; /* Force uniform height for all cards */
+    height: 210px;
+    /* Force uniform height for all cards */
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(12px);
     border-radius: 20px;
@@ -208,11 +218,13 @@
     pointer-events: none;
 }
 
-.categoryCard:hover {
-    transform: translateY(-4px); /* Minor lift */
-    background: #ffffff;
-    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.06);
-    border-color: rgba(226, 232, 240, 1);
+@media (hover: hover) {
+    .categoryCard:hover {
+        transform: translateY(-4px);
+        background: #ffffff;
+        box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.06);
+        border-color: rgba(226, 232, 240, 1);
+    }
 }
 
 /* ===== Image Box ===== */
@@ -230,8 +242,10 @@
     border-radius: 20px 20px 0 0;
 }
 
-.categoryCard:hover .imageBox {
-    background: radial-gradient(circle at center, rgba(16, 185, 129, 0.03) 0%, rgba(248, 250, 252, 0) 70%);
+@media (hover: hover) {
+    .categoryCard:hover .imageBox {
+        background: radial-gradient(circle at center, rgba(16, 185, 129, 0.03) 0%, rgba(248, 250, 252, 0) 70%);
+    }
 }
 
 .categoryImg {
@@ -243,8 +257,10 @@
     z-index: 10;
 }
 
-.categoryCard:hover .categoryImg {
-    transform: scale(1.05) rotate(1deg);
+@media (hover: hover) {
+    .categoryCard:hover .categoryImg {
+        transform: scale(1.05) rotate(1deg);
+    }
 }
 
 /* Subtle overlay string */
@@ -263,8 +279,10 @@
     transform: translateY(10px);
 }
 
-.categoryCard:hover .imageOverlay {
-    transform: translateY(0);
+@media (hover: hover) {
+    .categoryCard:hover .imageOverlay {
+        transform: translateY(0);
+    }
 }
 
 /* ===== Card Bottom ===== */
@@ -291,8 +309,10 @@
     overflow: hidden;
 }
 
-.categoryCard:hover .categoryName {
-    color: #10b981;
+@media (hover: hover) {
+    .categoryCard:hover .categoryName {
+        color: #10b981;
+    }
 }
 
 .categoryArrow {
@@ -385,6 +405,8 @@
         flex: 0 0 135px;
         width: 135px;
         min-width: 135px;
+        scroll-snap-align: center;
+        /* Center focus on small screens */
     }
 
     .categoryCard {
@@ -393,7 +415,7 @@
         height: 185px;
         border-radius: 16px;
     }
-    
+
     .imageBox {
         padding: 14px;
     }

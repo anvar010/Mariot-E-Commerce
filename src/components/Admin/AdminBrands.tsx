@@ -7,6 +7,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { resolveUrl } from '@/utils/resolveUrl';
+import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminBrands = () => {
     const [brands, setBrands] = useState<any[]>([]);
@@ -39,6 +40,25 @@ const AdminBrands = () => {
     useEffect(() => {
         fetchBrands();
     }, []);
+
+    // Selection state
+    const [isActionLoading, setIsActionLoading] = useState(false);
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'warning' | 'info';
+        confirmLabel?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'danger'
+    });
 
     const fetchBrands = async () => {
         try {
@@ -183,54 +203,77 @@ const AdminBrands = () => {
         }
     };
 
-    const handleDeleteBrand = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this brand?')) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/brands/${id}`, {
-                method: 'DELETE',
-                credentials: "include",
-                headers: getAuthHeaders()
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification('Brand deleted successfully');
-                fetchBrands();
-            } else {
-                showNotification(data.message || 'Failed to delete brand', 'error');
+    const handleDeleteBrand = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Brand',
+            message: 'Are you sure you want to delete this brand? This action cannot be undone.',
+            confirmLabel: 'Delete',
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/brands/${id}`, {
+                        method: 'DELETE',
+                        credentials: "include",
+                        headers: getAuthHeaders()
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification('Brand deleted successfully');
+                        fetchBrands();
+                    } else {
+                        showNotification(data.message || 'Failed to delete brand', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Failed to delete brand', 'error');
+                } finally {
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('Failed to delete brand', 'error');
-        }
+        });
     };
 
-    const handleBulkDelete = async () => {
+    const handleBulkDelete = () => {
         if (selectedIds.length === 0) return;
-        if (!confirm(`Are you sure you want to delete ${selectedIds.length} brands?`)) return;
-        
-        try {
-            setLoading(true);
-            const res = await fetch(`${API_BASE_URL}/brands`, {
-                method: 'DELETE',
-                credentials: "include",
-                headers: {
-                    ...getAuthHeaders(),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ ids: selectedIds })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification(`Successfully deleted ${selectedIds.length} brands`);
-                setSelectedIds([]);
-                fetchBrands();
-            } else {
-                showNotification(data.message || 'Bulk delete failed', 'error');
+
+        setConfirmModal({
+            isOpen: true,
+            title: 'Bulk Delete Brands',
+            message: `Are you sure you want to delete ${selectedIds.length} selected brands? This action cannot be undone.`,
+            confirmLabel: 'Delete All',
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    setLoading(true);
+                    setIsActionLoading(true);
+                    const res = await fetch(`${API_BASE_URL}/brands`, {
+                        method: 'DELETE',
+                        credentials: "include",
+                        headers: {
+                            ...getAuthHeaders(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ ids: selectedIds })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification(`Successfully deleted ${selectedIds.length} brands`);
+                        setSelectedIds([]);
+                        fetchBrands();
+                    } else {
+                        showNotification(data.message || 'Bulk delete failed', 'error');
+                    }
+                } catch (error) {
+                    showNotification('An error occurred during bulk delete', 'error');
+                } finally {
+                    setLoading(false);
+                    setIsActionLoading(false);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        } catch (error) {
-            showNotification('An error occurred during bulk delete', 'error');
-        } finally {
-            setLoading(false);
-        }
+        });
     };
 
     const toggleSelectAll = () => {
@@ -559,6 +602,17 @@ const AdminBrands = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmLabel={confirmModal.confirmLabel}
+                type={confirmModal.type}
+                isLoading={isActionLoading}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 };

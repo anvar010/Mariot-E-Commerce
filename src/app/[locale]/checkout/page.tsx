@@ -224,6 +224,12 @@ function CheckoutContent() {
     }, [showCouponModal]);
 
     useEffect(() => {
+        if (!user && !token) {
+            router.push(`/signin?redirectTo=/checkout&reason=purchase`);
+        }
+    }, [user, token, router, locale]);
+
+    useEffect(() => {
         if (user) {
             fetchAddresses();
         }

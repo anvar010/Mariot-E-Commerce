@@ -188,6 +188,11 @@ const CartDrawer = () => {
     };
 
     const handleCheckout = () => {
+        if (!user || !token) {
+            setIsDrawerOpen(false);
+            router.push(`/signin?redirectTo=/checkout&reason=purchase`);
+            return;
+        }
         setIsDrawerOpen(false);
         router.push('/checkout');
     };

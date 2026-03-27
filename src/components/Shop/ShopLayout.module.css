@@ -228,32 +228,31 @@
 
 .categoryGridWrapper {
     position: relative;
-    display: flex;
-    align-items: center;
-    gap: 10px;
     margin-bottom: 25px;
     background: transparent;
-    /* Or #e2e8f0 if you want a background container, screenshot looked white background for cards?? No, screenshot background seems transparent or light */
-    /* Wait, the cards are white, the background behind them is likely the page background #f1f5f9 or similar */
     width: 100%;
-    /* Ensure wrapper doesn't overflow parent */
-    border-radius: 8px;
 }
 
 .categoryGrid {
     display: flex;
-    overflow-x: hidden;
-    /* Hide scrollbar */
+    overflow-x: auto;
+    /* Allow native swiping on mobile */
     gap: 15px;
     scroll-behavior: smooth;
-    flex: 1;
-    /* Take remaining space */
-    width: 0;
-    /* Force flex child to respect container width */
-    min-width: 0;
-    padding: 5px 0;
-    /* Space for shadow */
+    width: 100%;
+    padding: 10px 0;
     user-select: none;
+    scrollbar-width: none;
+    /* Hide scrollbar for Firefox */
+    -ms-overflow-style: none;
+    /* Hide scrollbar for IE/Edge */
+    scroll-snap-type: x mandatory;
+    /* Smooth locking on mobile */
+}
+
+.categoryGrid::-webkit-scrollbar {
+    display: none;
+    /* Hide scrollbar for Chrome/Safari */
 }
 
 .aboutBrandSection {
@@ -336,6 +335,9 @@
 }
 
 .scrollBtn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 50%;
@@ -345,18 +347,27 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    z-index: 2;
-    flex-shrink: 0;
-    color: #64748b;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    color: #086c7e;
     transition: all 0.2s;
 }
 
-.scrollBtn:hover {
-    background: #f8fafc;
-    color: #17a2b8;
-    transform: scale(1.05);
-    border-color: #cbd5e1;
+.scrollBtn:first-of-type {
+    inset-inline-start: -20px;
+}
+
+.scrollBtn:last-of-type {
+    inset-inline-end: -20px;
+}
+
+@media (hover: hover) {
+    .scrollBtn:hover {
+        background: #f8fafc;
+        color: #17a2b8;
+        transform: translateY(-50%) scale(1.1);
+        border-color: #cbd5e1;
+    }
 }
 
 .categoryGrid::-webkit-scrollbar {
@@ -373,24 +384,26 @@
     padding: 15px;
     text-align: center;
     border-radius: 8px;
-    width: 200px;
-    /* Fixed width */
+    width: 180px;
+    /* Slightly smaller for better fit */
     flex: 0 0 auto;
-    /* No shrink */
     transition: all 0.3s ease;
     border: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    height: 180px;
-    /* Fixed height for uniformity */
+    height: 160px;
     text-decoration: none;
+    scroll-snap-align: start;
+    /* Snap point for mobile */
 }
 
-.categoryCard:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+@media (hover: hover) {
+    .categoryCard:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    }
 }
 
 .categoryImage {
@@ -758,12 +771,33 @@
 
     .categoryGridWrapper {
         margin-bottom: 16px;
+        width: 100%;
+    }
+
+    .categoryGrid {
+        padding: 5px 0;
+        margin: 0;
+        width: 100%;
+        gap: 12px;
+        scroll-snap-type: x mandatory;
+    }
+
+    .scrollBtn:first-of-type {
+        inset-inline-start: 0px;
+        /* Aligned with edge for mobile */
+    }
+
+    .scrollBtn:last-of-type {
+        inset-inline-end: 0px;
+        /* Aligned with edge for mobile */
     }
 
     .categoryCard {
-        width: 130px;
-        height: 130px;
+        width: 140px;
+        height: 140px;
         padding: 10px;
+        scroll-snap-align: center;
+        /* Center snap on mobile for better focus */
     }
 
     .categoryImage {
@@ -853,18 +887,18 @@
         height: 36px;
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
         display: flex;
         align-items: center;
     }
-    
+
     .mobileFilterToggle {
         padding: 0 12px;
         font-size: 13px;
         height: 36px;
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
         display: flex;
         align-items: center;
     }
@@ -953,7 +987,7 @@
         justify-content: space-between;
         margin-inline-start: 0;
     }
-    
+
     .sortDropdown {
         flex: 1;
         justify-content: space-between;
