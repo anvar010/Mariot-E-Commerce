@@ -185,24 +185,155 @@
     letter-spacing: 1px;
 }
 
-.modernSelect {
+/* Custom Address Dropdown */
+.addressDropdownWrapper {
+    position: relative;
     width: 100%;
-    padding: 12px 14px;
-    border: 1px solid #cfe0e0;
-    border-radius: 8px;
-    font-size: 13px;
-    background: #fff;
-    cursor: pointer;
-    font-weight: 700;
-    color: #333;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-    outline: none;
-    transition: all 0.2s;
 }
 
-.modernSelect:focus {
+.customDropdownTrigger {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #cfe0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.customDropdownTrigger:hover {
     border-color: #237073;
-    box-shadow: 0 0 0 3px rgba(35, 112, 115, 0.1);
+    background: #fdfdfd;
+}
+
+.triggerActive {
+    border-color: #237073;
+    box-shadow: 0 0 0 4px rgba(35, 112, 115, 0.1);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.triggerContent {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #334155;
+    overflow: hidden;
+}
+
+.triggerIcon {
+    color: #237073;
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+.triggerText {
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chevronIcon {
+    color: #94a3b8;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+.chevronRotate {
+    transform: rotate(180deg);
+}
+
+.addressDropdownMenu {
+    position: absolute;
+    top: 100%;
+    inset-inline-start: 0;
+    width: 100%;
+    background: white;
+    border: 1.5px solid #237073;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.addressOption {
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.addressOption:last-child {
+    border-bottom: none;
+}
+
+.addressOption:hover {
+    background-color: #f0fdfa;
+}
+
+.optionSelected {
+    background-color: #f0fdfa;
+}
+
+.optionInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.optionHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.optionName {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.defaultPill {
+    background: #dcfce7;
+    color: #166534;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.optionAddress {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.selectedCheck {
+    color: #237073;
+}
+
+.newAddrLabel {
+    font-size: 13px;
+    font-weight: 700;
+    color: #237073;
+    font-style: italic;
 }
 
 /* Modern Tabbed Payment Selection */
@@ -324,10 +455,12 @@
     background: #ffffff;
     border: 1.5px solid #237073;
     border-top: none;
-    margin-top: -8px; /* Cancels the 8px flex gap in .paymentGrid */
+    margin-top: -8px;
+    /* Cancels the 8px flex gap in .paymentGrid */
     margin-bottom: 12px;
     border-radius: 0 0 10px 10px;
-    box-shadow: 0 4px 12px rgba(35, 112, 115, 0.06); /* Match the top tab shadow to unify the 3D block */
+    box-shadow: 0 4px 12px rgba(35, 112, 115, 0.06);
+    /* Match the top tab shadow to unify the 3D block */
     overflow: hidden;
     animation: fadeIn 0.3s ease-out;
 }

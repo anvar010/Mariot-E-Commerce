@@ -237,6 +237,10 @@ const UserDashboard = () => {
                 setShowAddressForm(false);
                 setEditingAddressId(null);
                 setAddressForm({
+                    first_name: '',
+                    last_name: '',
+                    company_name: '',
+                    email: '',
                     address_line1: '',
                     address_line2: '',
                     city: '',
@@ -259,6 +263,10 @@ const UserDashboard = () => {
     const handleEditAddress = (addr: any) => {
         setEditingAddressId(addr.id);
         setAddressForm({
+            first_name: addr.first_name || '',
+            last_name: addr.last_name || '',
+            company_name: addr.company_name || '',
+            email: addr.email || '',
             address_line1: addr.address_line1 || '',
             address_line2: addr.address_line2 || '',
             city: addr.city || '',
@@ -316,6 +324,10 @@ const UserDashboard = () => {
     const [loadingAddresses, setLoadingAddresses] = useState(false);
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [addressForm, setAddressForm] = useState({
+        first_name: '',
+        last_name: '',
+        company_name: '',
+        email: '',
         address_line1: '',
         address_line2: '',
         city: '',
@@ -857,6 +869,10 @@ const UserDashboard = () => {
                             onClick={() => {
                                 setEditingAddressId(null);
                                 setAddressForm({
+                                    first_name: '',
+                                    last_name: '',
+                                    company_name: '',
+                                    email: '',
                                     address_line1: '',
                                     address_line2: '',
                                     city: '',
@@ -890,6 +906,53 @@ const UserDashboard = () => {
                     {showAddressForm && (
                         <form onSubmit={handleAddAddress} className={styles.addressForm} style={{ marginBottom: '40px', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
                             <h3 style={{ marginBottom: '20px', color: '#0f172a' }}>{editingAddressId ? t('addresses.edit') : t('addresses.addNew')}</h3>
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
+                                    <label className={styles.formLabel}>First Name *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className={styles.formInput}
+                                        value={addressForm.first_name}
+                                        onChange={(e) => setAddressForm({ ...addressForm, first_name: e.target.value })}
+                                        placeholder="e.g. John"
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label className={styles.formLabel}>Last Name *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className={styles.formInput}
+                                        value={addressForm.last_name}
+                                        onChange={(e) => setAddressForm({ ...addressForm, last_name: e.target.value })}
+                                        placeholder="e.g. Doe"
+                                    />
+                                </div>
+                            </div>
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
+                                    <label className={styles.formLabel}>Company Name</label>
+                                    <input
+                                        type="text"
+                                        className={styles.formInput}
+                                        value={addressForm.company_name}
+                                        onChange={(e) => setAddressForm({ ...addressForm, company_name: e.target.value })}
+                                        placeholder="Company LLC (Optional)"
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label className={styles.formLabel}>Email Address *</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        className={styles.formInput}
+                                        value={addressForm.email}
+                                        onChange={(e) => setAddressForm({ ...addressForm, email: e.target.value })}
+                                        placeholder="john@example.com"
+                                    />
+                                </div>
+                            </div>
                             <div className={styles.formGroup}>
                                 <label className={styles.formLabel}>{t('addresses.line1')}</label>
                                 <input
@@ -911,7 +974,7 @@ const UserDashboard = () => {
                                     placeholder={t('addresses.line2Placeholder')}
                                 />
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div className={styles.formRow}>
                                 <div className={styles.formGroup}>
                                     <label className={styles.formLabel}>{t('addresses.city')}</label>
                                     <input
@@ -935,7 +998,7 @@ const UserDashboard = () => {
                                     />
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div className={styles.formRow}>
                                 <div className={styles.formGroup}>
                                     <label className={styles.formLabel}>{t('addresses.zip')}</label>
                                     <input
@@ -992,11 +1055,16 @@ const UserDashboard = () => {
                                                 {t('addresses.default')}
                                             </div>
                                         )}
-                                        <h4 className={styles.addressNameText} style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}>
-                                            <MapPin size={18} color="#56cfe1" />
-                                            {addr.address_line1}
+                                        <h4 className={styles.addressNameText} style={{ ...(locale === 'ar' ? { flexDirection: 'row-reverse' } : {}), marginBottom: '4px' }}>
+                                            <User size={18} color="#56cfe1" />
+                                            {addr.first_name} {addr.last_name}
                                         </h4>
                                         <div style={locale === 'ar' ? { textAlign: 'right' } : {}}>
+                                            {!!addr.company_name && <p className={styles.addressInfoLine} style={{ fontWeight: 600, color: '#0f172a', marginBottom: '6px' }}>{addr.company_name}</p>}
+                                            <p className={styles.addressInfoLine}>
+                                                <MapPin size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                                                {addr.address_line1}
+                                            </p>
                                             {!!addr.address_line2 && <p className={styles.addressInfoLine}>{addr.address_line2}</p>}
                                             <p className={styles.addressInfoLine}>{addr.city}, {addr.state} {addr.zip_code}</p>
                                             <p className={styles.addressInfoLine} style={{ opacity: 0.8 }}>{addr.country}</p>
