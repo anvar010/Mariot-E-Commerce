@@ -399,6 +399,7 @@
     .categoryGrid {
         gap: 12px;
         padding-bottom: 12px;
+        scroll-snap-type: x mandatory;
     }
 
     .categoryCardWrapper {
