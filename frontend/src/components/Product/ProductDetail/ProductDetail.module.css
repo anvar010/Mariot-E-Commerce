@@ -484,31 +484,44 @@
 
 .qtyWrapper {
     position: relative;
-    width: 110px;
+    width: 140px;
     flex-shrink: 0;
+    height: 50px;
+    z-index: 20;
 }
 
-.qtySelect {
+.qtyCustomSelect {
     width: 100%;
-    height: 50px;
-    padding: 0 40px 0 20px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 40px 0 16px;
     font-size: 16px;
-    font-weight: 500;
+    font-weight: 600;
     color: #333;
     background: #fdfdfd;
-    appearance: none;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    user-select: none;
+    box-sizing: border-box;
+    position: relative;
 }
 
-.qtySelect:hover,
-.qtySelect:focus {
-    border-color: #333;
-    background: #fff;
-    outline: none;
+.qtyCustomSelect:hover,
+.qtyCustomSelect.open {
+    border-color: #3fbabf;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(63, 186, 191, 0.1);
+}
+
+.qtyCustomSelectText {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .qtyArrow {
@@ -516,13 +529,62 @@
     inset-inline-end: 15px;
     top: 50%;
     transform: translateY(-50%);
+    color: #64748b;
     pointer-events: none;
-    color: #555;
-    transition: transform 0.2s ease;
+    transition: color 0.2s;
 }
 
-.qtySelect:focus+.qtyArrow {
-    transform: translateY(-50%) rotate(180deg);
+.qtyCustomSelect:hover .qtyArrow,
+.qtyCustomSelect.open .qtyArrow {
+    color: #3fbabf;
+}
+
+.qtyCustomOptions {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    z-index: 50;
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 8px 0;
+    animation: fadeInDrop 0.2s ease-out;
+}
+
+@keyframes fadeInDrop {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.qtyCustomOption {
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.qtyCustomOption:hover {
+    background: #f8fafc;
+    color: #3fbabf;
+}
+
+.qtyCustomOption.selected {
+    background: #e6f6f6;
+    color: #3fbabf;
+    font-weight: 700;
 }
 
 .addToCartBtn {
@@ -2101,7 +2163,16 @@
     }
 
     .qtyWrapper {
-        width: 90px;
+        width: 120px;
+    }
+
+    .qtyCustomSelect {
+        padding: 0 30px 0 10px;
+        font-size: 14px;
+    }
+
+    .qtyArrow {
+        inset-inline-end: 10px;
     }
 
     .addToCartBtn {

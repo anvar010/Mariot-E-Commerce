@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { useCart } from '@/context/CartContext';
@@ -24,10 +24,11 @@ import {
     Phone,
     MapPin,
     Building,
-    ChevronRight,
+    ChevronDown,
     ShoppingBag,
     Ticket,
-    X as CloseIcon
+    X as CloseIcon,
+    Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, BASE_URL } from '@/config';
@@ -105,6 +106,58 @@ function CheckoutContent() {
     const [selectedAddressId, setSelectedAddressId] = useState<number | string>('');
     const [activeBrandsPopup, setActiveBrandsPopup] = useState<number | null>(null);
     const [activeProductsPopup, setActiveProductsPopup] = useState<number | null>(null);
+    const [isAddressDropdownOpen, setIsAddressDropdownOpen] = useState(false);
+    const addressDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (addressDropdownRef.current && !addressDropdownRef.current.contains(event.target as Node)) {
+                setIsAddressDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleAddressDropdownToggle = () => setIsAddressDropdownOpen(!isAddressDropdownOpen);
+
+    const handleAddressOptionClick = (addr: any) => {
+        setSelectedAddressId(addr.id);
+        setIsAddressDropdownOpen(false);
+
+        // Populate form fields directly from the saved address
+        setForm(prev => ({
+            ...prev,
+            firstName: addr.first_name || '',
+            lastName: addr.last_name || '',
+            companyName: addr.company_name || '',
+            email: addr.email || '',
+            streetAddress: addr.address_line1 || '',
+            additionalAddress: addr.address_line2 || '',
+            city: addr.city || '',
+            postcode: addr.zip_code || '',
+            phone: addr.phone || '',
+            country: addr.country || 'United Arab Emirates'
+        }));
+    };
+
+    const handleNewAddressClick = () => {
+        setSelectedAddressId('');
+        setIsAddressDropdownOpen(false);
+        setForm(prev => ({
+            ...prev,
+            firstName: '',
+            lastName: '',
+            companyName: '',
+            streetAddress: '',
+            additionalAddress: '',
+            city: '',
+            postcode: '',
+            phone: '',
+            email: ''
+        }));
+    };
 
     // Calculate final processing totals early so useEffects can use them
     const finalTotal = cartTotal;
@@ -126,11 +179,15 @@ function CheckoutContent() {
                     setSelectedAddressId(defaultAddr.id);
                     setForm(prev => ({
                         ...prev,
-                        streetAddress: defaultAddr.address_line1,
+                        firstName: defaultAddr.first_name || '',
+                        lastName: defaultAddr.last_name || '',
+                        companyName: defaultAddr.company_name || '',
+                        email: defaultAddr.email || '',
+                        streetAddress: defaultAddr.address_line1 || '',
                         additionalAddress: defaultAddr.address_line2 || '',
-                        city: defaultAddr.city,
+                        city: defaultAddr.city || '',
                         postcode: defaultAddr.zip_code || '',
-                        phone: defaultAddr.phone || prev.phone,
+                        phone: defaultAddr.phone || '',
                         country: defaultAddr.country || 'United Arab Emirates'
                     }));
                 }
@@ -197,35 +254,7 @@ function CheckoutContent() {
         }
     }, [paymentMethod, finalTotal, locale]);
 
-    const handleAddressSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const addrId = e.target.value;
-        setSelectedAddressId(addrId);
 
-        if (addrId === '') {
-            // "Enter New Address" selected
-            setForm(prev => ({
-                ...prev,
-                streetAddress: '',
-                additionalAddress: '',
-                city: '',
-                postcode: '',
-            }));
-            return;
-        }
-
-        const selected = userAddresses.find(a => a.id.toString() === addrId);
-        if (selected) {
-            setForm(prev => ({
-                ...prev,
-                streetAddress: selected.address_line1,
-                additionalAddress: selected.address_line2 || '',
-                city: selected.city,
-                postcode: selected.zip_code || '',
-                phone: selected.phone || prev.phone,
-                country: selected.country || 'United Arab Emirates'
-            }));
-        }
-    };
 
     const handleApplyCoupon = async (e: React.FormEvent | string) => {
         if (typeof e !== 'string' && e) e.preventDefault();
@@ -434,18 +463,63 @@ function CheckoutContent() {
                                     <label className={styles.addressSelectorLabel}>
                                         {t('savedAddress')}
                                     </label>
-                                    <select
-                                        className={styles.modernSelect}
-                                        value={selectedAddressId}
-                                        onChange={handleAddressSelect}
-                                    >
-                                        <option value="">-- {t('newAddress')} --</option>
-                                        {userAddresses.map(addr => (
-                                            <option key={addr.id} value={addr.id}>
-                                                {addr.address_line1}, {addr.city} {addr.is_default ? '(Default)' : ''}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className={styles.addressDropdownWrapper} ref={addressDropdownRef}>
+                                        <div
+                                            className={`${styles.customDropdownTrigger} ${isAddressDropdownOpen ? styles.triggerActive : ''}`}
+                                            onClick={handleAddressDropdownToggle}
+                                        >
+                                            <div className={styles.triggerContent}>
+                                                <MapPin size={18} className={styles.triggerIcon} />
+                                                <span className={styles.triggerText}>
+                                                    {selectedAddressId
+                                                        ? userAddresses.find(a => a.id.toString() === selectedAddressId.toString())?.address_line1
+                                                        : `-- ${t('newAddress')} --`}
+                                                </span>
+                                            </div>
+                                            <ChevronDown size={18} className={`${styles.chevronIcon} ${isAddressDropdownOpen ? styles.chevronRotate : ''}`} />
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {isAddressDropdownOpen && (
+                                                <motion.div
+                                                    className={styles.addressDropdownMenu}
+                                                    initial={{ opacity: 0, y: -10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -10 }}
+                                                    transition={{ duration: 0.2 }}
+                                                >
+                                                    <div
+                                                        className={`${styles.addressOption} ${!selectedAddressId ? styles.optionSelected : ''}`}
+                                                        onClick={handleNewAddressClick}
+                                                    >
+                                                        <span className={styles.newAddrLabel}>-- {t('newAddress')} --</span>
+                                                        {!selectedAddressId && <Check size={16} className={styles.selectedCheck} />}
+                                                    </div>
+
+                                                    {userAddresses.map(addr => (
+                                                        <div
+                                                            key={addr.id}
+                                                            className={`${styles.addressOption} ${selectedAddressId === addr.id ? styles.optionSelected : ''}`}
+                                                            onClick={() => handleAddressOptionClick(addr)}
+                                                        >
+                                                            <div className={styles.optionInfo}>
+                                                                <div className={styles.optionHeader}>
+                                                                    <span className={styles.optionName}>
+                                                                        {addr.first_name} {addr.last_name}
+                                                                        {addr.is_default && <span className={styles.defaultPill}>★ {t('default')}</span>}
+                                                                    </span>
+                                                                </div>
+                                                                <span className={styles.optionAddress}>
+                                                                    {addr.address_line1}, {addr.city}
+                                                                </span>
+                                                            </div>
+                                                            {selectedAddressId === addr.id && <Check size={16} className={styles.selectedCheck} />}
+                                                        </div>
+                                                    ))}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
                                 </div>
                             )}
 

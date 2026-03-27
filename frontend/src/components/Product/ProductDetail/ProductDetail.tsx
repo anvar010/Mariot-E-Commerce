@@ -86,8 +86,20 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     });
     const [isShortDescExpanded, setIsShortDescExpanded] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
+    const [isQtyOpen, setIsQtyOpen] = useState(false);
+    const qtyRef = useRef<HTMLDivElement>(null);
 
     const mainSwiperRef = useRef<any>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (qtyRef.current && !qtyRef.current.contains(event.target as Node)) {
+                setIsQtyOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         if (mainSwiperRef.current && mainSwiperRef.current.activeIndex !== currentImageIndex) {
@@ -735,22 +747,38 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 </div>
 
                                 <div className={styles.purchaseActions}>
-                                    <div className={styles.qtyWrapper}>
-                                        <select
-                                            className={styles.qtySelect}
-                                            value={qty}
-                                            onChange={(e) => setQty(parseInt(e.target.value))}
-                                            disabled={product.stock_quantity === 0}
+                                    <div className={styles.qtyWrapper} ref={qtyRef}>
+                                        <div
+                                            className={`${styles.qtyCustomSelect} ${isQtyOpen ? styles.open : ''}`}
+                                            onClick={() => setIsQtyOpen(!isQtyOpen)}
+                                            style={{ opacity: product.stock_quantity === 0 ? 0.6 : 1, pointerEvents: product.stock_quantity === 0 ? 'none' : 'auto' }}
                                         >
-                                            {product.stock_quantity > 0 ? (
-                                                Array.from({ length: Math.min(product.stock_quantity, 10) }, (_, i) => i + 1).map(n => (
-                                                    <option key={n} value={n}>{t('qty')} {n}</option>
-                                                ))
+                                            <span className={styles.qtyCustomSelectText}>
+                                                {product.stock_quantity > 0 ? `${t('qty')} ${qty}` : '0'}
+                                            </span>
+                                            {isQtyOpen ? (
+                                                <ChevronUp size={18} className={styles.qtyArrow} />
                                             ) : (
-                                                <option value={0}>0</option>
+                                                <ChevronDown size={18} className={styles.qtyArrow} />
                                             )}
-                                        </select>
-                                        <ChevronDown size={18} className={styles.qtyArrow} />
+                                        </div>
+
+                                        {isQtyOpen && product.stock_quantity > 0 && (
+                                            <div className={styles.qtyCustomOptions}>
+                                                {Array.from({ length: Math.min(product.stock_quantity, 10) }, (_, i) => i + 1).map(n => (
+                                                    <div
+                                                        key={n}
+                                                        className={`${styles.qtyCustomOption} ${n === qty ? styles.selected : ''}`}
+                                                        onClick={() => {
+                                                            setQty(n);
+                                                            setIsQtyOpen(false);
+                                                        }}
+                                                    >
+                                                        {t('qty')} {n}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                     <button
                                         className={styles.addToCartBtn}

@@ -835,6 +835,7 @@
         "applicableProducts": "Applicable Products"
     },
     "checkout": {
+        "default": "Default",
         "title": "Secure Checkout",
         "subtitle": "Complete your order by providing shipping and payment details.",
         "shippingInfo": "Shipping Information",
