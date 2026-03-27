@@ -11,11 +11,11 @@ class Address {
             await db.execute('UPDATE addresses SET is_default = 0 WHERE user_id = ?', [userId]);
         }
 
-        const { address_line1, address_line2, city, state, zip_code, country, phone, is_default } = data;
+        const { first_name, last_name, company_name, email, address_line1, address_line2, city, state, zip_code, country, phone, is_default } = data;
         const [result] = await db.execute(
-            `INSERT INTO addresses (user_id, address_line1, address_line2, city, state, zip_code, country, phone, is_default) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [userId, address_line1, address_line2, city, state, zip_code, country, phone, is_default]
+            `INSERT INTO addresses (user_id, first_name, last_name, company_name, email, address_line1, address_line2, city, state, zip_code, country, phone, is_default) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [userId, first_name || null, last_name || null, company_name || null, email || null, address_line1, address_line2 || null, city, state || null, zip_code, country, phone, is_default]
         );
         return result.insertId;
     }
@@ -29,12 +29,12 @@ class Address {
             await db.execute('UPDATE addresses SET is_default = 0 WHERE user_id = ?', [userId]);
         }
 
-        const { address_line1, address_line2, city, state, zip_code, country, phone, is_default } = data;
+        const { first_name, last_name, company_name, email, address_line1, address_line2, city, state, zip_code, country, phone, is_default } = data;
         await db.execute(
             `UPDATE addresses 
-             SET address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, country = ?, phone = ?, is_default = ? 
+             SET first_name = ?, last_name = ?, company_name = ?, email = ?, address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, country = ?, phone = ?, is_default = ? 
              WHERE id = ? AND user_id = ?`,
-            [address_line1, address_line2, city, state, zip_code, country, phone, is_default, addressId, userId]
+            [first_name || null, last_name || null, company_name || null, email || null, address_line1, address_line2 || null, city, state || null, zip_code, country, phone, is_default, addressId, userId]
         );
     }
 }

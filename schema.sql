@@ -84,6 +84,10 @@ CREATE TABLE IF NOT EXISTS product_images (
 CREATE TABLE IF NOT EXISTS addresses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    company_name VARCHAR(255),
+    email VARCHAR(255),
     address_line1 VARCHAR(255) NOT NULL,
     address_line2 VARCHAR(255),
     city VARCHAR(100) NOT NULL,
