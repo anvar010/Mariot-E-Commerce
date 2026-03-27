@@ -27,7 +27,7 @@ class Order {
                 finalAddressId = addrResult.insertId;
             } else if (shipping_address_id === 1) {
                 // If it's a placeholder but no details were provided (like a purely digital good checkout), null it.
-                finalAddressId = null; 
+                finalAddressId = null;
             }
 
             // Fetch dynamic point value (default: 0.01 AED per point)
@@ -130,14 +130,20 @@ class Order {
             );
         }
 
+        // 4. Update order to mark as processed
+        await connection.execute(
+            'UPDATE orders SET is_processed = 1 WHERE id = ?',
+            [orderId]
+        );
+
         // 5. Send Order Confirmation Email
         try {
             // Fetch User info
             const [userRows] = await connection.execute('SELECT name, email FROM users WHERE id = ?', [userId]);
-            
+
             // Fetch Order info
             const [orderRows] = await connection.execute('SELECT * FROM orders WHERE id = ?', [orderId]);
-            
+
             if (userRows[0] && orderRows[0]) {
                 const { name, email } = userRows[0];
                 const orderDataFromDb = orderRows[0];
@@ -171,7 +177,7 @@ class Order {
                 // Attach billing details for the email helper
                 orderDataFromDb.billing_details = billingDetails;
 
-                sendOrderConfirmationEmail(email, name, orderId, orderDataFromDb.final_amount, fullItems, orderDataFromDb).catch(err => 
+                sendOrderConfirmationEmail(email, name, orderId, orderDataFromDb.final_amount, fullItems, orderDataFromDb).catch(err =>
                     console.error(`Failed to send order confirmation email for order #${orderId}:`, err)
                 );
             }
@@ -210,16 +216,16 @@ class Order {
             await connection.beginTransaction();
 
             // First get the current order to see if we need to process completion logic
-            const [order] = await connection.execute('SELECT user_id, payment_status, points_used, final_amount FROM orders WHERE id = ?', [id]);
+            const [order] = await connection.execute('SELECT user_id, payment_status, is_processed, points_used, final_amount FROM orders WHERE id = ?', [id]);
             if (order.length === 0) throw new Error("Order not found");
 
-            const currentStatus = order[0].payment_status;
+            const { payment_status: currentStatus, is_processed } = order[0];
 
             // Update status
             await connection.execute('UPDATE orders SET payment_status = ? WHERE id = ?', [payment_status, id]);
 
-            // If it's transitioning to paid, and wasn't paid before, process completion
-            if (payment_status === 'paid' && currentStatus !== 'paid') {
+            // If it's transitioning to paid, and wasn't processed before, process completion
+            if (payment_status === 'paid' && !is_processed) {
                 // Fetch items for stock reduction
                 const [items] = await connection.execute('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [id]);
 
@@ -231,6 +237,28 @@ class Order {
                     order[0].points_used,
                     order[0].final_amount
                 );
+            } else if (payment_status === 'paid' && is_processed && currentStatus !== 'paid') {
+                // Already processed (e.g. Bank/COD), but now admin confirmed payment
+                // Trigger JUST the email part of completion
+                try {
+                    const [userRows] = await connection.execute('SELECT name, email FROM users WHERE id = ?', [order[0].user_id]);
+                    const [orderRows] = await connection.execute('SELECT * FROM orders WHERE id = ?', [id]);
+
+                    if (userRows[0] && orderRows[0]) {
+                        const { name, email } = userRows[0];
+                        const orderData = orderRows[0];
+
+                        // Fetch items for email
+                        const [fullItems] = await connection.execute(`
+                            SELECT oi.quantity, oi.price_at_purchase as price, p.name,
+                            (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1) as image
+                            FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?
+                        `, [id]);
+
+                        const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
+                        sendOrderConfirmationEmail(email, name, id, orderData.final_amount, fullItems, orderData).catch(e => console.error(e));
+                    }
+                } catch (e) { console.error("Email update failed:", e); }
             }
 
             await connection.commit();

@@ -122,16 +122,19 @@ const sendPasswordResetEmail = async (toEmail, userName, resetUrl) => {
  */
 const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmount, orderItems = [], orderData = {}) => {
     const transporter = createTransporter();
-    
+
     const subtotal = Number(orderData.total_amount || 0).toFixed(2);
     const vat = Number(orderData.vat_amount || 0).toFixed(2);
     const total = Number(finalAmount || 0).toFixed(2);
     const paymentMethod = orderData.payment_method || 'N/A';
     const billing = orderData.billing_details || {};
 
+    const isPaid = (orderData.payment_status === 'paid' || orderData.payment_status === 'PAID');
+
     // Map payment method display names
     const paymentDisplay = {
         'bank_transfer': 'Direct bank transfer',
+        'bank': 'Direct bank transfer',
         'cod': 'Cash on delivery',
         'tabby': 'Tabby (Installments)',
         'card': 'Credit/Debit Card'
@@ -155,8 +158,8 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
         </tr>
     `).join('');
 
-    // Conditional Bank Details
-    const bankDetailsHtml = paymentMethod === 'bank_transfer' ? `
+    // Conditional Bank Details - only show if NOT paid and payment method is bank_transfer
+    const bankDetailsHtml = (paymentMethod === 'bank_transfer' || paymentMethod === 'bank') && !isPaid ? `
         <div style="margin-top: 25px; color: #444444; font-size: 14px; line-height: 1.6;">
             <p>Make your payment directly into our bank account. Please use your <strong>Order ID</strong> as the payment reference. Your <strong>order</strong> will not be shipped until the funds have cleared in our account.</p>
             <h3 style="color: #333333; font-size: 16px; margin: 20px 0 10px;">Our bank details</h3>
@@ -173,8 +176,10 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
-        subject: `Order Confirmation #${orderId} — Mariot Store`,
-        text: `Hi ${userName},\n\nThank you for your order!\n\nYour order #${orderId} has been successfully placed. Your total is AED ${total}.\n\nBest regards,\nMariot Store Team`,
+        subject: isPaid ? `Payment Confirmed — Order #${orderId} — Mariot Store` : `Order Confirmation #${orderId} — Mariot Store`,
+        text: isPaid
+            ? `Hi ${userName},\n\nPayment for your order #${orderId} has been confirmed. Your total is AED ${total}.\n\nBest regards,\nMariot Store Team`
+            : `Hi ${userName},\n\nThank you for your order!\n\nYour order #${orderId} has been successfully placed. Your total is AED ${total}.\n\nBest regards,\nMariot Store Team`,
         html: `
             <div style="background-color: #f4f4f4; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; color: #000000; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
@@ -188,7 +193,9 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
                 <p style="font-size: 15px; color: #000000; font-weight: 500;">Hi ${userName},</p>
                 
                 <p style="font-size: 15px; color: #000000; line-height: 1.6;">
-                    We've received your <span style="background-color: #fff9c4; padding: 0 2px;">order</span> and it's currently on hold until we can <span style="background-color: #fff9c4; padding: 0 2px;">confirm</span> your payment has been processed.
+                    ${isPaid
+                ? `Great news! We've confirmed your payment for <span style="background-color: #fff9c4; padding: 0 2px;">order</span> #${orderId}. We are now preparing your items for delivery.`
+                : `We've received your <span style="background-color: #fff9c4; padding: 0 2px;">order</span> and it's currently on hold until we can <span style="background-color: #fff9c4; padding: 0 2px;">confirm</span> your payment has been processed.`}
                 </p>
 
                 <p style="font-size: 15px; color: #000000;">Here's a reminder of what you've ordered:</p>

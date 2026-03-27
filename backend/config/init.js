@@ -56,6 +56,17 @@ const initDb = async () => {
             console.error('[DB] Error migrating addresses table:', err.message);
         }
 
+        // 4. Orders completion tracking
+        try {
+            const [columns] = await db.query("SHOW COLUMNS FROM orders LIKE 'is_processed'");
+            if (columns.length === 0) {
+                await db.query("ALTER TABLE orders ADD COLUMN is_processed BOOLEAN DEFAULT FALSE AFTER payment_status");
+                console.log('[DB] Migration: Added is_processed column to orders table');
+            }
+        } catch (err) {
+            console.error('[DB] Error migrating orders table:', err.message);
+        }
+
         console.log('[DB] Initialization complete');
     } catch (error) {
         console.error('[DB] Fatal Initialization Error:', error.message);
