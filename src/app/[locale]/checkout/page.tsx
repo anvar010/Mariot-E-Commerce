@@ -43,7 +43,7 @@ function CheckoutContent() {
     const stripe = useStripe();
     const elements = useElements();
     const { cartItems, cartTotal, discountAmount, pointsToUse, pointsDiscountAmount, appliedCoupon, clearCart, applyDiscount, removeDiscount } = useCart();
-    const { user, token } = useAuth();
+    const { user, token, loading } = useAuth();
     const { showNotification } = useNotification();
     const n = useTranslations('notifications');
     const t = useTranslations('checkout');
@@ -224,10 +224,10 @@ function CheckoutContent() {
     }, [showCouponModal]);
 
     useEffect(() => {
-        if (!user && !token) {
+        if (!loading && !user && !token) {
             router.push(`/signin?redirectTo=/checkout&reason=purchase`);
         }
-    }, [user, token, router, locale]);
+    }, [user, token, loading, router, locale]);
 
     useEffect(() => {
         if (user) {
@@ -445,6 +445,19 @@ function CheckoutContent() {
 
     // Calculate the VAT breakdown (1/21 of total)
     const vatAmount = (cartTotal * (5 / 105)); // 5% VAT inclusive
+    if (loading || (!user && !token)) {
+        return (
+            <div className={styles.checkoutPage}>
+                <Header />
+                <div className={styles.loaderContainer}>
+                    <div className={styles.spinner}></div>
+                    <p>{t('processing') || 'Loading...'}</p>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
     return (
         <div className={styles.checkoutPage}>
             <Header />

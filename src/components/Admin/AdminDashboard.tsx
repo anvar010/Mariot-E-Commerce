@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './AdminDashboard.module.css';
 import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/context/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import {
     TrendingUp,
@@ -18,7 +18,11 @@ import {
     Search,
     Activity,
     Globe,
-    AlertTriangle
+    AlertTriangle,
+    Calendar,
+    ChevronDown,
+    LayoutDashboard,
+    Clock
 } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { useRouter } from 'next/navigation';
@@ -29,6 +33,7 @@ const AdminDashboard = () => {
     const { user, token } = useAuth();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [timeRange, setTimeRange] = useState('7d');
     const { showNotification } = useNotification();
     const router = useRouter();
 
@@ -44,14 +49,15 @@ const AdminDashboard = () => {
         isOpen: false,
         title: '',
         message: '',
-        onConfirm: () => {},
+        onConfirm: () => { },
         type: 'danger'
     });
     const [isActionLoading, setIsActionLoading] = useState(false);
 
-    const fetchStats = async () => {
+    const fetchStats = async (range = timeRange) => {
+        setLoading(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/admin/stats`, {
+            const res = await fetch(`${API_BASE_URL}/admin/stats?timeRange=${range}`, {
                 credentials: "include",
                 headers: getAuthHeaders()
             });
@@ -61,6 +67,7 @@ const AdminDashboard = () => {
             }
         } catch (error) {
             console.error('Failed to fetch dashboard stats', error);
+            showNotification('Failed to load dashboard data', 'error');
         } finally {
             setLoading(false);
         }
@@ -68,7 +75,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchStats();
-    }, []);
+    }, [timeRange]);
 
     const handleDeleteReview = (reviewId: number) => {
         if (!token) return;
@@ -106,25 +113,64 @@ const AdminDashboard = () => {
         });
     };
 
-    if (loading) {
-        return <div className={styles.dashboard}><div style={{ padding: '40px', textAlign: 'center' }}>Loading dashboard...</div></div>;
+    const timeOptions = [
+        { label: 'Last 7 Days', value: '7d' },
+        { label: 'Last 14 Days', value: '14d' },
+        { label: 'Last 30 Days', value: '30d' },
+        { label: 'Last 3 Months', value: '3m' },
+        { label: 'Last 6 Months', value: '6m' },
+        { label: 'Last Year', value: '1y' },
+        { label: 'All Time', value: 'all' },
+    ];
+
+    if (loading && !stats) {
+        return <div className={styles.dashboard}><div style={{ padding: '80px', textAlign: 'center' }}>Loading dashboard data...</div></div>;
     }
 
     return (
         <div className={styles.dashboard}>
+            <header className={styles.dashboardHeader}>
+                <div className={styles.headerInfo}>
+                    <h1 className={styles.pageTitle}>Admin Overview</h1>
+                    <p className={styles.pageSub}>Track your store's performance and growth.</p>
+                </div>
+                <div className={styles.headerActions}>
+                    <div className={styles.rangeSelector}>
+                        <Clock size={16} />
+                        <select
+                            value={timeRange}
+                            onChange={(e) => setTimeRange(e.target.value)}
+                            className={styles.selectInput}
+                        >
+                            {timeOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <button className={styles.refreshBtn} onClick={() => fetchStats()}>
+                        Refresh
+                    </button>
+                </div>
+            </header>
+
             <motion.div
                 className={styles.alertBanner}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
             >
                 <div className={styles.bannerContent}>
-                    <h2>Welcome back, {user?.name || 'Admin'}!</h2>
-                    <p>Your store is performing well today. We've seen a steady increase in orders and new user registrations over the last 24 hours.</p>
+                    <h2>Marhaba, {user?.name?.split(' ')[0] || 'Admin'}!</h2>
+                    <p>Your store has generated <strong>AED {Number(stats?.totalSales || 0).toLocaleString()}</strong> in total revenue so far. Check out the latest insights below.</p>
                 </div>
-                <button className={styles.bannerBtn} onClick={() => router.push('/admin/analytics')}>
-                    View Data Insights
-                </button>
+                <div className={styles.bannerButtons}>
+                    <button className={styles.bannerBtnSecondary} onClick={() => router.push('/admin/products/add')}>
+                        Add Product
+                    </button>
+                    <button className={styles.bannerBtn} onClick={() => router.push('/admin/analytics')}>
+                        Advanced Analytics
+                    </button>
+                </div>
             </motion.div>
 
             <div className={styles.statsGrid}>
@@ -132,7 +178,7 @@ const AdminDashboard = () => {
                 <motion.div
                     className={styles.statCard}
                     whileHover={{ y: -4 }}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                 >
@@ -145,7 +191,7 @@ const AdminDashboard = () => {
                     <div className={styles.statBody}>
                         <h3 className={styles.statValue}>AED {Number(stats?.totalSales || 0).toLocaleString()}</h3>
                         <div className={styles.statFooter}>
-                            <span className={styles.trendUp}>+12.5%</span> vs last month
+                            <span className={styles.trendUp}>+12.5%</span> vs prev period
                         </div>
                     </div>
                 </motion.div>
@@ -154,12 +200,12 @@ const AdminDashboard = () => {
                 <motion.div
                     className={styles.statCard}
                     whileHover={{ y: -4 }}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                 >
                     <div className={styles.statHeader}>
-                        <span className={styles.statTitle}>Total Orders</span>
+                        <span className={styles.statTitle}>Orders</span>
                         <div className={`${styles.iconWrapper} ${styles.bgGreen}`}>
                             <CheckCircle2 size={18} />
                         </div>
@@ -167,7 +213,7 @@ const AdminDashboard = () => {
                     <div className={styles.statBody}>
                         <h3 className={styles.statValue}>{stats?.totalOrders || 0}</h3>
                         <div className={styles.statFooter}>
-                            <span className={styles.trendUp}>+5.2%</span> daily average
+                            <span className={styles.trendUp}>+5.2%</span> successful
                         </div>
                     </div>
                 </motion.div>
@@ -176,12 +222,12 @@ const AdminDashboard = () => {
                 <motion.div
                     className={styles.statCard}
                     whileHover={{ y: -4 }}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                 >
                     <div className={styles.statHeader}>
-                        <span className={styles.statTitle}>New Customers</span>
+                        <span className={styles.statTitle}>Customers</span>
                         <div className={`${styles.iconWrapper} ${styles.bgPurple}`}>
                             <Users size={18} />
                         </div>
@@ -189,7 +235,7 @@ const AdminDashboard = () => {
                     <div className={styles.statBody}>
                         <h3 className={styles.statValue}>{stats?.totalUsers || 0}</h3>
                         <div className={styles.statFooter}>
-                            <span className={styles.trendNeutral}>Consistently growing</span>
+                            <span className={styles.trendNeutral}>{stats?.seoStats?.growth || 0}% growth</span>
                         </div>
                     </div>
                 </motion.div>
@@ -198,26 +244,26 @@ const AdminDashboard = () => {
                 <motion.div
                     className={styles.statCard}
                     whileHover={{ y: -4 }}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
                 >
                     <div className={styles.statHeader}>
-                        <span className={styles.statTitle}>Total Inventory</span>
+                        <span className={styles.statTitle}>Catalog</span>
                         <div className={`${styles.iconWrapper} ${styles.bgOrange}`}>
-                            <Globe size={18} />
+                            <LayoutDashboard size={18} />
                         </div>
                     </div>
                     <div className={styles.statBody}>
                         <h3 className={styles.statValue}>{stats?.totalProducts || 0}</h3>
                         <div className={styles.statFooter}>
-                            <span className={styles.trendNeutral}>{stats?.activeProducts || 0} active SKU</span>
+                            <span className={styles.trendNeutral}>{stats?.activeProducts || 0} active</span>
                         </div>
                     </div>
                 </motion.div>
             </div>
 
-            {/* Top Products & Alerts */}
+            {/* Main Analytics Row */}
             <div className={styles.middleSection}>
                 <motion.div
                     className={styles.chartArea}
@@ -226,25 +272,46 @@ const AdminDashboard = () => {
                     transition={{ delay: 0.5 }}
                 >
                     <div className={styles.chartHeader}>
-                        <h3>Top Selling Products</h3>
+                        <div className={styles.chartTitleBox}>
+                            <Activity size={16} />
+                            <h3>Sales Trend ({timeOptions.find(o => o.value === timeRange)?.label})</h3>
+                        </div>
                     </div>
-                    <div className={styles.tableWrapper}>
-                        <table className={styles.table}>
-                            <thead>
-                                <tr>
-                                    <th>PRODUCT NAME</th>
-                                    <th>UNITS SOLD</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {stats?.topProducts?.map((p: any, i: number) => (
-                                    <tr key={i}>
-                                        <td>{stripHtml(p.name)}</td>
-                                        <td><strong>{p.sold_count}</strong> {p.sold_count === 1 ? 'unit' : 'units'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className={styles.chartContainer}>
+                        {(() => {
+                            if (!stats?.salesHistory || stats.salesHistory.length === 0) {
+                                return <div className={styles.emptyChart}>No data for this period</div>;
+                            }
+
+                            const data = stats.salesHistory;
+                            const maxAmount = Math.max(...data.map((d: any) => parseFloat(d.amount))) || 1;
+
+                            return data.map((day: any, i: number) => {
+                                const heightPercentage = (parseFloat(day.amount) / maxAmount) * 100;
+                                return (
+                                    <div key={i} className={styles.barWrapper}>
+                                        <motion.div
+                                            className={styles.bar}
+                                            initial={{ height: 0 }}
+                                            animate={{ height: `${Math.max(heightPercentage, 4)}%` }}
+                                            transition={{ duration: 0.8, delay: 0.6 + (i * 0.05) }}
+                                        >
+                                            {day.amount > 0 && (
+                                                <div className={styles.barTooltip}>
+                                                    AED {Number(day.amount).toLocaleString()}
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                        <span className={styles.barLabel}>
+                                            {new Date(day.date).toLocaleDateString(undefined, {
+                                                day: 'numeric',
+                                                month: 'short'
+                                            })}
+                                        </span>
+                                    </div>
+                                );
+                            });
+                        })()}
                     </div>
                 </motion.div>
 
@@ -255,20 +322,30 @@ const AdminDashboard = () => {
                     transition={{ delay: 0.6 }}
                 >
                     <div className={`${styles.chartHeader} ${styles.inventoryHeader}`}>
-                        <h3>Inventory Alerts</h3>
+                        <div className={styles.chartTitleBox}>
+                            <AlertTriangle size={16} />
+                            <h3>Inventory Alerts</h3>
+                        </div>
+                        <button className={styles.smallActionBtn} onClick={() => router.push('/admin/products')}>Manage</button>
                     </div>
                     <div className={styles.actionList}>
                         {stats?.lowStockAlerts?.map((p: any, i: number) => (
-                            <div key={i} className={styles.activityItem} style={{ background: 'rgba(255, 77, 79, 0.05)', border: '1px solid rgba(255, 77, 79, 0.1)' }}>
-                                <AlertTriangle size={16} color="#ef4444" />
+                            <div key={i} className={styles.activityItem} style={{ background: '#fff' }}>
+                                <div className={styles.stockIndicator} />
                                 <div className={styles.activityText}>
-                                    <p><strong>{stripHtml(p.name)}</strong> is low on stock</p>
-                                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 'bold' }}>{p.stock_quantity} remaining</span>
+                                    <p><strong>{stripHtml(p.name)}</strong></p>
+                                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 'bold' }}>Only {p.stock_quantity} remaining</span>
                                 </div>
+                                <button className={styles.quickRestockBtn} onClick={() => router.push(`/admin/products/edit?id=${p.id}`)}>
+                                    <Edit3 size={14} />
+                                </button>
                             </div>
                         ))}
-                        {stats?.lowStockAlerts?.length === 0 && (
-                            <p style={{ color: '#94a3b8', fontSize: '12px' }}>All products are well stocked.</p>
+                        {(!stats?.lowStockAlerts || stats.lowStockAlerts.length === 0) && (
+                            <div className={styles.allClear}>
+                                <CheckCircle2 size={24} color="#10b981" />
+                                <p>All items are well stocked</p>
+                            </div>
                         )}
                     </div>
                 </motion.div>
@@ -277,90 +354,86 @@ const AdminDashboard = () => {
             <div className={styles.middleSection}>
                 <motion.div
                     className={styles.chartArea}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 }}
                 >
                     <div className={styles.chartHeader}>
-                        <h3>Sales Overview (Last 7 Days)</h3>
+                        <div className={styles.chartTitleBox}>
+                            <Filter size={16} />
+                            <h3>Revenue by Category</h3>
+                        </div>
                     </div>
-                    <div className={styles.chartContainer}>
-                        {/* ... existing chart logic mapping omitted for brevity but preserved in full file ... */}
-                        {(() => {
-                            const last7Days = [...Array(7)].map((_, i) => {
-                                const d = new Date();
-                                d.setDate(d.getDate() - (6 - i));
-                                return d.toISOString().split('T')[0];
-                            });
+                    <div className={styles.categoryList}>
+                        {stats?.categorySales?.slice(0, 5).map((cat: any, i: number) => {
+                            const totalRev = stats.categorySales.reduce((acc: number, curr: any) => acc + parseFloat(curr.revenue), 0) || 1;
+                            const share = ((parseFloat(cat.revenue) / totalRev) * 100).toFixed(1);
 
-                            const fullHistory = last7Days.map(date => {
-                                const existing = stats?.salesHistory?.find((s: any) => s.date.startsWith(date));
-                                return {
-                                    date,
-                                    amount: existing ? parseFloat(existing.amount) : 0
-                                };
-                            });
-
-                            const maxAmount = Math.max(...fullHistory.map(d => d.amount)) || 1;
-
-                            return fullHistory.map((day, i) => {
-                                const heightPercentage = (day.amount / maxAmount) * 100;
-                                return (
-                                    <div key={i} className={styles.barWrapper}>
-                                        <motion.div
-                                            className={styles.bar}
-                                            initial={{ height: 0 }}
-                                            animate={{ height: `${Math.max(heightPercentage, 2)}%` }}
-                                            transition={{ duration: 0.8, delay: 0.8 + (i * 0.1) }}
-                                        >
-                                            {day.amount > 0 && (
-                                                <span className={styles.barValue}>AED {day.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
-                                            )}
-                                        </motion.div>
-                                        <span className={styles.barLabel}>{new Date(day.date).toLocaleDateString(undefined, { weekday: 'short' })}</span>
+                            return (
+                                <div key={i} className={styles.categoryItemV2}>
+                                    <div className={styles.catInfoV2}>
+                                        <div className={styles.catLabels}>
+                                            <span className={styles.catName}>{cat.name}</span>
+                                            <span className={styles.catShare}>{share}% of total</span>
+                                        </div>
+                                        <div className={styles.catProgressWrap}>
+                                            <motion.div
+                                                className={styles.catProgressBar}
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${share}%` }}
+                                                transition={{ duration: 1, delay: 0.8 + (i * 0.1) }}
+                                            />
+                                        </div>
                                     </div>
-                                );
-                            });
-                        })()}
+                                    <span className={styles.revenueBadgeV2}>AED {Number(cat.revenue).toLocaleString()}</span>
+                                </div>
+                            );
+                        })}
+                        {(!stats?.categorySales || stats.categorySales.length === 0) && (
+                            <p className={styles.emptyState}>No categorization data available.</p>
+                        )}
                     </div>
                 </motion.div>
 
                 <motion.div
                     className={styles.chartArea}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.8 }}
                 >
                     <div className={styles.chartHeader}>
-                        <h3>Revenue by Category</h3>
+                        <div className={styles.chartTitleBox}>
+                            <TrendingUp size={16} />
+                            <h3>Top Selling Products</h3>
+                        </div>
                     </div>
-                    <div className={styles.categoryList}>
-                        {stats?.categorySales?.slice(0, 4).map((cat: any, i: number) => (
-                            <div key={i} className={styles.categoryItem}>
-                                <div className={styles.categoryInfo}>
-                                    <span className={styles.catName}>{cat.name}</span>
-                                    <span className={styles.catRevenue}>Performance Index</span>
+                    <div className={styles.topProductsSimple}>
+                        {stats?.topProducts?.map((p: any, i: number) => (
+                            <div key={i} className={styles.productSimpleItem}>
+                                <div className={styles.productRank}>{i + 1}</div>
+                                <div className={styles.productInfoSimple}>
+                                    <p className={styles.productNameSimple}>{stripHtml(p.name)}</p>
+                                    <span className={styles.productCountSimple}>{p.sold_count} units sold</span>
                                 </div>
-                                <span className={styles.revenueBadge}>AED {Number(cat.revenue).toLocaleString()}</span>
                             </div>
                         ))}
-                        {(!stats?.categorySales || stats.categorySales.length === 0) && (
-                            <p style={{ color: '#94a3b8', fontSize: '12px' }}>No category data available.</p>
-                        )}
                     </div>
                 </motion.div>
             </div>
 
             <div className={styles.latestOrders}>
                 <div className={styles.tableHeader}>
-                    <h3>Recent Product Reviews</h3>
-                    <button className={styles.filterBtn}>View All Reviews</button>
+                    <div className={styles.chartTitleBox}>
+                        <Activity size={16} />
+                        <h3>Recent Reviews</h3>
+                    </div>
+                    <button className={styles.filterBtn} onClick={() => router.push('/admin/reviews')}>All Reviews</button>
                 </div>
                 <div className={styles.activityList}>
                     {stats?.recentReviews?.length > 0 ? (
                         stats.recentReviews.map((review: any) => (
                             <div key={review.id} className={styles.activityItem}>
-                                <div className={styles.activityDot}></div>
+                                <div className={styles.avatarMini}>{review.user_name?.charAt(0) || 'U'}</div>
                                 <div className={styles.activityText}>
                                     <p>
                                         <strong>{review.user_name}</strong> reviewed <strong>{stripHtml(review.product_name)}</strong>
@@ -392,8 +465,11 @@ const AdminDashboard = () => {
 
             <div className={styles.latestOrders}>
                 <div className={styles.tableHeader}>
-                    <h3>Latest Orders</h3>
-                    <button className={styles.filterBtn}><Filter size={14} /> View All</button>
+                    <div className={styles.chartTitleBox}>
+                        <Clock size={16} />
+                        <h3>Recent Orders</h3>
+                    </div>
+                    <button className={styles.filterBtn} onClick={() => router.push('/admin/orders')}><Filter size={14} /> All Orders</button>
                 </div>
                 <div className={styles.tableWrapper}>
                     <table className={styles.table}>

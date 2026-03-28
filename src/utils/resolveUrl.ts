@@ -64,9 +64,10 @@ export const resolveUrl = (url?: string): string => {
         normalizedUrl = `uploads/${normalizedUrl}`;
     }
 
-    // Ensure leading slash for BASE_URL joining if it's not and doesn't have it
-    if (!normalizedUrl.startsWith('/') && !BASE_URL.endsWith('/')) {
+    // Ensure leading slash for BASE_URL joining or relative paths
+    if (!normalizedUrl.startsWith('/') && !normalizedUrl.startsWith('http')) {
         normalizedUrl = `/${normalizedUrl}`;
     }
-    return `${BASE_URL}${normalizedUrl}`;
+
+    return `${BASE_URL || ''}${normalizedUrl}`;
 };

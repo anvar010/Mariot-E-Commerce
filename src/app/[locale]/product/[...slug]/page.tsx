@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: { slug: string | st
     const slugArray = Array.isArray(params.slug) ? params.slug : [params.slug];
     const id = slugArray.map(s => decodeURIComponent(s)).join('/');
     const isArabic = params.locale === 'ar';
-    const SITE_URL = 'https://mariot-e-commerce.vercel.app';
+    const SITE_URL = 'https://mariotstore.com';
 
     // Helper to resolve absolute image URL for OG tags
     const resolveImageUrl = (url?: string) => {
@@ -54,8 +54,11 @@ export async function generateMetadata({ params }: { params: { slug: string | st
             const resolvedImg = resolveImageUrl(imagePath);
 
             return {
-                title: `${title} | Mariot Store`,
+                title: `${title} | Mariot Kitchen Equipment UAE`,
                 description: cleanDescription,
+                alternates: {
+                    canonical: `${SITE_URL}/${params.locale}/product/${encodeURIComponent(id)}`,
+                },
                 openGraph: {
                     title: `${title} | Mariot Store`,
                     description: cleanDescription,
@@ -69,12 +72,19 @@ export async function generateMetadata({ params }: { params: { slug: string | st
                     ] : [],
                     type: 'website',
                     url: `${SITE_URL}/${params.locale}/product/${encodeURIComponent(id)}`,
+                    siteName: 'Mariot Kitchen Equipment',
                 },
                 twitter: {
                     card: 'summary_large_image',
-                    title: `${title} | Mariot Store`,
+                    title: `${title} | Mariot Kitchen Equipment`,
                     description: cleanDescription,
                     images: resolvedImg ? [resolvedImg] : [],
+                },
+                other: {
+                    'product:price:amount': product.price || '0',
+                    'product:price:currency': 'AED',
+                    'product:availability': product.stock_quantity > 0 ? 'instock' : 'oos',
+                    'product:condition': 'new',
                 }
             };
         }
