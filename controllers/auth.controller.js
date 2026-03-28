@@ -12,12 +12,13 @@ const generateToken = (id) => {
 
 const sendTokenResponse = (user, statusCode, res) => {
     const token = generateToken(user.id);
+    const isProduction = process.env.NODE_ENV === 'production';
 
     const options = {
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' ? true : false,
-        sameSite: 'strict', 
+        secure: isProduction,
+        sameSite: isProduction ? 'lax' : 'strict', // 'lax' allows OAuth redirects in production
         path: '/'
     };
 
@@ -160,11 +161,12 @@ exports.updateMe = async (req, res, next) => {
 };
 
 exports.logout = async (req, res, next) => {
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('token', 'none', {
         expires: new Date(Date.now() + 10 * 1000),
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' ? true : false,
-        sameSite: 'strict',
+        secure: isProduction,
+        sameSite: isProduction ? 'lax' : 'strict',
         path: '/'
     });
     res.status(200).json({ success: true, data: {} });

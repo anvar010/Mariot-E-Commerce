@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 const errorHandler = require('./middlewares/error.middleware');
 const helmet = require('helmet');
 const hpp = require('hpp');
-const xss = require('xss-clean');
+const sanitize = require('./middlewares/sanitize.middleware');
 const rateLimit = require('express-rate-limit');
 // Load env vars
 dotenv.config();
@@ -47,8 +47,48 @@ app.use(express.json({
     }
 }));
 
-// Set security headers
-app.use(helmet());
+// Set security headers with Content Security Policy
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: [
+                "'self'",
+                "'unsafe-inline'",
+                "'unsafe-eval'",
+                "https://www.googletagmanager.com",
+                "https://www.google-analytics.com",
+                "https://connect.facebook.net",
+                "https://js.stripe.com"
+            ],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            imgSrc: [
+                "'self'",
+                "data:",
+                "blob:",
+                "https://www.google-analytics.com",
+                "https://www.facebook.com",
+                "https://*.stripe.com",
+                "https://lh3.googleusercontent.com",
+                process.env.FRONTEND_URL || 'http://localhost:3000'
+            ],
+            fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+            connectSrc: [
+                "'self'",
+                "https://www.google-analytics.com",
+                "https://analytics.google.com",
+                "https://www.facebook.com",
+                "https://api.stripe.com",
+                process.env.FRONTEND_URL || 'http://localhost:3000'
+            ],
+            frameSrc: ["'self'", "https://js.stripe.com", "https://www.facebook.com"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+        }
+    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false
+}));
 
 // Prevent HTTP param pollution
 app.use(hpp());
@@ -96,8 +136,8 @@ const authLimiter = rateLimit({
 // Cookie parser
 app.use(cookieParser());
 
-// Temporarily disable XSS for Express 5 compatibility investigation
-// app.use(xss()); 
+// XSS Sanitization (custom middleware, replaces xss-clean for Express 5 compatibility)
+app.use(sanitize);
 
 
 // Serve static files from uploads directory with cross-origin policy
