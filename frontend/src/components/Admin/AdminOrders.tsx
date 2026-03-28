@@ -10,6 +10,7 @@ import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminOrders = () => {
     const [orders, setOrders] = useState<any[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     const { showNotification } = useNotification();
@@ -26,7 +27,7 @@ const AdminOrders = () => {
         isOpen: false,
         title: '',
         message: '',
-        onConfirm: () => {},
+        onConfirm: () => { },
         type: 'info'
     });
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -160,6 +161,32 @@ const AdminOrders = () => {
         });
     };
 
+    const [activeDropdown, setActiveDropdown] = useState<{ id: number, type: 'status' | 'payment' } | null>(null);
+
+    const toggleDropdown = (id: number, type: 'status' | 'payment', e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (activeDropdown?.id === id && activeDropdown?.type === type) {
+            setActiveDropdown(null);
+        } else {
+            setActiveDropdown({ id, type });
+        }
+    };
+
+    useEffect(() => {
+        const handleClickOutside = () => setActiveDropdown(null);
+        window.addEventListener('click', handleClickOutside);
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    const filteredOrders = orders.filter(order => {
+        const term = searchTerm.toLowerCase();
+        return (
+            order.id.toString().includes(term) ||
+            (order.user_name && order.user_name.toLowerCase().includes(term)) ||
+            (order.user_email && order.user_email.toLowerCase().includes(term))
+        );
+    });
+
     const getStatusStyle = (status: string) => {
         switch (status) {
             case 'pending': return styles.statusPending;
@@ -197,7 +224,12 @@ const AdminOrders = () => {
             <div className={styles.filtersWrapper}>
                 <div className={styles.searchBox}>
                     <Search size={18} />
-                    <input type="text" placeholder="Search orders by ID or customer name..." />
+                    <input 
+                        type="text" 
+                        placeholder="Search orders by ID or customer name..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
             </div>
 
@@ -217,10 +249,10 @@ const AdminOrders = () => {
                     <tbody>
                         {loading ? (
                             <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>Loading orders...</td></tr>
-                        ) : orders.length === 0 ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>No orders found.</td></tr>
+                        ) : filteredOrders.length === 0 ? (
+                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>No orders found matching your search.</td></tr>
                         ) : (
-                            orders.map((order) => (
+                            filteredOrders.map((order) => (
                                 <tr key={order.id}>
                                     <td className={styles.id}>#{order.id}</td>
                                     <td>{new Date(order.created_at).toLocaleDateString()}</td>
@@ -245,30 +277,62 @@ const AdminOrders = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <select
-                                            className={styles.actionSelect}
-                                            style={{ minWidth: '100px', fontWeight: 'bold', color: order.payment_status === 'paid' ? '#16a34a' : order.payment_status === 'failed' ? '#dc2626' : '#ea580c' }}
-                                            value={order.payment_status}
-                                            onChange={(e) => handlePaymentStatusChange(order.id, e.target.value)}
-                                        >
-                                            <option value="pending">PENDING</option>
-                                            <option value="paid">PAID</option>
-                                            <option value="failed">FAILED</option>
-                                            <option value="refunded">REFUNDED</option>
-                                        </select>
+                                        <div className={styles.customDropdown}>
+                                            <div 
+                                                className={`${styles.dropdownHeader} ${
+                                                    order.payment_status === 'paid' ? styles.paymentPaid :
+                                                    order.payment_status === 'failed' ? styles.paymentFailed :
+                                                    order.payment_status === 'pending' ? styles.paymentPending : ''
+                                                } ${activeDropdown?.id === order.id && activeDropdown?.type === 'payment' ? styles.isOpen : ''}`}
+                                                onClick={(e) => toggleDropdown(order.id, 'payment', e)}
+                                            >
+                                                <span>{order.payment_status.toUpperCase()}</span>
+                                                <div className={styles.dropdownValueArrow}></div>
+                                            </div>
+                                            <div className={`${styles.dropdownMenu} ${activeDropdown?.id === order.id && activeDropdown?.type === 'payment' ? styles.isOpen : ''}`}>
+                                                {['pending', 'paid', 'failed', 'refunded'].map((status) => (
+                                                    <div 
+                                                        key={status} 
+                                                        className={styles.dropdownOption}
+                                                        onClick={() => {
+                                                            handlePaymentStatusChange(order.id, status);
+                                                            setActiveDropdown(null);
+                                                        }}
+                                                    >
+                                                        {status.toUpperCase()}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </td>
                                     <td>
-                                        <select
-                                            className={styles.actionSelect}
-                                            value={order.status}
-                                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                        >
-                                            <option value="pending">Pending</option>
-                                            <option value="processing">Processing</option>
-                                            <option value="shipped">Shipped</option>
-                                            <option value="delivered">Delivered</option>
-                                            <option value="cancelled">Cancelled</option>
-                                        </select>
+                                        <div className={styles.customDropdown}>
+                                            <div 
+                                                className={`${styles.dropdownHeader} ${
+                                                    order.status === 'delivered' ? styles.orderDelivered :
+                                                    order.status === 'processing' ? styles.orderProcessing :
+                                                    order.status === 'cancelled' ? styles.orderCancelled : ''
+                                                } ${activeDropdown?.id === order.id && activeDropdown?.type === 'status' ? styles.isOpen : ''}`}
+                                                onClick={(e) => toggleDropdown(order.id, 'status', e)}
+                                            >
+                                                <span>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
+                                                <div className={styles.dropdownValueArrow}></div>
+                                            </div>
+                                            <div className={`${styles.dropdownMenu} ${activeDropdown?.id === order.id && activeDropdown?.type === 'status' ? styles.isOpen : ''}`}>
+                                                {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => (
+                                                    <div 
+                                                        key={status} 
+                                                        className={styles.dropdownOption}
+                                                        onClick={() => {
+                                                            handleStatusChange(order.id, status);
+                                                            setActiveDropdown(null);
+                                                        }}
+                                                    >
+                                                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             ))

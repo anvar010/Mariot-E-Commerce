@@ -469,120 +469,123 @@ const AdminBrands = () => {
                             </button>
                         </div>
                         <form className={styles.form} onSubmit={handleSaveBrand}>
-                            <div className={styles.formGroup}>
-                                <label>Brand Name (English)</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    required
-                                    placeholder="e.g. Samsung"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label>Brand Name (Arabic)</label>
-                                <input
-                                    type="text"
-                                    name="name_ar"
-                                    placeholder="اسم العلامة التجارية باللغة العربية"
-                                    value={formData.name_ar}
-                                    onChange={handleInputChange}
-                                    dir="rtl"
-                                />
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label>Description (English)</label>
-                                <textarea
-                                    name="description"
-                                    placeholder="Brief background about the brand..."
-                                    value={formData.description}
-                                    onChange={handleInputChange}
-                                    rows={3}
-                                />
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label>Description (Arabic)</label>
-                                <textarea
-                                    name="description_ar"
-                                    placeholder="وصف العلامة التجارية باللغة العربية"
-                                    value={formData.description_ar}
-                                    onChange={handleInputChange}
-                                    rows={3}
-                                    dir="rtl"
-                                />
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label>Brand Logo</label>
-                                <div className={styles.fileUploadWrapper}>
-                                    {logoPreview ? (
-                                        <div className={styles.previewContainer}>
-                                            <img src={resolveUrl(logoPreview)} alt="Preview" className={styles.previewImage} />
-                                            <button
-                                                type="button"
-                                                onClick={() => { setLogoPreview(null); setLogoFile(null); }}
-                                                className={styles.removeFileBtn}
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <label className={styles.fileLabel}>
-                                            <ImageIcon size={24} />
-                                            <span>Click to upload brand logo</span>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleFileChange}
-                                                hidden
-                                            />
-                                        </label>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label>Website URL</label>
-                                <input
-                                    type="text"
-                                    name="website_url"
-                                    placeholder="https://www.brandwebsite.com"
-                                    value={formData.website_url}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label>Brand Categories (Multiple selection)</label>
-                                <div className={styles.categoryCheckboxes}>
-                                    {categoryOptions.map(cat => (
-                                        <label key={cat} className={styles.checkboxLabel}>
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.brand_type ? formData.brand_type.split(',').map(s => s.trim()).includes(cat) : false}
-                                                onChange={() => handleCategoryToggle(cat)}
-                                            />
-                                            <span>{cat}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label className={styles.checkboxLabel}>
+                            <div className={styles.formLeft}>
+                                <div className={styles.formGroup}>
+                                    <label>Brand Name (English)</label>
                                     <input
-                                        type="checkbox"
-                                        checked={formData.is_active}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                                        type="text"
+                                        name="name"
+                                        required
+                                        placeholder="e.g. Samsung"
+                                        value={formData.name}
+                                        onChange={handleInputChange}
                                     />
-                                    <span>Active Status</span>
-                                </label>
+                                </div>
+
+                                <div className={styles.formGroup}>
+                                    <label>Brand Name (Arabic)</label>
+                                    <input
+                                        type="text"
+                                        name="name_ar"
+                                        placeholder="اسم العلامة التجارية باللغة العربية"
+                                        value={formData.name_ar}
+                                        onChange={handleInputChange}
+                                        dir="rtl"
+                                    />
+                                </div>
+
+                                <div className={styles.formGroup}>
+                                    <label>Description (English)</label>
+                                    <textarea
+                                        name="description"
+                                        placeholder="Brief background about the brand..."
+                                        value={formData.description}
+                                        onChange={handleInputChange}
+                                        rows={6}
+                                    />
+                                </div>
+
+                                <div className={styles.formGroup}>
+                                    <label>Description (Arabic)</label>
+                                    <textarea
+                                        name="description_ar"
+                                        placeholder="وصف العلامة التجارية باللغة العربية"
+                                        value={formData.description_ar}
+                                        onChange={handleInputChange}
+                                        rows={6}
+                                        dir="rtl"
+                                    />
+                                </div>
                             </div>
 
+                            <div className={styles.formRight}>
+                                <div className={styles.formGroup}>
+                                    <label>Brand Logo</label>
+                                    <div className={styles.fileUploadWrapper}>
+                                        {logoPreview ? (
+                                            <div className={styles.previewContainer}>
+                                                <img src={resolveUrl(logoPreview)} alt="Preview" className={styles.previewImage} />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setLogoPreview(null); setLogoFile(null); }}
+                                                    className={styles.removeFileBtn}
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <label className={styles.fileLabel}>
+                                                <Plus size={24} />
+                                                <span>Click to upload brand logo</span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleFileChange}
+                                                    hidden
+                                                />
+                                            </label>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className={styles.formGroup}>
+                                    <label>Website URL</label>
+                                    <input
+                                        type="text"
+                                        name="website_url"
+                                        placeholder="https://www.brandwebsite.com"
+                                        value={formData.website_url}
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
+
+                                <div className={styles.formGroup}>
+                                    <label>Brand Categories</label>
+                                    <div className={styles.categoryCheckboxes}>
+                                        {categoryOptions.map(cat => (
+                                            <label key={cat} className={styles.checkboxLabel}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.brand_type ? formData.brand_type.split(',').map(s => s.trim()).includes(cat) : false}
+                                                    onChange={() => handleCategoryToggle(cat)}
+                                                />
+                                                <span>{cat}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className={styles.formGroup}>
+                                    <label className={styles.checkboxLabel}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.is_active}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                                        />
+                                        <span>Active Status</span>
+                                    </label>
+                                </div>
+                            </div>
                         </form>
                         <div className={styles.modalFooter}>
                             <button type="button" className={styles.cancelBtn} onClick={handleCloseModal}>
