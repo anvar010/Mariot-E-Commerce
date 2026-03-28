@@ -22,7 +22,8 @@ import {
     Calendar,
     ChevronDown,
     LayoutDashboard,
-    Clock
+    Clock,
+    Check
 } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { useRouter } from 'next/navigation';
@@ -34,6 +35,7 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [timeRange, setTimeRange] = useState('7d');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const { showNotification } = useNotification();
     const router = useRouter();
 
@@ -53,6 +55,17 @@ const AdminDashboard = () => {
         type: 'danger'
     });
     const [isActionLoading, setIsActionLoading] = useState(false);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (isDropdownOpen && !(event.target as HTMLElement).closest(`.${styles.dropdownWrapper}`)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isDropdownOpen]);
 
     const fetchStats = async (range = timeRange) => {
         setLoading(true);
@@ -135,17 +148,45 @@ const AdminDashboard = () => {
                     <p className={styles.pageSub}>Track your store's performance and growth.</p>
                 </div>
                 <div className={styles.headerActions}>
-                    <div className={styles.rangeSelector}>
-                        <Clock size={16} />
-                        <select
-                            value={timeRange}
-                            onChange={(e) => setTimeRange(e.target.value)}
-                            className={styles.selectInput}
+                    <div className={styles.dropdownWrapper}>
+                        <div
+                            className={`${styles.rangeSelector} ${isDropdownOpen ? styles.active : ''}`}
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         >
-                            {timeOptions.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
+                            <Clock size={16} className={styles.icon} />
+                            <span className={styles.currentRangeLabel}>
+                                {timeOptions.find(opt => opt.value === timeRange)?.label}
+                            </span>
+                            <ChevronDown size={14} className={`${styles.chevron} ${isDropdownOpen ? styles.rotate : ''}`} />
+                        </div>
+
+                        <AnimatePresence>
+                            {isDropdownOpen && (
+                                <motion.div
+                                    className={styles.dropdownMenu}
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                >
+                                    {timeOptions.map((opt) => (
+                                        <div
+                                            key={opt.value}
+                                            className={`${styles.dropdownItem} ${timeRange === opt.value ? styles.selected : ''}`}
+                                            onClick={() => {
+                                                setTimeRange(opt.value);
+                                                setIsDropdownOpen(false);
+                                            }}
+                                        >
+                                            <span className={styles.itemLabel}>{opt.label}</span>
+                                            {timeRange === opt.value && (
+                                                <Check size={12} className={styles.checkIcon} />
+                                            )}
+                                        </div>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                     <button className={styles.refreshBtn} onClick={() => fetchStats()}>
                         Refresh

@@ -5,6 +5,7 @@ import styles from './AdminProducts.module.css';
 import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
 import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL, BASE_URL } from '@/config';
@@ -122,7 +123,7 @@ const AdminProducts = () => {
         isOpen: false,
         title: '',
         message: '',
-        onConfirm: () => {},
+        onConfirm: () => { },
         type: 'danger'
     });
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -326,6 +327,27 @@ const AdminProducts = () => {
         offer_end: '',
         track_inventory: false
     });
+
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
+    useEffect(() => {
+        const id = searchParams.get('id');
+        if (id) {
+            const fetchAndEdit = async () => {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/products/${id}`, { credentials: "include", headers: getAuthHeaders() });
+                    const data = await res.json();
+                    if (data.success) {
+                        handleEditClick(data.data);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch product for editing', error);
+                }
+            };
+            fetchAndEdit();
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         fetchProducts();
@@ -628,8 +650,8 @@ const AdminProducts = () => {
         }
 
         setFormData({
-            name: product.name,
-            name_ar: product.name_ar || '',
+            name: stripHtml(product.name),
+            name_ar: stripHtml(product.name_ar || ''),
             model: product.model || '',
             youtube_video_links: vLinks,
             featured_video_index: vIndex,
@@ -665,6 +687,10 @@ const AdminProducts = () => {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingId(null);
+        // Clear search params if on the edit page or if id is present
+        if (searchParams.get('id')) {
+            router.push('/admin/products');
+        }
         setFormData({
             name: '',
             name_ar: '',
@@ -936,7 +962,7 @@ const AdminProducts = () => {
 
     const handleBulkDelete = () => {
         if (selectedIds.length === 0) return;
-        
+
         setConfirmModal({
             isOpen: true,
             title: 'Bulk Delete Products',
@@ -1367,7 +1393,7 @@ const AdminProducts = () => {
                         <div className={styles.modalSideHeader}>
                             <div className={styles.modalTitleArea}>
                                 <h2>{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-                                <p>{editingId ? `You are editing: ${formData.name}` : 'Create a professional product entry for the store'}</p>
+                                <p>{editingId ? `You are editing: ${stripHtml(formData.name)}` : 'Create a professional product entry for the store'}</p>
                             </div>
                             <button className={styles.closeBtn} onClick={handleCloseModal}>
                                 <X size={20} />

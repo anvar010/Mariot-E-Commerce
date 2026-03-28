@@ -12,13 +12,38 @@ import {
     BarChart3,
     PieChart,
     ArrowUpRight,
-    Calendar
+    Calendar,
+    ChevronDown,
+    Check
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminAnalytics = () => {
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [timeRange, setTimeRange] = useState('7d');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const timeOptions = [
+        { label: 'Last 7 Days', value: '7d' },
+        { label: 'Last 14 Days', value: '14d' },
+        { label: 'Last 30 Days', value: '30d' },
+        { label: 'Last 3 Months', value: '3m' },
+        { label: 'Last 6 Months', value: '6m' },
+        { label: 'Last Year', value: '1y' },
+        { label: 'All Time', value: 'all' },
+    ];
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (isDropdownOpen && !(event.target as HTMLElement).closest(`.${styles.datePickerWrapper}`)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isDropdownOpen]);
 
     useEffect(() => {
         const fetchAnalytics = async () => {
@@ -66,17 +91,45 @@ const AdminAnalytics = () => {
                     <p>Track your business growth and customer engagement metrics.</p>
                 </div>
                 <div className={styles.controls}>
-                    <div className={styles.datePicker}>
-                        <Calendar size={14} />
-                        <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)}>
-                            <option value="7d">Last 7 Days</option>
-                            <option value="14d">Last 14 Days</option>
-                            <option value="30d">Last 30 Days</option>
-                            <option value="3m">Last 3 Months</option>
-                            <option value="6m">Last 6 Months</option>
-                            <option value="1y">Last Year</option>
-                            <option value="all">All Time</option>
-                        </select>
+                    <div className={styles.datePickerWrapper}>
+                        <div 
+                            className={`${styles.datePicker} ${isDropdownOpen ? styles.active : ''}`}
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        >
+                            <Calendar size={14} className={styles.calendarIcon} />
+                            <span className={styles.currentRange}>
+                                {timeOptions.find(opt => opt.value === timeRange)?.label}
+                            </span>
+                            <ChevronDown size={14} className={`${styles.chevron} ${isDropdownOpen ? styles.rotate : ''}`} />
+                        </div>
+                        
+                        <AnimatePresence>
+                            {isDropdownOpen && (
+                                <motion.div 
+                                    className={styles.dropdown}
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                >
+                                    {timeOptions.map((option) => (
+                                        <div
+                                            key={option.value}
+                                            className={`${styles.dropdownOption} ${timeRange === option.value ? styles.selected : ''}`}
+                                            onClick={() => {
+                                                setTimeRange(option.value);
+                                                setIsDropdownOpen(false);
+                                            }}
+                                        >
+                                            <span className={styles.optionLabel}>{option.label}</span>
+                                            {timeRange === option.value && (
+                                                <Check size={12} className={styles.selectedIcon} />
+                                            )}
+                                        </div>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             </header>
