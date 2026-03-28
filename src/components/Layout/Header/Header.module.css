@@ -1228,4 +1228,20 @@
 
 .mobileSignOutBtn svg {
     color: #ef4444;
-}
+}
+
+.suggestionNameWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.suggestionModel {
+    font-size: 11px;
+    color: #868e96;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-inline-end: 4px;
+}

@@ -279,7 +279,10 @@ const Header = () => {
                                                     </div>
                                                     <div className={styles.suggestionInfo}>
                                                         <div className={styles.suggestionNameHeader}>
-                                                            <span className={styles.suggestionName}>{item.name}</span>
+                                                            <div className={styles.suggestionNameWrapper}>
+                                                                <span className={styles.suggestionName}>{item.name}</span>
+                                                                {item.model && <span className={styles.suggestionModel}>({item.model})</span>}
+                                                            </div>
                                                             <span className={`${styles.typeBadge} ${styles[item.type]}`}>{item.type}</span>
                                                         </div>
                                                         <div className={styles.suggestionMeta}>
