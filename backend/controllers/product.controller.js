@@ -274,6 +274,7 @@ exports.getSuggestions = async (req, res, next) => {
         const suggestions = products.map(p => ({
             id: p.id,
             name: p.name,
+            model: p.model,
             slug: p.slug,
             price: p.price,
             offer_price: p.offer_price,
