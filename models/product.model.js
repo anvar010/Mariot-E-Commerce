@@ -87,8 +87,8 @@ class Product {
             const searchWords = search.trim().split(/\s+/).filter(word => word.length > 0);
             if (searchWords.length > 0) {
                 const wordConditions = searchWords.map(word => {
-                    params.push(`%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`);
-                    return '(p.name LIKE ? OR p.name_ar LIKE ? OR p.description LIKE ? OR p.description_ar LIKE ? OR p.short_description LIKE ? OR p.short_description_ar LIKE ? OR c.name LIKE ? OR p.product_group LIKE ? OR p.sub_category LIKE ? OR b.name LIKE ? OR b.name_ar LIKE ?)';
+                    params.push(`%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`);
+                    return '(p.name LIKE ? OR p.name_ar LIKE ? OR p.description LIKE ? OR p.description_ar LIKE ? OR p.short_description LIKE ? OR p.short_description_ar LIKE ? OR c.name LIKE ? OR p.product_group LIKE ? OR p.sub_category LIKE ? OR b.name LIKE ? OR b.name_ar LIKE ? OR p.model LIKE ?)';
                 });
                 whereClauses.push('(' + wordConditions.join(' AND ') + ')');
             }
