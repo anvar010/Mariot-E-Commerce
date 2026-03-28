@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { sendQuotationEmail } = require('../utils/sendEmail');
 
 exports.createQuotation = async (req, res, next) => {
     try {
@@ -29,6 +30,21 @@ exports.createQuotation = async (req, res, next) => {
             user_id,
             created_at: new Date()
         };
+
+        // --- ASYNC QUOTATION EMAIL ---
+        (async () => {
+            try {
+                await sendQuotationEmail(
+                    customer_email,
+                    customer_name,
+                    quotation_ref,
+                    total_amount,
+                    items
+                );
+            } catch (err) {
+                console.error('[Email Service Error] Failed to send quotation email:', err.message);
+            }
+        })();
 
         res.status(201).json({
             success: true,

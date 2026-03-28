@@ -8,49 +8,43 @@ exports.getDashboardStats = async (req, res, next) => {
         const { timeRange } = req.query;
         let dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"; // default
         let oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
-        let uiDateCondition = "u.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
-
+        
         switch (timeRange) {
             case '14d':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)";
-                uiDateCondition = "u.created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)";
                 break;
             case '30d':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
-                uiDateCondition = "u.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
                 break;
             case '3m':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)";
-                uiDateCondition = "u.created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)";
                 break;
             case '6m':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)";
-                uiDateCondition = "u.created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)";
                 break;
             case '1y':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)";
-                uiDateCondition = "u.created_at >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)";
                 break;
             case 'all':
                 dateCondition = "1=1";
                 oDateCondition = "1=1";
-                uiDateCondition = "1=1";
                 break;
         }
 
-        const [userCount] = await db.query(`SELECT COUNT(*) as count FROM users`);
-        const [totalProducts] = await db.query('SELECT COUNT(*) as count FROM products');
-        const [activeProducts] = await db.query('SELECT COUNT(*) as count FROM products WHERE status = "active" AND is_active = 1');
-        const [orderStats] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != "cancelled"`);
+        const [[{ count: userCount }]] = await db.query(`SELECT COUNT(*) as count FROM users`);
+        const [[{ count: totalProducts }]] = await db.query('SELECT COUNT(*) as count FROM products');
+        const [[{ count: activeProducts }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE status = "active" AND is_active = 1');
+        const [[{ count: totalOrders, total_sales: totalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != "cancelled" AND ${dateCondition}`);
+        
         const [recentOrders] = await db.query(`
             SELECT o.*, u.name as user_name 
             FROM orders o 
-            JOIN users u ON o.user_id = u.id 
+            LEFT JOIN users u ON o.user_id = u.id 
             ORDER BY o.created_at DESC 
             LIMIT 5
         `);
@@ -79,6 +73,36 @@ exports.getDashboardStats = async (req, res, next) => {
             ORDER BY revenue DESC
         `);
 
+        // Low stock alerts
+        const [lowStockAlerts] = await db.query(`
+            SELECT id, name, stock_quantity 
+            FROM products 
+            WHERE stock_quantity <= 5 AND track_inventory = 1 AND is_active = 1
+            LIMIT 5
+        `);
+
+        // Top products
+        const [topProducts] = await db.query(`
+            SELECT p.id, p.name, SUM(oi.quantity) as sold_count
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.status != 'cancelled' AND ${oDateCondition}
+            GROUP BY p.id, p.name
+            ORDER BY sold_count DESC
+            LIMIT 5
+        `);
+
+        // Recent reviews
+        const [recentReviews] = await db.query(`
+            SELECT r.*, u.name as user_name, p.name as product_name
+            FROM reviews r
+            JOIN users u ON r.user_id = u.id
+            JOIN products p ON r.product_id = p.id
+            ORDER BY r.created_at DESC
+            LIMIT 5
+        `);
+
         // SEO Stats calculations
         const [[{ count: missingImages }]] = await db.query('SELECT COUNT(*) as count FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1 WHERE pi.id IS NULL');
         const [[{ count: missingDescription }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE description IS NULL OR description = ""');
@@ -86,76 +110,47 @@ exports.getDashboardStats = async (req, res, next) => {
         const [[{ count: longTitles }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE CHAR_LENGTH(name) > 60');
         const [[{ count: missingBrand }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE brand_id IS NULL');
 
-        const totalProductsCount = totalProducts[0].count;
+        const totalProductsCount = totalProducts || 0;
         const totalPossibleIssues = totalProductsCount * 5;
-        const actualIssues = missingImages + missingDescription + shortTitles + longTitles + missingBrand;
+        const actualIssues = (missingImages || 0) + (missingDescription || 0) + (shortTitles || 0) + (longTitles || 0) + (missingBrand || 0);
         const seoScore = totalProductsCount > 0 ? Math.round(((totalPossibleIssues - actualIssues) / totalPossibleIssues) * 100) : 100;
 
-        // Traffic Growth approximation
-        const [userGrowth] = await db.query(`
+        // Growth
+        const [[growth]] = await db.query(`
             SELECT 
                 (SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as current_period,
                 (SELECT COUNT(*) FROM users WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY)) as prev_period
         `);
 
-        const curr = userGrowth[0].current_period;
-        const prev = userGrowth[0].prev_period || 1;
-        const growth = (((curr - prev) / prev) * 100).toFixed(1);
+        const growthPercentage = growth.prev_period > 0 
+            ? Math.round(((growth.current_period - growth.prev_period) / growth.prev_period) * 100)
+            : growth.current_period * 100;
 
         res.json({
             success: true,
             data: {
-                totalUsers: userCount[0].count,
+                totalUsers: userCount,
                 totalProducts: totalProductsCount,
-                activeProducts: activeProducts[0].count,
-                totalOrders: orderStats[0].count,
-                totalSales: orderStats[0].total_sales || 0,
-                recentOrders: recentOrders || [],
-                salesHistory: salesHistory || [],
-                categorySales: categorySales || [],
+                activeProducts: activeProducts || 0,
+                totalOrders: totalOrders || 0,
+                totalSales: totalSales || 0,
+                recentOrders,
+                salesHistory,
+                categorySales,
+                lowStockAlerts,
+                topProducts,
+                recentReviews,
                 seoStats: {
-                    missingImages,
-                    missingDescription,
-                    shortTitles,
-                    longTitles,
-                    missingBrand,
-                    seoScore,
-                    growth
-                },
-                topProducts: (await db.query(`
-                    SELECT p.name, SUM(oi.quantity) as sold_count
-                    FROM products p
-                    JOIN order_items oi ON p.id = oi.product_id
-                    GROUP BY p.id
-                    ORDER BY sold_count DESC
-                    LIMIT 5
-                `))[0],
-                recentReviews: (await db.query(`
-                    SELECT r.*, u.name as user_name, p.name as product_name
-                    FROM reviews r
-                    JOIN users u ON r.user_id = u.id
-                    JOIN products p ON r.product_id = p.id
-                    ORDER BY r.created_at DESC
-                    LIMIT 5
-                `))[0],
-                lowStockAlerts: (await db.query('SELECT name, stock_quantity FROM products WHERE stock_quantity < 10 AND status = "active" AND is_active = 1 AND track_inventory = 1 ORDER BY stock_quantity ASC LIMIT 5'))[0],
-                seoIssues: (await db.query(`
-                    SELECT p.id, p.name, p.slug, 
-                    (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image,
-                    CASE WHEN (p.description IS NULL OR p.description = "") THEN 1 ELSE 0 END as missing_desc,
-                    CASE WHEN (CHAR_LENGTH(p.name) < 30 OR CHAR_LENGTH(p.name) > 60) THEN 1 ELSE 0 END as title_issue,
-                    CASE WHEN (p.brand_id IS NULL) THEN 1 ELSE 0 END as missing_brand,
-                    CASE WHEN ((SELECT COUNT(*) FROM product_images WHERE product_id = p.id AND is_primary = 1) = 0) THEN 1 ELSE 0 END as missing_image
-                    FROM products p
-                    WHERE p.description IS NULL 
-                       OR p.description = "" 
-                       OR CHAR_LENGTH(p.name) < 30 
-                       OR CHAR_LENGTH(p.name) > 60
-                       OR p.brand_id IS NULL
-                       OR (SELECT COUNT(*) FROM product_images WHERE product_id = p.id AND is_primary = 1) = 0
-                    ORDER BY p.id DESC
-                    LIMIT 20
-                `))[0]
+                    score: seoScore,
+                    growth: growthPercentage,
+                    issues: {
+                        missingImages,
+                        missingDescription,
+                        shortTitles,
+                        longTitles,
+                        missingBrand
+                    }
+                }
             }
         });
     } catch (error) {

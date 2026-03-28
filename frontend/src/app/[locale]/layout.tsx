@@ -37,9 +37,9 @@ export async function generateMetadata({ params: { locale } }: { params: { local
             userScalable: false,
         },
         icons: {
-            icon: '/assets/mariot-icon.webp',
-            shortcut: '/assets/mariot-icon.webp',
-            apple: '/assets/mariot-icon.webp',
+            icon: '/favicon.ico',
+            shortcut: '/favicon.ico',
+            apple: '/favicon.ico',
         },
         openGraph: {
             title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
@@ -63,10 +63,10 @@ export async function generateMetadata({ params: { locale } }: { params: { local
 export default async function LocaleLayout({
     children,
     params: { locale },
-}: {
+}: Readonly<{
     children: React.ReactNode;
     params: { locale: string };
-}) {
+}>) {
     const messages = await getMessages();
     const isRTL = locale === 'ar';
 

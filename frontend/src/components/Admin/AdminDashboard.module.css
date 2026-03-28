@@ -1,8 +1,81 @@
 .dashboard {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 30px;
     color: #1e293b;
+    padding-bottom: 40px;
+}
+
+.dashboardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 10px;
+}
+
+.headerInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pageTitle {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.pageSub {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+.headerActions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.rangeSelector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 8px 14px;
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    color: #64748b;
+}
+
+.selectInput {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    outline: none;
+    cursor: pointer;
+}
+
+.refreshBtn {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.refreshBtn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
 }
 
 .alertBanner {
@@ -55,17 +128,41 @@
     background-color: #3b82f6;
     color: white;
     border: none;
-    padding: 8px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 12px;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
 }
 
 .bannerBtn:hover {
     background-color: #2563eb;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+}
+
+.bannerBtnSecondary {
+    background-color: transparent;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bannerBtnSecondary:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+.bannerButtons {
+    display: flex;
+    gap: 12px;
 }
 
 .statsGrid {
@@ -349,11 +446,23 @@
 .historyArea h3,
 .tableHeader h3 {
     margin: 0;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
-    color: #0f172a;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
+    color: #334155;
+    letter-spacing: -0.01em;
+}
+
+.chartTitleBox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #64748b;
+}
+
+.chartTitleBox h3 {
+    color: #1e293b !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
 }
 
 .latestOrders {
@@ -725,6 +834,204 @@
     border-radius: 4px;
     font-size: 11px;
     font-weight: 700;
+}
+
+.categoryItemV2 {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+}
+
+.catInfoV2 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.catLabels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.catShare {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.catProgressWrap {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.catProgressBar {
+    height: 100%;
+    background: #3b82f6;
+    border-radius: 4px;
+}
+
+.revenueBadgeV2 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    background: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.barTooltip {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.bar:hover .barTooltip {
+    opacity: 1;
+}
+
+.emptyChart {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.stockIndicator {
+    width: 4px;
+    height: 100%;
+    background: #ef4444;
+    border-radius: 4px;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.allClear {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px 0;
+    color: #94a3b8;
+}
+
+.smallActionBtn {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.quickRestockBtn {
+    background: #f1f5f9;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    margin-inline-start: auto;
+}
+
+.productRank {
+    width: 24px;
+    height: 24px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    color: #3b82f6;
+}
+
+.productSimpleItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.productSimpleItem:last-child {
+    border-bottom: none;
+}
+
+.productNameSimple {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
+.productCountSimple {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.avatarMini {
+    width: 32px;
+    height: 32px;
+    background: #eff6ff;
+    color: #3b82f6;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.deleteBtn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.tableWrapper {
+    width: 100%;
+    overflow-x: auto;
 }
 
 .inventoryAlert {

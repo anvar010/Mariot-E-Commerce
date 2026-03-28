@@ -250,6 +250,20 @@
     transform: translateY(-3px);
 }
 
+.socialIcons a.twitter:hover {
+    background-color: #000000;
+    color: #fff;
+    border-color: #000000;
+    transform: translateY(-3px);
+}
+
+.socialIcons a.pinterest:hover {
+    background-color: #E60023;
+    color: #fff;
+    border-color: #E60023;
+    transform: translateY(-3px);
+}
+
 .socialIcons a.linkedin:hover {
     background-color: #0077b5;
     color: #fff;

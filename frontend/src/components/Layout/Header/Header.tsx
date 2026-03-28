@@ -11,6 +11,7 @@ import { useCart } from '@/context/CartContext';
 import CategoriesLayout from '@/components/Categories/CategoriesLayout';
 
 import { API_BASE_URL } from '@/config';
+import { resolveUrl } from '@/utils/resolveUrl';
 
 const Header = () => {
 
@@ -256,14 +257,20 @@ const Header = () => {
                                                     key={item.id}
                                                     className={styles.suggestionItem}
                                                     onClick={() => {
-                                                        router.push(`/product/${item.slug}`);
+                                                        if (item.type === 'category') {
+                                                            router.push(`/category/${item.slug}`);
+                                                        } else if (item.type === 'brand') {
+                                                            router.push(`/shop?brand=${item.slug}`);
+                                                        } else {
+                                                            router.push(`/product/${item.slug}`);
+                                                        }
                                                         setShowSuggestions(false);
                                                         setSearchQuery('');
                                                     }}
                                                 >
                                                     <div className={styles.suggestionImageWrapper}>
                                                         <Image
-                                                            src={item.primary_image || '/assets/placeholder-image.webp'}
+                                                            src={resolveUrl(item.primary_image || (item.type === 'category' ? '/assets/category-placeholder.png' : '/assets/placeholder-image.webp'))}
                                                             alt={item.name}
                                                             width={45}
                                                             height={45}
@@ -271,13 +278,24 @@ const Header = () => {
                                                         />
                                                     </div>
                                                     <div className={styles.suggestionInfo}>
-                                                        <span className={styles.suggestionName}>{item.name}</span>
+                                                        <div className={styles.suggestionNameHeader}>
+                                                            <span className={styles.suggestionName}>{item.name}</span>
+                                                            <span className={`${styles.typeBadge} ${styles[item.type]}`}>{item.type}</span>
+                                                        </div>
                                                         <div className={styles.suggestionMeta}>
-                                                            <span className={styles.suggestionPrice}>
-                                                                AED {Number(item.offer_price || item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                            </span>
+                                                            {item.type === 'product' && (
+                                                                <span className={styles.suggestionPrice}>
+                                                                    AED {Number(item.offer_price || item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                </span>
+                                                            )}
                                                             {item.category_name && (
                                                                 <span className={styles.suggestionCategory}>{item.category_name}</span>
+                                                            )}
+                                                            {item.type === 'category' && (
+                                                                <span className={styles.suggestionCategory}>Browse Category</span>
+                                                            )}
+                                                            {item.type === 'brand' && (
+                                                                <span className={styles.suggestionCategory}>Shop Brand</span>
                                                             )}
                                                         </div>
                                                     </div>

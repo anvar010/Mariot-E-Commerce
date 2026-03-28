@@ -17,8 +17,10 @@ exports.getSettings = async (req, res, next) => {
         const [rows] = await db.query('SELECT * FROM settings');
         
         // Format as an object for easier frontend use
-        const settings = rows.reduce((acc, row) => {
-            acc[row.key] = row.value;
+        const settings = (rows || []).reduce((acc, row) => {
+            if (row && row.key) {
+                acc[row.key] = row.value;
+            }
             return acc;
         }, {});
 
@@ -28,6 +30,7 @@ exports.getSettings = async (req, res, next) => {
 
         res.json({ success: true, data: settings });
     } catch (error) {
+        console.error('[SETTINGS] Fetch Error:', error.message);
         next(error);
     }
 };
