@@ -6,6 +6,7 @@ const errorHandler = require('./middlewares/error.middleware');
 const helmet = require('helmet');
 const hpp = require('hpp');
 const xss = require('xss-clean');
+const rateLimit = require('express-rate-limit');
 // Load env vars
 dotenv.config();
 
@@ -52,34 +53,52 @@ app.use(helmet());
 // Prevent HTTP param pollution
 app.use(hpp());
 
-// Data sanitization against XSS
-// app.use(xss());
-
-// Cookie parser
-app.use(cookieParser());
-
 // Enable CORS
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://192.168.0.100:3000',
+    process.env.FRONTEND_URL
+];
+
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-
-        const allowedOrigins = [
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'http://192.168.0.100:3000',
-            process.env.FRONTEND_URL
-        ];
-
-        // Allow allowed origins or any vercel.app subdomain
-        if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin || allowedOrigins.includes(origin) || (origin && origin.endsWith('.vercel.app'))) {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS: ' + origin));
+            console.warn(`[CORS] Rejected origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
 }));
+
+// Global Rate Limiting
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use('/api', globalLimiter);
+
+// Specific Rate Limiter for sensitive routes
+const authLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // Limit each IP to 10 login/register requests per hour
+    message: { success: false, message: 'Too many authentication attempts, please try again after an hour.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Cookie parser
+app.use(cookieParser());
+
+// Temporarily disable XSS for Express 5 compatibility investigation
+// app.use(xss()); 
+
 
 // Serve static files from uploads directory with cross-origin policy
 app.use(['/uploads', '/product_images'], (req, res, next) => {
@@ -95,7 +114,8 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Mount routers
-app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth', authLimiter, authRoutes);
+app.use('/api/v1/contact', authLimiter, contactRoutes); // Also limit contact form
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/brands', brandRoutes);
@@ -109,7 +129,7 @@ app.use('/api/v1/coupons', couponRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/reviews', reviewRoutes);
 app.use('/api/v1/quotations', quotationRoutes);
-app.use('/api/v1/contact', contactRoutes);
+// app.use('/api/v1/contact', contactRoutes); // Moved up with limiter
 app.use('/api/v1/cms', cmsRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 

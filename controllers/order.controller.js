@@ -3,6 +3,7 @@ const Cart = require('../models/cart.model');
 const Coupon = require('../models/coupon.model');
 const db = require('../config/db');
 const axios = require('axios');
+const { sendOrderConfirmationEmail, sendEmail } = require('../utils/sendEmail');
 
 // Initialize Stripe with secret key
 const stripe = process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('REPLACE_WITH')
@@ -325,6 +326,28 @@ exports.createOrder = async (req, res, next) => {
         if (payment_method === 'bank') {
             // Bank transfers stay pending until admin manually confirms
         }
+
+        // --- ASYNC ORDER CONFIRMATION EMAIL ---
+        (async () => {
+            try {
+                // Email to customer (using the robust template in utils/sendEmail.js)
+                await sendOrderConfirmationEmail(
+                    billing_details?.email || req.user.email,
+                    billing_details?.name || req.user.name,
+                    orderId,
+                    finalAmount,
+                    items,
+                    orderData
+                );
+
+                // Notification to admin
+                const adminEmail = process.env.RECEIVER_EMAIL || 'anvarshaknavas588@gmail.com';
+                const adminMailHtml = `<h2>New Order Alert #${orderId}</h2><p>Customer: ${billing_details?.name || req.user.name}</p><p>Total: AED ${finalAmount}</p>`;
+                await sendEmail(adminEmail, `NEW ORDER #${orderId}`, adminMailHtml);
+            } catch (err) {
+                console.error('[Email Service Error] Failed to send order confirmation:', err.message);
+            }
+        })();
 
         res.status(201).json({
             success: true,

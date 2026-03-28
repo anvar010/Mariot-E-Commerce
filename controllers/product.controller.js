@@ -1,6 +1,7 @@
 const Product = require('../models/product.model');
 const Category = require('../models/category.model');
 const Brand = require('../models/brand.model');
+const db = require('../config/db'); // Fix: Import db
 const slugify = require('slugify');
 const ExcelJS = require('exceljs');
 const fs = require('fs');
@@ -277,8 +278,40 @@ exports.getSuggestions = async (req, res, next) => {
             price: p.price,
             offer_price: p.offer_price,
             primary_image: p.primary_image,
-            category_name: p.category_name
+            category_name: p.category_name,
+            type: 'product'
         }));
+
+        // Fetch matching categories
+        const [categories] = await db.query(
+            'SELECT id, name, slug FROM categories WHERE name LIKE ? OR slug LIKE ? LIMIT 3',
+            [`%${search.trim()}%`, `%${search.trim()}%`]
+        );
+        
+        categories.forEach(c => {
+            suggestions.push({
+                id: c.id,
+                name: c.name,
+                slug: c.slug,
+                type: 'category'
+            });
+        });
+
+        // Fetch matching brands
+        const [brands] = await db.query(
+            'SELECT id, name, slug, image_url FROM brands WHERE name LIKE ? OR slug LIKE ? LIMIT 3',
+            [`%${search.trim()}%`, `%${search.trim()}%`]
+        );
+
+        brands.forEach(b => {
+            suggestions.push({
+                id: b.id,
+                name: b.name,
+                slug: b.slug,
+                primary_image: b.image_url,
+                type: 'brand'
+            });
+        });
 
         res.json({
             success: true,

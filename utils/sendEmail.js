@@ -35,6 +35,31 @@ const verifySmtpConnection = async () => {
 };
 
 /**
+ * Sends a generic HTML email.
+ * @param {string} to - Recipient email.
+ * @param {string} subject - Email subject.
+ * @param {string} html - HTML content of the email.
+ */
+const sendEmail = async (to, subject, html) => {
+    try {
+        const transporter = createTransporter();
+        const mailOptions = {
+            from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
+            to,
+            subject,
+            html
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('[EMAIL] ✅ Generic email sent: ' + info.response);
+        return info;
+    } catch (error) {
+        console.error('[EMAIL] ❌ Error sending generic email:', error);
+        throw error;
+    }
+};
+
+/**
  * Send a password reset email to the user
  * @param {string} toEmail - Recipient email
  * @param {string} userName - User's display name
@@ -335,9 +360,84 @@ const sendWelcomeEmail = async (toEmail, userName) => {
     }
 };
 
+/**
+ * Send a quotation email to the customer
+ */
+const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, items = []) => {
+    const transporter = createTransporter();
+
+    // Map items to rows
+    const itemRows = items.map(item => `
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${Number(item.price).toFixed(2)} AED</td>
+        </tr>
+    `).join('');
+
+    const mailOptions = {
+        from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
+        to: toEmail,
+        subject: `Your Quotation from Mariot Store — ${quotationRef}`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <img src="https://mariotstore.com/wp-content/uploads/2024/10/kitchen-equipment-store.png" alt="MARIOT" style="width: 180px;">
+                </div>
+                <h2 style="color: #333; text-align: center;">Quotation #${quotationRef}</h2>
+                <p>Dear <strong>${userName}</strong>,</p>
+                <p>Thank you for choosing Mariot Kitchen Equipment. Below is the quotation you requested for your commercial kitchen equipment.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 25px 0;">
+                    <thead>
+                        <tr style="background: #f8f8f8;">
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Product</th>
+                            <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Qty</th>
+                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemRows}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" style="padding: 15px 10px; text-align: right; font-weight: bold;">Final Total:</td>
+                            <td style="padding: 15px 10px; text-align: right; font-weight: bold; color: #e11d48; font-size: 18px;">${Number(finalAmount).toFixed(2)} AED</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <div style="background: #fef2f2; padding: 15px; border-radius: 6px; border-left: 4px solid #e11d48; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #991b1b; font-size: 14px;">
+                        <strong>Note:</strong> This quotation is valid for 15 days from the date of issue. Prices are inclusive of VAT where applicable.
+                    </p>
+                </div>
+
+                <p style="font-size: 14px; color: #666; line-height: 1.6;">
+                    If you have any questions or would like to proceed with this quotation, please reply to this email or call us at <a href="tel:+971500000000" style="color: #0ea5e9;">+971 50 000 0000</a>.
+                </p>
+
+                <div style="text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; color: #999; font-size: 12px;">
+                    <p>© Mariot Store — Professional Kitchen Solutions</p>
+                </div>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[EMAIL] ✅ Quotation email sent to ${toEmail}`);
+    } catch (error) {
+        console.error(`[EMAIL] ❌ Failed to send quotation email to ${toEmail}:`, error.message);
+        throw error;
+    }
+};
+
 module.exports = {
     sendPasswordResetEmail,
     sendOrderConfirmationEmail,
     sendWelcomeEmail,
-    verifySmtpConnection
+    verifySmtpConnection,
+    sendQuotationEmail,
+    sendEmail
 };
