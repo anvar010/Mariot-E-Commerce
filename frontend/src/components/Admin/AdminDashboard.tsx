@@ -320,7 +320,7 @@ const AdminDashboard = () => {
                     </div>
                     <div className={styles.chartContainer}>
                         {(() => {
-                            let data = [...(stats.salesHistory || [])];
+                            let data = [...(stats?.salesHistory || [])];
                             
                             // For short-term ranges (7, 14, 30 days), fill in missing dates with 0 values
                             const rangeDaysMap: { [key: string]: number } = { '7d': 7, '14d': 14, '30d': 30 };

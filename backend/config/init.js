@@ -67,6 +67,44 @@ const initDb = async () => {
             console.error('[DB] Error migrating orders table:', err.message);
         }
 
+        // 5. Products missing columns migration
+        try {
+            const [columns] = await db.query("SHOW COLUMNS FROM products");
+            const columnNames = columns.map(c => c.Field);
+            
+            const productColumns = [
+                { name: 'name_ar', definition: "VARCHAR(255)" },
+                { name: 'short_description', definition: "TEXT" },
+                { name: 'short_description_ar', definition: "TEXT" },
+                { name: 'description_ar', definition: "TEXT" },
+                { name: 'specifications', definition: "TEXT" },
+                { name: 'track_inventory', definition: "BOOLEAN DEFAULT TRUE" },
+                { name: 'brand_id', definition: "INT" },
+                { name: 'seller_id', definition: "INT" },
+                { name: 'is_weekly_deal', definition: "BOOLEAN DEFAULT FALSE" },
+                { name: 'is_limited_offer', definition: "BOOLEAN DEFAULT FALSE" },
+                { name: 'is_daily_offer', definition: "BOOLEAN DEFAULT FALSE" },
+                { name: 'is_best_seller', definition: "BOOLEAN DEFAULT FALSE" },
+                { name: 'status', definition: "VARCHAR(50) DEFAULT 'active'" },
+                { name: 'product_group', definition: "VARCHAR(255)" },
+                { name: 'sub_category', definition: "VARCHAR(255)" },
+                { name: 'model', definition: "VARCHAR(255)" },
+                { name: 'youtube_video_link', definition: "JSON" },
+                { name: 'resources', definition: "JSON" },
+                { name: 'offer_start', definition: "DATETIME" },
+                { name: 'offer_end', definition: "DATETIME" }
+            ];
+
+            for (const col of productColumns) {
+                if (!columnNames.includes(col.name)) {
+                    await db.query(`ALTER TABLE products ADD COLUMN ${col.name} ${col.definition}`);
+                    console.log(`[DB] Migration: Added ${col.name} column to products table`);
+                }
+            }
+        } catch (err) {
+            console.error('[DB] Error migrating products table:', err.message);
+        }
+
         console.log('[DB] Initialization complete');
     } catch (error) {
         console.error('[DB] Fatal Initialization Error:', error.message);
