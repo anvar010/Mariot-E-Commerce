@@ -4,11 +4,9 @@ import React, { useState, useEffect } from 'react';
 import styles from './AdminProducts.module.css';
 import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video } from 'lucide-react';
 import ExcelJS from 'exceljs';
-import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
-import Loader from '@/components/shared/Loader/Loader';
-import { API_BASE_URL, BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/config';
 import { CATEGORIES_STRUCTURE } from '@/data/categories';
 import { stripHtml } from '@/utils/formatters';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -332,11 +330,40 @@ const AdminProducts = () => {
     const router = useRouter();
 
     useEffect(() => {
-        const id = searchParams.get('id');
-        if (id) {
+        const action = searchParams.get('action');
+        const editId = searchParams.get('edit');
+        const legacyId = searchParams.get('id');
+        const productId = editId || legacyId;
+
+        if (action === 'add') {
+            // Open the add product modal
+            setEditingId(null);
+            setFormData({
+                name: '', name_ar: '', slug: '',
+                youtube_video_links: [''],
+                featured_video_index: 0,
+                description: '', description_ar: '',
+                short_description: '', short_description_ar: '',
+                specifications: '',
+                price: '', discount_percentage: '0', offer_price: '',
+                stock_quantity: '', category_id: '1', brand_id: '1',
+                product_group: '', sub_category: '',
+                image_url: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=400&auto=format&fit=crop',
+                additional_images: ['', '', ''],
+                is_weekly_deal: false, is_limited_offer: false,
+                is_featured: false, is_daily_offer: false, is_best_seller: false,
+                resources: [{ name: '', url: '' }],
+                status: 'active', offer_start: '', offer_end: '',
+                track_inventory: false
+            });
+            setIsModalOpen(true);
+            setActiveTab('basic');
+            // Clear the query param so refreshing doesn't re-open
+            router.replace('/admin/products', { scroll: false });
+        } else if (productId) {
             const fetchAndEdit = async () => {
                 try {
-                    const res = await fetch(`${API_BASE_URL}/products/${id}`, { credentials: "include", headers: getAuthHeaders() });
+                    const res = await fetch(`${API_BASE_URL}/products/${productId}`, { credentials: "include", headers: getAuthHeaders() });
                     const data = await res.json();
                     if (data.success) {
                         handleEditClick(data.data);
@@ -346,6 +373,8 @@ const AdminProducts = () => {
                 }
             };
             fetchAndEdit();
+            // Clear the query param
+            router.replace('/admin/products', { scroll: false });
         }
     }, [searchParams]);
 
@@ -431,22 +460,22 @@ const AdminProducts = () => {
 
             // Auto-calculate logic for pricing
             if (name === 'price') {
-                const basePrice = parseFloat(value);
-                const discount = parseFloat(prev.discount_percentage);
-                const offerPrice = parseFloat(prev.offer_price);
+                const basePrice = Number.parseFloat(value);
+                const discount = Number.parseFloat(prev.discount_percentage);
+                const offerPrice = Number.parseFloat(prev.offer_price);
 
-                if (!isNaN(basePrice) && basePrice > 0) {
-                    if (!isNaN(discount) && discount > 0) {
+                if (!Number.isNaN(basePrice) && basePrice > 0) {
+                    if (!Number.isNaN(discount) && discount > 0) {
                         next.offer_price = (basePrice * (1 - discount / 100)).toFixed(2);
-                    } else if (!isNaN(offerPrice) && offerPrice > 0) {
+                    } else if (!Number.isNaN(offerPrice) && offerPrice > 0) {
                         next.discount_percentage = (((basePrice - offerPrice) / basePrice) * 100).toFixed(2);
                     }
                 }
             } else if (name === 'discount_percentage') {
-                const basePrice = parseFloat(prev.price);
-                const discount = parseFloat(value);
+                const basePrice = Number.parseFloat(prev.price);
+                const discount = Number.parseFloat(value);
 
-                if (!isNaN(basePrice) && basePrice > 0 && !isNaN(discount)) {
+                if (!Number.isNaN(basePrice) && basePrice > 0 && !Number.isNaN(discount)) {
                     if (discount > 0) {
                         next.offer_price = (basePrice * (1 - discount / 100)).toFixed(2);
                     } else {
@@ -454,10 +483,10 @@ const AdminProducts = () => {
                     }
                 }
             } else if (name === 'offer_price') {
-                const basePrice = parseFloat(prev.price);
-                const offerPrice = parseFloat(value);
+                const basePrice = Number.parseFloat(prev.price);
+                const offerPrice = Number.parseFloat(value);
 
-                if (!isNaN(basePrice) && basePrice > 0 && !isNaN(offerPrice)) {
+                if (!Number.isNaN(basePrice) && basePrice > 0 && !Number.isNaN(offerPrice)) {
                     if (offerPrice > 0 && offerPrice < basePrice) {
                         next.discount_percentage = (((basePrice - offerPrice) / basePrice) * 100).toFixed(2);
                     } else if (offerPrice >= basePrice) {
@@ -896,21 +925,24 @@ const AdminProducts = () => {
 
         setLoading(true);
         try {
-            for (const brand of initialBrands) {
-                await fetch(`${API_BASE_URL}/brands`, {
-                    credentials: "include",
-                    method: 'POST',
-                    headers: {
-                        ...getAuthHeaders(),
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ name: brand.name, image_url: brand.logo })
-                });
+            const res = await fetch(`${API_BASE_URL}/brands/sync`, {
+                credentials: "include",
+                method: 'POST',
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ brands: initialBrands.map(b => ({ name: b.name, image_url: b.logo })) })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showNotification(data.message || 'Brands synced to database successfully!');
+            } else {
+                showNotification(data.message || 'Sync failed', 'error');
             }
-            showNotification('Brands synced to database successfully!');
             fetchBrands();
         } catch (error) {
-            showNotification('Sync failed', 'error');
+            showNotification('Sync failed - network error', 'error');
         } finally {
             setLoading(false);
         }

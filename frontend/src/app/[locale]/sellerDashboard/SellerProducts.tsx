@@ -463,20 +463,23 @@ const SellerProducts = () => {
 
         setLoading(true);
         try {
-            for (const brand of initialBrands) {
-                await fetch(`${API_BASE_URL}/brands`, {
-                    credentials: "include",
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ name: brand.name, image_url: brand.logo })
-                });
+            const res = await fetch(`${API_BASE_URL}/brands/sync`, {
+                credentials: "include",
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ brands: initialBrands.map(b => ({ name: b.name, image_url: b.logo })) })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showNotification(data.message || 'Brands synced to database successfully!');
+            } else {
+                showNotification(data.message || 'Sync failed', 'error');
             }
-            showNotification('Brands synced to database successfully!');
             fetchBrands();
         } catch (error) {
-            showNotification('Sync failed', 'error');
+            showNotification('Sync failed - network error', 'error');
         } finally {
             setLoading(false);
         }

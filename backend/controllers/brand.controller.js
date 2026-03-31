@@ -31,14 +31,59 @@ exports.getBrand = async (req, res, next) => {
 exports.createBrand = async (req, res, next) => {
     try {
         const data = {
-            ...req.body,
-            slug: slugify(req.body.name, { lower: true })
+            name: req.body.name,
+            slug: slugify(req.body.name, { lower: true }),
+            image_url: req.body.image_url || null
         };
         const id = await Brand.create(data);
         res.status(201).json({
             success: true,
             message: 'Brand created successfully',
             data: { id, ...data }
+        });
+    } catch (error) {
+        // Handle duplicate entry error gracefully
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({
+                success: false,
+                message: `Brand "${req.body.name}" already exists`
+            });
+        }
+        next(error);
+    }
+};
+
+exports.syncBrands = async (req, res, next) => {
+    try {
+        const { brands } = req.body;
+        if (!brands || !Array.isArray(brands)) {
+            return res.status(400).json({ success: false, message: 'Invalid brands data. Expected { brands: [...] }' });
+        }
+
+        let synced = 0;
+        let failed = 0;
+        const errors = [];
+
+        for (const brand of brands) {
+            try {
+                const slug = slugify(brand.name, { lower: true });
+                await Brand.upsert({
+                    name: brand.name,
+                    slug,
+                    image_url: brand.image_url || brand.logo || null
+                });
+                synced++;
+            } catch (err) {
+                failed++;
+                errors.push({ name: brand.name, error: err.message });
+            }
+        }
+
+        const failedMsg = failed > 0 ? `, ${failed} failed` : '';
+        res.json({
+            success: true,
+            message: `Synced ${synced} brands successfully${failedMsg}`,
+            data: { synced, failed, errors: errors.length > 0 ? errors : undefined }
         });
     } catch (error) {
         next(error);

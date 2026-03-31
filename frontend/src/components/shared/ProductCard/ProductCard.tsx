@@ -210,9 +210,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     {isDailyOffer && <div className={`${styles.dealTag} ${styles.dailyTag}`}>{t('dailyOffer')}</div>}
 
                     {/* Show Top Selling tag if sold_count >= 2 OR manually marked as best seller */}
-                    {((!!product?.is_best_seller) || (Number(product?.sold_count) >= 2)) && !isWeeklyDeal && !isLimitedOffer && !isDailyOffer && (
+                    {/* {((!!product?.is_best_seller) || (Number(product?.sold_count) >= 2)) && !isWeeklyDeal && !isLimitedOffer && !isDailyOffer && (
                         <div className={`${styles.dealTag} ${styles.bestSellerTag}`}>{t('topSellingProduct')}</div>
-                    )}
+                    )} */}
                 </div>
 
                 {displayDiscount && !isDailyOffer && (

@@ -7,6 +7,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
+import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminQuotations = () => {
@@ -265,7 +266,12 @@ const AdminQuotations = () => {
                                 <div className={styles.itemList}>
                                     {JSON.parse(selectedQuotation.items).map((item: any, idx: number) => (
                                         <div key={idx} className={styles.itemCard}>
-                                            <img src={item.image_url} alt={item.name} className={styles.itemImage} />
+                                            <img 
+                                                src={resolveUrl(item.image_url) || '/assets/placeholder-image.webp'} 
+                                                alt={item.name} 
+                                                className={styles.itemImage}
+                                                onError={(e) => { e.currentTarget.src = '/assets/placeholder-image.webp'; }}
+                                            />
                                             <div className={styles.itemDetails}>
                                                 <span className={styles.itemName}>{item.name}</span>
                                                 <span className={styles.itemMeta}>Qty: {item.quantity} x AED {item.price}</span>

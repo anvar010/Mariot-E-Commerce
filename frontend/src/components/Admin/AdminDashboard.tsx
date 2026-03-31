@@ -205,7 +205,7 @@ const AdminDashboard = () => {
                     <p>Your store has generated <strong>AED {Number(stats?.totalSales || 0).toLocaleString()}</strong> in total revenue so far. Check out the latest insights below.</p>
                 </div>
                 <div className={styles.bannerButtons}>
-                    <button className={styles.bannerBtnSecondary} onClick={() => router.push('/admin/products/add')}>
+                    <button className={styles.bannerBtnSecondary} onClick={() => router.push('/admin/products?action=add')}>
                         Add Product
                     </button>
                     <button className={styles.bannerBtn} onClick={() => router.push('/admin/analytics')}>
@@ -320,11 +320,37 @@ const AdminDashboard = () => {
                     </div>
                     <div className={styles.chartContainer}>
                         {(() => {
-                            if (!stats?.salesHistory || stats.salesHistory.length === 0) {
+                            let data = [...(stats.salesHistory || [])];
+                            
+                            // For short-term ranges (7, 14, 30 days), fill in missing dates with 0 values
+                            const rangeDaysMap: { [key: string]: number } = { '7d': 7, '14d': 14, '30d': 30 };
+                            if (rangeDaysMap[timeRange]) {
+                                const daysToFill = rangeDaysMap[timeRange];
+                                const filledData = [];
+                                const now = new Date();
+                                
+                                for (let i = daysToFill - 1; i >= 0; i--) {
+                                    const date = new Date(now);
+                                    date.setDate(date.getDate() - i);
+                                    const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD
+                                    
+                                    const existing = data.find(h => {
+                                        const hDate = new Date(h.date).toLocaleDateString('en-CA');
+                                        return hDate === dateStr;
+                                    });
+                                    
+                                    filledData.push({
+                                        date: dateStr,
+                                        amount: existing ? existing.amount : 0
+                                    });
+                                }
+                                data = filledData;
+                            }
+
+                            if (data.length === 0) {
                                 return <div className={styles.emptyChart}>No data for this period</div>;
                             }
 
-                            const data = stats.salesHistory;
                             const maxAmount = Math.max(...data.map((d: any) => parseFloat(d.amount))) || 1;
 
                             return data.map((day: any, i: number) => {
@@ -377,7 +403,7 @@ const AdminDashboard = () => {
                                     <p><strong>{stripHtml(p.name)}</strong></p>
                                     <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 'bold' }}>Only {p.stock_quantity} remaining</span>
                                 </div>
-                                <button className={styles.quickRestockBtn} onClick={() => router.push(`/admin/products/edit?id=${p.id}`)}>
+                                <button className={styles.quickRestockBtn} onClick={() => router.push(`/admin/products?edit=${p.id}`)}>
                                     <Edit3 size={14} />
                                 </button>
                             </div>

@@ -25,12 +25,25 @@ class Brand {
         return rows[0];
     }
 
-    static async create({ name, name_ar = null, slug, image_url = null, description = null, description_ar = null, website_url = null, is_active = 1, brand_type = 'All' }) {
+    static async create({ name, slug, image_url = null }) {
         const [result] = await db.execute(
-            'INSERT INTO brands (name, name_ar, slug, image_url, description, description_ar, website_url, is_active, brand_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [name, name_ar, slug, image_url, description, description_ar, website_url, is_active, brand_type]
+            'INSERT INTO brands (name, slug, image_url) VALUES (?, ?, ?)',
+            [name, slug, image_url]
         );
         return result.insertId;
+    }
+
+    static async findByName(name) {
+        const [rows] = await db.execute('SELECT * FROM brands WHERE name = ?', [name]);
+        return rows[0];
+    }
+
+    static async upsert({ name, slug, image_url = null }) {
+        const [result] = await db.execute(
+            'INSERT INTO brands (name, slug, image_url) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name), image_url = VALUES(image_url)',
+            [name, slug, image_url]
+        );
+        return result.insertId || result.affectedRows;
     }
 
     static async update(id, data) {
