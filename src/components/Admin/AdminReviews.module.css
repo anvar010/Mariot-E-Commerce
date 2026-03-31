@@ -102,6 +102,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-bottom: 1px solid #e2e8f0;
+    text-align: start;
 }
 
 .table td {
@@ -189,7 +190,7 @@
     background: white;
     cursor: pointer;
     transition: all 0.2s;
-    color: #ef4444;
+    color: #dc2626;
 }
 
 .deleteBtn:hover {

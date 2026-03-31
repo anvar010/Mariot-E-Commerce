@@ -138,9 +138,9 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                 {!!product.is_daily_offer && (
                     <div className={`${styles.dealTag} ${styles.dailyTag}`}>{t('dailyOffer')}</div>
                 )}
-                {(!!product.is_best_seller || Number(product.sold_count) >= 2) && (
+                {/* {(!!product.is_best_seller || Number(product.sold_count) >= 2) && (
                     <div className={styles.bestSellerTag}>{t('topSellingProduct')}</div>
-                )}
+                )} */}
             </div>
 
             {Number(product.discount_percentage) > 0 && (

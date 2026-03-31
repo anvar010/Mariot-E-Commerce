@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminOrders.module.css';
-import { Search, Eye, Truck, Check, Package, XCircle, Clock, Download } from 'lucide-react';
+import { Search, Package, Download } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';

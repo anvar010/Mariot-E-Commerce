@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminReviews.module.css';
-import { Trash2, Search, Star, Loader2, MessageSquare } from 'lucide-react';
+import { Trash2, Search, Star, Loader2 } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { stripHtml } from '@/utils/formatters';
+import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 
 const AdminReviews = () => {
@@ -163,9 +164,10 @@ const AdminReviews = () => {
                                     <td>
                                         <div className={styles.productInfo}>
                                             <img
-                                                src={r.product_image ? `${API_BASE_URL.replace('/api/v1', '')}${r.product_image}` : 'https://via.placeholder.com/40'}
+                                                src={resolveUrl(r.product_image) || 'https://via.placeholder.com/40'}
                                                 alt={r.product_name}
                                                 className={styles.productImage}
+                                                onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/40'; }}
                                             />
                                             <span className={styles.productName} title={stripHtml(r.product_name)}>{stripHtml(r.product_name)}</span>
                                         </div>
