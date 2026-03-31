@@ -339,7 +339,7 @@ const AdminProducts = () => {
             // Open the add product modal
             setEditingId(null);
             setFormData({
-                name: '', name_ar: '', slug: '',
+                name: '', name_ar: '', model: '',
                 youtube_video_links: [''],
                 featured_video_index: 0,
                 description: '', description_ar: '',
