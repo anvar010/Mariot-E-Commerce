@@ -43,9 +43,12 @@
     cursor: pointer;
 }
 
+@media (hover: hover) {
+
 .posterCard:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
 }
 
 /* Image container — fills entire card, sits behind overlay */
@@ -63,8 +66,11 @@
     transition: transform 0.5s ease;
 }
 
+@media (hover: hover) {
+
 .posterCard:hover .posterImg {
     transform: scale(1.05);
+}
 }
 
 /* Gradient overlay for text readability */
@@ -83,11 +89,14 @@
     transition: background 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .posterCard:hover .overlay {
     background: linear-gradient(180deg,
             rgba(0, 0, 0, 0.05) 0%,
             rgba(0, 0, 0, 0.3) 45%,
             rgba(0, 0, 0, 0.85) 100%);
+}
 }
 
 .badge {
@@ -147,12 +156,15 @@
     width: fit-content;
 }
 
+@media (hover: hover) {
+
 .button:hover {
     background: #fff;
     color: #000;
     border-color: #fff;
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+}
 }
 
 .navBtn {
@@ -174,9 +186,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .navBtn:hover {
     background: #000;
     color: #fff;
+}
 }
 
 .prev {

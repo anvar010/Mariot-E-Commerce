@@ -92,9 +92,12 @@
     /* No hover animation */
 }
 
-.viewAllLink:hover {
-    color: #10b981;
-    /* Keep same color */
+@media (hover: hover) {
+
+    .viewAllLink:hover {
+        color: #10b981;
+        /* Keep same color */
+    }
 }
 
 .navBtns {
@@ -117,13 +120,16 @@
     /* Removed transition */
 }
 
-.navBtn:hover {
-    /* No hover effects as per user request */
-    background: #ffffff;
-    color: #334155;
-    border-color: rgba(226, 232, 240, 0.8);
-    transform: none;
-    box-shadow: none;
+@media (hover: hover) {
+
+    .navBtn:hover {
+        /* No hover effects as per user request */
+        background: #ffffff;
+        color: #334155;
+        border-color: rgba(226, 232, 240, 0.8);
+        transform: none;
+        box-shadow: none;
+    }
 }
 
 .navBtnDisabled {

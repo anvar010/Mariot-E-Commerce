@@ -116,8 +116,11 @@
     vertical-align: middle;
 }
 
+@media (hover: hover) {
+
 .table tr:hover {
     background-color: #f8fafc;
+}
 }
 
 .userCell {
@@ -192,19 +195,25 @@
     color: #0ea5e9;
 }
 
+@media (hover: hover) {
+
 .editBtn:hover {
     border-color: #0ea5e9;
     background-color: #f0f9ff;
+}
 }
 
 .deleteBtn {
     color: #64748b;
 }
 
+@media (hover: hover) {
+
 .deleteBtn:hover:not(:disabled) {
     color: #ef4444;
     border-color: #ef4444;
     background-color: #fef2f2;
+}
 }
 
 .deleteBtn:disabled {
@@ -277,9 +286,12 @@
     border: none;
 }
 
+@media (hover: hover) {
+
 .closeBtn:hover {
     background: #f1f3f5;
     color: #0f172a;
+}
 }
 
 .form {
@@ -348,7 +360,10 @@
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
 }
 
+@media (hover: hover) {
+
 .submitBtn:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(15, 23, 42, 0.15);
+}
 }

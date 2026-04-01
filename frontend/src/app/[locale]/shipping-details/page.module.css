@@ -133,8 +133,11 @@
     transition: background-color 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .priceTable tbody tr:hover {
     background-color: #f8fafc;
+}
 }
 
 .priceTable td:first-child {
@@ -171,8 +174,11 @@
     text-decoration: none;
 }
 
+@media (hover: hover) {
+
 .contactInfoBlock a:hover {
     text-decoration: underline;
+}
 }
 
 @media (max-width: 1024px) {

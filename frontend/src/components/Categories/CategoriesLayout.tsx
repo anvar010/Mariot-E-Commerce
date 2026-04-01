@@ -473,7 +473,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
         <div className={styles.nestedGrid}>
             <div className={styles.nestedColumn}>
                 {data.left.map((group, idx) => (
-                    <div key={idx} className={styles.categoryGroup}>
+                    <div key={idx} className={`${styles.categoryGroup} ${(!group.items || group.items.length === 0) ? styles.emptyGroup : ''}`}>
                         <Link
                             href={`/shop?category=${group.title}`}
                             onClick={onClose}
@@ -498,7 +498,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
             </div>
             <div className={styles.nestedColumn}>
                 {data.right.map((group, idx) => (
-                    <div key={idx} className={styles.categoryGroup}>
+                    <div key={idx} className={`${styles.categoryGroup} ${(!group.items || group.items.length === 0) ? styles.emptyGroup : ''}`}>
                         <Link
                             href={`/shop?category=${group.title}`}
                             onClick={onClose}

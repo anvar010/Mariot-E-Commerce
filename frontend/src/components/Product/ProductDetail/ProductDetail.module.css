@@ -71,11 +71,14 @@
     color: #333;
 }
 
+@media (hover: hover) {
+
 .expandBtn:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
     background: #f8f9fa;
     color: #e31e24;
+}
 }
 
 .mainImage {
@@ -115,8 +118,11 @@
     transition: transform 0.2s;
 }
 
+@media (hover: hover) {
+
 .wishlistBtn:hover {
     transform: scale(1.05);
+}
 }
 
 .thumbnailsWrapper {
@@ -250,10 +256,13 @@
     cursor: pointer;
 }
 
+@media (hover: hover) {
+
 .brandLogoWrapper:hover {
     border-color: #4cc9cd;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     transform: translateY(-1px);
+}
 }
 
 .brandLogo {
@@ -327,8 +336,11 @@
     text-decoration: underline;
 }
 
+@media (hover: hover) {
+
 .readMoreBtn:hover {
     color: #c4191f;
+}
 }
 
 /* Tabby Area */
@@ -411,15 +423,21 @@
     transition: opacity 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .priceMatchCard:hover {
     border-color: #cbd5e1;
     background: #ffffff;
     box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.05);
     transform: translateY(-2px);
 }
+}
+
+@media (hover: hover) {
 
 .priceMatchCard:hover::before {
     opacity: 1;
+}
 }
 
 .priceMatchIcon {
@@ -437,10 +455,13 @@
     transition: all 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .priceMatchCard:hover .priceMatchIcon {
     background: #334155;
     color: #ffffff;
     transform: rotate(-10deg);
+}
 }
 
 .priceMatchInfo {
@@ -470,9 +491,12 @@
     transition: all 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .priceMatchCard:hover .chevronIcon {
     color: #1e293b;
     transform: translateX(4px);
+}
 }
 
 /* Purchase Actions */
@@ -510,11 +534,14 @@
     position: relative;
 }
 
+@media (hover: hover) {
+
 .qtyCustomSelect:hover,
 .qtyCustomSelect.open {
     border-color: #3fbabf;
     background: #ffffff;
     box-shadow: 0 4px 12px rgba(63, 186, 191, 0.1);
+}
 }
 
 .qtyCustomSelectText {
@@ -534,9 +561,12 @@
     transition: color 0.2s;
 }
 
+@media (hover: hover) {
+
 .qtyCustomSelect:hover .qtyArrow,
 .qtyCustomSelect.open .qtyArrow {
     color: #3fbabf;
+}
 }
 
 .qtyCustomOptions {
@@ -576,9 +606,12 @@
     transition: all 0.15s;
 }
 
+@media (hover: hover) {
+
 .qtyCustomOption:hover {
     background: #f8fafc;
     color: #3fbabf;
+}
 }
 
 .qtyCustomOption.selected {
@@ -606,8 +639,11 @@
     transition: background 0.2s;
 }
 
+@media (hover: hover) {
+
 .addToCartBtn:hover {
     background: #3fbabf;
+}
 }
 
 .whatsappBtn {
@@ -629,8 +665,11 @@
     transition: background 0.2s;
 }
 
+@media (hover: hover) {
+
 .whatsappBtn:hover {
     background: #54c263;
+}
 }
 
 /* Bottom Section (Description) */
@@ -700,8 +739,11 @@
     transition: transform 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .videoContainerSmall:hover {
     transform: translateY(-4px);
+}
 }
 
 .videoContainerSmall iframe {
@@ -858,10 +900,13 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
+@media (hover: hover) {
+
 .resourceCard:hover {
     border-color: #e31e24;
     box-shadow: 0 10px 15px -3px rgba(227, 30, 36, 0.1), 0 4px 6px -2px rgba(227, 30, 36, 0.05);
     transform: translateY(-2px);
+}
 }
 
 .resourceIconInfo {
@@ -882,9 +927,12 @@
     transition: all 0.3s;
 }
 
+@media (hover: hover) {
+
 .resourceCard:hover .fileIconBox {
     background: #e31e24;
     color: #ffffff;
+}
 }
 
 .resourceTextInfo {
@@ -920,9 +968,12 @@
     transition: all 0.3s;
 }
 
+@media (hover: hover) {
+
 .resourceCard:hover .downloadAction {
     background: #e31e24;
     color: #ffffff;
+}
 }
 
 @media (max-width: 640px) {
@@ -969,9 +1020,12 @@
     /* Slightly stronger shadow */
 }
 
+@media (hover: hover) {
+
 .accordionItem:hover {
     border-color: #cbd5e1;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
 }
 
 .accordionHeader {
@@ -991,8 +1045,11 @@
     transition: color 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .accordionHeader:hover {
     color: #5bb377;
+}
 }
 
 .accordionHeader svg {
@@ -1000,8 +1057,11 @@
     transition: transform 0.3s ease, color 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .accordionHeader:hover svg {
     color: #5bb377;
+}
 }
 
 .accordionContent {
@@ -1164,8 +1224,11 @@
     transition: background 0.2s;
 }
 
+@media (hover: hover) {
+
 .closeModal:hover {
     background: #f0f0f0;
+}
 }
 
 .modalContent {
@@ -1387,9 +1450,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .pmUploadZone:hover {
     border-color: #3fbabf;
     background: #f1f5f9;
+}
 }
 
 .pmUploadIcon {
@@ -1472,8 +1538,11 @@
     transition: background 0.2s;
 }
 
+@media (hover: hover) {
+
 .pmSubmitBtn:hover {
     background: #3fbabf;
+}
 }
 
 @media (max-width: 640px) {
@@ -1512,9 +1581,12 @@
     letter-spacing: 0.5px;
 }
 
+@media (hover: hover) {
+
 .continueBtn:hover {
     background: #333;
     color: white;
+}
 }
 
 /* Modernized Bottom Sections */
@@ -1572,12 +1644,15 @@
     right: -22px;
 }
 
+@media (hover: hover) {
+
 .sliderArrow:hover {
     background: #1a1a1a;
     border-color: #1a1a1a;
     color: #ffffff;
     transform: translateY(-50%) scale(1.1);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
 }
 
 .relatedSection {
@@ -1755,10 +1830,13 @@
     transition: all 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .reviewItem:hover {
     background: white;
     border-color: #e2e8f0;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
 }
 
 .reviewHeader {
@@ -1818,9 +1896,12 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .deleteReviewBtn:hover {
     color: #ef4444;
     background: #fee2e2;
+}
 }
 
 /* Expert Ask Redesign */
@@ -1874,10 +1955,13 @@
     width: fit-content;
 }
 
+@media (hover: hover) {
+
 .premiumBtn:hover {
     background: #333;
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
 }
 
 .secondaryBtn {
@@ -1892,10 +1976,13 @@
     transition: all 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .secondaryBtn:hover {
     background: #4a9e65;
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(91, 179, 119, 0.3);
+}
 }
 
 @media (max-width: 900px) {
@@ -1974,9 +2061,12 @@
     border-radius: 8px;
 }
 
+@media (hover: hover) {
+
 .starInput button:hover {
     transform: scale(1.2) rotate(8deg);
     background: #f8fafc;
+}
 }
 
 .starInput button:active {
@@ -2029,10 +2119,13 @@
     box-shadow: 0 4px 12px rgba(91, 179, 119, 0.2);
 }
 
+@media (hover: hover) {
+
 .submitBtn:hover {
     background: #4a9e65;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(91, 179, 119, 0.3);
+}
 }
 
 .submitBtn:active {
@@ -2058,10 +2151,13 @@
     transition: all 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .cancelBtn:hover {
     background: #e2e8f0;
     color: #1e293b;
     transform: translateY(-2px);
+}
 }
 
 .cancelBtn:active {
@@ -2331,10 +2427,13 @@
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
+@media (hover: hover) {
+
 .backHomeBtn:hover {
     background: #333;
     transform: translateY(-3px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
 }
 
 /* Support Banner (matches user screenshot) */
@@ -2492,9 +2591,12 @@
     justify-content: center;
 }
 
+@media (hover: hover) {
+
 .closeOverlayBtn:hover {
     transform: scale(1.1);
     color: #ff4d4f;
+}
 }
 
 @keyframes zoomIn {

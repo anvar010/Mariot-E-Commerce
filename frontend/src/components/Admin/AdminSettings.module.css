@@ -111,9 +111,12 @@
     gap: 8px;
 }
 
+@media (hover: hover) {
+
 .saveBtn:hover {
     background: #1e293b;
     transform: translateY(-1px);
+}
 }
 
 .saveBtn:disabled {

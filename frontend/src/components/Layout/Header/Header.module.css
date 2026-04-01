@@ -151,8 +151,11 @@
     transition: transform 0.2s ease;
 }
 
-.logoImage:hover {
-    transform: scale(1.03);
+@media (hover: hover) {
+
+    .logoImage:hover {
+        transform: scale(1.03);
+    }
 }
 
 
@@ -232,8 +235,11 @@
     transition: opacity 0.2s;
 }
 
-.searchButton:hover {
-    opacity: 0.9;
+@media (hover: hover) {
+
+    .searchButton:hover {
+        opacity: 0.9;
+    }
 }
 
 /* User Actions */
@@ -302,8 +308,11 @@
     flex-shrink: 0;
 }
 
-.closeToast:hover {
-    opacity: 1;
+@media (hover: hover) {
+
+    .closeToast:hover {
+        opacity: 1;
+    }
 }
 
 @keyframes toastBounce {
@@ -396,8 +405,11 @@
     white-space: nowrap;
 }
 
-.categories:hover {
-    color: #5bb377;
+@media (hover: hover) {
+
+    .categories:hover {
+        color: #5bb377;
+    }
 }
 
 .categories span {
@@ -465,9 +477,12 @@
     white-space: nowrap;
 }
 
-.navLinks a:hover,
-.navLinks .linkActive {
-    color: #5bb377;
+@media (hover: hover) {
+
+    .navLinks a:hover,
+    .navLinks .linkActive {
+        color: #5bb377;
+    }
 }
 
 .navLinks .linkActive {
@@ -502,8 +517,11 @@
     white-space: nowrap;
 }
 
-.langSelector:hover {
-    background-color: #f8f9fa;
+@media (hover: hover) {
+
+    .langSelector:hover {
+        background-color: #f8f9fa;
+    }
 }
 
 .flagImg {
@@ -596,16 +614,22 @@
     position: relative;
 }
 
-.langOption:hover {
-    background: #f4f6f8;
+@media (hover: hover) {
+
+    .langOption:hover {
+        background: #f4f6f8;
+    }
 }
 
 .langOptionActive {
     background: #f0faf3;
 }
 
-.langOptionActive:hover {
-    background: #e5f5ea;
+@media (hover: hover) {
+
+    .langOptionActive:hover {
+        background: #e5f5ea;
+    }
 }
 
 .langOptionFlag {
@@ -679,8 +703,11 @@
     font-weight: 500;
 }
 
-.supportItem a:hover {
-    text-decoration: underline;
+@media (hover: hover) {
+
+    .supportItem a:hover {
+        text-decoration: underline;
+    }
 }
 
 .whatsappIcon,
@@ -1036,12 +1063,10 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0) 0%,
-        rgba(255, 255, 255, 0.6) 50%,
-        rgba(255, 255, 255, 0) 100%
-    );
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.6) 50%,
+            rgba(255, 255, 255, 0) 100%);
     animation: shimmer 1.5s infinite;
 }
 
@@ -1049,10 +1074,12 @@
     0% {
         transform: translateX(-100%);
     }
+
     100% {
         transform: translateX(100%);
     }
 }
+
 .suggestionsDropdown {
     position: absolute;
     top: calc(100% + 5px);
@@ -1072,6 +1099,7 @@
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1092,8 +1120,11 @@
     border-bottom: none;
 }
 
-.suggestionItem:hover {
-    background: #f8fafc;
+@media (hover: hover) {
+
+    .suggestionItem:hover {
+        background: #f8fafc;
+    }
 }
 
 .suggestionImageWrapper {

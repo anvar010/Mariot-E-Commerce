@@ -29,9 +29,10 @@ interface ProductCardPromotionProps {
     timeLeft?: { hours: number; minutes: number; seconds: number };
     disableHover?: boolean;
     showTimer?: boolean;
+    badgeType?: 'weekly' | 'limited' | 'daily';
 }
 
-const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, timeLeft, disableHover, showTimer = false }) => {
+const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, timeLeft, disableHover, showTimer = false, badgeType }) => {
     const locale = useLocale();
     const t = useTranslations('product');
     const isArabic = locale === 'ar';

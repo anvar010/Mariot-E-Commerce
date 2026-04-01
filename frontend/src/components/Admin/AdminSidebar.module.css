@@ -44,30 +44,54 @@
 }
 
 .userProfile {
-    padding: 20px;
+    padding: 24px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.02);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background-color: #1e293b;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+    /* Deeper Amber-to-Orange for white text contrast */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #ffffff;
+    font-size: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(217, 119, 6, 0.3);
+    flex-shrink: 0;
+}
+
+.userInfo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
 }
 
 .userName {
-    color: white;
-    font-size: 11px;
+    color: #ffffff;
+    font-size: 15px;
     font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .userRole {
-    font-size: 10px;
+    font-size: 12px;
     color: #64748b;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-top: 2px;
 }
 
 .nav {
@@ -77,12 +101,18 @@
 }
 
 .navLabel {
-    padding: 0 12px 10px;
+    padding: 24px 12px 10px;
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     color: #475569;
     letter-spacing: 0.1em;
+}
+
+.menuList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .menuItem {
@@ -100,9 +130,12 @@
     position: relative;
 }
 
+@media (hover: hover) {
+
 .menuItem:hover {
     color: white;
     background-color: rgba(255, 255, 255, 0.05);
+}
 }
 
 .active {
@@ -173,30 +206,8 @@
 
 .activityList {
     list-style: none;
-    padding: 0 20px;
+    padding: 0;
     margin: 0;
-}
-
-.activityItem {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 15px;
-    position: relative;
-}
-
-.activityDot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: #4c6ef5;
-    margin-top: 5px;
-}
-
-.activityContent p {
-    font-size: 12px;
-    margin: 0;
-    line-height: 1.4;
-    color: #dee2e6;
 }
 
 .sidebarFooter {
@@ -217,7 +228,10 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .logoutBtn:hover {
     background-color: #fa5252;
     color: white;
+}
 }

@@ -69,9 +69,12 @@
     flex-shrink: 0;
 }
 
+@media (hover: hover) {
+
 .closeQuotationBtn:hover {
     background: #e2e8f0;
     color: #334155;
+}
 }
 
 /* Content / Form */
@@ -150,9 +153,12 @@
     font-family: inherit;
 }
 
+@media (hover: hover) {
+
 .downloadBtn:hover:not(:disabled) {
     background: #337c7f;
     color: white;
+}
 }
 
 .downloadBtn:disabled {

@@ -60,9 +60,12 @@
     user-select: none;
 }
 
+@media (hover: hover) {
+
 .rangeSelector:hover {
     border-color: #cbd5e1;
     background: #f8fafc;
+}
 }
 
 .rangeSelector.active {
@@ -114,9 +117,12 @@
     color: #475569;
 }
 
+@media (hover: hover) {
+
 .dropdownItem:hover {
     background: #f1f5f9;
     color: #0f172a;
+}
 }
 
 .dropdownItem.selected {
@@ -145,9 +151,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .refreshBtn:hover {
     background: #f1f5f9;
     color: #0f172a;
+}
 }
 
 .alertBanner {
@@ -209,10 +218,13 @@
     box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
 }
 
+@media (hover: hover) {
+
 .bannerBtn:hover {
     background-color: #2563eb;
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+}
 }
 
 .bannerBtnSecondary {
@@ -227,9 +239,12 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .bannerBtnSecondary:hover {
     background-color: #f1f5f9;
     color: #0f172a;
+}
 }
 
 .bannerButtons {
@@ -255,9 +270,12 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+@media (hover: hover) {
+
 .statCard:hover {
     border-color: #3b82f6;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
+}
 }
 
 .statHeader {
@@ -566,9 +584,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .filterBtn:hover {
     background-color: #f1f5f9;
     color: #0f172a;
+}
 }
 
 .table {
@@ -610,8 +631,11 @@
     transition: background-color 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .table tr:hover td {
     background-color: #f8fafc;
+}
 }
 
 .table tr:last-child td:first-child {
@@ -703,9 +727,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .activityItem:hover {
     transform: scale(1.01);
     background-color: #f1f5f9;
+}
 }
 
 .activityDot {
@@ -829,9 +856,12 @@
     height: auto !important;
 }
 
+@media (hover: hover) {
+
 .actionItem:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
 }
 
 .actionMain {
@@ -891,9 +921,12 @@
     transition: all 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .bar:hover {
     background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
     transform: translateY(-5px);
+}
 }
 
 .barValue {
@@ -1020,8 +1053,11 @@
     white-space: nowrap;
 }
 
+@media (hover: hover) {
+
 .bar:hover .barTooltip {
     opacity: 1;
+}
 }
 
 .emptyChart {
@@ -1247,9 +1283,12 @@
     height: auto !important;
 }
 
+@media (hover: hover) {
+
 .actionItem:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
 }
 
 .actionMain {
@@ -1309,9 +1348,12 @@
     transition: all 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .bar:hover {
     background: linear-gradient(180deg, #5c7cfa 0%, #4c6ef5 100%);
     transform: translateY(-5px);
+}
 }
 
 .barValue {

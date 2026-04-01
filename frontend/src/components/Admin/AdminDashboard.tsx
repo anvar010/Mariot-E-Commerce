@@ -23,7 +23,8 @@ import {
     ChevronDown,
     LayoutDashboard,
     Clock,
-    Check
+    Check,
+    RefreshCw
 } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { useRouter } from 'next/navigation';
@@ -70,9 +71,10 @@ const AdminDashboard = () => {
     const fetchStats = async (range = timeRange) => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/admin/stats?timeRange=${range}`, {
+            const res = await fetch(`${API_BASE_URL}/admin/stats?timeRange=${range}&_t=${new Date().getTime()}`, {
                 credentials: "include",
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                cache: 'no-store'
             });
             const data = await res.json();
             if (data.success) {
@@ -188,8 +190,9 @@ const AdminDashboard = () => {
                             )}
                         </AnimatePresence>
                     </div>
-                    <button className={styles.refreshBtn} onClick={() => fetchStats()}>
-                        Refresh
+                    <button className={styles.refreshBtn} onClick={() => fetchStats()} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <RefreshCw size={14} className={loading ? styles.spin : ''} style={loading ? { animation: 'spin 1s linear infinite' } : {}} />
+                        {loading ? 'Refreshing...' : 'Refresh'}
                     </button>
                 </div>
             </header>
@@ -232,7 +235,9 @@ const AdminDashboard = () => {
                     <div className={styles.statBody}>
                         <h3 className={styles.statValue}>AED {Number(stats?.totalSales || 0).toLocaleString()}</h3>
                         <div className={styles.statFooter}>
-                            <span className={styles.trendUp}>+12.5%</span> vs prev period
+                            <span className={(stats?.salesGrowth ?? 0) >= 0 ? styles.trendUp : styles.trendDown}>
+                                {(stats?.salesGrowth ?? 0) >= 0 ? '+' : ''}{stats?.salesGrowth ?? 0}%
+                            </span> vs prev period
                         </div>
                     </div>
                 </motion.div>
@@ -254,7 +259,9 @@ const AdminDashboard = () => {
                     <div className={styles.statBody}>
                         <h3 className={styles.statValue}>{stats?.totalOrders || 0}</h3>
                         <div className={styles.statFooter}>
-                            <span className={styles.trendUp}>+5.2%</span> successful
+                            <span className={(stats?.ordersGrowth ?? 0) >= 0 ? styles.trendUp : styles.trendDown}>
+                                {(stats?.ordersGrowth ?? 0) >= 0 ? '+' : ''}{stats?.ordersGrowth ?? 0}%
+                            </span> vs prev period
                         </div>
                     </div>
                 </motion.div>
@@ -276,7 +283,9 @@ const AdminDashboard = () => {
                     <div className={styles.statBody}>
                         <h3 className={styles.statValue}>{stats?.totalUsers || 0}</h3>
                         <div className={styles.statFooter}>
-                            <span className={styles.trendNeutral}>{stats?.seoStats?.growth || 0}% growth</span>
+                            <span className={(stats?.userGrowth ?? 0) >= 0 ? styles.trendUp : styles.trendDown}>
+                                {(stats?.userGrowth ?? 0) >= 0 ? '+' : ''}{stats?.userGrowth ?? 0}%
+                            </span> vs prev period
                         </div>
                     </div>
                 </motion.div>

@@ -54,7 +54,9 @@ const AdminSidebar = () => {
             </div>
 
             <div className={styles.userProfile}>
-                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Admin Users')}&background=random`} alt="Admin" className={styles.avatar} />
+                <div className={styles.avatar}>
+                    {user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'AU'}
+                </div>
                 <div className={styles.userInfo}>
                     <span className={styles.userName}>{user?.name || 'Admin Users'}</span>
                     <span className={styles.userRole}>Site Manager</span>

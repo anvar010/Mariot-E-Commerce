@@ -68,12 +68,12 @@ const CategoryBrowse = () => {
     useEffect(() => {
         const handler = checkScroll();
         const el = scrollRef.current;
-        
+
         if (el) {
             window.requestAnimationFrame(() => {
                 handler();
             });
-            
+
             // Mouse wheel to horizontal scroll conversion
             const handleWheel = (e: WheelEvent) => {
                 if (e.deltaY !== 0) {
@@ -84,7 +84,7 @@ const CategoryBrowse = () => {
 
             el.addEventListener('scroll', handler, { passive: true });
             el.addEventListener('wheel', handleWheel, { passive: false });
-            
+
             return () => {
                 el.removeEventListener('scroll', handler);
                 el.removeEventListener('wheel', handleWheel);
@@ -133,7 +133,7 @@ const CategoryBrowse = () => {
     return (
         <section className={styles.categorySection} id="category-browse">
             <div className={styles.container}>
-                <motion.div 
+                <motion.div
                     className={styles.sectionHeader}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -220,21 +220,21 @@ const CategoryBrowse = () => {
 
                     <AnimatePresence>
                         {canScrollLeft && (
-                            <motion.div 
+                            <motion.div
                                 key="fade-left"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className={styles.fadeLeft} 
+                                className={styles.fadeLeft}
                             />
                         )}
                         {canScrollRight && (
-                            <motion.div 
+                            <motion.div
                                 key="fade-right"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className={styles.fadeRight} 
+                                className={styles.fadeRight}
                             />
                         )}
                     </AnimatePresence>

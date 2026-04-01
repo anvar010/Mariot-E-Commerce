@@ -57,8 +57,11 @@
     transition: color 0.2s;
 }
 
+@media (hover: hover) {
+
 .actionItem:hover {
     color: #333;
+}
 }
 
 .badge {
@@ -128,8 +131,11 @@
     transition: color 0.2s;
 }
 
+@media (hover: hover) {
+
 .actionLink:hover {
     color: #228be6;
+}
 }
 
 .dropdownList {
@@ -160,8 +166,11 @@
     border-bottom: none;
 }
 
+@media (hover: hover) {
+
 .notificationItem:hover {
     background-color: #f8f9fa;
+}
 }
 
 .notificationIcon {

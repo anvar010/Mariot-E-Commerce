@@ -65,12 +65,15 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+@media (hover: hover) {
+
 .exportBtn:hover {
     background: #f8fafc;
     color: #0f172a;
     border-color: #cbd5e1;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
 }
 
 .exportBtn:disabled {
@@ -151,8 +154,11 @@
     vertical-align: middle;
 }
 
+@media (hover: hover) {
+
 .table tr:hover {
     background-color: #f8fafc;
+}
 }
 
 .id {
@@ -292,9 +298,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .dropdownOption:hover {
     background: #f1f5f9;
     color: #3b82f6;
+}
 }
 
 /* Reusing your color logic for headers */
@@ -334,11 +343,14 @@
     background-color: #fef2f2;
 }
 
+@media (hover: hover) {
+
 .actionSelect option:hover,
 .actionSelect option:focus,
 .actionSelect option:active {
     background-color: #f1f5f9 !important;
     color: #3b82f6 !important;
+}
 }
 
 .amount {

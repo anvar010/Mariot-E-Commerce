@@ -74,9 +74,12 @@
     position: relative;
 }
 
-.sidebarItem:hover {
-    background-color: #f1f5f9;
-    color: #1e293b;
+@media (hover: hover) {
+
+    .sidebarItem:hover {
+        background-color: #f1f5f9;
+        color: #1e293b;
+    }
 }
 
 .activeItem {
@@ -108,9 +111,12 @@
     color: #5bb377;
 }
 
-.sidebarItem:hover .sidebarIcon {
-    opacity: 1;
-    transform: scale(1.1);
+@media (hover: hover) {
+
+    .sidebarItem:hover .sidebarIcon {
+        opacity: 1;
+        transform: scale(1.1);
+    }
 }
 
 .activeItem .sidebarLabel {
@@ -124,10 +130,13 @@
     color: #5bb377;
 }
 
-.sidebarItem:hover .chevronIcon,
-.activeItem .chevronIcon {
-    opacity: 1;
-    transform: translateX(0);
+@media (hover: hover) {
+
+    .sidebarItem:hover .chevronIcon,
+    .activeItem .chevronIcon {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* Modern Main Content */
@@ -182,6 +191,10 @@
     margin-bottom: 40px;
 }
 
+.categoryGroup.emptyGroup {
+    margin-bottom: 20px;
+}
+
 .groupTitle {
     font-size: 13px;
     font-weight: 800;
@@ -224,12 +237,18 @@
     transition: width 0.3s ease;
 }
 
-.nestedLink:hover {
-    color: #15803d;
+@media (hover: hover) {
+
+    .nestedLink:hover {
+        color: #15803d;
+    }
 }
 
-.nestedLink:hover::after {
-    width: 100%;
+@media (hover: hover) {
+
+    .nestedLink:hover::after {
+        width: 100%;
+    }
 }
 
 .groupTitleLink {
@@ -237,9 +256,12 @@
     display: inline-block;
 }
 
-.groupTitleLink:hover .groupTitle {
-    color: #15803d;
-    cursor: pointer;
+@media (hover: hover) {
+
+    .groupTitleLink:hover .groupTitle {
+        color: #15803d;
+        cursor: pointer;
+    }
 }
 
 /* Flat Grid View */
@@ -301,10 +323,13 @@
     justify-content: space-between;
 }
 
-.subCatItem:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-    transform: translateY(-2px);
+@media (hover: hover) {
+
+    .subCatItem:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+        transform: translateY(-2px);
+    }
 }
 
 .itemIcon {
@@ -312,9 +337,12 @@
     transition: all 0.2s ease;
 }
 
-.subCatItem:hover .itemIcon {
-    opacity: 1;
-    color: #5bb377;
+@media (hover: hover) {
+
+    .subCatItem:hover .itemIcon {
+        opacity: 1;
+        color: #5bb377;
+    }
 }
 
 /* Modern Brands Section */
@@ -348,8 +376,11 @@
     transition: all 0.3s ease;
 }
 
-.brandBox:hover {
-    transform: scale(1.08);
+@media (hover: hover) {
+
+    .brandBox:hover {
+        transform: scale(1.08);
+    }
 }
 
 .brandLogoImg {
@@ -370,19 +401,20 @@
 @media (max-width: 1100px) {
     .contentGrid {
         flex-direction: column;
-        gap: 60px;
+        gap: 20px;
     }
 
     .brandsColumn {
         border-inline-start: none;
         padding-inline-start: 0;
-        margin-top: 60px;
+        margin-top: 20px;
         border-top: 1px solid #f1f5f9;
-        padding-top: 40px;
+        padding-top: 15px;
     }
 
     .brandsTitle {
         text-align: start;
+        margin-bottom: 20px;
     }
 
     .brandsGrid {
@@ -397,26 +429,64 @@
 
     .sidebar {
         width: 100%;
-        padding: 10px;
+        padding: 8px;
         height: auto;
         border-inline-end: none;
         border-bottom: 1px solid #f1f5f9;
     }
 
     .sidebarItem {
-        padding: 15px 20px;
+        padding: 8px 15px;
     }
 
     .mainContent {
-        padding: 40px 20px;
+        padding: 10px 12px;
+    }
+
+    .columnTitle {
+        margin-bottom: 5px;
+        font-size: 19px;
+    }
+
+    .categoryGroup {
+        margin-bottom: 6px;
+    }
+
+    .categoryGroup.emptyGroup {
+        margin-bottom: 6px;
+    }
+
+    .groupTitle {
+        margin-bottom: 2px;
+        padding-bottom: 2px;
+        font-size: 11px;
     }
 
     .nestedGrid,
     .subCatGrid {
         grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .subCatGrid {
+        gap: 4px;
+    }
+
+    .contentGrid {
+        gap: 12px;
+    }
+
+    .brandsColumn {
+        margin-top: 10px;
+        padding-top: 10px;
     }
 
     .brandsGrid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .brandsTitle {
+        margin-bottom: 8px;
     }
 }

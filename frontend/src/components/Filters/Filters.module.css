@@ -45,8 +45,11 @@
     transition: color 0.2s;
 }
 
+@media (hover: hover) {
+
 .resetBtn:hover {
     color: #e31e24;
+}
 }
 
 .filterSection {
@@ -66,8 +69,11 @@
     transition: background 0.2s;
 }
 
+@media (hover: hover) {
+
 .sectionHeader:hover {
     background: #fdfdfd;
+}
 }
 
 .sectionHeader h3 {
@@ -110,8 +116,11 @@
     transition: color 0.2s;
 }
 
+@media (hover: hover) {
+
 .checkboxLabel:hover {
     color: #e31e24;
+}
 }
 
 .checkboxLabel input {

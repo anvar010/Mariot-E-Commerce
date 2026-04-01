@@ -117,8 +117,11 @@
     border-bottom: none;
 }
 
+@media (hover: hover) {
+
 .table tr:hover {
     background: #f8fafc;
+}
 }
 
 .productInfo {
@@ -193,9 +196,12 @@
     color: #dc2626;
 }
 
+@media (hover: hover) {
+
 .deleteBtn:hover {
     background: #fef2f2;
     border-color: #fecaca;
+}
 }
 
 .spin {

@@ -35,9 +35,12 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .offerCard:hover {
     transform: translateY(-6px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
 }
 
 /* Image fills entire card */
@@ -55,8 +58,11 @@
     transition: transform 0.5s ease;
 }
 
+@media (hover: hover) {
+
 .offerCard:hover .offerImage {
     transform: scale(1.05);
+}
 }
 
 /* Gradient overlay at the bottom for text readability */
@@ -72,11 +78,14 @@
     transition: background 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .offerCard:hover .imageContainer::after {
     background: linear-gradient(180deg,
             rgba(0, 0, 0, 0) 20%,
             rgba(0, 0, 0, 0.3) 50%,
             rgba(0, 0, 0, 0.8) 100%);
+}
 }
 
 /* Subtitle badge — top-right floating tag */
@@ -145,12 +154,15 @@
     width: fit-content;
 }
 
+@media (hover: hover) {
+
 .shopBtn:hover {
     background: #ffffff;
     color: #333;
     border-color: #ffffff;
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+}
 }
 
 /* Ticker / Marquee */
@@ -202,8 +214,10 @@
 }
 
 /* Pause on hover for readability */
+@media (hover: hover) {
 .tickerContainer:hover .tickerTrack {
     animation-play-state: paused;
+}
 }
 
 @keyframes marquee {

@@ -117,8 +117,11 @@
     border-bottom: none;
 }
 
+@media (hover: hover) {
+
 .table tr:hover {
     background: #f8fafc;
+}
 }
 
 .refCode {
@@ -196,18 +199,24 @@
     color: #6366f1;
 }
 
+@media (hover: hover) {
+
 .viewBtn:hover {
     background: #eef2ff;
     border-color: #c7d2fe;
+}
 }
 
 .deleteBtn {
     color: #ef4444;
 }
 
+@media (hover: hover) {
+
 .deleteBtn:hover {
     background: #fef2f2;
     border-color: #fecaca;
+}
 }
 
 /* Modal Redesign */
@@ -280,9 +289,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .closeBtn:hover {
     background: #f1f5f9;
     color: #0f172a;
+}
 }
 
 .modalBody {
@@ -378,8 +390,11 @@
     transition: transform 0.2s;
 }
 
+@media (hover: hover) {
+
 .itemCard:hover {
     transform: scale(1.01);
+}
 }
 
 .itemImage {
@@ -455,9 +470,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .printBtn:hover:not(:disabled) {
     background: #1e293b;
     transform: translateY(-1px);
+}
 }
 
 .spin {

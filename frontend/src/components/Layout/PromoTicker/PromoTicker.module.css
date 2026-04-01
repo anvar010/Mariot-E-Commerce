@@ -51,6 +51,9 @@
     }
 }
 
+@media (hover: hover) {
+
 .tickerWrapper:hover .tickerContent {
     animation-play-state: paused;
+}
 }

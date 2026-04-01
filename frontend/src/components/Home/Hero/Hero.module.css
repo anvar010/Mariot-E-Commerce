@@ -125,10 +125,13 @@
     border: none;
 }
 
+@media (hover: hover) {
+
 .buyBtn:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 30px rgba(255, 59, 48, 0.5);
     background: linear-gradient(135deg, #ff4f44, #ff3b30);
+}
 }
 
 .whatsappBtn {
@@ -156,6 +159,8 @@
     order: 1;
 }
 
+@media (hover: hover) {
+
 .whatsappBtn:hover {
     background: #25D366;
     color: white;
@@ -163,9 +168,13 @@
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(37, 211, 102, 0.3);
 }
+}
+
+@media (hover: hover) {
 
 .whatsappBtn:hover svg {
     fill: white;
+}
 }
 
 /* Brand Badge — floating on the right side */
@@ -190,8 +199,11 @@
     transition: opacity 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .brandBadge:hover .brandLogo {
     opacity: 1;
+}
 }
 
 /* Slider Arrows */
@@ -215,13 +227,19 @@
     opacity: 0;
 }
 
+@media (hover: hover) {
+
 .heroSection:hover .sliderBtn {
     opacity: 1;
 }
+}
+
+@media (hover: hover) {
 
 .sliderBtn:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: translateY(-50%) scale(1.08);
+}
 }
 
 .prevBtn {
@@ -261,8 +279,11 @@
     padding: 0;
 }
 
+@media (hover: hover) {
+
 .dot:hover {
     background: rgba(255, 255, 255, 0.5);
+}
 }
 
 .dotActive {
