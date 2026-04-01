@@ -55,7 +55,7 @@ const AdminSidebar = () => {
 
             <div className={styles.userProfile}>
                 <div className={styles.avatar}>
-                    {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'AU'}
+                    {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'AU'}
                 </div>
                 <div className={styles.userInfo}>
                     <span className={styles.userName}>{user?.name || 'Admin Users'}</span>
