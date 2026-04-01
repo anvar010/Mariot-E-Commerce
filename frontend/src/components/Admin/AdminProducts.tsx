@@ -427,6 +427,18 @@ const AdminProducts = () => {
 
             params.append('t', String(Date.now()));
 
+            // Database Debugging Trace
+            try {
+                const debugRes = await fetch(`${API_BASE_URL}/admin/debug-db`, { credentials: "include", headers: getAuthHeaders() });
+                const debugData = await debugRes.json();
+                console.log('--- DATABASE DEBUG INFO ---');
+                console.log('Table Counts:', debugData.counts);
+                console.log('Environment:', debugData.env);
+                console.log('---------------------------');
+            } catch (e) {
+                console.warn('Debug fetch failed', e);
+            }
+
             const res = await fetch(`${API_BASE_URL}/products?${params.toString()}`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) {
