@@ -135,12 +135,18 @@ class Product {
             }
 
             // Count query
-            let countQuery = 'SELECT COUNT(*) as total FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN brands b ON p.brand_id = b.id';
-            if (whereClauses.length > 0) {
-                countQuery += ' WHERE ' + whereClauses.join(' AND ');
-            }
+            const countQuery = `SELECT COUNT(*) as total FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN brands b ON p.brand_id = b.id${whereClauses.length > 0 ? ' WHERE ' + whereClauses.join(' AND ') : ''}`;
+            
+            console.log('DEBUG: EXECUTE COUNT QUERY:', countQuery);
+            console.log('DEBUG: COUNT PARAMS:', JSON.stringify(countParams));
+            
             const [countRows] = await db.query(countQuery, countParams);
-            const total = countRows[0].total;
+            
+            console.log('DEBUG: COUNT ROWS RESULT:', JSON.stringify(countRows));
+            
+            const total = Number(countRows[0]?.total || 0);
+            
+            console.log('DEBUG: RETURNING TOTAL:', total, 'TYPE:', typeof total);
 
             return { products: rows, total };
         } catch (error) {

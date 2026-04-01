@@ -288,7 +288,7 @@ exports.getSuggestions = async (req, res, next) => {
             'SELECT id, name, slug FROM categories WHERE name LIKE ? OR slug LIKE ? LIMIT 3',
             [`%${search.trim()}%`, `%${search.trim()}%`]
         );
-        
+
         categories.forEach(c => {
             suggestions.push({
                 id: c.id,
