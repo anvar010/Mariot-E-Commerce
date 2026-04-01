@@ -98,6 +98,7 @@ const AdminProducts = () => {
     const [exporting, setExporting] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importing, setImporting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [importResult, setImportResult] = useState<any>(null);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [activeTab, setActiveTab] = useState('basic');
@@ -409,6 +410,7 @@ const AdminProducts = () => {
 
     const fetchProducts = async (page = currentPage) => {
         setLoading(true);
+        setError(null);
         try {
             const params = new URLSearchParams();
             if (filters.search) params.append('search', filters.search);
@@ -434,13 +436,16 @@ const AdminProducts = () => {
                 if (data.pagination) {
                     setPaginationInfo(prev => ({
                         ...prev,
-                        total: data.total,
+                        total: Number(data.total || 0),
                         totalPages: data.pagination.totalPages
                     }));
                 }
+            } else {
+                setError(data.message || 'Failed to fetch products list');
             }
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            console.error('Failed to fetch products', error);
+            setError(error.message || 'Network error occurred');
         } finally {
             setLoading(false);
         }
@@ -1067,9 +1072,15 @@ const AdminProducts = () => {
                     <div className={styles.titleGroup}>
                         <div className={styles.titleWithBadge}>
                             <h1>Products Management</h1>
-                            <div className={styles.totalBadge}>
+                            <div className={`${styles.totalBadge} ${error ? styles.errorBadge : ''}`}>
                                 <Package size={14} />
-                                <span><strong>{paginationInfo.total}</strong> products</span>
+                                <span>
+                                    {error ? (
+                                        <span style={{ color: '#ef4444' }} title={error}>Error Loading</span>
+                                    ) : (
+                                        <><strong>{paginationInfo.total}</strong> products</>
+                                    )}
+                                </span>
                             </div>
                         </div>
                         <p className={styles.subtitle}>Manage your inventory and add new products to the catalog.</p>
