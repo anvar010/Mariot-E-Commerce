@@ -75,10 +75,13 @@
     gap: 8px;
 }
 
+@media (hover: hover) {
+
 .utilBtn:hover {
     background: #f8fafc;
     color: #0f172a;
     border-color: #cbd5e1;
+}
 }
 
 .addBtn {
@@ -97,10 +100,13 @@
     cursor: pointer;
 }
 
+@media (hover: hover) {
+
 .addBtn:hover {
     background-color: #2563eb;
     transform: translateY(-1px);
     box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+}
 }
 
 .bulkDeleteBtn {
@@ -118,9 +124,12 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .bulkDeleteBtn:hover {
     background-color: #fef2f2;
     border-color: #ef4444;
+}
 }
 
 .filtersWrapper {
@@ -182,8 +191,11 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .filterSelect:hover {
     border-color: #3b82f6;
+}
 }
 
 .productsTableWrapper {
@@ -219,8 +231,11 @@
     vertical-align: middle;
 }
 
+@media (hover: hover) {
+
 .table tr:hover {
     background-color: #f8fafc;
+}
 }
 
 .productCell {
@@ -415,16 +430,22 @@
     color: #ef4444;
 }
 
+@media (hover: hover) {
+
 .editBtn:hover {
     color: #3b82f6;
     border-color: #3b82f6;
     background-color: #eff6ff;
 }
+}
+
+@media (hover: hover) {
 
 .deleteBtn:hover {
     color: #ef4444;
     border-color: #ef4444;
     background-color: #fef2f2;
+}
 }
 
 .editBtn:active,
@@ -529,9 +550,11 @@
 }
 
 /* Action Buttons & Navigation Cont. */
+@media (hover: hover) {
 .navItem:hover {
     background: #f1f5f9;
     color: #0f172a;
+}
 }
 
 .activeNav {
@@ -554,9 +577,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .closeBtn:hover {
     background: #fee2e2;
     color: #ef4444;
+}
 }
 
 .modalContentArea {
@@ -779,8 +805,11 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .customSelectTrigger:hover {
     border-color: #cbd5e1;
+}
 }
 
 .customSelectTrigger svg {
@@ -847,9 +876,12 @@
     transition: all 0.15s;
 }
 
+@media (hover: hover) {
+
 .selectOption:hover {
     background: #f1f5f9;
     color: #0f172a;
+}
 }
 
 .selectOption.selected {
@@ -953,11 +985,14 @@
     color: #64748b;
 }
 
+@media (hover: hover) {
+
 .addVideoBtn:hover,
 .addResourceBtn:hover {
     background: #f8fafc;
     border-color: #3b82f6;
     color: #3b82f6;
+}
 }
 
 /* Footer Actions */
@@ -993,9 +1028,12 @@
     box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
 }
 
+@media (hover: hover) {
+
 .submitBtn:hover {
     background: #2563eb;
     transform: translateY(-1px);
+}
 }
 
 /* Pagination */
@@ -1051,9 +1089,12 @@
     padding: 0 8px;
 }
 
+@media (hover: hover) {
+
 .pageBtn:hover:not(:disabled) {
     border-color: #3b82f6;
     color: #3b82f6;
+}
 }
 
 .pageBtn:disabled {
@@ -1126,9 +1167,12 @@
     cursor: pointer;
 }
 
+@media (hover: hover) {
+
 .clearSelection:hover {
     background: rgba(255, 255, 255, 0.2);
     color: white;
+}
 }
 
 .bulkBtns {
@@ -1151,9 +1195,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .bulkUpdateBtn:hover {
     background: #2563eb;
     transform: translateY(-1px);
+}
 }
 
 /* Searchable Select Overrides */
@@ -1177,9 +1224,12 @@
     padding: 8px 12px;
 }
 
+@media (hover: hover) {
+
 .selectOption:hover {
     background: #eff6ff;
     color: #3b82f6;
+}
 }
 
 .selectOption.selected {
@@ -1324,12 +1374,15 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+@media (hover: hover) {
+
 .downloadTemplateBtn:hover {
     background: #f8fafc;
     border-color: #3b82f6;
     color: #3b82f6;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
 }
 
 .uploadPlaceholder {
@@ -1348,11 +1401,14 @@
     overflow: hidden;
 }
 
+@media (hover: hover) {
+
 .uploadPlaceholder:hover {
     border-color: #3b82f6;
     background: #f0f7ff33;
     border-style: solid;
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05);
+}
 }
 
 .uploadPlaceholder.dragging {
@@ -1373,10 +1429,13 @@
     transition: all 0.3s;
 }
 
+@media (hover: hover) {
+
 .uploadPlaceholder:hover .uploadIconCircle {
     background: #3b82f6;
     color: #ffffff;
     transform: scale(1.1);
+}
 }
 
 .uploadIdleState {
@@ -1581,9 +1640,12 @@
     border: none;
 }
 
+@media (hover: hover) {
+
 .finishBtn:hover {
     background: #1e293b;
     transform: translateY(-1px);
+}
 }
 
 .tryAgainBtn {
@@ -1592,9 +1654,12 @@
     border: 1px solid #e2e8f0;
 }
 
+@media (hover: hover) {
+
 .tryAgainBtn:hover {
     background: #f8fafc;
     border-color: #cbd5e1;
+}
 }
 
 /* Bulk Update Modal Specifics */
@@ -1654,10 +1719,13 @@
     align-items: center;
 }
 
+@media (hover: hover) {
+
 .bulkUpdateClose:hover {
     background: #fef2f2;
     color: #ef4444;
     border-color: #fee2e2;
+}
 }
 
 .selectedRow {
@@ -1722,9 +1790,12 @@
     cursor: pointer;
 }
 
+@media (hover: hover) {
+
 .clearSelection:hover {
     background: rgba(255, 255, 255, 0.2);
     color: #ffffff;
+}
 }
 
 .bulkBtns {
@@ -1747,9 +1818,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .bulkUpdateBtn:hover {
     background: #2563eb;
     transform: translateY(-1px);
+}
 }
 
 .bulkDeleteStickyBtn {
@@ -1767,9 +1841,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .bulkDeleteStickyBtn:hover {
     background: #dc2626;
     transform: translateY(-1px);
+}
 }
 
 .smallModal {
@@ -1806,10 +1883,13 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .videoLinkItem:hover,
 .resourceItem:hover {
     border-color: #cbd5e1;
     background: #f1f5f9;
+}
 }
 
 .videoInput,
@@ -1862,10 +1942,13 @@
     flex-shrink: 0;
 }
 
+@media (hover: hover) {
+
 .removeVideoBtn:hover {
     background: #ef4444;
     color: #ffffff;
     border-color: #ef4444;
+}
 }
 
 .addVideoBtn,
@@ -1887,11 +1970,14 @@
     margin-top: 10px;
 }
 
+@media (hover: hover) {
+
 .addVideoBtn:hover,
 .addResourceBtn:hover {
     background: #f8fafc;
     border-color: #3b82f6;
     color: #3b82f6;
+}
 }
 
 .resourceUploadWrapper {
@@ -1914,10 +2000,13 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .resourceUploadBtn:hover {
     background: #eff6ff;
     color: #3b82f6;
     border-color: #3b82f6;
+}
 }
 
 /* Media Grid & Upload Placeholder Styles */
@@ -1960,12 +2049,15 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .mediaUploadPlaceholder:hover {
     background: #f1f5f9;
     border-color: #3b82f6;
     color: #3b82f6;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
 }
 
 .mediaUploadPlaceholder span {
@@ -1991,11 +2083,14 @@
     justify-content: center;
 }
 
+@media (hover: hover) {
+
 .removeMedia:hover {
     background: #ef4444;
     color: #ffffff;
     border-color: #ef4444;
     transform: scale(1.1);
+}
 }
 
 .primaryBadge {
@@ -2037,10 +2132,13 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .cancelBtn:hover {
     background: #f1f5f9;
     color: #0f172a;
     border-color: #cbd5e1;
+}
 }
 
 .submitBtn {
@@ -2056,10 +2154,13 @@
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
+@media (hover: hover) {
+
 .submitBtn:hover {
     background: #2563eb;
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+}
 }
 
 .submitBtn:active {

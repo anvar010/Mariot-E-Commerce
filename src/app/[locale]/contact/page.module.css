@@ -105,8 +105,11 @@
     text-decoration: none;
 }
 
+@media (hover: hover) {
+
 .contactItemDetails a:hover {
     color: #5bb377;
+}
 }
 
 /* ========= LOCATIONS SECTION ========= */
@@ -140,9 +143,12 @@
     transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .locationCard:hover {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
+}
 }
 
 .locationHeader {
@@ -173,8 +179,11 @@
     font-weight: 500;
 }
 
+@media (hover: hover) {
+
 .locationCard a:hover {
     color: #5bb377;
+}
 }
 
 .miniMap {
@@ -229,8 +238,11 @@
     white-space: nowrap;
 }
 
+@media (hover: hover) {
+
 .countryCodeBtn:hover {
     background-color: #f1f5f9;
+}
 }
 
 .flagImg {
@@ -266,8 +278,11 @@
     transition: background-color 0.15s ease;
 }
 
+@media (hover: hover) {
+
 .countryOption:hover {
     background-color: #f1f5f9;
+}
 }
 
 .countryOptionActive {
@@ -322,9 +337,12 @@
     transition: all 0.25s ease;
 }
 
+@media (hover: hover) {
+
 .subjectBtn:hover {
     border-color: #cbd5e1;
     background-color: #ffffff;
+}
 }
 
 .subjectBtnSelected {
@@ -337,9 +355,12 @@
     transition: color 0.25s ease;
 }
 
+@media (hover: hover) {
+
 .subjectBtn:hover .subjectBtnIcon,
 .subjectBtnSelected .subjectBtnIcon {
     color: #5bb377;
+}
 }
 
 .subjectBtn span {
@@ -380,8 +401,11 @@
     transition: background-color 0.15s ease;
 }
 
+@media (hover: hover) {
+
 .subjectOption:hover {
     background-color: #f1f5f9;
+}
 }
 
 .subjectOptionActive {
@@ -560,11 +584,14 @@
     font-weight: 400;
 }
 
+@media (hover: hover) {
+
 .formGroup input:hover,
 .formGroup textarea:hover,
 .formGroup select:hover {
     border-color: #cbd5e1;
     background-color: #ffffff;
+}
 }
 
 .formGroup input:focus,
@@ -614,13 +641,19 @@
     transition: left 0.6s ease;
 }
 
+@media (hover: hover) {
+
 .submitBtn:hover::before {
     inset-inline-start: 100%;
 }
+}
+
+@media (hover: hover) {
 
 .submitBtn:hover {
     box-shadow: 0 10px 30px rgba(45, 106, 90, 0.35);
     transform: translateY(-2px);
+}
 }
 
 .submitBtn:active {

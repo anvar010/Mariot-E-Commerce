@@ -52,9 +52,12 @@
     overflow: hidden;
 }
 
+@media (hover: hover) {
+
 .whatsapp:hover {
     transform: scale(1.1);
     background-color: #20ba5a !important;
+}
 }
 
 .whatsapp.active {
@@ -63,8 +66,11 @@
     box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
 }
 
+@media (hover: hover) {
+
 .whatsapp.active:hover {
     transform: rotate(90deg) scale(1.1);
+}
 }
 
 .backToTop {
@@ -223,9 +229,12 @@
     backdrop-filter: blur(10px);
 }
 
+@media (hover: hover) {
+
 .closeBtn:hover {
     background-color: rgba(255, 255, 255, 0.3);
     transform: scale(1.05);
+}
 }
 
 
@@ -303,10 +312,13 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .cancelBtn:hover {
     background-color: #f9fafb;
     border-color: #d1d5db;
     transform: translateY(-1px);
+}
 }
 
 .sendBtn {
@@ -327,10 +339,13 @@
     box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
 }
 
+@media (hover: hover) {
+
 .sendBtn:hover {
     background: linear-gradient(135deg, #20ba5a 0%, #1da851 100%);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(37, 211, 102, 0.4);
+}
 }
 
 .sendBtn:active {

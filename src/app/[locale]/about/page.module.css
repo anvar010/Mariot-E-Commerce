@@ -363,10 +363,13 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .horizontalLocationCard:hover {
     transform: translateY(-4px);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
     border-color: #cbd5e1;
+}
 }
 
 .cardHeader {
@@ -425,9 +428,12 @@
     word-break: break-word;
 }
 
+@media (hover: hover) {
+
 .contactRow a:hover,
 .contactRowTop a:hover {
     color: #5bb377;
+}
 }
 
 .linkStack {

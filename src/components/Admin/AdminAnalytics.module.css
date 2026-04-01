@@ -53,9 +53,12 @@
     user-select: none;
 }
 
+@media (hover: hover) {
+
 .datePicker:hover {
     border-color: #cbd5e1;
     background: #f8fafc;
+}
 }
 
 .datePicker.active {
@@ -106,9 +109,12 @@
     color: #475569;
 }
 
+@media (hover: hover) {
+
 .dropdownOption:hover {
     background: #f1f5f9;
     color: #0f172a;
+}
 }
 
 .dropdownOption.selected {
@@ -143,9 +149,12 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+@media (hover: hover) {
+
 .metricCard:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.08);
+}
 }
 
 .metricHeader {
@@ -288,9 +297,12 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+@media (hover: hover) {
+
 .bar:hover {
     filter: brightness(1.1);
     transform: scaleX(1.1);
+}
 }
 
 .barTooltip {
@@ -311,9 +323,12 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
+@media (hover: hover) {
+
 .bar:hover .barTooltip {
     opacity: 1;
     top: -45px;
+}
 }
 
 .barLabel {
@@ -399,8 +414,11 @@
     border-bottom: none;
 }
 
+@media (hover: hover) {
+
 .table tr:hover {
     background-color: #f8fafc;
+}
 }
 
 .loading {

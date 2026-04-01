@@ -25,8 +25,11 @@
     transition: color 0.2s;
 }
 
+@media (hover: hover) {
+
 .breadcrumbs a:hover {
     color: #17a2b8;
+}
 }
 
 .separator {
@@ -96,8 +99,11 @@
     transition: color 0.2s;
 }
 
+@media (hover: hover) {
+
 .resetBtn:hover {
     color: #17a2b8;
+}
 }
 
 .filterSection {
@@ -113,8 +119,11 @@
     padding: 5px 0;
 }
 
+@media (hover: hover) {
+
 .sectionHeader:hover h3 {
     color: #17a2b8;
+}
 }
 
 .rotateIcon {
@@ -502,9 +511,12 @@
     transition: background 0.2s;
 }
 
+@media (hover: hover) {
+
 .dropdownContent div:hover {
     background: #f1f5f9;
     color: #17a2b8;
+}
 }
 
 /* Product Grid Styling */
@@ -1030,6 +1042,8 @@
     stroke-width: 2.5px;
 }
 
+@media (hover: hover) {
+
 .numBtn:hover,
 .arrowBtn:hover:not(:disabled) {
     border-color: #17a2b8;
@@ -1037,6 +1051,7 @@
     background: #f0f9fa;
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(23, 162, 184, 0.1);
+}
 }
 
 .activePage {
@@ -1054,9 +1069,12 @@
     color: #cbd5e1;
 }
 
+@media (hover: hover) {
+
 .arrowBtn:disabled:hover {
     transform: none;
     box-shadow: none;
+}
 }
 
 .paginationDots {

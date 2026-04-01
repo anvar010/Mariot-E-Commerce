@@ -185,9 +185,12 @@
     transition: color 0.2s;
 }
 
+@media (hover: hover) {
+
 .linksCol a:hover {
     color: #000;
     text-decoration: underline;
+}
 }
 
 .socialSection h4 {
@@ -222,12 +225,16 @@
 }
 
 /* Brand Colors on Hover */
+@media (hover: hover) {
 .socialIcons a.facebook:hover {
     background-color: #1877f2;
     color: #fff;
     border-color: #1877f2;
     transform: translateY(-3px);
 }
+}
+
+@media (hover: hover) {
 
 .socialIcons a.instagram:hover {
     background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
@@ -235,6 +242,9 @@
     border-color: transparent;
     transform: translateY(-3px);
 }
+}
+
+@media (hover: hover) {
 
 .socialIcons a.youtube:hover {
     background-color: #FF0000;
@@ -242,6 +252,9 @@
     border-color: #FF0000;
     transform: translateY(-3px);
 }
+}
+
+@media (hover: hover) {
 
 .socialIcons a.tiktok:hover {
     background-color: #000000;
@@ -249,6 +262,9 @@
     border-color: #000000;
     transform: translateY(-3px);
 }
+}
+
+@media (hover: hover) {
 
 .socialIcons a.twitter:hover {
     background-color: #000000;
@@ -256,6 +272,9 @@
     border-color: #000000;
     transform: translateY(-3px);
 }
+}
+
+@media (hover: hover) {
 
 .socialIcons a.pinterest:hover {
     background-color: #E60023;
@@ -263,6 +282,9 @@
     border-color: #E60023;
     transform: translateY(-3px);
 }
+}
+
+@media (hover: hover) {
 
 .socialIcons a.linkedin:hover {
     background-color: #0077b5;
@@ -270,9 +292,13 @@
     border-color: #0077b5;
     transform: translateY(-3px);
 }
+}
+
+@media (hover: hover) {
 
 .socialIcons a:hover svg {
     transform: scale(1.1);
+}
 }
 
 /* Payment Section */
@@ -313,9 +339,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .payOption:hover {
     border-color: #70d475;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
 }
 
 .payLogo,

@@ -134,9 +134,12 @@
     transition: transform 0.2s, background 0.2s;
 }
 
+@media (hover: hover) {
+
 .submitBtn:hover {
     background: #4abccb;
     transform: translateY(-2px);
+}
 }
 
 .divider {
@@ -178,8 +181,11 @@
     transition: background 0.2s;
 }
 
+@media (hover: hover) {
+
 .googleBtn:hover {
     background: #f1f5f9;
+}
 }
 
 .googleIcon {

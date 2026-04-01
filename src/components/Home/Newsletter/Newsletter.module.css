@@ -53,9 +53,12 @@
     transition: background-color 0.2s, transform 0.2s;
 }
 
+@media (hover: hover) {
+
 .subscribeBtn:hover {
     background-color: #2a6669;
     transform: translateY(-1px);
+}
 }
 
 @media (max-width: 640px) {

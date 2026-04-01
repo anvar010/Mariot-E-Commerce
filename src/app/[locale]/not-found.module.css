@@ -72,8 +72,11 @@
     transition: background 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .searchButton:hover {
     background-color: #23595d;
+}
 }
 
 /* Shortcuts */
@@ -112,12 +115,15 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .shortcutBtn:hover {
     background: #ffffff;
     border-color: #2c6e73;
     color: #2c6e73;
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
 }
 
 .icon {

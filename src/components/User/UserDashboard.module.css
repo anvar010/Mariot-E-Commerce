@@ -101,11 +101,14 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .navLink:hover,
 .active {
     background-color: white;
     color: #56cfe1;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
 }
 
 .active {
@@ -159,8 +162,11 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .signOutBtn:hover {
     background-color: #f1f5f9;
+}
 }
 
 /* Content Styling */
@@ -240,8 +246,11 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .shoppingBtn:hover {
     opacity: 0.9;
+}
 }
 
 @media (max-width: 900px) {
@@ -501,9 +510,12 @@
     transition: transform 0.2s;
 }
 
+@media (hover: hover) {
+
 .wishlistItem:hover {
     transform: translateY(-5px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
 }
 
 .itemImage {
@@ -668,9 +680,12 @@
     margin-top: 10px;
 }
 
+@media (hover: hover) {
+
 .editBtn:hover {
     background: #1a1a1a;
     color: white;
+}
 }
 
 .editBtn:disabled {
@@ -725,10 +740,13 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
 }
 
+@media (hover: hover) {
+
 .premiumQuotationCard:hover {
     transform: translateY(-2px);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
     border-color: #56cfe1;
+}
 }
 
 .quotationInfoMain {
@@ -858,11 +876,14 @@
     border: 1px solid #e2e8f0;
 }
 
+@media (hover: hover) {
+
 .sleekViewBtn:hover {
     background: #f8fafc;
     color: #0d9488;
     border-color: #56cfe1;
     transform: translateY(-1px);
+}
 }
 
 .sleekDownloadBtn {
@@ -872,10 +893,13 @@
     box-shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.1);
 }
 
+@media (hover: hover) {
+
 .sleekDownloadBtn:hover {
     background: #334155;
     transform: translateY(-1px);
     box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.2);
+}
 }
 
 .sleekDeleteBtn {
@@ -892,11 +916,14 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .sleekDeleteBtn:hover {
     background: #fff1f2;
     color: #ef4444;
     border-color: #fee2e2;
     transform: scale(1.05);
+}
 }
 
 .miniLoaderTeal {
@@ -1078,9 +1105,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .closePreview:hover {
     transform: scale(1.1);
     color: #ef4444;
+}
 }
 
 .previewContent {
@@ -1112,10 +1142,13 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .downloadFinalBtn:hover {
     background: #45b7c9;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(86, 207, 225, 0.3);
+}
 }
 
 /* Address Section Modern Styling */
@@ -1140,10 +1173,13 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
+@media (hover: hover) {
+
 .addressCard:hover {
     border-color: #56cfe1;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
     transform: translateY(-4px);
+}
 }
 
 .addressCardDefault {
@@ -1224,9 +1260,12 @@
     color: #0369a1;
 }
 
+@media (hover: hover) {
+
 .addressEditBtn:hover {
     background: #e0f2fe;
     transform: translateY(-1px);
+}
 }
 
 .addressDeleteBtn {
@@ -1234,9 +1273,12 @@
     color: #be123c;
 }
 
+@media (hover: hover) {
+
 .addressDeleteBtn:hover {
     background: #ffe4e6;
     transform: translateY(-1px);
+}
 }
 
 /* Orders Section Redesign */
@@ -1253,10 +1295,13 @@
     margin-bottom: 20px;
 }
 
+@media (hover: hover) {
+
 .premiumOrderCard:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     border-color: #56cfe1;
+}
 }
 
 .orderMain {
@@ -1360,10 +1405,13 @@
     white-space: nowrap;
 }
 
+@media (hover: hover) {
+
 .orderViewBtn:hover {
     background: #f8fafc;
     border-color: #94a3b8;
     transform: translateY(-1px);
+}
 }
 
 .orderViewBtn:disabled {
@@ -1385,10 +1433,13 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
 }
 
+@media (hover: hover) {
+
 .premiumPaymentCard:hover {
     transform: translateX(4px);
     border-color: #56cfe1;
     box-shadow: 0 12px 20px -8px rgba(86, 207, 225, 0.15);
+}
 }
 
 .paymentMain {
@@ -1411,10 +1462,13 @@
     transition: all 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .premiumPaymentCard:hover .paymentIconWrapper {
     border-color: #56cfe1;
     color: #56cfe1;
     background: #f0fdfe;
+}
 }
 
 .paymentInfo {

@@ -177,8 +177,11 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .downloadQuote:hover {
     background: #f0fdf4;
+}
 }
 
 .downloadQuote:disabled {
@@ -329,8 +332,11 @@
     justify-content: center;
 }
 
+@media (hover: hover) {
+
 .removeBtn:hover {
     color: #ef4444;
+}
 }
 
 .section {
@@ -473,9 +479,12 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .downloadQuotationBtn:hover:not(:disabled) {
     background: var(--primary-teal);
     color: white;
+}
 }
 
 .downloadQuotationBtn:disabled {
@@ -539,8 +548,11 @@
     padding: 0;
 }
 
+@media (hover: hover) {
+
 .viewCouponsBtn:hover {
     text-decoration: underline;
+}
 }
 
 .couponRow {
@@ -579,8 +591,11 @@
     transition: background 0.2s;
 }
 
+@media (hover: hover) {
+
 .applyBtn:hover {
     background: #000;
+}
 }
 
 .applyBtn:disabled {
@@ -665,9 +680,12 @@
     position: relative;
 }
 
+@media (hover: hover) {
+
 .couponCard:hover {
     border-color: var(--primary-teal);
     background: #f0fdf4;
+}
 }
 
 .couponCode {
@@ -705,8 +723,11 @@
     transition: opacity 0.2s;
 }
 
+@media (hover: hover) {
+
 .couponCard:hover .useCouponBtn {
     opacity: 1;
+}
 }
 
 .allBrandsLabel {
@@ -782,8 +803,11 @@
     color: #94a3b8;
 }
 
+@media (hover: hover) {
+
 .closePopup:hover {
     color: #475569;
+}
 }
 
 .brandsListPopup {
@@ -1042,9 +1066,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .closeQuotationBtn:hover {
     background: #e2e8f0;
     color: #334155;
+}
 }
 
 .quotationContent {
@@ -1104,10 +1131,13 @@
     margin-top: 10px;
 }
 
+@media (hover: hover) {
+
 .downloadBtn:hover:not(:disabled) {
     background: #2a6669;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(51, 124, 127, 0.3);
+}
 }
 
 .downloadBtn:disabled {
@@ -1197,10 +1227,13 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .downloadBtn:hover:not(:disabled) {
     background: #2a6669;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(51, 124, 127, 0.3);
+}
 }
 
 .downloadBtn:disabled {
@@ -1273,9 +1306,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .quotationSheetClose:hover {
     background: #e2e8f0;
     color: #1e293b;
+}
 }
 
 .quotationSheetContent {
@@ -1325,9 +1361,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .quotationSheetSubmit:hover:not(:disabled) {
     background: #337c7f;
     color: white;
+}
 }
 
 .quotationSheetSubmit:disabled {

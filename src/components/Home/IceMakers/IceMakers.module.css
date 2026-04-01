@@ -69,12 +69,15 @@
     pointer-events: auto;
 }
 
+@media (hover: hover) {
+
 .navBtn:hover {
     background-color: #1a1a1a;
     border-color: #1a1a1a;
     color: #ffffff;
     transform: scale(1.1);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
 }
 
 .prevBtn {
@@ -153,9 +156,12 @@
     background: transparent;
 }
 
+@media (hover: hover) {
+
 .viewAllBtn:hover {
     background: #ffffff;
     color: #0f2b43;
+}
 }
 
 .bannerImg {
@@ -198,8 +204,11 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+@media (hover: hover) {
+
 .dealCard:hover {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}
 }
 
 .imageArea {
@@ -245,8 +254,11 @@
     z-index: 5;
 }
 
+@media (hover: hover) {
+
 .wishlistBtn:hover {
     color: #ef4444;
+}
 }
 
 .cardContent {
@@ -355,8 +367,11 @@
     transition: background 0.2s;
 }
 
+@media (hover: hover) {
+
 .whatsappBtn:hover {
     background-color: #4da668;
+}
 }
 
 .cartBtn {
@@ -376,8 +391,11 @@
     transition: background 0.2s;
 }
 
+@media (hover: hover) {
+
 .cartBtn:hover {
     background-color: #3fbabf;
+}
 }
 
 /* Responsiveness */

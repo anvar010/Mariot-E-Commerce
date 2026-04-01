@@ -62,10 +62,13 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+@media (hover: hover) {
+
 .addBtn:hover {
     background-color: #1e293b;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
 }
 
 .bulkDeleteBtn {
@@ -83,9 +86,12 @@
     transition: all 0.2s ease;
 }
 
+@media (hover: hover) {
+
 .bulkDeleteBtn:hover {
     background-color: #fef2f2;
     border-color: #ef4444;
+}
 }
 
 .filtersWrapper {
@@ -174,8 +180,11 @@
     vertical-align: middle;
 }
 
+@media (hover: hover) {
+
 .table tr:hover {
     background-color: #f8fafc;
+}
 }
 
 .brandLogo {
@@ -222,8 +231,11 @@
     font-size: 13px;
 }
 
+@media (hover: hover) {
+
 .websiteLink:hover {
     text-decoration: underline;
+}
 }
 
 .statusActive {
@@ -262,16 +274,22 @@
     cursor: pointer;
 }
 
+@media (hover: hover) {
+
 .editBtn:hover {
     color: #0ea5e9;
     border-color: #0ea5e9;
     background-color: #f0f9ff;
 }
+}
+
+@media (hover: hover) {
 
 .deleteBtn:hover {
     color: #ef4444;
     border-color: #ef4444;
     background-color: #fef2f2;
+}
 }
 
 /* Modal Styles */
@@ -344,9 +362,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .closeBtn:hover {
     background: #fee2e2;
     color: #ef4444;
+}
 }
 
 .form {
@@ -445,14 +466,20 @@
     transition: transform 0.2s;
 }
 
+@media (hover: hover) {
+
 .fileLabel:hover svg {
     transform: translateY(-2px);
 }
+}
+
+@media (hover: hover) {
 
 .fileLabel:hover {
     background-color: #f8fafc;
     border-color: #cbd5e1;
     color: #475569;
+}
 }
 
 .previewContainer {
@@ -492,9 +519,12 @@
     z-index: 2;
 }
 
+@media (hover: hover) {
+
 .removeFileBtn:hover {
     background: #dc2626;
     transform: scale(1.1);
+}
 }
 
 .modalFooter {
@@ -548,7 +578,10 @@
     font-weight: 500;
 }
 
+@media (hover: hover) {
+
 .submitBtn:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(15, 23, 42, 0.15);
+}
 }

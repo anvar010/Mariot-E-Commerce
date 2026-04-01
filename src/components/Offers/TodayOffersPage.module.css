@@ -76,9 +76,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .heroSliderFull .slideBtn:hover {
     background: rgba(51, 124, 127, 1);
     transform: translateY(-50%) scale(1.1);
+}
 }
 
 .heroSliderFull .slideBtn:first-child {
@@ -265,9 +268,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .resetBtnLarge:hover {
     background: #2a6669;
     transform: translateY(-2px);
+}
 }
 
 .showMoreBtn {
@@ -283,9 +289,12 @@
     transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .showMoreBtn:hover:not(:disabled) {
     background: #337c7f;
     color: white;
+}
 }
 
 .showMoreBtn:disabled {
@@ -363,9 +372,12 @@
     transition: color 0.2s;
 }
 
+@media (hover: hover) {
+
 .readMoreBtn:hover {
     color: #c41a1f;
     text-decoration: underline;
+}
 }
 
 @media (max-width: 1024px) {
