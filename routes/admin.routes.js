@@ -17,7 +17,8 @@ const {
     deleteHeroPoster,
     exportProducts,
     exportOrders,
-    getRoles
+    getRoles,
+    getDatabaseDebug
 } = require('../controllers/admin.controller');
 const { getAllReviews } = require('../controllers/review.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
@@ -29,6 +30,7 @@ router.use(protect);
 
 router.get('/stats', authorize('admin'), getDashboardStats);
 router.get('/roles', authorize('admin'), getRoles);
+router.get('/debug-db', authorize('admin'), getDatabaseDebug);
 
 router.route('/users')
     .get(authorize('admin'), getAllUsers);
