@@ -43,11 +43,22 @@ exports.getDashboardStats = async (req, res, next) => {
                 break;
         }
 
-        const [[{ count: userCount }]] = await db.query(`SELECT COUNT(*) as count FROM users`);
-        const [[{ count: totalProducts }]] = await db.query('SELECT COUNT(*) as count FROM products');
-        const [[{ count: activeProducts }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE status = "active" AND is_active = 1');
-        const [[{ count: totalOrders, total_sales: totalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != "cancelled" AND ${dateCondition}`);
-        const [[{ count: prevTotalOrders, total_sales: prevTotalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != "cancelled" AND ${prevDateCondition}`);
+        const [userRows] = await db.query(`SELECT COUNT(*) as count FROM users`);
+        const userCount = userRows[0]?.count || 0;
+
+        const [productRows] = await db.query('SELECT COUNT(*) as count FROM products');
+        const totalProducts = productRows[0]?.count || 0;
+
+        const [activeProductRows] = await db.query('SELECT COUNT(*) as count FROM products WHERE status = "active" AND is_active = 1');
+        const activeProducts = activeProductRows[0]?.count || 0;
+
+        const [orderRows] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != "cancelled" AND ${dateCondition}`);
+        const totalOrders = orderRows[0]?.count || 0;
+        const totalSales = orderRows[0]?.total_sales || 0;
+
+        const [prevOrderRows] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != "cancelled" AND ${prevDateCondition}`);
+        const prevTotalOrders = prevOrderRows[0]?.count || 0;
+        const prevTotalSales = prevOrderRows[0]?.total_sales || 0;
 
         const currentSales = totalSales || 0;
         const previousSales = prevTotalSales || 0;
@@ -518,5 +529,36 @@ exports.deleteHeroPoster = async (req, res, next) => {
         res.json({ success: true, message: 'Poster deleted successfully' });
     } catch (error) {
         next(error);
+    }
+};
+
+// @desc    Debug database counts
+// @route   GET /api/v1/admin/debug-db
+// @access  Private/Admin
+exports.getDatabaseDebug = async (req, res, next) => {
+    try {
+        const [users] = await db.query('SELECT COUNT(*) as count FROM users');
+        const [products] = await db.query('SELECT COUNT(*) as count FROM products');
+        const [categories] = await db.query('SELECT COUNT(*) as count FROM categories');
+        const [brands] = await db.query('SELECT COUNT(*) as count FROM brands');
+        const [orders] = await db.query('SELECT COUNT(*) as count FROM orders');
+        
+        res.json({
+            success: true,
+            counts: {
+                users: users[0]?.count || 0,
+                products: products[0]?.count || 0,
+                categories: categories[0]?.count || 0,
+                brands: brands[0]?.count || 0,
+                orders: orders[0]?.count || 0
+            },
+            env: process.env.NODE_ENV,
+            db_host: process.env.DB_HOST ? 'Configured' : 'Missing'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 };
