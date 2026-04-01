@@ -8,31 +8,38 @@ exports.getDashboardStats = async (req, res, next) => {
         const { timeRange } = req.query;
         let dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"; // default
         let oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
-        
+        let prevDateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
+
         switch (timeRange) {
             case '14d':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)";
+                prevDateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 28 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 14 DAY)";
                 break;
             case '30d':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
+                prevDateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
                 break;
             case '3m':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)";
+                prevDateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) AND created_at < DATE_SUB(CURDATE(), INTERVAL 3 MONTH)";
                 break;
             case '6m':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)";
+                prevDateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) AND created_at < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)";
                 break;
             case '1y':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)";
+                prevDateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 2 YEAR) AND created_at < DATE_SUB(CURDATE(), INTERVAL 1 YEAR)";
                 break;
             case 'all':
                 dateCondition = "1=1";
                 oDateCondition = "1=1";
+                prevDateCondition = "1=0";
                 break;
         }
 
@@ -40,7 +47,16 @@ exports.getDashboardStats = async (req, res, next) => {
         const [[{ count: totalProducts }]] = await db.query('SELECT COUNT(*) as count FROM products');
         const [[{ count: activeProducts }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE status = "active" AND is_active = 1');
         const [[{ count: totalOrders, total_sales: totalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != "cancelled" AND ${dateCondition}`);
-        
+        const [[{ count: prevTotalOrders, total_sales: prevTotalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != "cancelled" AND ${prevDateCondition}`);
+
+        const currentSales = totalSales || 0;
+        const previousSales = prevTotalSales || 0;
+        const salesGrowth = previousSales > 0 ? Math.round(((currentSales - previousSales) / previousSales) * 100) : (currentSales > 0 ? 100 : 0);
+
+        const currentOrders = totalOrders || 0;
+        const previousOrders = prevTotalOrders || 0;
+        const ordersGrowth = previousOrders > 0 ? Math.round(((currentOrders - previousOrders) / previousOrders) * 100) : (currentOrders > 0 ? 100 : 0);
+
         const [recentOrders] = await db.query(`
             SELECT o.*, u.name as user_name 
             FROM orders o 
@@ -115,25 +131,28 @@ exports.getDashboardStats = async (req, res, next) => {
         const actualIssues = (missingImages || 0) + (missingDescription || 0) + (shortTitles || 0) + (longTitles || 0) + (missingBrand || 0);
         const seoScore = totalProductsCount > 0 ? Math.round(((totalPossibleIssues - actualIssues) / totalPossibleIssues) * 100) : 100;
 
-        // Growth
-        const [[growth]] = await db.query(`
+        // Users Growth
+        const [[userGrowthStats]] = await db.query(`
             SELECT 
-                (SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as current_period,
-                (SELECT COUNT(*) FROM users WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY)) as prev_period
+                (SELECT COUNT(*) FROM users WHERE ${dateCondition}) as current_period,
+                (SELECT COUNT(*) FROM users WHERE ${prevDateCondition}) as prev_period
         `);
 
-        const growthPercentage = growth.prev_period > 0 
-            ? Math.round(((growth.current_period - growth.prev_period) / growth.prev_period) * 100)
-            : growth.current_period * 100;
+        const userGrowthPercentage = userGrowthStats.prev_period > 0
+            ? Math.round(((userGrowthStats.current_period - userGrowthStats.prev_period) / userGrowthStats.prev_period) * 100)
+            : (userGrowthStats.current_period > 0 ? 100 : 0);
 
         res.json({
             success: true,
             data: {
                 totalUsers: userCount,
+                userGrowth: userGrowthPercentage,
                 totalProducts: totalProductsCount,
                 activeProducts: activeProducts || 0,
                 totalOrders: totalOrders || 0,
-                totalSales: totalSales || 0,
+                totalSales: currentSales,
+                salesGrowth,
+                ordersGrowth,
                 recentOrders,
                 salesHistory,
                 categorySales,
@@ -142,7 +161,6 @@ exports.getDashboardStats = async (req, res, next) => {
                 recentReviews,
                 seoStats: {
                     score: seoScore,
-                    growth: growthPercentage,
                     issues: {
                         missingImages,
                         missingDescription,
