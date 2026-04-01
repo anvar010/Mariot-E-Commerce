@@ -68,8 +68,11 @@ const AdminDashboard = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isDropdownOpen]);
 
+    const [error, setError] = useState<string | null>(null);
+
     const fetchStats = async (range = timeRange) => {
         setLoading(true);
+        setError(null);
         try {
             const res = await fetch(`${API_BASE_URL}/admin/stats?timeRange=${range}&_t=${new Date().getTime()}`, {
                 credentials: "include",
@@ -79,9 +82,12 @@ const AdminDashboard = () => {
             const data = await res.json();
             if (data.success) {
                 setStats(data.data);
+            } else {
+                setError(data.message || 'Failed to fetch dashboard data');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to fetch dashboard stats', error);
+            setError(error.message || 'Network error occurred');
             showNotification('Failed to load dashboard data', 'error');
         } finally {
             setLoading(false);
@@ -140,6 +146,21 @@ const AdminDashboard = () => {
 
     if (loading && !stats) {
         return <div className={styles.dashboard}><div style={{ padding: '80px', textAlign: 'center' }}>Loading dashboard data...</div></div>;
+    }
+
+    if (error && !stats) {
+        return (
+            <div className={styles.dashboard}>
+                <div style={{ padding: '80px', textAlign: 'center' }}>
+                    <AlertTriangle size={48} color="#ef4444" style={{ marginBottom: '16px' }} />
+                    <h3>Dashboard Error</h3>
+                    <p style={{ color: '#64748b', marginTop: '8px' }}>{error}</p>
+                    <button className={styles.refreshBtn} onClick={() => fetchStats()} style={{ marginTop: '20px' }}>
+                        Retry Connection
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return (
