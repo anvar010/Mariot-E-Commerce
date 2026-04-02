@@ -725,8 +725,12 @@
 }
 
 .trustBadge {
-    height: 24px;
+    height: 28px;
     object-fit: contain;
+}
+
+.visaBadge {
+    height: 38px;
 }
 
 .animateSpin {

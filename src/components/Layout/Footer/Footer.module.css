@@ -349,9 +349,13 @@
 
 .payLogo,
 .payLogoSvg {
-    height: 24px;
+    height: 28px;
     width: auto;
     object-fit: contain;
+}
+
+.visaLogo {
+    height: 38px;
 }
 
 /* 3. Copyright Bar */

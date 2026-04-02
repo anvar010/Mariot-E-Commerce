@@ -128,11 +128,11 @@ const Footer = () => {
                             <h4>{t('paymentMethods')}</h4>
                             <div className={styles.paymentIcons}>
                                 <div className={styles.payOption}>
-                                    <img src="/assets/visa-logo.svg" alt="Visa" className={styles.payLogo} />
+                                    <img src="/assets/visa-logo.svg" alt="Visa" className={`${styles.payLogo} ${styles.visaLogo}`} />
                                 </div>
-                                <div className={styles.payOption}><img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className={styles.payLogo} /></div>
-                                <div className={styles.payOption}><img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Apple_Pay_logo.svg" alt="Apple Pay" className={styles.payLogo} /></div>
-                                <div className={styles.payOption}><img src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Google_Pay_Logo_%282020%29.svg" alt="Google Pay" className={styles.payLogo} /></div>
+                                <div className={styles.payOption}><img src="/assets/mastercard-logo.svg" alt="Mastercard" className={styles.payLogo} /></div>
+                                <div className={styles.payOption}><img src="/assets/apple-pay-logo.svg" alt="Apple Pay" className={styles.payLogo} /></div>
+                                <div className={styles.payOption}><img src="/assets/google-pay-logo.svg" alt="Google Pay" className={styles.payLogo} /></div>
                             </div>
                         </div>
                     </div>

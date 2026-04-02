@@ -806,11 +806,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         <div className={styles.paymentMethods}>
                             <div className={styles.paymentTitle}>{t('weAcceptPayment')}</div>
                             <div className={styles.paymentLogos}>
-                                <img src="/assets/visa-logo.svg" alt="Visa" />
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" />
+                                <img src="/assets/visa-logo.svg" alt="Visa" className={styles.visaDetailLogo} />
+                                <img src="/assets/mastercard-logo.svg" alt="Mastercard" />
                                 <img src="/assets/Tabby.webp" alt="Tabby" />
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Apple_Pay_logo.svg" alt="ApplePay" />
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Google_Pay_Logo_%282020%29.svg" alt="GPay" />
+                                <img src="/assets/apple-pay-logo.svg" alt="ApplePay" />
+                                <img src="/assets/google-pay-logo.svg" alt="GPay" />
                             </div>
                         </div>
                     </div>
