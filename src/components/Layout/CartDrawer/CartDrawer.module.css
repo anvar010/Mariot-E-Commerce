@@ -179,9 +179,9 @@
 
 @media (hover: hover) {
 
-.downloadQuote:hover {
-    background: #f0fdf4;
-}
+    .downloadQuote:hover {
+        background: #f0fdf4;
+    }
 }
 
 .downloadQuote:disabled {
@@ -229,6 +229,7 @@
     cursor: pointer;
     flex-shrink: 0;
     padding: 4px;
+    position: relative;
 }
 
 .itemImg img {
@@ -266,18 +267,23 @@
 }
 
 .itemCountBadge {
+    position: absolute;
+    top: -8px;
+    inset-inline-end: -8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent-orange);
+    background: #0f172a; /* Sleek Slate 900 */
     color: white;
     font-size: 10px;
     font-weight: 800;
     min-width: 20px;
     height: 20px;
-    padding: 0 6px;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+    padding: 0 4px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 5;
 }
 
 .itemBrand {
@@ -334,9 +340,9 @@
 
 @media (hover: hover) {
 
-.removeBtn:hover {
-    color: #ef4444;
-}
+    .removeBtn:hover {
+        color: #ef4444;
+    }
 }
 
 .section {
@@ -481,10 +487,10 @@
 
 @media (hover: hover) {
 
-.downloadQuotationBtn:hover:not(:disabled) {
-    background: var(--primary-teal);
-    color: white;
-}
+    .downloadQuotationBtn:hover:not(:disabled) {
+        background: var(--primary-teal);
+        color: white;
+    }
 }
 
 .downloadQuotationBtn:disabled {
@@ -550,9 +556,9 @@
 
 @media (hover: hover) {
 
-.viewCouponsBtn:hover {
-    text-decoration: underline;
-}
+    .viewCouponsBtn:hover {
+        text-decoration: underline;
+    }
 }
 
 .couponRow {
@@ -593,9 +599,9 @@
 
 @media (hover: hover) {
 
-.applyBtn:hover {
-    background: #000;
-}
+    .applyBtn:hover {
+        background: #000;
+    }
 }
 
 .applyBtn:disabled {
@@ -682,10 +688,10 @@
 
 @media (hover: hover) {
 
-.couponCard:hover {
-    border-color: var(--primary-teal);
-    background: #f0fdf4;
-}
+    .couponCard:hover {
+        border-color: var(--primary-teal);
+        background: #f0fdf4;
+    }
 }
 
 .couponCode {
@@ -725,9 +731,9 @@
 
 @media (hover: hover) {
 
-.couponCard:hover .useCouponBtn {
-    opacity: 1;
-}
+    .couponCard:hover .useCouponBtn {
+        opacity: 1;
+    }
 }
 
 .allBrandsLabel {
@@ -805,9 +811,9 @@
 
 @media (hover: hover) {
 
-.closePopup:hover {
-    color: #475569;
-}
+    .closePopup:hover {
+        color: #475569;
+    }
 }
 
 .brandsListPopup {
@@ -1068,10 +1074,10 @@
 
 @media (hover: hover) {
 
-.closeQuotationBtn:hover {
-    background: #e2e8f0;
-    color: #334155;
-}
+    .closeQuotationBtn:hover {
+        background: #e2e8f0;
+        color: #334155;
+    }
 }
 
 .quotationContent {
@@ -1133,11 +1139,11 @@
 
 @media (hover: hover) {
 
-.downloadBtn:hover:not(:disabled) {
-    background: #2a6669;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(51, 124, 127, 0.3);
-}
+    .downloadBtn:hover:not(:disabled) {
+        background: #2a6669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(51, 124, 127, 0.3);
+    }
 }
 
 .downloadBtn:disabled {
@@ -1229,11 +1235,11 @@
 
 @media (hover: hover) {
 
-.downloadBtn:hover:not(:disabled) {
-    background: #2a6669;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(51, 124, 127, 0.3);
-}
+    .downloadBtn:hover:not(:disabled) {
+        background: #2a6669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(51, 124, 127, 0.3);
+    }
 }
 
 .downloadBtn:disabled {
@@ -1308,10 +1314,10 @@
 
 @media (hover: hover) {
 
-.quotationSheetClose:hover {
-    background: #e2e8f0;
-    color: #1e293b;
-}
+    .quotationSheetClose:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
 }
 
 .quotationSheetContent {
@@ -1363,10 +1369,10 @@
 
 @media (hover: hover) {
 
-.quotationSheetSubmit:hover:not(:disabled) {
-    background: #337c7f;
-    color: white;
-}
+    .quotationSheetSubmit:hover:not(:disabled) {
+        background: #337c7f;
+        color: white;
+    }
 }
 
 .quotationSheetSubmit:disabled {
