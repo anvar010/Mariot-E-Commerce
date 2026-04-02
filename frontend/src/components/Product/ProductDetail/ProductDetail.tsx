@@ -39,6 +39,7 @@ import Loader from '@/components/shared/Loader/Loader';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Link from 'next/link';
 import { MessageSquare, Phone } from 'lucide-react';
+import useEmblaCarousel from 'embla-carousel-react';
 import Script from 'next/script';
 
 // Swiper imports
@@ -169,6 +170,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const locale = useLocale();
     const t = useTranslations('product');
     const isArabic = locale === 'ar';
+
+    const [relatedEmblaRef, relatedEmblaApi] = useEmblaCarousel({
+        loop: false,
+        direction: locale === 'ar' ? 'rtl' : 'ltr',
+        align: 'start',
+        containScroll: 'trimSnaps',
+        dragFree: true
+    });
 
 
     // Helper to get localized product field
@@ -335,10 +344,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         }
     };
 
-    const [isDraggingRelated, setIsDraggingRelated] = useState(false);
-    const [startXRelated, setStartXRelated] = useState(0);
-    const [scrollLeftRelated, setScrollLeftRelated] = useState(0);
-
     const thumbScrollRef = useRef<HTMLDivElement>(null);
     const [isDraggingThumbs, setIsDraggingThumbs] = useState(false);
     const [startXThumbs, setStartXThumbs] = useState(0);
@@ -354,39 +359,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
     const handleThumbMouseLeave = () => setIsDraggingThumbs(false);
     const handleThumbMouseUp = () => setIsDraggingThumbs(false);
+
     const handleThumbMouseMove = (e: React.MouseEvent) => {
         if (!isDraggingThumbs || !thumbScrollRef.current) return;
         e.preventDefault();
         const x = e.pageX - thumbScrollRef.current.offsetLeft;
         const walk = (x - startXThumbs) * 1.1;
         thumbScrollRef.current.scrollLeft = scrollLeftThumbs - walk;
-    };
-
-    const handleRelatedMouseDown = (e: React.MouseEvent) => {
-        const grid = document.getElementById('related-grid');
-        if (!grid) return;
-        setIsDraggingRelated(true);
-        setStartXRelated(e.pageX - grid.offsetLeft);
-        setScrollLeftRelated(grid.scrollLeft);
-        e.preventDefault();
-    };
-
-    const handleRelatedMouseLeave = () => {
-        setIsDraggingRelated(false);
-    };
-
-    const handleRelatedMouseUp = () => {
-        setIsDraggingRelated(false);
-    };
-
-    const handleRelatedMouseMove = (e: React.MouseEvent) => {
-        if (!isDraggingRelated) return;
-        const grid = document.getElementById('related-grid');
-        if (!grid) return;
-        e.preventDefault();
-        const x = e.pageX - grid.offsetLeft;
-        const walk = (x - startXRelated) * 1.1;
-        grid.scrollLeft = scrollLeftRelated - walk;
     };
 
     if (loading) return <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>;
@@ -1073,34 +1052,24 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         <div className={styles.sliderWrapper}>
                             <button
                                 className={`${styles.sliderArrow} ${styles.prevArrow}`}
-                                onClick={() => {
-                                    const grid = document.getElementById('related-grid');
-                                    if (grid) grid.scrollBy({ left: -300, behavior: 'smooth' });
-                                }}
+                                onClick={() => relatedEmblaApi?.scrollPrev()}
                             >
                                 <ChevronLeft size={26} />
                             </button>
 
-                            <div
-                                className={styles.relatedGrid}
-                                id="related-grid"
-                                onMouseDown={handleRelatedMouseDown}
-                                onMouseLeave={handleRelatedMouseLeave}
-                                onMouseUp={handleRelatedMouseUp}
-                                onMouseMove={handleRelatedMouseMove}
-                                style={{ cursor: isDraggingRelated ? 'grabbing' : 'grab' }}
-                            >
-                                {relatedProducts.map((p) => (
-                                    <ProductCardPromotion key={p.id} product={{ ...p, price: Number(p.offer_price) > 0 ? Number(p.offer_price) : Number(p.price), old_price: Number(p.offer_price) > 0 ? Number(p.price) : (Number(p.old_price) || Number(p.originalPrice) || 0) }} />
-                                ))}
+                            <div className={styles.relatedViewport} ref={relatedEmblaRef}>
+                                <div className={styles.relatedGrid}>
+                                    {relatedProducts.map((p) => (
+                                        <div key={p.id} className={styles.relatedSlide}>
+                                            <ProductCardPromotion product={{ ...p, price: Number(p.offer_price) > 0 ? Number(p.offer_price) : Number(p.price), old_price: Number(p.offer_price) > 0 ? Number(p.price) : (Number(p.old_price) || Number(p.originalPrice) || 0) }} />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
                             <button
                                 className={`${styles.sliderArrow} ${styles.nextArrow}`}
-                                onClick={() => {
-                                    const grid = document.getElementById('related-grid');
-                                    if (grid) grid.scrollBy({ left: 300, behavior: 'smooth' });
-                                }}
+                                onClick={() => relatedEmblaApi?.scrollNext()}
                             >
                                 <ChevronRight size={26} />
                             </button>

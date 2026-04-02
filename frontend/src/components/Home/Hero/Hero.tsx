@@ -156,7 +156,7 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
         >
-            {/* Background Image Slider */}
+            {/* Background Image Slider with Swipe Support */}
             <div className={styles.imageLayer}>
                 <AnimatePresence initial={false} custom={direction} mode="popLayout">
                     <motion.div
@@ -167,6 +167,18 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                         initial="enter"
                         animate="center"
                         exit="exit"
+                        drag="x"
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={0.2}
+                        onDragEnd={(_, info) => {
+                            const swipe = info.offset.x;
+                            const threshold = 50;
+                            if (swipe < -threshold) {
+                                nextSlide();
+                            } else if (swipe > threshold) {
+                                prevSlide();
+                            }
+                        }}
                     >
                         <Image
                             src={slide.image}

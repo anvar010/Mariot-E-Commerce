@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styles from './CategoryBrowse.module.css';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
+import useEmblaCarousel from 'embla-carousel-react';
 
 const categories = [
     { id: 1, name: "Coffee Makers", slug: "coffee-makers", image: "/assets/product_images/coffeemakers.webp" },
@@ -36,99 +37,38 @@ const CategoryBrowse = () => {
     const tc = useTranslations('categoryContent');
     const locale = useLocale();
     const isRtl = locale === 'ar';
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const [canScrollLeft, setCanScrollLeft] = useState(isRtl);
-    const [canScrollRight, setCanScrollRight] = useState(!isRtl);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(true);
 
-    const checkScroll = () => {
-        let ticking = false;
-        return () => {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    if (scrollRef.current) {
-                        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-                        const absScroll = Math.abs(Math.round(scrollLeft));
-                        const maxScroll = scrollWidth - clientWidth;
+    const [emblaRef, emblaApi] = useEmblaCarousel({ 
+        loop: false, 
+        direction: isRtl ? 'rtl' : 'ltr',
+        align: 'start',
+        skipSnaps: true,
+        dragFree: true,
+        containScroll: 'trimSnaps'
+    });
 
-                        if (isRtl) {
-                            setCanScrollRight(absScroll > 10);
-                            setCanScrollLeft(absScroll < maxScroll - 10);
-                        } else {
-                            setCanScrollLeft(absScroll > 10);
-                            setCanScrollRight(absScroll < maxScroll - 10);
-                        }
-                    }
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        };
-    };
+    const scrollPrev = useCallback(() => {
+        if (emblaApi) emblaApi.scrollPrev();
+    }, [emblaApi]);
+
+    const scrollNext = useCallback(() => {
+        if (emblaApi) emblaApi.scrollNext();
+    }, [emblaApi]);
+
+    const onSelect = useCallback(() => {
+        if (!emblaApi) return;
+        setCanScrollLeft(emblaApi.canScrollPrev());
+        setCanScrollRight(emblaApi.canScrollNext());
+    }, [emblaApi]);
 
     useEffect(() => {
-        const handler = checkScroll();
-        const el = scrollRef.current;
-
-        if (el) {
-            window.requestAnimationFrame(() => {
-                handler();
-            });
-
-            // Mouse wheel to horizontal scroll conversion
-            const handleWheel = (e: WheelEvent) => {
-                if (e.deltaY !== 0) {
-                    e.preventDefault();
-                    el.scrollLeft += e.deltaY * 0.8; // Slightly Dampened for smoothness
-                }
-            };
-
-            el.addEventListener('scroll', handler, { passive: true });
-            el.addEventListener('wheel', handleWheel, { passive: false });
-
-            return () => {
-                el.removeEventListener('scroll', handler);
-                el.removeEventListener('wheel', handleWheel);
-            };
-        }
-    }, [isRtl]);
-
-    const [isDragging, setIsDragging] = useState(false);
-    const [startX, setStartX] = useState(0);
-    const [scrollLeftState, setScrollLeftState] = useState(0);
-
-    const scroll = (direction: 'left' | 'right') => {
-        if (scrollRef.current) {
-            const scrollAmount = 400;
-            scrollRef.current.scrollBy({
-                left: direction === 'left' ? -scrollAmount : scrollAmount,
-                behavior: 'smooth'
-            });
-        }
-    };
-
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (!scrollRef.current) return;
-        setIsDragging(true);
-        setStartX(e.pageX - scrollRef.current.offsetLeft);
-        setScrollLeftState(scrollRef.current.scrollLeft);
-        e.preventDefault();
-    };
-
-    const handleMouseLeave = () => {
-        setIsDragging(false);
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isDragging || !scrollRef.current) return;
-        e.preventDefault();
-        const x = e.pageX - scrollRef.current.offsetLeft;
-        const walk = (x - startX) * 1.1;
-        scrollRef.current.scrollLeft = scrollLeftState - walk;
-    };
+        if (!emblaApi) return;
+        onSelect();
+        emblaApi.on('select', onSelect);
+        emblaApi.on('reInit', onSelect);
+    }, [emblaApi, onSelect]);
 
     return (
         <section className={styles.categorySection} id="category-browse">
@@ -153,14 +93,14 @@ const CategoryBrowse = () => {
                         <div className={styles.navBtns}>
                             <motion.button
                                 className={`${styles.navBtn} ${!canScrollLeft ? styles.navBtnDisabled : ''}`}
-                                onClick={() => scroll('left')}
+                                onClick={scrollPrev}
                                 disabled={!canScrollLeft}
                             >
                                 <ChevronLeft size={20} />
                             </motion.button>
                             <motion.button
                                 className={`${styles.navBtn} ${!canScrollRight ? styles.navBtnDisabled : ''}`}
-                                onClick={() => scroll('right')}
+                                onClick={scrollNext}
                                 disabled={!canScrollRight}
                             >
                                 <ChevronRight size={20} />
@@ -170,52 +110,39 @@ const CategoryBrowse = () => {
                 </motion.div>
 
                 <div className={styles.sliderWrapper}>
-                    <div
-                        className={styles.categoryGrid}
-                        ref={scrollRef}
-                        onMouseDown={handleMouseDown}
-                        onMouseLeave={handleMouseLeave}
-                        onMouseUp={handleMouseUp}
-                        onMouseMove={handleMouseMove}
-                        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-                    >
-                        {categories.map((category, index) => (
-                            <motion.div
-                                key={category.id}
-                                className={styles.categoryCardWrapper}
-                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5, delay: index * 0.05 }}
-                            >
-                                <Link
-                                    href={`/shop?category=${category.slug}`}
-                                    className={styles.categoryCard}
-                                >
-                                    <div className={styles.imageBox}>
-                                        <Image
-                                            src={category.image}
-                                            alt={t.has(category.slug) ? t(category.slug) : category.name}
-                                            fill
-                                            sizes="(max-width: 768px) 150px, 120px"
-                                            style={{ objectFit: 'contain', zIndex: 10 }}
-                                            className={styles.categoryImg}
-                                        />
-                                        <div className={styles.imageOverlay}>
-                                            {category.name.split(' ')[0]}
+                    <div className={styles.emblaViewport} ref={emblaRef}>
+                        <div className={styles.categoryGrid}>
+                            {categories.map((category) => (
+                                <div key={category.id} className={styles.categoryCardWrapper}>
+                                    <Link
+                                        href={`/shop?category=${category.slug}`}
+                                        className={styles.categoryCard}
+                                    >
+                                        <div className={styles.imageBox}>
+                                            <Image
+                                                src={category.image}
+                                                alt={t.has(category.slug) ? t(category.slug) : category.name}
+                                                fill
+                                                sizes="(max-width: 768px) 150px, 120px"
+                                                style={{ objectFit: 'contain', zIndex: 10 }}
+                                                className={styles.categoryImg}
+                                            />
+                                            <div className={styles.imageOverlay}>
+                                                {category.name.split(' ')[0]}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className={styles.cardBottom}>
-                                        <span className={styles.categoryName}>
-                                            {t.has(category.slug) ? t(category.slug) : category.name}
-                                        </span>
-                                        <span className={styles.categoryArrow}>
-                                            {isRtl ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
-                                        </span>
-                                    </div>
-                                </Link>
-                            </motion.div>
-                        ))}
+                                        <div className={styles.cardBottom}>
+                                            <span className={styles.categoryName}>
+                                                {t.has(category.slug) ? t(category.slug) : category.name}
+                                            </span>
+                                            <span className={styles.categoryArrow}>
+                                                {isRtl ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     <AnimatePresence>
