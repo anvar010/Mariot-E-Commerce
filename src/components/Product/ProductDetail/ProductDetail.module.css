@@ -73,12 +73,12 @@
 
 @media (hover: hover) {
 
-.expandBtn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-    background: #f8f9fa;
-    color: #e31e24;
-}
+    .expandBtn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        background: #f8f9fa;
+        color: #e31e24;
+    }
 }
 
 .mainImage {
@@ -120,9 +120,9 @@
 
 @media (hover: hover) {
 
-.wishlistBtn:hover {
-    transform: scale(1.05);
-}
+    .wishlistBtn:hover {
+        transform: scale(1.05);
+    }
 }
 
 .thumbnailsWrapper {
@@ -258,11 +258,11 @@
 
 @media (hover: hover) {
 
-.brandLogoWrapper:hover {
-    border-color: #4cc9cd;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    transform: translateY(-1px);
-}
+    .brandLogoWrapper:hover {
+        border-color: #4cc9cd;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        transform: translateY(-1px);
+    }
 }
 
 .brandLogo {
@@ -338,9 +338,9 @@
 
 @media (hover: hover) {
 
-.readMoreBtn:hover {
-    color: #c4191f;
-}
+    .readMoreBtn:hover {
+        color: #c4191f;
+    }
 }
 
 /* Tabby Area */
@@ -425,19 +425,19 @@
 
 @media (hover: hover) {
 
-.priceMatchCard:hover {
-    border-color: #cbd5e1;
-    background: #ffffff;
-    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.05);
-    transform: translateY(-2px);
-}
+    .priceMatchCard:hover {
+        border-color: #cbd5e1;
+        background: #ffffff;
+        box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
 }
 
 @media (hover: hover) {
 
-.priceMatchCard:hover::before {
-    opacity: 1;
-}
+    .priceMatchCard:hover::before {
+        opacity: 1;
+    }
 }
 
 .priceMatchIcon {
@@ -457,11 +457,11 @@
 
 @media (hover: hover) {
 
-.priceMatchCard:hover .priceMatchIcon {
-    background: #334155;
-    color: #ffffff;
-    transform: rotate(-10deg);
-}
+    .priceMatchCard:hover .priceMatchIcon {
+        background: #334155;
+        color: #ffffff;
+        transform: rotate(-10deg);
+    }
 }
 
 .priceMatchInfo {
@@ -493,10 +493,10 @@
 
 @media (hover: hover) {
 
-.priceMatchCard:hover .chevronIcon {
-    color: #1e293b;
-    transform: translateX(4px);
-}
+    .priceMatchCard:hover .chevronIcon {
+        color: #1e293b;
+        transform: translateX(4px);
+    }
 }
 
 /* Purchase Actions */
@@ -536,12 +536,12 @@
 
 @media (hover: hover) {
 
-.qtyCustomSelect:hover,
-.qtyCustomSelect.open {
-    border-color: #3fbabf;
-    background: #ffffff;
-    box-shadow: 0 4px 12px rgba(63, 186, 191, 0.1);
-}
+    .qtyCustomSelect:hover,
+    .qtyCustomSelect.open {
+        border-color: #3fbabf;
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(63, 186, 191, 0.1);
+    }
 }
 
 .qtyCustomSelectText {
@@ -563,10 +563,10 @@
 
 @media (hover: hover) {
 
-.qtyCustomSelect:hover .qtyArrow,
-.qtyCustomSelect.open .qtyArrow {
-    color: #3fbabf;
-}
+    .qtyCustomSelect:hover .qtyArrow,
+    .qtyCustomSelect.open .qtyArrow {
+        color: #3fbabf;
+    }
 }
 
 .qtyCustomOptions {
@@ -608,10 +608,10 @@
 
 @media (hover: hover) {
 
-.qtyCustomOption:hover {
-    background: #f8fafc;
-    color: #3fbabf;
-}
+    .qtyCustomOption:hover {
+        background: #f8fafc;
+        color: #3fbabf;
+    }
 }
 
 .qtyCustomOption.selected {
@@ -641,9 +641,9 @@
 
 @media (hover: hover) {
 
-.addToCartBtn:hover {
-    background: #3fbabf;
-}
+    .addToCartBtn:hover {
+        background: #3fbabf;
+    }
 }
 
 .whatsappBtn {
@@ -667,9 +667,9 @@
 
 @media (hover: hover) {
 
-.whatsappBtn:hover {
-    background: #54c263;
-}
+    .whatsappBtn:hover {
+        background: #54c263;
+    }
 }
 
 /* Bottom Section (Description) */
@@ -741,9 +741,9 @@
 
 @media (hover: hover) {
 
-.videoContainerSmall:hover {
-    transform: translateY(-4px);
-}
+    .videoContainerSmall:hover {
+        transform: translateY(-4px);
+    }
 }
 
 .videoContainerSmall iframe {
@@ -902,11 +902,11 @@
 
 @media (hover: hover) {
 
-.resourceCard:hover {
-    border-color: #e31e24;
-    box-shadow: 0 10px 15px -3px rgba(227, 30, 36, 0.1), 0 4px 6px -2px rgba(227, 30, 36, 0.05);
-    transform: translateY(-2px);
-}
+    .resourceCard:hover {
+        border-color: #e31e24;
+        box-shadow: 0 10px 15px -3px rgba(227, 30, 36, 0.1), 0 4px 6px -2px rgba(227, 30, 36, 0.05);
+        transform: translateY(-2px);
+    }
 }
 
 .resourceIconInfo {
@@ -929,10 +929,10 @@
 
 @media (hover: hover) {
 
-.resourceCard:hover .fileIconBox {
-    background: #e31e24;
-    color: #ffffff;
-}
+    .resourceCard:hover .fileIconBox {
+        background: #e31e24;
+        color: #ffffff;
+    }
 }
 
 .resourceTextInfo {
@@ -970,10 +970,10 @@
 
 @media (hover: hover) {
 
-.resourceCard:hover .downloadAction {
-    background: #e31e24;
-    color: #ffffff;
-}
+    .resourceCard:hover .downloadAction {
+        background: #e31e24;
+        color: #ffffff;
+    }
 }
 
 @media (max-width: 640px) {
@@ -1022,10 +1022,10 @@
 
 @media (hover: hover) {
 
-.accordionItem:hover {
-    border-color: #cbd5e1;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-}
+    .accordionItem:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
 }
 
 .accordionHeader {
@@ -1047,9 +1047,9 @@
 
 @media (hover: hover) {
 
-.accordionHeader:hover {
-    color: #5bb377;
-}
+    .accordionHeader:hover {
+        color: #5bb377;
+    }
 }
 
 .accordionHeader svg {
@@ -1059,9 +1059,9 @@
 
 @media (hover: hover) {
 
-.accordionHeader:hover svg {
-    color: #5bb377;
-}
+    .accordionHeader:hover svg {
+        color: #5bb377;
+    }
 }
 
 .accordionContent {
@@ -1226,9 +1226,9 @@
 
 @media (hover: hover) {
 
-.closeModal:hover {
-    background: #f0f0f0;
-}
+    .closeModal:hover {
+        background: #f0f0f0;
+    }
 }
 
 .modalContent {
@@ -1452,10 +1452,10 @@
 
 @media (hover: hover) {
 
-.pmUploadZone:hover {
-    border-color: #3fbabf;
-    background: #f1f5f9;
-}
+    .pmUploadZone:hover {
+        border-color: #3fbabf;
+        background: #f1f5f9;
+    }
 }
 
 .pmUploadIcon {
@@ -1540,9 +1540,9 @@
 
 @media (hover: hover) {
 
-.pmSubmitBtn:hover {
-    background: #3fbabf;
-}
+    .pmSubmitBtn:hover {
+        background: #3fbabf;
+    }
 }
 
 @media (max-width: 640px) {
@@ -1583,10 +1583,10 @@
 
 @media (hover: hover) {
 
-.continueBtn:hover {
-    background: #333;
-    color: white;
-}
+    .continueBtn:hover {
+        background: #333;
+        color: white;
+    }
 }
 
 /* Modernized Bottom Sections */
@@ -1646,13 +1646,13 @@
 
 @media (hover: hover) {
 
-.sliderArrow:hover {
-    background: #1a1a1a;
-    border-color: #1a1a1a;
-    color: #ffffff;
-    transform: translateY(-50%) scale(1.1);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
+    .sliderArrow:hover {
+        background: #1a1a1a;
+        border-color: #1a1a1a;
+        color: #ffffff;
+        transform: translateY(-50%) scale(1.1);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
 }
 
 .relatedSection {
@@ -1671,43 +1671,40 @@
 
 
 
+.relatedViewport {
+    overflow: hidden;
+    margin: 0 40px;
+}
+
 .relatedGrid {
     display: flex;
-    overflow-x: auto;
     gap: 8px;
     padding-bottom: 20px;
     padding-top: 10px;
     align-items: stretch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    margin: 0 40px;
     user-select: none;
+    touch-action: pan-y pinch-zoom;
 }
 
-.relatedGrid::-webkit-scrollbar {
-    display: none;
-    /* Hide scrollbar for Chrome/Safari */
-}
-
-.relatedGrid>div {
+.relatedSlide {
     flex: 0 0 250px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
 }
 
 @media (max-width: 1024px) {
-    .relatedGrid {
+    .relatedViewport {
         margin: 0 20px;
     }
 }
 
 @media (max-width: 768px) {
-    .relatedGrid {
+    .relatedViewport {
         margin: 0;
-        gap: 8px;
     }
 
-    .relatedGrid>div {
+    .relatedSlide {
         flex: 0 0 200px;
     }
 
@@ -1734,26 +1731,16 @@
     }
 
     .relatedGrid {
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: 50%;
-        gap: 0px;
+        gap: 0;
         padding: 10px 0;
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
-        scroll-snap-type: x mandatory;
-        scrollbar-width: none;
-        margin: 0;
     }
 
-    .relatedGrid>div {
-        flex: none;
-        width: 100%;
-        scroll-snap-align: start;
+    .relatedSlide {
+        flex: 0 0 50%;
         border-right: 1px solid #f0f0f0;
     }
 
-    .relatedGrid>div:last-child {
+    .relatedSlide:last-child {
         border-right: none;
     }
 }
@@ -1832,11 +1819,11 @@
 
 @media (hover: hover) {
 
-.reviewItem:hover {
-    background: white;
-    border-color: #e2e8f0;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-}
+    .reviewItem:hover {
+        background: white;
+        border-color: #e2e8f0;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    }
 }
 
 .reviewHeader {
@@ -1898,10 +1885,10 @@
 
 @media (hover: hover) {
 
-.deleteReviewBtn:hover {
-    color: #ef4444;
-    background: #fee2e2;
-}
+    .deleteReviewBtn:hover {
+        color: #ef4444;
+        background: #fee2e2;
+    }
 }
 
 /* Expert Ask Redesign */
@@ -1957,11 +1944,11 @@
 
 @media (hover: hover) {
 
-.premiumBtn:hover {
-    background: #333;
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-}
+    .premiumBtn:hover {
+        background: #333;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
 }
 
 .secondaryBtn {
@@ -1978,11 +1965,11 @@
 
 @media (hover: hover) {
 
-.secondaryBtn:hover {
-    background: #4a9e65;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(91, 179, 119, 0.3);
-}
+    .secondaryBtn:hover {
+        background: #4a9e65;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(91, 179, 119, 0.3);
+    }
 }
 
 @media (max-width: 900px) {
@@ -2063,10 +2050,10 @@
 
 @media (hover: hover) {
 
-.starInput button:hover {
-    transform: scale(1.2) rotate(8deg);
-    background: #f8fafc;
-}
+    .starInput button:hover {
+        transform: scale(1.2) rotate(8deg);
+        background: #f8fafc;
+    }
 }
 
 .starInput button:active {
@@ -2121,11 +2108,11 @@
 
 @media (hover: hover) {
 
-.submitBtn:hover {
-    background: #4a9e65;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(91, 179, 119, 0.3);
-}
+    .submitBtn:hover {
+        background: #4a9e65;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(91, 179, 119, 0.3);
+    }
 }
 
 .submitBtn:active {
@@ -2153,11 +2140,11 @@
 
 @media (hover: hover) {
 
-.cancelBtn:hover {
-    background: #e2e8f0;
-    color: #1e293b;
-    transform: translateY(-2px);
-}
+    .cancelBtn:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+        transform: translateY(-2px);
+    }
 }
 
 .cancelBtn:active {
@@ -2429,11 +2416,11 @@
 
 @media (hover: hover) {
 
-.backHomeBtn:hover {
-    background: #333;
-    transform: translateY(-3px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-}
+    .backHomeBtn:hover {
+        background: #333;
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    }
 }
 
 /* Support Banner (matches user screenshot) */
@@ -2593,10 +2580,10 @@
 
 @media (hover: hover) {
 
-.closeOverlayBtn:hover {
-    transform: scale(1.1);
-    color: #ff4d4f;
-}
+    .closeOverlayBtn:hover {
+        transform: scale(1.1);
+        color: #ff4d4f;
+    }
 }
 
 @keyframes zoomIn {

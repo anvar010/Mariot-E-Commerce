@@ -108,6 +108,7 @@
     border-color: #1a1a1a;
     color: #ffffff;
     transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .prevBtn {
@@ -118,66 +119,26 @@
     margin-right: -20px;
 }
 
-.productGrid {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 0px;
-    padding: 20px 0;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    user-select: none;
-    scroll-behavior: smooth;
+.emblaViewport {
+    overflow: hidden;
+    width: 100%;
 }
 
-.productGrid::-webkit-scrollbar {
-    display: none;
+.productGrid {
+    display: flex;
+    gap: 0;
+    /* Embla works better with slide flex-basis or padding */
+    padding: 20px 0;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .productWrapper {
     flex: 0 0 220px;
     width: 220px;
-}
-
-/* System Width (Desktop) Fix: No swiping, wrapped grid */
-@media (min-width: 1025px) {
-    .navButtons {
-        display: none;
-    }
-
-    .productGrid {
-        flex-wrap: nowrap;
-        overflow-x: hidden;
-        cursor: default !important;
-        gap: 0px;
-        justify-content: flex-start;
-    }
-
-    .productWrapper {
-        flex: 0 0 calc(100% / 7);
-        /* 7 items per row */
-        width: calc(100% / 7);
-    }
-}
-
-@media (max-width: 1024px) {
-    .container {
-        padding: 0 30px;
-    }
-}
-
-@media (max-width: 768px) {
-    .container {
-        padding: 0 20px;
-    }
-
-    .navButtons {
-        display: none;
-    }
-
-    .headerActions {
-        gap: 15px;
-    }
+    height: 100%;
+    padding-right: 2px;
+    /* Replaces the gap */
 }
 
 @media (max-width: 576px) {
@@ -209,24 +170,35 @@
         font-size: 13px;
     }
 
-    .productGrid {
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: 50%;
-        gap: 0px;
-        padding: 10px 0;
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
-        scroll-snap-type: x mandatory;
-        scrollbar-width: none;
+    .navBtn {
+        width: 36px;
+        height: 36px;
     }
 
-    .productGrid::-webkit-scrollbar {
-        display: none;
+    .productGrid {
+        display: flex;
+        /* Ensure it stays flex for Embla */
+        padding: 10px 0;
     }
 
     .productWrapper {
-        width: 100%;
-        scroll-snap-align: start;
+        flex: 0 0 50%;
+        /* Shows 2 items correctly on mobile */
+        width: 50%;
+        padding-right: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 20px;
+    }
+
+    .navButtons {
+        display: none;
+    }
+
+    .headerActions {
+        gap: 15px;
     }
 }

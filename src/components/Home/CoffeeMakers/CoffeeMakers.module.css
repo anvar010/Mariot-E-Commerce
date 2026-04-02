@@ -15,10 +15,6 @@
     margin-bottom: 30px;
 }
 
-.mobileHeader {
-    display: none;
-}
-
 .title {
     font-size: 22px;
     font-weight: 700;
@@ -31,12 +27,42 @@
 
 .headerFlex {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
-    margin-bottom: 5px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb;
 }
 
-.dealsContentWrapper {
+.titleGroup {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.viewAll {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #086c7e;
+    text-decoration: none;
+    font-family: 'Inter', -apple-system, sans-serif;
+    transition: all 0.2s ease;
+}
+
+.viewAll:hover {
+    color: #0b8fa8;
+}
+
+.sliderWrapper {
     position: relative;
     width: 100%;
 }
@@ -71,13 +97,13 @@
 
 @media (hover: hover) {
 
-.navBtn:hover {
-    background-color: #1a1a1a;
-    border-color: #1a1a1a;
-    color: #ffffff;
-    transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
+    .navBtn:hover {
+        background-color: #1a1a1a;
+        border-color: #1a1a1a;
+        color: #ffffff;
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
 }
 
 .prevBtn {
@@ -88,108 +114,60 @@
     margin-right: -20px;
 }
 
-@media (max-width: 576px) {
-    .navBtn {
-        width: 36px;
-        height: 36px;
-    }
-}
-
-.dealsContent {
-    display: flex;
-    gap: 15px;
-    align-items: flex-start;
-}
-
-/* Side Banner Card */
-.bannerCard {
-    flex: 0 0 300px;
-    background-color: #ffffff;
-    border-radius: 12px;
+.emblaViewport {
     overflow: hidden;
-    position: relative;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    min-height: 550px;
-}
-
-.bannerOverlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 40px 20px;
-    background: linear-gradient(to bottom, transparent, rgba(15, 43, 67, 0.95));
-    z-index: 5;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: center;
-    text-align: center;
-}
-
-.bannerTitle {
-    color: #ffffff;
-    font-size: 48px;
-    font-weight: 900;
-    line-height: 1;
-    margin: 0 0 20px 0;
-    letter-spacing: -2px;
-    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    text-transform: uppercase;
-    font-family: 'Inter', sans-serif;
-}
-
-.viewAllBtn {
-    display: inline-block;
-    padding: 10px 24px;
-    border: 2px solid #ffffff;
-    color: #ffffff;
-    font-size: 13px;
-    font-weight: 800;
-    text-decoration: none;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    background: transparent;
-}
-
-@media (hover: hover) {
-
-.viewAllBtn:hover {
-    background: #ffffff;
-    color: #0f2b43;
-}
-}
-
-.bannerImg {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 1;
 }
 
 .dealsGrid {
-    flex: 1;
     display: flex;
-    overflow-x: auto;
-    gap: 2px;
-    padding: 20px 0;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    padding: 10px 0;
     user-select: none;
-}
-
-.dealsGrid::-webkit-scrollbar {
-    display: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .productWrapper {
     flex: 0 0 220px;
-    width: 220px;
-    min-width: 220px;
+    min-width: 0;
+    padding-right: 2px;
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    .headerFlex {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 8px;
+    }
+
+    .title {
+        font-size: 16px;
+        white-space: nowrap;
+    }
+
+    .viewAll {
+        font-size: 13px;
+    }
+
+    .productWrapper {
+        flex: 0 0 50%;
+        padding-right: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 20px;
+    }
+
+    .navButtons {
+        display: none;
+    }
 }
 
 .dealCard {
@@ -206,9 +184,9 @@
 
 @media (hover: hover) {
 
-.dealCard:hover {
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-}
+    .dealCard:hover {
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    }
 }
 
 .imageArea {
@@ -256,9 +234,9 @@
 
 @media (hover: hover) {
 
-.wishlistBtn:hover {
-    color: #ef4444;
-}
+    .wishlistBtn:hover {
+        color: #ef4444;
+    }
 }
 
 .cardContent {
@@ -369,9 +347,9 @@
 
 @media (hover: hover) {
 
-.whatsappBtn:hover {
-    background-color: #4da668;
-}
+    .whatsappBtn:hover {
+        background-color: #4da668;
+    }
 }
 
 .cartBtn {
@@ -393,9 +371,9 @@
 
 @media (hover: hover) {
 
-.cartBtn:hover {
-    background-color: #3fbabf;
-}
+    .cartBtn:hover {
+        background-color: #3fbabf;
+    }
 }
 
 /* Responsiveness */
@@ -416,8 +394,8 @@
 }
 
 @media (max-width: 576px) {
-    .title {
-        font-size: 18px;
+    .container {
+        padding: 0 15px;
     }
 
     .mobileHeader {
@@ -447,20 +425,19 @@
         text-decoration: none;
     }
 
-    .dealsGrid {
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: calc(50% - 5px);
-        gap: 10px;
-        padding: 10px 0;
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
-        scroll-snap-type: x mandatory;
-        scrollbar-width: none;
+    .emblaViewport {
+        overflow: hidden;
+        width: 100%;
+        flex: 1;
     }
 
-    .dealsGrid::-webkit-scrollbar {
-        display: none;
+    .dealsGrid {
+        display: flex;
+        gap: 0;
+        padding: 5px 0;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        width: 100%;
     }
 
     .dealCard {
@@ -468,8 +445,8 @@
     }
 
     .productWrapper {
-        width: 100%;
-        scroll-snap-align: start;
-        min-width: 0;
+        flex: 0 0 50%;
+        width: 50%;
+        padding-right: 0;
     }
 }

@@ -1,6 +1,5 @@
-/* ===== Section ===== */
 .categorySection {
-    padding: 60px 0;
+    padding: 40px 0 60px 0;
     background: radial-gradient(circle at top right, #f8fafc, #ffffff, #f1f5f9);
     overflow: hidden;
     position: relative;
@@ -144,21 +143,15 @@
     position: relative;
 }
 
-.categoryGrid {
-    display: flex;
-    overflow-x: auto;
-    gap: 16px;
-    padding: 10px 4px 20px;
-    scroll-behavior: smooth;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    user-select: none;
-    scroll-snap-type: x mandatory;
-    /* Ultra-smooth mobile snapping */
+.emblaViewport {
+    overflow: hidden;
+    width: 100%;
 }
 
-.categoryGrid::-webkit-scrollbar {
-    display: none;
+.categoryGrid {
+    display: flex;
+    gap: 0;
+    width: 100%;
 }
 
 /* ===== Fade Edges (Modern Glass Style) ===== */
@@ -347,7 +340,7 @@
 
 @media (max-width: 768px) {
     .categorySection {
-        padding: 40px 0;
+        padding: 10px 0 40px 0;
     }
 
     .container {
