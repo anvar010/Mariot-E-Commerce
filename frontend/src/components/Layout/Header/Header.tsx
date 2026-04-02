@@ -174,7 +174,7 @@ const Header = () => {
                         <div className={styles.topBannerLeft} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             {announcement?.is_active ? announcement.text : t('topBanner')}
                             <Image
-                                src="https://upload.wikimedia.org/wikipedia/commons/c/cb/Flag_of_the_United_Arab_Emirates.svg"
+                                src="/Flag_of_the_United_Arab_Emirates.svg"
                                 alt="UAE"
                                 width={18}
                                 height={12}
@@ -488,8 +488,8 @@ const Header = () => {
                             <button className={styles.langSelector} onClick={toggleLang}>
                                 <img
                                     src={isArabic
-                                        ? "https://upload.wikimedia.org/wikipedia/commons/c/cb/Flag_of_the_United_Arab_Emirates.svg"
-                                        : "https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg"}
+                                        ? "/Flag_of_the_United_Arab_Emirates.svg"
+                                        : "/Flag_of_the_United_States.svg"}
                                     alt={isArabic ? 'AR' : 'EN'}
                                     className={styles.flagImg}
                                 />
@@ -513,7 +513,7 @@ const Header = () => {
                                         className={`${styles.langOption} ${!isArabic ? styles.langOptionActive : ''}`}
                                         onClick={() => switchLocale('en')}
                                     >
-                                        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="US" className={styles.langOptionFlag} />
+                                        <img src="/Flag_of_the_United_States.svg" alt="US" className={styles.langOptionFlag} />
                                         <div className={styles.langOptionText}>
                                             <span className={styles.langOptionName}>English</span>
                                             <span className={styles.langOptionNative}>EN</span>
@@ -526,7 +526,7 @@ const Header = () => {
                                         className={`${styles.langOption} ${isArabic ? styles.langOptionActive : ''}`}
                                         onClick={() => switchLocale('ar')}
                                     >
-                                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/cb/Flag_of_the_United_Arab_Emirates.svg" alt="UAE" className={styles.langOptionFlag} />
+                                        <img src="/Flag_of_the_United_Arab_Emirates.svg" alt="UAE" className={styles.langOptionFlag} />
                                         <div className={styles.langOptionText}>
                                             <span className={styles.langOptionName}>العربية</span>
                                             <span className={styles.langOptionNative}>AR</span>

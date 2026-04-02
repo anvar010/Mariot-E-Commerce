@@ -927,10 +927,10 @@ function CheckoutContent() {
                                 </button>
 
                                 <div className={styles.trustBadges}>
-                                    <img src="/assets/visa-logo.svg" alt="Visa" className={styles.trustBadge} />
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className={styles.trustBadge} />
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Apple_Pay_logo.svg" alt="Apple Pay" className={styles.trustBadge} />
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Google_Pay_Logo_%282020%29.svg" alt="Google Pay" className={styles.trustBadge} />
+                                    <img src="/assets/visa-logo.svg" alt="Visa" className={`${styles.trustBadge} ${styles.visaBadge}`} />
+                                    <img src="/assets/mastercard-logo.svg" alt="Mastercard" className={styles.trustBadge} />
+                                    <img src="/assets/apple-pay-logo.svg" alt="Apple Pay" className={styles.trustBadge} />
+                                    <img src="/assets/google-pay-logo.svg" alt="Google Pay" className={styles.trustBadge} />
                                 </div>
 
                                 <p style={{ textAlign: 'center', fontSize: '12px', color: '#94a3b8', marginTop: '16px' }}>
