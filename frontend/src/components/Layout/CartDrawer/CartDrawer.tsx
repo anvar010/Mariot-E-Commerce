@@ -259,12 +259,12 @@ const CartDrawer = () => {
                                                 src={item.image || '/assets/placeholder-image.webp'}
                                                 alt={item.name}
                                             />
+                                            <span className={styles.itemCountBadge}>{item.quantity}</span>
                                         </div>
                                         <div className={styles.itemDetails}>
                                             <div className={styles.itemNameRow}>
                                                 <div className={styles.itemNameMain}>
                                                     <h4 className={styles.itemName}>{item.name}</h4>
-                                                    <span className={styles.itemCountBadge}>{item.quantity}</span>
                                                 </div>
                                                 <button className={styles.removeBtn} onClick={() => removeFromCart(item.id)}>
                                                     <Trash2 size={18} />
