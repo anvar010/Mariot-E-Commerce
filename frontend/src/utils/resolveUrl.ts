@@ -40,21 +40,21 @@ export const resolveUrl = (url?: string): string => {
             if (normalizedUrl.includes(domain)) {
                 // Use regex with global flag to replace all occurrences
                 const domainRegex = new RegExp(`https?://${domain}`, 'g');
-                return normalizedUrl.replace(domainRegex, BASE_URL);
+                return normalizedUrl.replace(domainRegex, BASE_URL).replace(/ /g, '%20');
             }
         }
         
         // Final fallback for any onrender.com backend
         if (normalizedUrl.includes('.onrender.com') && !normalizedUrl.includes(BASE_URL.replace(/https?:\/\//, ''))) {
-             return normalizedUrl.replace(/https?:\/\/[^/]+/g, BASE_URL);
+             return normalizedUrl.replace(/https?:\/\/[^/]+/g, BASE_URL).replace(/ /g, '%20');
         }
 
-        return normalizedUrl;
+        return normalizedUrl.replace(/ /g, '%20');
     }
 
     // Handle internal project assets
     if (normalizedUrl.startsWith('/assets/') || normalizedUrl.startsWith('/images/')) {
-        return normalizedUrl;
+        return normalizedUrl.replace(/ /g, '%20');
     }
 
     // Automatically prepend uploads/ if it's a relative path like brands/... or products/... 
@@ -69,5 +69,8 @@ export const resolveUrl = (url?: string): string => {
         normalizedUrl = `/${normalizedUrl}`;
     }
 
-    return `${BASE_URL || ''}${normalizedUrl}`;
+    const finalUrl = `${BASE_URL || ''}${normalizedUrl}`;
+    
+    // Ensure spaces are safely URL encoded so Next.js Image loader doesn't crash in production
+    return finalUrl.replace(/ /g, '%20');
 };
