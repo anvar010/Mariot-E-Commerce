@@ -100,7 +100,10 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
 
         // Relative backend path (e.g. /uploads/...) — prepend backend base URL
         const cleanBase = API_BASE_URL.replace('/api/v1', '');
-        return `${cleanBase}${withoutPublic.startsWith('/') ? '' : '/'}${withoutPublic}`;
+        const finalUrl = `${cleanBase}${withoutPublic.startsWith('/') ? '' : '/'}${withoutPublic}`;
+
+        // Ensure spaces are safely URL encoded so Next.js Image loader doesn't crash in production
+        return finalUrl.replace(/ /g, '%20');
     }, []);
 
     useEffect(() => {
@@ -209,7 +212,6 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
                                         sizes="(max-width: 768px) 220px, 260px"
                                         className={styles.posterImg}
                                         priority={index === 0}
-                                        loading={index === 0 ? undefined : 'lazy'}
                                         quality={85}
                                     />
                                 </div>
