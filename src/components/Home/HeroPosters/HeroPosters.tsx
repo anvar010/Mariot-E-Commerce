@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import styles from './HeroPosters.module.css';
 import { API_BASE_URL } from '@/config';
+import { resolveUrl } from '@/utils/resolveUrl';
 
 interface Poster {
     id: number;
@@ -66,45 +67,6 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
     const [posters, setPosters] = useState<Poster[]>(initialPosters.length > 0 ? initialPosters : []);
     const [loading, setLoading] = useState(initialPosters.length === 0);
     const scrollRef = useRef<HTMLDivElement>(null);
-
-    /**
-     * Resolves and normalises any image URL coming from the database:
-     * - Converts Windows backslashes to forward slashes
-     * - Strips accidental /public prefix (Next.js serves public/ at root)
-     * - Prepends backend base URL for relative /uploads/ paths
-     * - Returns external http(s) and /assets/ paths unchanged
-     */
-    const resolveUrl = useCallback((url?: string): string => {
-        if (!url) return '';
-
-        // Normalise Windows-style backslashes
-        const normalised = url.replace(/\\/g, '/');
-
-        // Already a full external URL — return as-is
-        if (normalised.startsWith('http') || normalised.startsWith('data:')) {
-            return normalised;
-        }
-
-        // Strip any erroneous /public prefix that crept into stored paths
-        // e.g. "/public/assets/foo.webp" → "/assets/foo.webp"
-        const withoutPublic = normalised.startsWith('/public/')
-            ? normalised.slice('/public'.length)
-            : normalised.startsWith('public/')
-                ? '/' + normalised.slice('public/'.length)
-                : normalised;
-
-        // Static frontend paths — served by Next.js directly, no backend needed
-        if (withoutPublic.startsWith('/assets/') || withoutPublic.startsWith('/images/')) {
-            return withoutPublic;
-        }
-
-        // Relative backend path (e.g. /uploads/...) — prepend backend base URL
-        const cleanBase = API_BASE_URL.replace('/api/v1', '');
-        const finalUrl = `${cleanBase}${withoutPublic.startsWith('/') ? '' : '/'}${withoutPublic}`;
-
-        // Ensure spaces are safely URL encoded so Next.js Image loader doesn't crash in production
-        return finalUrl.replace(/ /g, '%20');
-    }, []);
 
     useEffect(() => {
         const fetchPosters = async () => {
