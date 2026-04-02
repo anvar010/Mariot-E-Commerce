@@ -8,6 +8,7 @@ import { useLocale } from 'next-intl';
 import styles from './HeroPosters.module.css';
 import { API_BASE_URL } from '@/config';
 import { resolveUrl } from '@/utils/resolveUrl';
+import useEmblaCarousel from 'embla-carousel-react';
 
 interface Poster {
     id: number;
@@ -66,7 +67,23 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
     const isArabic = locale === 'ar';
     const [posters, setPosters] = useState<Poster[]>(initialPosters.length > 0 ? initialPosters : []);
     const [loading, setLoading] = useState(initialPosters.length === 0);
-    const scrollRef = useRef<HTMLDivElement>(null);
+    
+    const [emblaRef, emblaApi] = useEmblaCarousel({ 
+        loop: false, 
+        direction: isArabic ? 'rtl' : 'ltr',
+        align: 'start',
+        skipSnaps: true, 
+        dragFree: true,  
+        containScroll: 'trimSnaps' 
+    });
+
+    const scrollPrev = useCallback(() => {
+        if (emblaApi) emblaApi.scrollPrev();
+    }, [emblaApi]);
+
+    const scrollNext = useCallback(() => {
+        if (emblaApi) emblaApi.scrollNext();
+    }, [emblaApi]);
 
     useEffect(() => {
         const fetchPosters = async () => {
@@ -95,41 +112,7 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
         fetchPosters();
     }, [initialPosters]);
 
-    const [isDragging, setIsDragging] = useState(false);
-    const [startX, setStartX] = useState(0);
-    const [scrollLeftState, setScrollLeftState] = useState(0);
-
-    const scroll = (direction: 'left' | 'right') => {
-        if (scrollRef.current) {
-            const { scrollLeft } = scrollRef.current;
-            const scrollTo = direction === 'left' ? scrollLeft - 275 : scrollLeft + 275;
-            scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
-        }
-    };
-
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (!scrollRef.current) return;
-        setIsDragging(true);
-        setStartX(e.pageX - scrollRef.current.offsetLeft);
-        setScrollLeftState(scrollRef.current.scrollLeft);
-        e.preventDefault();
-    };
-
-    const handleMouseLeave = () => {
-        setIsDragging(false);
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isDragging || !scrollRef.current) return;
-        e.preventDefault();
-        const x = e.pageX - scrollRef.current.offsetLeft;
-        const walk = (x - startX) * 1.1;
-        scrollRef.current.scrollLeft = scrollLeftState - walk;
-    };
+    // Embla handles drag events natively
 
     if (!loading && posters.length === 0) return null;
 
@@ -152,19 +135,12 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
         <section className={styles.postersSection} id="hero-posters">
             <div className={styles.container}>
                 <div className={styles.scrollWrapper}>
-                    <button className={`${styles.navBtn} ${styles.prev}`} onClick={() => scroll('left')}>
+                    <button className={`${styles.navBtn} ${styles.prev}`} onClick={scrollPrev}>
                         <ChevronLeft size={24} />
                     </button>
-                    <div
-                        className={styles.postersGrid}
-                        ref={scrollRef}
-                        onMouseDown={handleMouseDown}
-                        onMouseLeave={handleMouseLeave}
-                        onMouseUp={handleMouseUp}
-                        onMouseMove={handleMouseMove}
-                        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-                    >
-                        {posters.map((poster, index) => (
+                    <div className={styles.emblaViewport} ref={emblaRef}>
+                        <div className={styles.postersGrid}>
+                            {posters.map((poster, index) => (
                             <div key={poster.id} className={styles.posterCard}>
                                 <div className={styles.imageContainer}>
                                     <Image
@@ -198,8 +174,9 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
                                 </div>
                             </div>
                         ))}
+                        </div>
                     </div>
-                    <button className={`${styles.navBtn} ${styles.next}`} onClick={() => scroll('right')}>
+                    <button className={`${styles.navBtn} ${styles.next}`} onClick={scrollNext}>
                         <ChevronRight size={24} />
                     </button>
                 </div>

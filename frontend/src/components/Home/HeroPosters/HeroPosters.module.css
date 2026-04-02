@@ -16,20 +16,17 @@
     padding: 0 10px;
 }
 
+.emblaViewport {
+    overflow: hidden;
+    width: 100%;
+}
+
 .postersGrid {
     display: flex;
     gap: 15px;
-    overflow-x: auto;
-    scroll-behavior: smooth;
     padding: 10px 0;
-    scrollbar-width: none;
     user-select: none;
-    /* Hide scrollbar Firefox */
-}
-
-.postersGrid::-webkit-scrollbar {
-    display: none;
-    /* Hide scrollbar Chrome/Safari */
+    -webkit-tap-highlight-color: transparent;
 }
 
 .posterCard {
