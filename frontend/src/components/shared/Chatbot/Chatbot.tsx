@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Bot, Phone } from 'lucide-react';
+import { X, Send, Bot, Phone } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import styles from './Chatbot.module.css';
@@ -153,7 +153,9 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
                 {!isOpen && externalOpen === undefined && (
                     <motion.button
                         className={styles.chatFab}
-                        onClick={() => setIsOpen(true)}
+                        onClick={() => {
+                            setIsOpen(true);
+                        }}
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
@@ -162,7 +164,7 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
                         aria-label="Open chat"
                         id="chatbot-fab"
                     >
-                        <MessageCircle size={26} strokeWidth={2.2} />
+                        <Bot size={28} strokeWidth={2.2} />
                         {!hasInteracted && <span className={styles.fabDot} />}
                     </motion.button>
                 )}

@@ -11,7 +11,7 @@ const FloatingActions = () => {
     const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
     const [message, setMessage] = useState('');
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [hasInteractedWithChat, setHasInteractedWithChat] = useState(false);
+    const [hasInteracted, setHasInteracted] = useState(false);
     const { isDrawerOpen } = useCart();
 
     useEffect(() => {
@@ -71,17 +71,18 @@ const FloatingActions = () => {
                 </button>
 
                 {/* 2. Chatbot Trigger (Middle) */}
-                <button
-                    className={`${styles.actionBtn} ${styles.chatbotTrigger}`}
-                    onClick={() => {
-                        setIsChatOpen(true);
-                        setHasInteractedWithChat(true);
-                    }}
-                    title="Open Chat"
-                >
-                    <Bot size={28} strokeWidth={2.2} />
-                    {!hasInteractedWithChat && <span className={styles.fabDot} />}
-                </button>
+                <div style={{ position: 'relative', width: '50px', height: '50px' }}>
+                    <button
+                        className={`${styles.actionBtn} ${styles.chatbotTrigger}`}
+                        onClick={() => {
+                            setIsChatOpen(true);
+                        }}
+                        title="Open Chat"
+                    >
+                        <Bot size={28} strokeWidth={2.2} />
+                    </button>
+                    {!hasInteracted && <span className={styles.fabDot} />}
+                </div>
 
                 {/* 3. WhatsApp (Bottom of stack) */}
                 <button
