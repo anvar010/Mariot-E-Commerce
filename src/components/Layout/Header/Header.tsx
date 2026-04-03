@@ -349,7 +349,7 @@ const Header = () => {
                             {user?.role === 'admin' && (
                                 <Link href="/admin">
                                     <div className={styles.adminIconWrapper}>
-                                        <Shield size={28} color="#4c6ef5" />
+                                        <Shield size={28} />
                                         <span className={styles.adminLabel}>{t('admin')}</span>
                                     </div>
                                 </Link>

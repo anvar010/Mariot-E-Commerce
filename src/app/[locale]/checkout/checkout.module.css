@@ -206,12 +206,12 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.customDropdownTrigger:hover {
-    border-color: #237073;
-    background: #fdfdfd;
-}
+    .customDropdownTrigger:hover {
+        border-color: #237073;
+        background: #fdfdfd;
+    }
 }
 
 .triggerActive {
@@ -282,11 +282,11 @@
     border-bottom: none;
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.addressOption:hover {
-    background-color: #f0fdfa;
-}
+    .addressOption:hover {
+        background-color: #f0fdfa;
+    }
 }
 
 .optionSelected {
@@ -365,11 +365,11 @@
     background: #fff;
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.paymentTab:hover:not(.active) {
-    border-color: #e2e8f0;
-}
+    .paymentTab:hover:not(.active) {
+        border-color: #e2e8f0;
+    }
 }
 
 .paymentTab.active {
@@ -701,13 +701,13 @@
     gap: 8px;
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.checkoutBtn:hover:not(:disabled) {
-    background: #1a5658;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(35, 112, 115, 0.4);
-}
+    .checkoutBtn:hover:not(:disabled) {
+        background: #1a5658;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(35, 112, 115, 0.4);
+    }
 }
 
 .checkoutBtn:disabled {
@@ -788,11 +788,11 @@
     transition: background 0.2s;
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.applyCouponBtn:hover:not(:disabled) {
-    background: #1e293b;
-}
+    .applyCouponBtn:hover:not(:disabled) {
+        background: #1e293b;
+    }
 }
 
 .applyCouponBtn:disabled {
@@ -842,12 +842,12 @@
     transition: color 0.2s;
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.removeCouponBtn:hover {
-    color: #dc2626;
-    text-decoration: underline;
-}
+    .removeCouponBtn:hover {
+        color: #dc2626;
+        text-decoration: underline;
+    }
 }
 
 /* Modal and Additional Coupon Styles */
@@ -871,11 +871,11 @@
     width: fit-content;
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.viewCouponsBtn:hover {
-    text-decoration: underline;
-}
+    .viewCouponsBtn:hover {
+        text-decoration: underline;
+    }
 }
 
 .modalOverlay {
@@ -942,13 +942,13 @@
     transition: all 0.2s;
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.closeModal:hover {
-    background: #f1f5f9;
-    color: #0f172a;
-    border-color: #cbd5e1;
-}
+    .closeModal:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #cbd5e1;
+    }
 }
 
 .couponList {
@@ -990,12 +990,12 @@
     transition: all 0.2s;
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.couponItem:hover {
-    border-color: #237073;
-    background: #f0f9f9;
-}
+    .couponItem:hover {
+        border-color: #237073;
+        background: #f0f9f9;
+    }
 }
 
 .couponMain {
@@ -1072,12 +1072,12 @@
     transition: transform 0.2s, background 0.2s;
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.useCouponBtn:hover {
-    background: #1e293b;
-    transform: scale(1.05);
-}
+    .useCouponBtn:hover {
+        background: #1e293b;
+        transform: scale(1.05);
+    }
 }
 
 .noCoupons {
@@ -1344,12 +1344,12 @@
     width: fit-content;
 }
 
-@media (hover: hover){
+@media (hover: hover) {
 
-.tabbyViewOptions:hover {
-    background: #2dd4a0;
-    transform: translateY(-1px);
-}
+    .tabbyViewOptions:hover {
+        background: #2dd4a0;
+        transform: translateY(-1px);
+    }
 }
 
 @media (max-width: 600px) {

@@ -257,6 +257,14 @@
     cursor: pointer;
 }
 
+.adminIconWrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    color: #2563eb;
+}
+
 .rewardPoints {
     position: relative;
 }
@@ -356,6 +364,12 @@
     font-size: 13px;
     font-weight: 700;
     color: var(--text-dark);
+}
+
+.adminLabel {
+    font-size: 13px;
+    font-weight: 500;
+    color: #000;
 }
 
 .cartIconWrapper {
@@ -832,8 +846,9 @@
 
     /* Hide text in user actions for tablet/smaller screens */
     .profile .actionText,
-    .rewardPoints .actionText {
-        display: none;
+    .rewardPoints .actionText,
+    .adminLabel {
+        display: none !important;
     }
 
     .logoText img {
