@@ -1127,5 +1127,20 @@
         "title": "Affiliate Program",
         "currentlyUnavailable": "Our affiliate program is currently under development.",
         "stayTuned": "We're working on something exciting! Please check back later to join our network."
+    },
+    "chatbot": {
+        "title": "Mariot Assistant",
+        "subtitle": "Online — Typically replies instantly",
+        "welcomeMessage": "👋 Welcome to Mariot! I'm your kitchen equipment expert. How can I help you today?",
+        "placeholder": "Type your message...",
+        "errorMessage": "Sorry, I'm having trouble connecting. Please try again or contact us via WhatsApp.",
+        "whatsappCta": "Talk to a Human Expert on WhatsApp",
+        "poweredBy": "Powered by Mariot AI",
+        "quickShipping": "🚚 Shipping Info",
+        "quickShippingQ": "What are your shipping options and delivery times to the UAE?",
+        "quickProducts": "🔧 Browse Products",
+        "quickProductsQ": "What types of commercial kitchen equipment do you offer?",
+        "quickQuote": "📋 Get a Quote",
+        "quickQuoteQ": "I need a custom quote for my restaurant kitchen. How can I get one?"
     }
 }

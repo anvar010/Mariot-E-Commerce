@@ -18,18 +18,18 @@ export async function generateMetadata({ params }: { params: { slug: string | st
         if (!url) return '';
         // If it's already an absolute URL (but not localhost), return it
         if ((url.startsWith('http')) && !url.includes('localhost:5000')) return url;
-        
+
         // Use production backend URL or fallback to localhost during dev
-        const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL 
-            ? process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api/v1', '') 
+        const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+            ? process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api/v1', '')
             : 'http://localhost:5000';
 
         if (url.includes('localhost:5000')) {
             return url.replace('http://localhost:5000', BACKEND_URL);
         }
-        
+
         if (url.startsWith('/assets/')) return `${SITE_URL}${url}`;
-        
+
         return `${BACKEND_URL}${url.startsWith('/') ? '' : '/'}${url}`;
     };
 
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: { params: { slug: string | st
             const title = isArabic && product.name_ar ? product.name_ar : product.name;
             const rawDescription = isArabic && product.short_description_ar ? product.short_description_ar : product.short_description;
             const cleanDescription = stripHtml(rawDescription) || `Buy ${title} at the best price in UAE only at Mariot Store.`;
-            
+
             // Get the primary image
             const imagePath = product.primary_image || (product.images && product.images[0]?.image_url);
             const resolvedImg = resolveImageUrl(imagePath);

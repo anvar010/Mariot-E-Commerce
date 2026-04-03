@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import Providers from './providers';
 import CartDrawer from '@/components/Layout/CartDrawer/CartDrawer';
+import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import { Inter, Alexandria } from 'next/font/google';
 
 const inter = Inter({
@@ -78,6 +79,7 @@ export default async function LocaleLayout({
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <Providers>
                         <CartDrawer />
+                        <FloatingActions />
                         {children}
                     </Providers>
                 </NextIntlClientProvider>
