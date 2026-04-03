@@ -41,8 +41,8 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
 
     const resolveUrl = (url?: string) => {
         if (!url) return '';
-        if (url.includes('localhost:5000')) {
-            return url.replace('http://localhost:5000', API_BASE_URL.replace('/api/v1', ''));
+        if (url.includes('127.0.0.1:5000')) {
+            return url.replace('http://127.0.0.1:5000', API_BASE_URL.replace('/api/v1', ''));
         }
         if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
         const cleanBaseUrl = API_BASE_URL.replace('/api/v1', '');
@@ -289,3 +289,4 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
 };
 
 export default Hero;
+

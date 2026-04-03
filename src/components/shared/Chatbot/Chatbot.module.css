@@ -4,8 +4,8 @@
     bottom: 24px;
     right: 24px;
     z-index: 1500;
-    width: 58px;
-    height: 58px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     background: linear-gradient(135deg, #337c7f 0%, #2a6668 100%);
     color: #ffffff;
@@ -37,13 +37,13 @@ html[dir="rtl"] .chatFab {
 /* Notification dot */
 .fabDot {
     position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 12px;
-    height: 12px;
+    top: 0px;
+    right: 0px;
+    width: 14px;
+    height: 14px;
     background-color: #f58220;
     border-radius: 50%;
-    border: 2px solid #fff;
+    border: 2.5px solid #fff;
     animation: dotPulse 2s ease-in-out infinite;
 }
 
