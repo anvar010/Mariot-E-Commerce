@@ -94,6 +94,9 @@ const Header = () => {
             if (!target.closest(`.${styles.searchSection}`)) {
                 setShowSuggestions(false);
             }
+            if (!target.closest(`.${styles.langSelectorContainer}`)) {
+                setIsLangOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -336,6 +339,61 @@ const Header = () => {
                                 )}
                             </div>
 
+                            <div className={`${styles.langSelectorContainer} ${styles.headerLangSelector}`}>
+                                <button className={styles.langSelector} onClick={toggleLang}>
+                                    <img
+                                        src={isArabic
+                                            ? "/Flag_of_the_United_Arab_Emirates.svg"
+                                            : "/Flag_of_the_United_States.svg"}
+                                        alt={isArabic ? 'AR' : 'EN'}
+                                        className={styles.flagImg}
+                                    />
+                                    <span className={`${styles.langCode} ${styles.desktopOnly}`}>{isArabic ? 'AR' : 'EN'}</span>
+                                    <svg
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className={isLangOpen ? styles.rotate : ''}
+                                    >
+                                        <path d="M7 10L12 15L17 10H7Z" />
+                                    </svg>
+                                </button>
+
+                                {isLangOpen && (
+                                    <div className={styles.langDropdown}>
+                                        <div className={styles.langDropdownLabel}>{t('language')}</div>
+                                        <div
+                                            className={`${styles.langOption} ${!isArabic ? styles.langOptionActive : ''}`}
+                                            onClick={() => switchLocale('en')}
+                                        >
+                                            <img src="/Flag_of_the_United_States.svg" alt="US" className={styles.langOptionFlag} />
+                                            <div className={styles.langOptionText}>
+                                                <span className={styles.langOptionName}>English</span>
+                                                <span className={styles.langOptionNative}>EN</span>
+                                            </div>
+                                            {!isArabic && (
+                                                <svg className={styles.langCheck} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            )}
+                                        </div>
+                                        <div
+                                            className={`${styles.langOption} ${isArabic ? styles.langOptionActive : ''}`}
+                                            onClick={() => switchLocale('ar')}
+                                        >
+                                            <img src="/Flag_of_the_United_Arab_Emirates.svg" alt="UAE" className={styles.langOptionFlag} />
+                                            <div className={styles.langOptionText}>
+                                                <span className={styles.langOptionName}>العربية</span>
+                                                <span className={styles.langOptionNative}>AR</span>
+                                            </div>
+                                            {isArabic && (
+                                                <svg className={styles.langCheck} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <Link href={user ? "/profile" : "/signin"} className={styles.profile}>
                                 <User size={28} className={styles.userIcon} />
                                 <div className={styles.actionText}>
@@ -347,7 +405,7 @@ const Header = () => {
                             </Link>
 
                             {user?.role === 'admin' && (
-                                <Link href="/admin">
+                                <Link href="/admin" className={styles.desktopOnly}>
                                     <div className={styles.adminIconWrapper}>
                                         <Shield size={28} />
                                         <span className={styles.adminLabel}>{t('admin')}</span>
@@ -466,7 +524,16 @@ const Header = () => {
                             <li className={styles.mobileOnly}><Link href="/profile" onClick={() => setIsMenuOpen(false)}>{t('myAccount')}</Link></li>
                             <li className={styles.mobileOnly}><Link href="/rewards" onClick={() => setIsMenuOpen(false)}>{t('rewardPointsNav')}</Link></li>
                             {user?.role === 'admin' && (
-                                <li className={styles.mobileOnly}><Link href="/admin" onClick={() => setIsMenuOpen(false)}>{t('adminDashboard')}</Link></li>
+                                <li className={styles.mobileOnly}>
+                                    <Link 
+                                        href="/admin" 
+                                        onClick={() => setIsMenuOpen(false)}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#2563eb' }}
+                                    >
+                                        <Shield size={20} />
+                                        <span>{t('adminDashboard')}</span>
+                                    </Link>
+                                </li>
                             )}
                             {user && (
                                 <li className={styles.mobileOnly}>
@@ -484,60 +551,7 @@ const Header = () => {
                             )}
                         </ul>
 
-                        <div className={styles.langSelectorContainer}>
-                            <button className={styles.langSelector} onClick={toggleLang}>
-                                <img
-                                    src={isArabic
-                                        ? "/Flag_of_the_United_Arab_Emirates.svg"
-                                        : "/Flag_of_the_United_States.svg"}
-                                    alt={isArabic ? 'AR' : 'EN'}
-                                    className={styles.flagImg}
-                                />
-                                <span className={styles.langCode}>{isArabic ? 'AR' : 'EN'}</span>
-                                <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className={isLangOpen ? styles.rotate : ''}
-                                >
-                                    <path d="M7 10L12 15L17 10H7Z" />
-                                </svg>
-                            </button>
 
-                            {isLangOpen && (
-                                <div className={styles.langDropdown}>
-                                    <div className={styles.langDropdownLabel}>{t('language')}</div>
-                                    <div
-                                        className={`${styles.langOption} ${!isArabic ? styles.langOptionActive : ''}`}
-                                        onClick={() => switchLocale('en')}
-                                    >
-                                        <img src="/Flag_of_the_United_States.svg" alt="US" className={styles.langOptionFlag} />
-                                        <div className={styles.langOptionText}>
-                                            <span className={styles.langOptionName}>English</span>
-                                            <span className={styles.langOptionNative}>EN</span>
-                                        </div>
-                                        {!isArabic && (
-                                            <svg className={styles.langCheck} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                        )}
-                                    </div>
-                                    <div
-                                        className={`${styles.langOption} ${isArabic ? styles.langOptionActive : ''}`}
-                                        onClick={() => switchLocale('ar')}
-                                    >
-                                        <img src="/Flag_of_the_United_Arab_Emirates.svg" alt="UAE" className={styles.langOptionFlag} />
-                                        <div className={styles.langOptionText}>
-                                            <span className={styles.langOptionName}>العربية</span>
-                                            <span className={styles.langOptionNative}>AR</span>
-                                        </div>
-                                        {isArabic && (
-                                            <svg className={styles.langCheck} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </nav>
 

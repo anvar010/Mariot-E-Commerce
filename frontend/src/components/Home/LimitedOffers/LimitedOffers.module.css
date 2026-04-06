@@ -146,28 +146,34 @@
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         padding-bottom: 8px;
     }
 
-    .headerActions {
-        width: auto;
-        gap: 12px;
-        flex-shrink: 0;
+    .titleGroup {
+        gap: 8px;
+        flex: 1;
+        overflow: hidden;
     }
 
     .title {
-        font-size: 16px;
+        font-size: 14px;
         white-space: nowrap;
+        flex-shrink: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .mainTimer {
-        font-size: 11px;
-        padding: 2px 8px;
+        font-size: 10px;
+        padding: 2px 6px;
+        flex-shrink: 0;
     }
 
     .viewAll {
-        font-size: 13px;
+        font-size: 12px;
+        flex-shrink: 0;
+        white-space: nowrap;
     }
 
     .navBtn {
