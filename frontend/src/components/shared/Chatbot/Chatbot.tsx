@@ -141,9 +141,10 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
     // Format message text (basic markdown-like formatting)
     const formatMessage = (text: string) => {
         return text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/^- /gm, '• ');
+            .replaceAll(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replaceAll(/\*(.*?)\*/g, '<em>$1</em>')
+            .replaceAll(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #25d366; text-decoration: underline; font-weight: 600;">$1</a>')
+            .replaceAll(/^- /gm, '• ');
     };
 
     return (

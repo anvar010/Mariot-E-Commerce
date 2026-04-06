@@ -14,11 +14,13 @@
     height: 100%;
     position: relative;
     overflow: hidden;
+    user-select: none; /* Prevents text selection while swiping */
+    -webkit-user-select: none; /* iOS Safari */
+    -ms-user-select: none; /* Internet Explorer/Edge */
 }
 
 @media (hover: hover) {
     .card:hover {
-        transform: translateY(-10px);
         box-shadow: 0 30px 60px rgba(0, 0, 0, 0.08);
         border-color: rgba(0, 113, 227, 0.1);
     }
@@ -140,7 +142,8 @@
 @media (hover: hover) {
     .card:hover .timerWrapper {
         background: rgba(255, 255, 255, 0.95);
-        transform: translateX(-50%) translateY(-2px);
+        transform: translateX(-50%);
+        /* Fixed horizontal position without vertical lift */
         box-shadow: 0 15px 35px rgba(255, 59, 48, 0.15);
     }
 }

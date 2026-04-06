@@ -64,8 +64,24 @@
 
 .sliderWrapper {
     position: relative;
-    width: 100%;
+    width: 0;
+    flex-grow: 1;
 }
+
+.sectionContent {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.promoColumn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: stretch; /* Force child (CategoryPromotionCard) to stretch to container height */
+}
+
 
 .navButtons {
     position: absolute;
@@ -121,15 +137,14 @@
 
 .dealsGrid {
     display: flex;
-    padding: 10px 0;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+    align-items: stretch; /* Force same height for all products */
 }
 
 .productWrapper {
     flex: 0 0 220px;
     min-width: 0;
     padding-right: 2px;
+    display: flex; /* Space for the card to stretch */
 }
 
 @media (max-width: 576px) {

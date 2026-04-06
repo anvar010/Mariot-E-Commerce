@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import styles from './CookingEquipment.module.css';
 import { Link } from '@/i18n/navigation';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
+import CategoryPromotionCard from '@/components/shared/CategoryPromotionCard/CategoryPromotionCard';
 import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL } from '@/config';
 import { useLocale } from 'next-intl';
@@ -77,36 +78,46 @@ const CookingEquipment = ({ initialProducts = [] }: CookingEquipmentProps) => {
                     </div>
                 </div>
 
-                <div className={styles.sliderWrapper}>
-                    <div className={styles.navButtons}>
-                        <button className={`${styles.navBtn} ${styles.prevBtn}`} onClick={scrollPrev} aria-label="Scroll left">
-                            <ChevronLeft size={24} color="currentColor" strokeWidth={2.5} />
-                        </button>
-                        <button className={`${styles.navBtn} ${styles.nextBtn}`} onClick={scrollNext} aria-label="Scroll right">
-                            <ChevronRight size={24} color="currentColor" strokeWidth={2.5} />
-                        </button>
+                <div className={styles.sectionContent}>
+                    <div className={styles.promoColumn}>
+                        <CategoryPromotionCard 
+                            title="Cooking Equipment" 
+                            image="/assets/images/promo/cooking_equipment_promo.png" 
+                            link="/shop?category=cooking-equipment" 
+                        />
                     </div>
 
-                    <div className={styles.emblaViewport} ref={emblaRef}>
-                        <div className={styles.dealsGrid}>
-                            {loading ? (
-                                <Loader />
-                            ) : isEmpty ? (
-                                <p style={{ padding: '20px', color: '#666', fontStyle: 'italic', textAlign: 'center', width: '100%' }}>No products available at the moment.</p>
-                            ) : (
-                                products.map((prod) => (
-                                    <div key={prod.id} className={styles.productWrapper}>
-                                        <ProductCardPromotion 
-                                            product={{ 
-                                                ...prod, 
-                                                price: Number(prod.offer_price) > 0 ? Number(prod.offer_price) : Number(prod.price), 
-                                                old_price: Number(prod.offer_price) > 0 ? Number(prod.price) : (Number(prod.old_price) || Number(prod.originalPrice) || 0) 
-                                            }} 
-                                            showTimer={true}
-                                        />
-                                    </div>
-                                ))
-                            )}
+                    <div className={styles.sliderWrapper}>
+                        <div className={styles.navButtons}>
+                            <button className={`${styles.navBtn} ${styles.prevBtn}`} onClick={scrollPrev} aria-label="Scroll left">
+                                <ChevronLeft size={24} color="currentColor" strokeWidth={2.5} />
+                            </button>
+                            <button className={`${styles.navBtn} ${styles.nextBtn}`} onClick={scrollNext} aria-label="Scroll right">
+                                <ChevronRight size={24} color="currentColor" strokeWidth={2.5} />
+                            </button>
+                        </div>
+
+                        <div className={styles.emblaViewport} ref={emblaRef}>
+                            <div className={styles.dealsGrid}>
+                                {loading ? (
+                                    <Loader />
+                                ) : isEmpty ? (
+                                    <p style={{ padding: '20px', color: '#666', fontStyle: 'italic', textAlign: 'center', width: '100%' }}>No products available at the moment.</p>
+                                ) : (
+                                    products.map((prod) => (
+                                        <div key={prod.id} className={styles.productWrapper}>
+                                            <ProductCardPromotion 
+                                                product={{ 
+                                                    ...prod, 
+                                                    price: Number(prod.offer_price) > 0 ? Number(prod.offer_price) : Number(prod.price), 
+                                                    old_price: Number(prod.offer_price) > 0 ? Number(prod.price) : (Number(prod.old_price) || Number(prod.originalPrice) || 0) 
+                                                }} 
+                                                showTimer={true}
+                                            />
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
