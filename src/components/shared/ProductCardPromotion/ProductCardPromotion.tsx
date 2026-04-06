@@ -26,7 +26,7 @@ interface ProductCardPromotionProps {
         slug?: string;
         [key: string]: any;
     };
-    timeLeft?: { hours: number; minutes: number; seconds: number };
+    timeLeft?: { hours: number; minutes: number; seconds: number } | null;
     disableHover?: boolean;
     showTimer?: boolean;
     badgeType?: 'weekly' | 'limited' | 'daily';
@@ -35,6 +35,7 @@ interface ProductCardPromotionProps {
 const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, timeLeft, disableHover, showTimer = false, badgeType }) => {
     const locale = useLocale();
     const t = useTranslations('product');
+    const tTimer = useTranslations('limitedOffers');
     const isArabic = locale === 'ar';
     const displayBrand = product.brand_name || (product as any)?.brand || 'RATIONAL';
     const localBrandLogo = getBrandLogo(displayBrand);
@@ -77,7 +78,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         return () => clearInterval(interval);
     }, [product?.offer_end]);
 
-    const activeTimer = countdown || { hours: 0, minutes: 0, seconds: 0 };
+    const activeTimer = timeLeft || countdown || { hours: 0, minutes: 0, seconds: 0 };
 
     const rating = Number((product as any)?.average_rating || (product as any)?.rating || 0);
     const reviews = Number((product as any)?.total_reviews || (product as any)?.reviews_count || (product as any)?.review_count || 0);
@@ -163,7 +164,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                         <div className={styles.timerWrapper}>
                             <Clock size={16} color="#ff3b30" />
                             <div className={styles.timer}>
-                                {formatTime(activeTimer.hours)}h : {formatTime(activeTimer.minutes)}m : {formatTime(activeTimer.seconds)}s
+                                {formatTime(activeTimer.hours)}{tTimer('h')} : {formatTime(activeTimer.minutes)}{tTimer('m')} : {formatTime(activeTimer.seconds)}{tTimer('s')}
                             </div>
                         </div>
                     )}

@@ -514,6 +514,23 @@
     position: relative;
 }
 
+.headerLangSelector {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .headerLangSelector {
+        margin-top: 0 !important;
+        width: auto !important;
+    }
+    .headerLangSelector button {
+        padding: 6px 10px !important;
+        gap: 6px !important;
+        border: 1px solid #000 !important;
+        border-radius: 8px !important;
+    }
+}
+
 .langSelector {
     display: flex;
     align-items: center;
@@ -905,7 +922,7 @@
 
     .userActions {
         order: 2;
-        gap: 15px;
+        gap: 12px; /* Restored middle ground */
     }
 
     .navBar {
@@ -984,15 +1001,19 @@
 
 @media (max-width: 576px) {
     .container {
-        padding: 0 15px;
+        padding: 0 10px; /* Balanced padding */
+    }
+
+    .miniIcon {
+        display: none !important; /* Hide icon on mobile to create enough space for language selector */
     }
 
     .logoText img {
-        height: 34px;
+        height: 34px; /* Standard size */
     }
 
     .userActions {
-        gap: 18px;
+        gap: 10px; /* Optimal gap */
     }
 
     .searchSection {

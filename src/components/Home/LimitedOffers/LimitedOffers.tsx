@@ -116,15 +116,13 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
                 <div className={styles.headerFlex}>
                     <div className={styles.titleGroup}>
                         <h2 className={styles.title}>{t('title')}</h2>
-                    </div>
-                    <div className={styles.headerActions}>
                         <span className={styles.mainTimer}>
                             {timeLeft.hours.toString().padStart(2, '0')}{t('h')} : {timeLeft.minutes.toString().padStart(2, '0')}{t('m')} : {timeLeft.seconds.toString().padStart(2, '0')}{t('s')}
                         </span>
-                        <Link href="/shop?limited=true" className={styles.viewAll}>
-                            {t('viewAll')} <span>{isRtl ? '←' : '→'}</span>
-                        </Link>
                     </div>
+                    <Link href="/shop?limited=true" className={styles.viewAll}>
+                        {t('viewAll')} <span>{isRtl ? '←' : '→'}</span>
+                    </Link>
                 </div>
 
                 <div className={styles.sliderWrapper}>
@@ -154,6 +152,7 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
                                                 primary_image: prod.primary_image || 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1'
                                             }}
                                             showTimer={true}
+                                            timeLeft={timeLeft}
                                         />
                                     </div>
                                 ))

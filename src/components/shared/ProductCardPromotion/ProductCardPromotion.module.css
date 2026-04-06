@@ -80,6 +80,8 @@
     letter-spacing: 0.5px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    width: fit-content;
 }
 
 .weeklyTag {
@@ -118,7 +120,7 @@
 .timerWrapper {
     position: absolute;
     bottom: -16px;
-    inset-inline-start: 50%;
+    left: 50%;
     transform: translateX(-50%);
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(12px);
@@ -485,7 +487,7 @@
     .tagsWrapperStart {
         top: 6px !important;
         inset-inline-start: 6px !important;
-        max-width: 52% !important;
+        max-width: 65% !important;
     }
 
     .discountTagWrapper {
