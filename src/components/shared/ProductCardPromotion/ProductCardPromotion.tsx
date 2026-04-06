@@ -160,7 +160,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                         objectFit="contain"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                     />
-                    {showTimer && activeTimer && (
+                    {showTimer && (product.is_weekly_deal || product.is_limited_offer || product.is_daily_offer) && activeTimer && (
                         <div className={styles.timerWrapper}>
                             <Clock size={16} color="#ff3b30" />
                             <div className={styles.timer}>
