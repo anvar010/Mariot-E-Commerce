@@ -1,7 +1,9 @@
 # 🛍️ Mariot E-Commerce
 
 ![Mariot E-Commerce Banner](https://raw.githubusercontent.com/anvar010/Mariot-E-Commerce/main/public/assets/banner.png)
-
+<p align="center">
+  <img src="https://raw.githubusercontent.com/anvar010/Mariot-E-Commerce/main/public/assets/banner.png" alt="Mariot E-Commerce Banner" width="100%">
+</p>
 ## ✨ Overview
 **Mariot E-Commerce** is a premium, high-performance B2B and B2C marketplace built with **Next.js 13**, **TypeScript**, and **Framer Motion**. It offers a seamless shopping experience with professional-grade features including internationalization, AI-powered assistance, and secure payment processing.
 
