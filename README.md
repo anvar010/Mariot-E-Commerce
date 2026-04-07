@@ -1,6 +1,6 @@
 # 🛍️ Mariot E-Commerce
 
-![Mariot E-Commerce Banner](https://raw.githubusercontent.com/anvar010/Mariot-E-Commerce/main/public/assets/banner.png)
+![Mariot E-Commerce Banner](frontend/public/assets/banner.png)
 <p align="center">
   <img src="https://raw.githubusercontent.com/anvar010/Mariot-E-Commerce/main/public/assets/banner.png" alt="Mariot E-Commerce Banner" width="100%">
 </p>
