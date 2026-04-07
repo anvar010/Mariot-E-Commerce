@@ -523,6 +523,7 @@
         margin-top: 0 !important;
         width: auto !important;
     }
+
     .headerLangSelector button {
         padding: 6px 10px !important;
         gap: 6px !important;
@@ -922,7 +923,8 @@
 
     .userActions {
         order: 2;
-        gap: 12px; /* Restored middle ground */
+        gap: 12px;
+        /* Restored middle ground */
     }
 
     .navBar {
@@ -979,13 +981,22 @@
         color: #5bb377;
     }
 
+    .categoriesWrapper {
+        width: 100%;
+    }
+
     .categories {
-        font-size: 16px;
-        margin-bottom: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 0;
         padding: 15px 0;
         width: 100%;
         border-bottom: 1px solid #f5f5f5;
         background: none;
+    }
+
+    .categories span {
+        font-size: 15px;
     }
 
     .langSelectorContainer {
@@ -1001,19 +1012,23 @@
 
 @media (max-width: 576px) {
     .container {
-        padding: 0 10px; /* Balanced padding */
+        padding: 0 10px;
+        /* Balanced padding */
     }
 
     .miniIcon {
-        display: none !important; /* Hide icon on mobile to create enough space for language selector */
+        display: none !important;
+        /* Hide icon on mobile to create enough space for language selector */
     }
 
     .logoText img {
-        height: 34px; /* Standard size */
+        height: 34px;
+        /* Standard size */
     }
 
     .userActions {
-        gap: 10px; /* Optimal gap */
+        gap: 10px;
+        /* Optimal gap */
     }
 
     .searchSection {
