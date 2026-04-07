@@ -403,6 +403,8 @@
 .navBar .container {
     height: 46px;
     gap: 10px;
+    justify-content: center;
+    position: relative;
 }
 
 .categories {
@@ -441,7 +443,8 @@
 
 .categoriesWrapper {
     height: 100%;
-    position: relative;
+    position: absolute;
+    inset-inline-start: 40px;
     display: flex;
     align-items: center;
 }
@@ -804,6 +807,10 @@
         padding: 0 20px;
     }
 
+    .categoriesWrapper {
+        inset-inline-start: 20px;
+    }
+
     .navLinks {
         gap: 15px;
     }
@@ -983,6 +990,8 @@
 
     .categoriesWrapper {
         width: 100%;
+        position: static;
+        inset-inline-start: auto;
     }
 
     .categories {
