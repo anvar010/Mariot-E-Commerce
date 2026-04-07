@@ -46,25 +46,62 @@
 
 .infoCard {
     background-color: #ffffff;
-    border-radius: 16px;
-    padding: 35px;
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(145deg, #ffffff 0%, #fbfcfd 100%);
+}
+
+.infoCard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #5bb377, #2d6a5a);
+}
+
+.infoCard::after {
+    content: 'CONTACT';
+    position: absolute;
+    bottom: -10px;
+    inset-inline-end: -10px;
+    font-size: 5rem;
+    font-weight: 900;
+    color: rgba(0, 0, 0, 0.02);
+    pointer-events: none;
+    letter-spacing: -2px;
 }
 
 .infoCard h3 {
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1.4rem;
+    font-weight: 800;
     color: #0f172a;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #f1f5f9;
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
 }
 
 .contactItem {
     display: flex;
-    align-items: flex-start;
-    gap: 15px;
-    margin-bottom: 18px;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+@media (hover: hover) {
+    .contactItem:hover {
+        background-color: #f8fafc;
+        border-color: #f1f5f9;
+        transform: translateX(5px);
+    }
 }
 
 .contactItem:last-child {
@@ -72,15 +109,24 @@
 }
 
 .contactItemIcon {
-    width: 42px;
-    height: 42px;
+    width: 48px;
+    height: 48px;
     background-color: #f0fdf4;
     color: #5bb377;
-    border-radius: 10px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+@media (hover: hover) {
+    .contactItem:hover .contactItemIcon {
+        background-color: #5bb377;
+        color: #ffffff;
+        transform: scale(1.1);
+    }
 }
 
 .contactItemDetails {
@@ -89,27 +135,28 @@
 }
 
 .contactItemDetails strong {
-    font-size: 0.85rem;
-    font-weight: 700;
+    font-size: 0.8rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #64748b;
-    margin-bottom: 4px;
+    letter-spacing: 1px;
+    color: #94a3b8;
+    margin-bottom: 2px;
 }
 
 .contactItemDetails span,
 .contactItemDetails a {
-    color: #0f172a;
-    font-size: 1.05rem;
-    font-weight: 500;
+    color: #1e293b;
+    font-size: 1.1rem;
+    font-weight: 600;
     text-decoration: none;
+    transition: color 0.2s ease;
+    line-height: 1.4;
 }
 
 @media (hover: hover) {
-
-.contactItemDetails a:hover {
-    color: #5bb377;
-}
+    .contactItemDetails a:hover {
+        color: #5bb377;
+    }
 }
 
 /* ========= LOCATIONS SECTION ========= */
@@ -790,12 +837,32 @@
     }
 
     .infoCard {
-        padding: 25px 20px;
+        padding: 25px 15px;
+        border-radius: 16px;
+    }
+
+    .infoCard h3 {
+        font-size: 1.35rem;
+        margin-bottom: 20px;
+    }
+
+    .contactItem {
+        gap: 15px;
+        padding: 8px 0;
+        margin-bottom: 15px;
+    }
+
+    @media (hover: none) {
+        .contactItem:hover {
+            transform: none;
+            background-color: transparent;
+        }
     }
 
     .contactItemIcon {
-        width: 38px;
-        height: 38px;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
     }
 
     .contactItemDetails span,
