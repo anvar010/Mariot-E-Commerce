@@ -32,6 +32,7 @@ exports.createBrand = async (req, res, next) => {
     try {
         const data = {
             name: req.body.name,
+            name_ar: req.body.name_ar || null,
             slug: slugify(req.body.name, { lower: true }),
             image_url: req.body.image_url || null
         };
@@ -69,6 +70,7 @@ exports.syncBrands = async (req, res, next) => {
                 const slug = slugify(brand.name, { lower: true });
                 await Brand.upsert({
                     name: brand.name,
+                    name_ar: brand.name_ar || null,
                     slug,
                     image_url: brand.image_url || brand.logo || null
                 });

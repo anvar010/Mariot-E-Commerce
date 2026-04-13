@@ -56,12 +56,25 @@ const initDb = async () => {
             console.error('[DB] Error migrating addresses table:', err.message);
         }
 
-        // 4. Orders completion tracking
+        // 4. Orders completion tracking and points
         try {
-            const [columns] = await db.query("SHOW COLUMNS FROM orders LIKE 'is_processed'");
-            if (columns.length === 0) {
-                await db.query("ALTER TABLE orders ADD COLUMN is_processed BOOLEAN DEFAULT FALSE AFTER payment_status");
-                console.log('[DB] Migration: Added is_processed column to orders table');
+            const [columns] = await db.query("SHOW COLUMNS FROM orders");
+            const columnNames = columns.map(c => c.Field);
+
+            const orderColumns = [
+                { name: 'is_processed', definition: "BOOLEAN DEFAULT FALSE AFTER payment_status" },
+                { name: 'stripe_payment_intent_id', definition: "VARCHAR(255) AFTER payment_method" },
+                { name: 'points_used', definition: "INT DEFAULT 0" },
+                { name: 'points_discount', definition: "DECIMAL(10, 2) DEFAULT 0.00" },
+                { name: 'coupon_id', definition: "INT" },
+                { name: 'discount_amount', definition: "DECIMAL(10, 2) DEFAULT 0.00" }
+            ];
+
+            for (const col of orderColumns) {
+                if (!columnNames.includes(col.name)) {
+                    await db.query(`ALTER TABLE orders ADD COLUMN ${col.name} ${col.definition}`);
+                    console.log(`[DB] Migration: Added ${col.name} column to orders table`);
+                }
             }
         } catch (err) {
             console.error('[DB] Error migrating orders table:', err.message);
@@ -71,7 +84,7 @@ const initDb = async () => {
         try {
             const [columns] = await db.query("SHOW COLUMNS FROM products");
             const columnNames = columns.map(c => c.Field);
-            
+
             const productColumns = [
                 { name: 'name_ar', definition: "VARCHAR(255)" },
                 { name: 'short_description', definition: "TEXT" },
@@ -105,7 +118,45 @@ const initDb = async () => {
             console.error('[DB] Error migrating products table:', err.message);
         }
 
-        console.log('[DB] Initialization complete');
+        // 6. Hierarchical Categories migration
+        try {
+            const [columns] = await db.query("SHOW COLUMNS FROM categories");
+            const columnNames = columns.map(c => c.Field);
+
+            const categoryColumns = [
+                { name: 'parent_id', definition: "INT NULL" },
+                { name: 'type', definition: "ENUM('main_category', 'sub_category', 'sub_sub_category') DEFAULT 'main_category'" },
+                { name: 'level', definition: "INT DEFAULT 0" },
+                { name: 'order_index', definition: "INT DEFAULT 0" },
+                { name: 'is_active', definition: "BOOLEAN DEFAULT TRUE" }
+            ];
+
+            for (const col of categoryColumns) {
+                if (!columnNames.includes(col.name)) {
+                    await db.query(`ALTER TABLE categories ADD COLUMN ${col.name} ${col.definition}`);
+                    console.log(`[DB] Migration: Added ${col.name} column to categories table`);
+                }
+            }
+
+            // Ensure foreign key for parent_id if it doesn't exist
+            try {
+                await db.query("ALTER TABLE categories ADD CONSTRAINT fk_categories_parent FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL");
+            } catch (fkErr) {
+                // Ignore if it already exists
+            }
+        } catch (err) {
+            console.error('[DB] Error migrating categories table:', err.message);
+        }
+
+        // 7. Settings Table (Ensure it exists)
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS settings (
+                \`key\` VARCHAR(100) PRIMARY KEY,
+                \`value\` TEXT,
+                \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('[DB] settings table verified');
     } catch (error) {
         console.error('[DB] Fatal Initialization Error:', error.message);
         throw error; // Rethrow to stop server startup if initialization fails

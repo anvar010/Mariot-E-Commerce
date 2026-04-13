@@ -56,15 +56,21 @@ CREATE TABLE IF NOT EXISTS products (
     offer_price DECIMAL(10, 2) DEFAULT NULL, -- Final price after discount
     stock_quantity INT DEFAULT 0,
     category_id INT,
+    sub_category_id INT,
+    sub_sub_category_id INT,
     brand_id INT,
     is_featured BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (sub_category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (sub_sub_category_id) REFERENCES categories(id) ON DELETE SET NULL,
     FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE SET NULL,
     INDEX (slug),
     INDEX (category_id),
+    INDEX (sub_category_id),
+    INDEX (sub_sub_category_id),
     INDEX (brand_id),
     FULLTEXT(name)
 );

@@ -24,9 +24,17 @@ exports.getCategory = async (req, res, next) => {
 
 exports.createCategory = async (req, res, next) => {
     try {
+        const { name, name_ar, description, image_url, is_active, parent_id, type, brands } = req.body;
         const data = {
-            ...req.body,
-            slug: slugify(req.body.name, { lower: true })
+            name,
+            name_ar: name_ar || null,
+            slug: slugify(name, { lower: true }),
+            description: description || null,
+            image_url: image_url || null,
+            is_active: is_active !== undefined ? is_active : 1,
+            parent_id: parent_id || null,
+            type: type || 'main_category',
+            brands: brands || []
         };
         const id = await Category.create(data);
         res.status(201).json({
@@ -41,12 +49,19 @@ exports.createCategory = async (req, res, next) => {
 
 exports.updateCategory = async (req, res, next) => {
     try {
-        if (req.body.name) {
-            req.body.slug = slugify(req.body.name, { lower: true });
+        console.log('=== UPDATE CATEGORY ===');
+        console.log('ID:', req.params.id);
+        console.log('Body:', JSON.stringify(req.body));
+        const updateData = { ...req.body };
+        if (updateData.name) {
+            updateData.slug = slugify(updateData.name, { lower: true });
         }
-        await Category.update(req.params.id, req.body);
+        if (updateData.parent_id === '') updateData.parent_id = null;
+        console.log('Final updateData:', JSON.stringify(updateData));
+        await Category.update(req.params.id, updateData);
         res.json({ success: true, message: 'Category updated' });
     } catch (error) {
+        console.error('UPDATE ERROR:', error);
         next(error);
     }
 };

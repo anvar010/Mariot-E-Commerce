@@ -31,7 +31,7 @@ class Order {
             }
 
             // Fetch dynamic point value (default: 0.01 AED per point)
-            const [settingRows] = await connection.execute('SELECT `value` FROM settings WHERE `key` = "aed_per_point"');
+            const [settingRows] = await connection.execute('SELECT `value` FROM settings WHERE `key` = \'aed_per_point\'');
             const aedPerPoint = settingRows[0] ? parseFloat(settingRows[0].value) : 0.01;
 
             const pointsDiscount = points_to_use * aedPerPoint;
@@ -114,7 +114,7 @@ class Order {
         }
 
         // 4. Calculate and add rewards points
-        const [settingRows] = await connection.execute('SELECT `value` FROM settings WHERE `key` = "points_per_aed"');
+        const [settingRows] = await connection.execute('SELECT `value` FROM settings WHERE `key` = \'points_per_aed\'');
         const pointsPerAed = settingRows[0] ? parseFloat(settingRows[0].value) : 0.5;
 
         const pointsEarned = Math.floor(adjustedFinalAmount * pointsPerAed);

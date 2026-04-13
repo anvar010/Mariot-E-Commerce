@@ -42,24 +42,69 @@ exports.bulkImport = async (req, res, next) => {
         };
 
         // Cache for category/brand IDs
-        const categoryMap = {};
+        const categoryMap = {}; // Main Category Map
+        const subCategoryMap = {}; // Sub Category Map (keyed by parentId:name)
+        const subSubCategoryMap = {}; // Sub-Sub Category Map (keyed by parentId:name)
         const brandMap = {};
 
         // 1. Pre-resolve all categories and brands sequentially to avoid race conditions
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
-            if (row.category) {
-                const catName = row.category.trim();
-                if (!categoryMap[catName]) {
-                    let cat = await Category.findBySlug(slugify(catName, { lower: true }));
+
+            // Resolve Main Category
+            let mainId = null;
+            const mainName = (row.category || row.Category || row.main_category)?.toString().trim();
+            if (mainName) {
+                if (!categoryMap[mainName]) {
+                    let cat = await Category.findBySlug(slugify(mainName, { lower: true }));
                     if (!cat) {
-                        const newId = await Category.create({ name: catName, slug: slugify(catName, { lower: true }) });
-                        categoryMap[catName] = newId;
+                        mainId = await Category.create({ name: mainName, slug: slugify(mainName, { lower: true }), type: 'main_category' });
                     } else {
-                        categoryMap[catName] = cat.id;
+                        mainId = cat.id;
                     }
+                    categoryMap[mainName] = mainId;
+                } else {
+                    mainId = categoryMap[mainName];
                 }
             }
+
+            // Resolve Sub Category
+            let subId = null;
+            const subName = (row.sub_category || row['sub category'] || row.product_group || row.Group)?.toString().trim();
+            if (subName && mainId) {
+                const mapKey = `${mainId}:${subName}`;
+                if (!subCategoryMap[mapKey]) {
+                    // Search for existing sub category under this parent
+                    let [existing] = await db.query('SELECT id FROM categories WHERE name = ? AND parent_id = ? AND type = "sub_category"', [subName, mainId]);
+                    if (existing.length === 0) {
+                        subId = await Category.create({ name: subName, slug: slugify(subName, { lower: true }), type: 'sub_category', parent_id: mainId });
+                    } else {
+                        subId = existing[0].id;
+                    }
+                    subCategoryMap[mapKey] = subId;
+                } else {
+                    subId = subCategoryMap[mapKey];
+                }
+            }
+
+            // Resolve Sub-Sub Category
+            let subSubId = null;
+            const subSubName = (row.sub_sub_category || row['sub sub category'] || row.final_sub_category)?.toString().trim();
+            if (subSubName && subId) {
+                const mapKey = `${subId}:${subSubName}`;
+                if (!subSubCategoryMap[mapKey]) {
+                    let [existing] = await db.query('SELECT id FROM categories WHERE name = ? AND parent_id = ? AND type = "sub_sub_category"', [subSubName, subId]);
+                    if (existing.length === 0) {
+                        subSubId = await Category.create({ name: subSubName, slug: slugify(subSubName, { lower: true }), type: 'sub_sub_category', parent_id: subId });
+                    } else {
+                        subSubId = existing[0].id;
+                    }
+                    subSubCategoryMap[mapKey] = subSubId;
+                } else {
+                    subSubId = subSubCategoryMap[mapKey];
+                }
+            }
+
             if (row.brand) {
                 const brandName = row.brand.trim();
                 if (!brandMap[brandName]) {
@@ -87,7 +132,14 @@ exports.bulkImport = async (req, res, next) => {
                         throw new Error(`Row ${rowIndex + 2}: Missing mandatory fields (name or price)`);
                     }
 
-                    const categoryId = row.category ? categoryMap[row.category.trim()] : null;
+                    const mainName = (row.category || row.Category || row.main_category)?.toString().trim();
+                    const subName = (row.sub_category || row['sub category'] || row.product_group || row.Group)?.toString().trim();
+                    const subSubName = (row.sub_sub_category || row['sub sub category'] || row.final_sub_category)?.toString().trim();
+
+                    const categoryId = mainName ? categoryMap[mainName] : null;
+                    const subCategoryId = (categoryId && subName) ? subCategoryMap[`${categoryId}:${subName}`] : null;
+                    const subSubCategoryId = (subCategoryId && subSubName) ? subSubCategoryMap[`${subCategoryId}:${subSubName}`] : null;
+
                     const brandId = row.brand ? brandMap[row.brand.trim()] : null;
 
                     // Process images if comma separated
@@ -113,6 +165,8 @@ exports.bulkImport = async (req, res, next) => {
                         discount_percentage: row.discount_percentage || 0,
                         stock_quantity: row.stock_quantity || 0,
                         category_id: categoryId,
+                        sub_category_id: subCategoryId,
+                        sub_sub_category_id: subSubCategoryId,
                         brand_id: brandId,
                         is_featured: row.is_featured === 1 || row.is_featured === true || String(row.is_featured).toLowerCase() === 'yes',
                         is_weekly_deal: row.is_weekly_deal === 1 || row.is_weekly_deal === true || String(row.is_weekly_deal).toLowerCase() === 'yes',
@@ -121,8 +175,8 @@ exports.bulkImport = async (req, res, next) => {
                         offer_start: row.offer_start || null,
                         offer_end: row.offer_end || null,
                         status: row.status || 'active',
-                        product_group: row.product_group || row.group || row.heading,
-                        sub_category: row.sub_category,
+                        product_group: subName || null,
+                        sub_category: subSubName || null,
                         model: row.model,
                         youtube_video_link: row.youtube_video_link ? (String(row.youtube_video_link).startsWith('{') ? row.youtube_video_link : JSON.stringify({ links: [row.youtube_video_link], featuredIndex: 0 })) : null,
                         resources: row.resources ? (String(row.resources).startsWith('[') ? row.resources : JSON.stringify(String(row.resources).split(',').map(r => {
