@@ -142,11 +142,11 @@ const AdminCategories = () => {
         setEditingId(null);
         setIsQuickAdd(type !== 'main_category');
 
-        let mainId: number | string = '';
+        let mainId: string | number = '';
         if (type === 'sub_category') {
             mainId = parentId;
         } else if (type === 'sub_sub_category') {
-            const parentSub = categories.find(c => c.id === parentId);
+            const parentSub = categories.find((c: any) => c.id === parentId);
             mainId = parentSub ? parentSub.parent_id : '';
         }
         setModalMainId(mainId);
