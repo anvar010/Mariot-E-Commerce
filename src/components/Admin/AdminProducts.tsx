@@ -440,8 +440,8 @@ const AdminProducts = () => {
             if (filters.brand) params.append('brand', filters.brand);
             params.append('page', String(page));
             params.append('limit', String(paginationInfo.limit));
-            params.append('status', filters.status); // User selected status
-            params.append('stockStatus', filters.stockStatus); // User selected stock status
+            if (filters.status && filters.status !== 'all') params.append('status', filters.status);
+            if (filters.stockStatus && filters.stockStatus !== 'all') params.append('stockStatus', filters.stockStatus);
 
             if (filters.offerType === 'featured') params.append('is_featured', 'true');
             if (filters.offerType === 'weekly') params.append('is_weekly_deal', 'true');
