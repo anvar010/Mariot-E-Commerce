@@ -25,6 +25,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
     const { login, googleLogin, register, loading, error: authError } = useAuth();
     const { showNotification } = useNotification();
     const t = useTranslations('notifications');
+    const tAuth = useTranslations('auth');
     const searchParams = useSearchParams();
 
     const redirectTo = searchParams.get('redirectTo') || '/';
@@ -48,7 +49,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
         } catch (err: any) {
             if (err.message?.includes('suspended')) {
                 setIsSuspended(true);
-                setFormError('Your account has been suspended. Please contact admin for more details.');
+                setFormError(tAuth('accountSuspendedDesc'));
             } else {
                 const displayMsg = isSignIn ? t('authError') : (err.message || t('error'));
                 setFormError(displayMsg);
@@ -68,7 +69,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                 console.error(err);
                 if (err.message?.includes('suspended')) {
                     setIsSuspended(true);
-                    setFormError('Your account has been suspended. Please contact admin for more details.');
+                    setFormError(tAuth('accountSuspendedDesc'));
                 } else {
                     setFormError(t('googleError'));
                     showNotification(t('googleError'), 'error', { title: 'Google Login' });
@@ -77,7 +78,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
         },
         onError: () => {
             console.error('Login Failed');
-            setFormError('Google Login Failed');
+            setFormError(t('googleError'));
         }
     });
 
@@ -92,14 +93,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             <div className={styles.formSection}>
                 <div className={styles.authContainer}>
                     <h1 className={styles.authTitle}>
-                        {isSignIn ? 'Welcome Back' : 'Get Started'}
+                        {isSignIn ? tAuth('welcomeBack') : tAuth('getStarted')}
                     </h1>
 
                     <p className={styles.authSubtitle}>
                         {isSignIn ? (
-                            <>New to Mariot? <Link href={`/signup${redirectTo !== '/' ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}${reason ? `${redirectTo !== '/' ? '&' : '?'}reason=${reason}` : ''}`} className={styles.link}>Create an account</Link></>
+                            <>{tAuth('newToMariot')} <Link href={`/signup${redirectTo !== '/' ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}${reason ? `${redirectTo !== '/' ? '&' : '?'}reason=${reason}` : ''}`} className={styles.link}>{tAuth('createAnAccount')}</Link></>
                         ) : (
-                            <>Already have an account? <Link href={`/signin${redirectTo !== '/' ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}${reason ? `${redirectTo !== '/' ? '&' : '?'}reason=${reason}` : ''}`} className={styles.link}>Sign in</Link></>
+                            <>{tAuth('alreadyHaveAccount')} <Link href={`/signin${redirectTo !== '/' ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}${reason ? `${redirectTo !== '/' ? '&' : '?'}reason=${reason}` : ''}`} className={styles.link}>{tAuth('signIn')}</Link></>
                         )}
                     </p>
 
@@ -129,8 +130,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                                 <ShoppingCart size={20} />
                             </div>
                             <div>
-                                <h4 style={{ color: '#92400e', fontSize: '14px', fontWeight: 700, margin: '0 0 2px 0' }}>One last step</h4>
-                                <p style={{ color: '#b45309', fontSize: '13px', margin: 0, fontWeight: 500 }}>Please sign in to continue your purchase</p>
+                                <h4 style={{ color: '#92400e', fontSize: '14px', fontWeight: 700, margin: '0 0 2px 0' }}>{tAuth('oneLastStep')}</h4>
+                                <p style={{ color: '#b45309', fontSize: '13px', margin: 0, fontWeight: 500 }}>{tAuth('signInToPurchase')}</p>
                             </div>
                         </div>
                     )}
@@ -145,9 +146,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                             textAlign: 'center'
                         }}>
                             <div style={{ fontSize: '32px', marginBottom: '8px' }}>🚫</div>
-                            <h3 style={{ color: '#dc2626', fontSize: '16px', fontWeight: 700, margin: '0 0 6px 0' }}>Account Suspended</h3>
+                            <h3 style={{ color: '#dc2626', fontSize: '16px', fontWeight: 700, margin: '0 0 6px 0' }}>{tAuth('accountSuspended')}</h3>
                             <p style={{ color: '#7c2d12', fontSize: '13px', margin: 0, lineHeight: 1.5 }}>
-                                Your account has been suspended. Please contact admin for more details.
+                                {tAuth('accountSuspendedDesc')}
                             </p>
                         </div>
                     ) : (formError || authError) && (
@@ -161,13 +162,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                     <form onSubmit={handleSubmit}>
                         {!isSignIn && (
                             <div className={styles.formGroup}>
-                                <label className={styles.label}>Full Name</label>
+                                <label className={styles.label}>{tAuth('fullNameLabel')}</label>
                                 <div className={styles.inputWrapper}>
                                     <UserIcon className={styles.inputIcon} size={18} />
                                     <input
                                         type="text"
                                         className={styles.inputField}
-                                        placeholder="Enter your full name"
+                                        placeholder={tAuth('fullNamePlaceholder')}
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         required
@@ -177,13 +178,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                         )}
 
                         <div className={styles.formGroup}>
-                            <label className={styles.label}>Email Address</label>
+                            <label className={styles.label}>{tAuth('emailAddressLabel')}</label>
                             <div className={styles.inputWrapper}>
                                 <Mail className={styles.inputIcon} size={18} />
                                 <input
                                     type="email"
                                     className={styles.inputField}
-                                    placeholder="name@company.com"
+                                    placeholder={tAuth('emailPlaceholder')}
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -192,7 +193,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                         </div>
 
                         <div className={styles.formGroup}>
-                            <label className={styles.label}>Password</label>
+                            <label className={styles.label}>{tAuth('passwordLabel')}</label>
                             <div className={styles.inputWrapper}>
                                 <Lock className={styles.inputIcon} size={18} />
                                 <input
@@ -209,7 +210,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                             </div>
                             {isSignIn && (
                                 <Link href="/forgot-password" className={styles.forgotPassword}>
-                                    Forgot password?
+                                    {tAuth('forgotPassword')}
                                 </Link>
                             )}
                         </div>
@@ -220,12 +221,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                             disabled={loading}
                             style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
                         >
-                            {loading ? 'Processing...' : (isSignIn ? 'Sign in' : 'Create Account')}
+                            {loading ? t('loading') : (isSignIn ? tAuth('signIn') : tAuth('createAccount'))}
                         </button>
                     </form>
 
                     <div className={styles.divider}>
-                        <span className={styles.dividerText}>or continue with</span>
+                        <span className={styles.dividerText}>{tAuth('orContinueWith')}</span>
                     </div>
 
                     <button className={styles.googleBtn} type="button" onClick={() => googleLoginHandler()}>
@@ -234,7 +235,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                             alt="Google"
                             className={styles.googleIcon}
                         />
-                        <span>Sign in with Google</span>
+                        <span>{tAuth('signInWithGoogle')}</span>
                     </button>
                 </div>
             </div>

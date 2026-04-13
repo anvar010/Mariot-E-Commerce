@@ -71,7 +71,7 @@ const FloatingActions = () => {
                 </button>
 
                 {/* 2. Chatbot Trigger (Middle) */}
-                <div style={{ position: 'relative', width: '50px', height: '50px' }}>
+                <div className={styles.botWrapper}>
                     <button
                         className={`${styles.actionBtn} ${styles.chatbotTrigger}`}
                         onClick={() => {

@@ -77,11 +77,11 @@
 
 @media (hover: hover) {
 
-.utilBtn:hover {
-    background: #f8fafc;
-    color: #0f172a;
-    border-color: #cbd5e1;
-}
+    .utilBtn:hover {
+        background: #f8fafc;
+        color: #0f172a;
+        border-color: #cbd5e1;
+    }
 }
 
 .addBtn {
@@ -102,11 +102,11 @@
 
 @media (hover: hover) {
 
-.addBtn:hover {
-    background-color: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
-}
+    .addBtn:hover {
+        background-color: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+    }
 }
 
 .bulkDeleteBtn {
@@ -126,10 +126,10 @@
 
 @media (hover: hover) {
 
-.bulkDeleteBtn:hover {
-    background-color: #fef2f2;
-    border-color: #ef4444;
-}
+    .bulkDeleteBtn:hover {
+        background-color: #fef2f2;
+        border-color: #ef4444;
+    }
 }
 
 .filtersWrapper {
@@ -193,9 +193,9 @@
 
 @media (hover: hover) {
 
-.filterSelect:hover {
-    border-color: #3b82f6;
-}
+    .filterSelect:hover {
+        border-color: #3b82f6;
+    }
 }
 
 .productsTableWrapper {
@@ -233,9 +233,9 @@
 
 @media (hover: hover) {
 
-.table tr:hover {
-    background-color: #f8fafc;
-}
+    .table tr:hover {
+        background-color: #f8fafc;
+    }
 }
 
 .productCell {
@@ -432,20 +432,20 @@
 
 @media (hover: hover) {
 
-.editBtn:hover {
-    color: #3b82f6;
-    border-color: #3b82f6;
-    background-color: #eff6ff;
-}
+    .editBtn:hover {
+        color: #3b82f6;
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+    }
 }
 
 @media (hover: hover) {
 
-.deleteBtn:hover {
-    color: #ef4444;
-    border-color: #ef4444;
-    background-color: #fef2f2;
-}
+    .deleteBtn:hover {
+        color: #ef4444;
+        border-color: #ef4444;
+        background-color: #fef2f2;
+    }
 }
 
 .editBtn:active,
@@ -551,10 +551,10 @@
 
 /* Action Buttons & Navigation Cont. */
 @media (hover: hover) {
-.navItem:hover {
-    background: #f1f5f9;
-    color: #0f172a;
-}
+    .navItem:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
 }
 
 .activeNav {
@@ -579,10 +579,10 @@
 
 @media (hover: hover) {
 
-.closeBtn:hover {
-    background: #fee2e2;
-    color: #ef4444;
-}
+    .closeBtn:hover {
+        background: #fee2e2;
+        color: #ef4444;
+    }
 }
 
 .modalContentArea {
@@ -807,9 +807,9 @@
 
 @media (hover: hover) {
 
-.customSelectTrigger:hover {
-    border-color: #cbd5e1;
-}
+    .customSelectTrigger:hover {
+        border-color: #cbd5e1;
+    }
 }
 
 .customSelectTrigger svg {
@@ -878,10 +878,10 @@
 
 @media (hover: hover) {
 
-.selectOption:hover {
-    background: #f1f5f9;
-    color: #0f172a;
-}
+    .selectOption:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
 }
 
 .selectOption.selected {
@@ -987,12 +987,12 @@
 
 @media (hover: hover) {
 
-.addVideoBtn:hover,
-.addResourceBtn:hover {
-    background: #f8fafc;
-    border-color: #3b82f6;
-    color: #3b82f6;
-}
+    .addVideoBtn:hover,
+    .addResourceBtn:hover {
+        background: #f8fafc;
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
 }
 
 /* Footer Actions */
@@ -1030,10 +1030,10 @@
 
 @media (hover: hover) {
 
-.submitBtn:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-}
+    .submitBtn:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+    }
 }
 
 /* Pagination */
@@ -1091,10 +1091,10 @@
 
 @media (hover: hover) {
 
-.pageBtn:hover:not(:disabled) {
-    border-color: #3b82f6;
-    color: #3b82f6;
-}
+    .pageBtn:hover:not(:disabled) {
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
 }
 
 .pageBtn:disabled {
@@ -1169,10 +1169,10 @@
 
 @media (hover: hover) {
 
-.clearSelection:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-}
+    .clearSelection:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
 }
 
 .bulkBtns {
@@ -1197,10 +1197,10 @@
 
 @media (hover: hover) {
 
-.bulkUpdateBtn:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-}
+    .bulkUpdateBtn:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+    }
 }
 
 /* Searchable Select Overrides */
@@ -1226,10 +1226,10 @@
 
 @media (hover: hover) {
 
-.selectOption:hover {
-    background: #eff6ff;
-    color: #3b82f6;
-}
+    .selectOption:hover {
+        background: #eff6ff;
+        color: #3b82f6;
+    }
 }
 
 .selectOption.selected {
@@ -1376,13 +1376,13 @@
 
 @media (hover: hover) {
 
-.downloadTemplateBtn:hover {
-    background: #f8fafc;
-    border-color: #3b82f6;
-    color: #3b82f6;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
+    .downloadTemplateBtn:hover {
+        background: #f8fafc;
+        border-color: #3b82f6;
+        color: #3b82f6;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
 }
 
 .uploadPlaceholder {
@@ -1403,12 +1403,12 @@
 
 @media (hover: hover) {
 
-.uploadPlaceholder:hover {
-    border-color: #3b82f6;
-    background: #f0f7ff33;
-    border-style: solid;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05);
-}
+    .uploadPlaceholder:hover {
+        border-color: #3b82f6;
+        background: #f0f7ff33;
+        border-style: solid;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05);
+    }
 }
 
 .uploadPlaceholder.dragging {
@@ -1431,11 +1431,11 @@
 
 @media (hover: hover) {
 
-.uploadPlaceholder:hover .uploadIconCircle {
-    background: #3b82f6;
-    color: #ffffff;
-    transform: scale(1.1);
-}
+    .uploadPlaceholder:hover .uploadIconCircle {
+        background: #3b82f6;
+        color: #ffffff;
+        transform: scale(1.1);
+    }
 }
 
 .uploadIdleState {
@@ -1642,10 +1642,10 @@
 
 @media (hover: hover) {
 
-.finishBtn:hover {
-    background: #1e293b;
-    transform: translateY(-1px);
-}
+    .finishBtn:hover {
+        background: #1e293b;
+        transform: translateY(-1px);
+    }
 }
 
 .tryAgainBtn {
@@ -1656,10 +1656,10 @@
 
 @media (hover: hover) {
 
-.tryAgainBtn:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-}
+    .tryAgainBtn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
 }
 
 /* Bulk Update Modal Specifics */
@@ -1721,11 +1721,11 @@
 
 @media (hover: hover) {
 
-.bulkUpdateClose:hover {
-    background: #fef2f2;
-    color: #ef4444;
-    border-color: #fee2e2;
-}
+    .bulkUpdateClose:hover {
+        background: #fef2f2;
+        color: #ef4444;
+        border-color: #fee2e2;
+    }
 }
 
 .selectedRow {
@@ -1792,10 +1792,10 @@
 
 @media (hover: hover) {
 
-.clearSelection:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-}
+    .clearSelection:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
 }
 
 .bulkBtns {
@@ -1820,10 +1820,10 @@
 
 @media (hover: hover) {
 
-.bulkUpdateBtn:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-}
+    .bulkUpdateBtn:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+    }
 }
 
 .bulkDeleteStickyBtn {
@@ -1843,10 +1843,10 @@
 
 @media (hover: hover) {
 
-.bulkDeleteStickyBtn:hover {
-    background: #dc2626;
-    transform: translateY(-1px);
-}
+    .bulkDeleteStickyBtn:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+    }
 }
 
 .smallModal {
@@ -1885,11 +1885,11 @@
 
 @media (hover: hover) {
 
-.videoLinkItem:hover,
-.resourceItem:hover {
-    border-color: #cbd5e1;
-    background: #f1f5f9;
-}
+    .videoLinkItem:hover,
+    .resourceItem:hover {
+        border-color: #cbd5e1;
+        background: #f1f5f9;
+    }
 }
 
 .videoInput,
@@ -1944,11 +1944,11 @@
 
 @media (hover: hover) {
 
-.removeVideoBtn:hover {
-    background: #ef4444;
-    color: #ffffff;
-    border-color: #ef4444;
-}
+    .removeVideoBtn:hover {
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+    }
 }
 
 .addVideoBtn,
@@ -1972,12 +1972,12 @@
 
 @media (hover: hover) {
 
-.addVideoBtn:hover,
-.addResourceBtn:hover {
-    background: #f8fafc;
-    border-color: #3b82f6;
-    color: #3b82f6;
-}
+    .addVideoBtn:hover,
+    .addResourceBtn:hover {
+        background: #f8fafc;
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
 }
 
 .resourceUploadWrapper {
@@ -2002,11 +2002,11 @@
 
 @media (hover: hover) {
 
-.resourceUploadBtn:hover {
-    background: #eff6ff;
-    color: #3b82f6;
-    border-color: #3b82f6;
-}
+    .resourceUploadBtn:hover {
+        background: #eff6ff;
+        color: #3b82f6;
+        border-color: #3b82f6;
+    }
 }
 
 /* Media Grid & Upload Placeholder Styles */
@@ -2051,13 +2051,13 @@
 
 @media (hover: hover) {
 
-.mediaUploadPlaceholder:hover {
-    background: #f1f5f9;
-    border-color: #3b82f6;
-    color: #3b82f6;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-}
+    .mediaUploadPlaceholder:hover {
+        background: #f1f5f9;
+        border-color: #3b82f6;
+        color: #3b82f6;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    }
 }
 
 .mediaUploadPlaceholder span {
@@ -2085,12 +2085,12 @@
 
 @media (hover: hover) {
 
-.removeMedia:hover {
-    background: #ef4444;
-    color: #ffffff;
-    border-color: #ef4444;
-    transform: scale(1.1);
-}
+    .removeMedia:hover {
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+        transform: scale(1.1);
+    }
 }
 
 .primaryBadge {
@@ -2134,11 +2134,11 @@
 
 @media (hover: hover) {
 
-.cancelBtn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
-    border-color: #cbd5e1;
-}
+    .cancelBtn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #cbd5e1;
+    }
 }
 
 .submitBtn {
@@ -2156,13 +2156,41 @@
 
 @media (hover: hover) {
 
-.submitBtn:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
-}
+    .submitBtn:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+    }
 }
 
 .submitBtn:active {
     transform: translateY(0);
+}
+
+/* Category Filter Improvements */
+.filterDropdownWrapper {
+    min-width: 220px;
+}
+
+.filterDropdownWrapper .customSelectTrigger {
+    padding: 6px 12px;
+    height: 33px;
+    font-size: 12px;
+    min-height: auto;
+}
+
+.filterDropdownWrapper .selectOption {
+    font-size: 12px;
+    padding: 8px 12px;
+    white-space: nowrap;
+}
+
+.filterDropdownWrapper .customSelectDropdown {
+    min-width: 350px;
+    left: auto;
+    right: 0;
+}
+
+.filterDropdownWrapper .rotate {
+    transform: rotate(180deg);
 }

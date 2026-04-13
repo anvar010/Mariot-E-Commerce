@@ -7,6 +7,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
+import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 
 const AdminOrders = () => {
     const [orders, setOrders] = useState<any[]>([]);
@@ -224,9 +225,9 @@ const AdminOrders = () => {
             <div className={styles.filtersWrapper}>
                 <div className={styles.searchBox}>
                     <Search size={18} />
-                    <input 
-                        type="text" 
-                        placeholder="Search orders by ID or customer name..." 
+                    <input
+                        type="text"
+                        placeholder="Search orders by ID or customer name..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -248,7 +249,7 @@ const AdminOrders = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>Loading orders...</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Active Orders..." /></td></tr>
                         ) : filteredOrders.length === 0 ? (
                             <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>No orders found matching your search.</td></tr>
                         ) : (
@@ -278,12 +279,11 @@ const AdminOrders = () => {
                                     </td>
                                     <td>
                                         <div className={styles.customDropdown}>
-                                            <div 
-                                                className={`${styles.dropdownHeader} ${
-                                                    order.payment_status === 'paid' ? styles.paymentPaid :
-                                                    order.payment_status === 'failed' ? styles.paymentFailed :
-                                                    order.payment_status === 'pending' ? styles.paymentPending : ''
-                                                } ${activeDropdown?.id === order.id && activeDropdown?.type === 'payment' ? styles.isOpen : ''}`}
+                                            <div
+                                                className={`${styles.dropdownHeader} ${order.payment_status === 'paid' ? styles.paymentPaid :
+                                                        order.payment_status === 'failed' ? styles.paymentFailed :
+                                                            order.payment_status === 'pending' ? styles.paymentPending : ''
+                                                    } ${activeDropdown?.id === order.id && activeDropdown?.type === 'payment' ? styles.isOpen : ''}`}
                                                 onClick={(e) => toggleDropdown(order.id, 'payment', e)}
                                             >
                                                 <span>{order.payment_status.toUpperCase()}</span>
@@ -291,8 +291,8 @@ const AdminOrders = () => {
                                             </div>
                                             <div className={`${styles.dropdownMenu} ${activeDropdown?.id === order.id && activeDropdown?.type === 'payment' ? styles.isOpen : ''}`}>
                                                 {['pending', 'paid', 'failed', 'refunded'].map((status) => (
-                                                    <div 
-                                                        key={status} 
+                                                    <div
+                                                        key={status}
                                                         className={styles.dropdownOption}
                                                         onClick={() => {
                                                             handlePaymentStatusChange(order.id, status);
@@ -307,12 +307,11 @@ const AdminOrders = () => {
                                     </td>
                                     <td>
                                         <div className={styles.customDropdown}>
-                                            <div 
-                                                className={`${styles.dropdownHeader} ${
-                                                    order.status === 'delivered' ? styles.orderDelivered :
-                                                    order.status === 'processing' ? styles.orderProcessing :
-                                                    order.status === 'cancelled' ? styles.orderCancelled : ''
-                                                } ${activeDropdown?.id === order.id && activeDropdown?.type === 'status' ? styles.isOpen : ''}`}
+                                            <div
+                                                className={`${styles.dropdownHeader} ${order.status === 'delivered' ? styles.orderDelivered :
+                                                        order.status === 'processing' ? styles.orderProcessing :
+                                                            order.status === 'cancelled' ? styles.orderCancelled : ''
+                                                    } ${activeDropdown?.id === order.id && activeDropdown?.type === 'status' ? styles.isOpen : ''}`}
                                                 onClick={(e) => toggleDropdown(order.id, 'status', e)}
                                             >
                                                 <span>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
@@ -320,8 +319,8 @@ const AdminOrders = () => {
                                             </div>
                                             <div className={`${styles.dropdownMenu} ${activeDropdown?.id === order.id && activeDropdown?.type === 'status' ? styles.isOpen : ''}`}>
                                                 {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => (
-                                                    <div 
-                                                        key={status} 
+                                                    <div
+                                                        key={status}
                                                         className={styles.dropdownOption}
                                                         onClick={() => {
                                                             handleStatusChange(order.id, status);

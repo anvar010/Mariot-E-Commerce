@@ -26,11 +26,13 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
     const brand = searchParams.brand as string | undefined;
     const seller = searchParams.seller as string | undefined;
     const search = searchParams.search as string | undefined;
-    const limited = searchParams.limited === 'true';
+    const limited = searchParams.limited as string | undefined;
+    const page = searchParams.page as string | undefined;
+    const pageNum = page ? parseInt(page) : 1;
 
     try {
         // Build product URL
-        let productUrl = `${API_BASE_URL_SERVER}/products?page=1&limit=20`;
+        let productUrl = `${API_BASE_URL_SERVER}/products?page=${pageNum}&limit=24`;
         if (category) productUrl += `&category=${category}`;
         if (brand) productUrl += `&brand=${brand}`;
         if (seller) productUrl += `&seller=${seller}`;

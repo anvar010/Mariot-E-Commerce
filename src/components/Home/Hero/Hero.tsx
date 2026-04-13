@@ -186,6 +186,7 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                             fill
                             className={styles.bgImage}
                             priority={currentSlide === 0}
+                            unoptimized={slide.image.startsWith('/assets/')}
                             sizes="100vw"
                             style={{ objectFit: 'cover' }}
                         />

@@ -11,6 +11,36 @@
     margin: 0;
 }
 
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #64748b;
+    flex-wrap: wrap;
+    padding: 0 40px;
+}
+
+.breadcrumbLink {
+    color: #64748b;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumbLink:hover {
+    color: #e31e24;
+}
+
+.breadcrumbSeparator {
+    color: #cbd5e1;
+}
+
+.breadcrumbCurrent {
+    color: #1e293b;
+    font-weight: 600;
+}
+
 .layout {
     display: flex;
     gap: 40px;
@@ -1617,8 +1647,8 @@
     justify-content: flex-start;
     align-items: center;
     border-bottom: 2px solid #8e959c;
-    margin-bottom: 30px;
-    padding-bottom: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
 }
 
 .sliderArrow {
@@ -1663,8 +1693,8 @@
     background: #eff6ff;
     border: 1px solid #d1d9e6;
     margin-top: 60px;
-    padding: 30px 20px;
-    border-radius: 8px;
+    padding: 30px 40px 15px 40px;
+    border-radius: 12px;
     box-shadow: none;
 }
 
@@ -1677,21 +1707,24 @@
 
 .relatedViewport {
     overflow: hidden;
-    margin: 0 40px;
+    margin: 0 10px;
+    /* Small buffer for card shadows */
 }
 
 .relatedGrid {
     display: flex;
-    gap: 8px;
-    padding-bottom: 20px;
-    padding-top: 10px;
+    gap: 0;
+    padding: 10px 0 15px 0;
     align-items: stretch;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
     touch-action: pan-y pinch-zoom;
 }
 
 .relatedSlide {
-    flex: 0 0 250px;
+    flex: 0 0 220px;
+    width: 220px;
+    padding-right: 2px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -1725,13 +1758,20 @@
         border-radius: 0;
         border-left: none;
         border-right: none;
-        padding: 25px 0;
+        padding: 20px 0 10px 0;
         margin-top: 40px;
     }
 
     .relatedSection .sectionTitle {
         margin-left: 20px;
-        margin-right: 20px;
+        margin-right: auto;
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+    .relatedSection .sectionTitle h2 {
+        text-align: left;
+        margin-left: 0;
     }
 
     .relatedGrid {
@@ -1741,6 +1781,8 @@
 
     .relatedSlide {
         flex: 0 0 50%;
+        width: 50%;
+        padding-right: 0;
         border-right: 1px solid #f0f0f0;
     }
 
@@ -1896,6 +1938,10 @@
 }
 
 /* Expert Ask Redesign */
+.expertSection {
+    margin-top: 60px;
+}
+
 .askExpertCard {
     background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
     padding: 40px;
@@ -1906,27 +1952,52 @@
     border: 1px solid #dcfce7;
 }
 
+.expertHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.expertIconBox {
+    background: #dcfce7;
+    padding: 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.expertLabel {
+    color: #059669;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .askContent {
     max-width: 60%;
 }
 
 .askContent h3 {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 800;
     color: #065f46;
-    margin-bottom: 10px;
+    margin: 0 0 12px 0;
 }
 
 .askContent p {
-    color: #374151;
+    color: #4b5563;
     font-size: 16px;
     line-height: 1.6;
+    margin: 0;
 }
 
 .askActions {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
 }
 
 /* Updated Buttons */
@@ -1942,8 +2013,10 @@
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     width: fit-content;
+    white-space: nowrap;
 }
 
 @media (hover: hover) {
@@ -1987,18 +2060,50 @@
         width: 100%;
     }
 
+    .expertSection {
+        padding: 0;
+        margin-left: -20px;
+        margin-right: -20px;
+        width: calc(100% + 40px);
+        box-shadow: none;
+        background: transparent;
+        margin-top: 40px;
+    }
+
     .askExpertCard {
         flex-direction: column;
-        gap: 30px;
-        text-align: center;
+        gap: 20px;
+        text-align: left;
+        padding: 30px 20px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        align-items: flex-start;
+    }
+
+    .expertHeader {
+        justify-content: flex-start;
+        margin-bottom: 12px;
     }
 
     .askContent {
         max-width: 100%;
     }
 
+    .askActions {
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .askActions span {
+        width: 100%;
+        text-align: center;
+    }
+
     .premiumBtn {
-        margin: 0 auto;
+        width: 100%;
+        max-width: 320px;
+        margin: 0;
     }
 }
 
@@ -2172,6 +2277,23 @@
 @media (max-width: 1024px) {
     .container {
         padding: 0 20px;
+    }
+
+    .breadcrumbs {
+        padding: 0;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none;
+        /* Firefox */
+        -ms-overflow-style: none;
+        /* IE/Edge */
+        gap: 6px;
+        margin-bottom: 15px;
+    }
+
+    .breadcrumbs::-webkit-scrollbar {
+        display: none;
+        /* Chrome/Safari */
     }
 
     .layout {

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 import styles from './AdminLayout.module.css';
+import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, loading, error } = useAuth();
@@ -17,7 +18,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         }
     }, [user, loading, error, router]);
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <AdminLoader fullPage={true} message="Authenticating..." />;
 
     if (error) {
         return (

@@ -23,6 +23,7 @@ const Header = () => {
     const router = useRouter();
     const locale = useLocale();
     const t = useTranslations('header');
+    const tc = useTranslations('categories');
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -35,6 +36,45 @@ const Header = () => {
     const [announcement, setAnnouncement] = useState<any>(null);
 
     const isArabic = locale === 'ar';
+
+    // Search Drag-to-Scroll Logic
+    const searchDropdownRef = React.useRef<HTMLDivElement>(null);
+    const isDraggingRef = React.useRef(false);
+    const startYRef = React.useRef(0);
+    const scrollTopRef = React.useRef(0);
+    const hasDraggedRef = React.useRef(false);
+
+    const handleSearchMouseDown = (e: React.MouseEvent) => {
+        if (!searchDropdownRef.current) return;
+        isDraggingRef.current = true;
+        hasDraggedRef.current = false;
+        startYRef.current = e.pageY - searchDropdownRef.current.offsetTop;
+        scrollTopRef.current = searchDropdownRef.current.scrollTop;
+        searchDropdownRef.current.classList.add(styles.isDragging);
+    };
+
+    const handleSearchMouseLeave = () => {
+        isDraggingRef.current = false;
+        if (searchDropdownRef.current) searchDropdownRef.current.classList.remove(styles.isDragging);
+    };
+
+    const handleSearchMouseUp = () => {
+        // Small delay so onClick can read hasDraggedRef before reset
+        setTimeout(() => {
+            isDraggingRef.current = false;
+        }, 10);
+        if (searchDropdownRef.current) searchDropdownRef.current.classList.remove(styles.isDragging);
+    };
+
+    const handleSearchMouseMove = (e: React.MouseEvent) => {
+        if (!isDraggingRef.current || !searchDropdownRef.current) return;
+        const y = e.pageY - searchDropdownRef.current.offsetTop;
+        const walk = (y - startYRef.current) * 1.5; // Scroll speed
+        if (Math.abs(y - startYRef.current) > 5) {
+            hasDraggedRef.current = true;
+        }
+        searchDropdownRef.current.scrollTop = scrollTopRef.current - walk;
+    };
 
     useEffect(() => {
         const fetchCMS = async () => {
@@ -181,7 +221,6 @@ const Header = () => {
                                 alt="UAE"
                                 width={18}
                                 height={12}
-                                style={{ height: '12px', width: 'auto' }}
                             />
                         </div>
                         <div className={`${styles.topBannerRight} ${styles.desktopOnly}`}>
@@ -220,12 +259,33 @@ const Header = () => {
 
                         <div className={styles.searchSection}>
                             <form className={styles.searchBar} onSubmit={handleSearch}>
+                                {!searchQuery && !isSearching && (
+                                    <div className={styles.placeholderContainer}>
+                                        <div className={styles.initialText}>
+                                            {t('searchPlaceholder')}
+                                        </div>
+                                        <div className={styles.animatedPlaceholder}>
+                                            <span className={styles.placeholderPrefix}>{t('searchFor')}</span>
+                                            <div className={styles.wordsScroller}>
+                                                <div className={styles.wordsScrollerInner}>
+                                                    <span className={styles.word}>&quot;{tc('coffee-makers')}&quot;</span>
+                                                    <span className={styles.word}>&quot;{tc('refrigeration')}&quot;</span>
+                                                    <span className={styles.word}>&quot;{tc('commercial-ovens')}&quot;</span>
+                                                    <span className={styles.word}>&quot;{tc('food-preparation')}&quot;</span>
+                                                    <span className={styles.word}>&quot;{tc('ice-equipment')}&quot;</span>
+                                                    <span className={styles.word}>&quot;{tc('coffee-makers')}&quot;</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 <input
                                     type="text"
-                                    placeholder={t('searchPlaceholder')}
+                                    placeholder={searchQuery ? '' : ''}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onFocus={() => searchQuery.trim().length >= 2 && setShowSuggestions(true)}
+                                    className={styles.searchInput}
                                 />
                                 <button type="submit" className={styles.searchButton}>
                                     <Search size={20} />
@@ -234,7 +294,14 @@ const Header = () => {
                             </form>
 
                             {showSuggestions && (
-                                <div className={styles.suggestionsDropdown}>
+                                <div
+                                    className={styles.suggestionsDropdown}
+                                    ref={searchDropdownRef}
+                                    onMouseDown={handleSearchMouseDown}
+                                    onMouseLeave={handleSearchMouseLeave}
+                                    onMouseUp={handleSearchMouseUp}
+                                    onMouseMove={handleSearchMouseMove}
+                                >
                                     {isSearching ? (
                                         <div className={styles.suggestionsList}>
                                             {[1, 2, 3].map((item) => (
@@ -259,7 +326,13 @@ const Header = () => {
                                                 <div
                                                     key={item.id}
                                                     className={styles.suggestionItem}
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        if (hasDraggedRef.current) {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            return;
+                                                        }
+
                                                         if (item.type === 'category') {
                                                             router.push(`/category/${item.slug}`);
                                                         } else if (item.type === 'brand') {
@@ -525,8 +598,8 @@ const Header = () => {
                             <li className={styles.mobileOnly}><Link href="/rewards" onClick={() => setIsMenuOpen(false)}>{t('rewardPointsNav')}</Link></li>
                             {user?.role === 'admin' && (
                                 <li className={styles.mobileOnly}>
-                                    <Link 
-                                        href="/admin" 
+                                    <Link
+                                        href="/admin"
                                         onClick={() => setIsMenuOpen(false)}
                                         style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#2563eb' }}
                                     >
@@ -572,7 +645,7 @@ const Header = () => {
                         </div>
                         <div className={styles.supportItem}>
                             <HelpCircle size={16} className={styles.helpIcon} />
-                            <a href="#">{t('needHelp')}</a>
+                            <Link href="/shop?category=parts">{t('needHelp')}</Link>
                         </div>
                     </div>
                 </div>

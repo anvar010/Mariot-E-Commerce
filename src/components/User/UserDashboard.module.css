@@ -43,7 +43,7 @@
     transform: translateY(-50%);
     width: 100px;
     height: 100px;
-    background: url('https://mariotgroup.com/assets/images/logo.png') no-repeat;
+    background: url('https://mariotstore.com/assets/images/logo.png') no-repeat;
     background-size: contain;
     opacity: 0.1;
 }
@@ -103,12 +103,12 @@
 
 @media (hover: hover) {
 
-.navLink:hover,
-.active {
-    background-color: white;
-    color: #56cfe1;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
+    .navLink:hover,
+    .active {
+        background-color: white;
+        color: #56cfe1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
 }
 
 .active {
@@ -164,9 +164,9 @@
 
 @media (hover: hover) {
 
-.signOutBtn:hover {
-    background-color: #f1f5f9;
-}
+    .signOutBtn:hover {
+        background-color: #f1f5f9;
+    }
 }
 
 /* Content Styling */
@@ -248,9 +248,9 @@
 
 @media (hover: hover) {
 
-.shoppingBtn:hover {
-    opacity: 0.9;
-}
+    .shoppingBtn:hover {
+        opacity: 0.9;
+    }
 }
 
 @media (max-width: 900px) {
@@ -512,10 +512,10 @@
 
 @media (hover: hover) {
 
-.wishlistItem:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-}
+    .wishlistItem:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
 }
 
 .itemImage {
@@ -682,10 +682,10 @@
 
 @media (hover: hover) {
 
-.editBtn:hover {
-    background: #1a1a1a;
-    color: white;
-}
+    .editBtn:hover {
+        background: #1a1a1a;
+        color: white;
+    }
 }
 
 .editBtn:disabled {
@@ -742,11 +742,11 @@
 
 @media (hover: hover) {
 
-.premiumQuotationCard:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-    border-color: #56cfe1;
-}
+    .premiumQuotationCard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        border-color: #56cfe1;
+    }
 }
 
 .quotationInfoMain {
@@ -878,12 +878,12 @@
 
 @media (hover: hover) {
 
-.sleekViewBtn:hover {
-    background: #f8fafc;
-    color: #0d9488;
-    border-color: #56cfe1;
-    transform: translateY(-1px);
-}
+    .sleekViewBtn:hover {
+        background: #f8fafc;
+        color: #0d9488;
+        border-color: #56cfe1;
+        transform: translateY(-1px);
+    }
 }
 
 .sleekDownloadBtn {
@@ -895,11 +895,11 @@
 
 @media (hover: hover) {
 
-.sleekDownloadBtn:hover {
-    background: #334155;
-    transform: translateY(-1px);
-    box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.2);
-}
+    .sleekDownloadBtn:hover {
+        background: #334155;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.2);
+    }
 }
 
 .sleekDeleteBtn {
@@ -918,12 +918,12 @@
 
 @media (hover: hover) {
 
-.sleekDeleteBtn:hover {
-    background: #fff1f2;
-    color: #ef4444;
-    border-color: #fee2e2;
-    transform: scale(1.05);
-}
+    .sleekDeleteBtn:hover {
+        background: #fff1f2;
+        color: #ef4444;
+        border-color: #fee2e2;
+        transform: scale(1.05);
+    }
 }
 
 .miniLoaderTeal {
@@ -1107,10 +1107,10 @@
 
 @media (hover: hover) {
 
-.closePreview:hover {
-    transform: scale(1.1);
-    color: #ef4444;
-}
+    .closePreview:hover {
+        transform: scale(1.1);
+        color: #ef4444;
+    }
 }
 
 .previewContent {
@@ -1144,11 +1144,11 @@
 
 @media (hover: hover) {
 
-.downloadFinalBtn:hover {
-    background: #45b7c9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(86, 207, 225, 0.3);
-}
+    .downloadFinalBtn:hover {
+        background: #45b7c9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(86, 207, 225, 0.3);
+    }
 }
 
 /* Address Section Modern Styling */
@@ -1175,11 +1175,11 @@
 
 @media (hover: hover) {
 
-.addressCard:hover {
-    border-color: #56cfe1;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
-    transform: translateY(-4px);
-}
+    .addressCard:hover {
+        border-color: #56cfe1;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        transform: translateY(-4px);
+    }
 }
 
 .addressCardDefault {
@@ -1262,10 +1262,10 @@
 
 @media (hover: hover) {
 
-.addressEditBtn:hover {
-    background: #e0f2fe;
-    transform: translateY(-1px);
-}
+    .addressEditBtn:hover {
+        background: #e0f2fe;
+        transform: translateY(-1px);
+    }
 }
 
 .addressDeleteBtn {
@@ -1275,10 +1275,10 @@
 
 @media (hover: hover) {
 
-.addressDeleteBtn:hover {
-    background: #ffe4e6;
-    transform: translateY(-1px);
-}
+    .addressDeleteBtn:hover {
+        background: #ffe4e6;
+        transform: translateY(-1px);
+    }
 }
 
 /* Orders Section Redesign */
@@ -1297,11 +1297,11 @@
 
 @media (hover: hover) {
 
-.premiumOrderCard:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-    border-color: #56cfe1;
-}
+    .premiumOrderCard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        border-color: #56cfe1;
+    }
 }
 
 .orderMain {
@@ -1407,11 +1407,11 @@
 
 @media (hover: hover) {
 
-.orderViewBtn:hover {
-    background: #f8fafc;
-    border-color: #94a3b8;
-    transform: translateY(-1px);
-}
+    .orderViewBtn:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        transform: translateY(-1px);
+    }
 }
 
 .orderViewBtn:disabled {
@@ -1435,11 +1435,11 @@
 
 @media (hover: hover) {
 
-.premiumPaymentCard:hover {
-    transform: translateX(4px);
-    border-color: #56cfe1;
-    box-shadow: 0 12px 20px -8px rgba(86, 207, 225, 0.15);
-}
+    .premiumPaymentCard:hover {
+        transform: translateX(4px);
+        border-color: #56cfe1;
+        box-shadow: 0 12px 20px -8px rgba(86, 207, 225, 0.15);
+    }
 }
 
 .paymentMain {
@@ -1464,11 +1464,11 @@
 
 @media (hover: hover) {
 
-.premiumPaymentCard:hover .paymentIconWrapper {
-    border-color: #56cfe1;
-    color: #56cfe1;
-    background: #f0fdfe;
-}
+    .premiumPaymentCard:hover .paymentIconWrapper {
+        border-color: #56cfe1;
+        color: #56cfe1;
+        background: #f0fdfe;
+    }
 }
 
 .paymentInfo {

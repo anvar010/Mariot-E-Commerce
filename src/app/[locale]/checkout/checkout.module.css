@@ -10,6 +10,7 @@
     margin: 0 auto;
     padding: 30px 40px;
     font-family: sans-serif;
+    box-sizing: border-box;
 }
 
 .checkoutHeader {
@@ -411,19 +412,24 @@
 .tabText {
     flex: 1;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .tabTitle {
-    font-size: 13px;
+    font-size: 14px;
+    /* Slightly larger for single row prominence */
     font-weight: 700;
     color: #0f172a;
+    white-space: nowrap;
 }
 
 .tabDesc {
     font-size: 11px;
     color: #64748b;
+    font-weight: 400;
 }
 
 .tabIcon {
@@ -447,10 +453,10 @@
 
 /* Tabby Specific Branding */
 .tabbyBrand {
-    flex: 1;
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    margin-inline-start: auto;
 }
 
 .tabbyLogoLarge {
@@ -487,23 +493,97 @@
 }
 
 /* Refined Card Form */
-.cardFormGrid {
-    padding: 24px 24px 28px 48px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+.cardFormContent {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .fieldGroup {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .fieldLabel {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: #475569;
+}
+
+.cardNumberContainer,
+.expiryWrapper,
+.cvcWrapper {
+    position: relative;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.cardNumberContainer:focus-within,
+.expiryWrapper:focus-within,
+.cvcWrapper:focus-within {
+    border-color: #237073;
+    box-shadow: 0 0 0 3px rgba(35, 112, 115, 0.08);
+}
+
+.cardLogos {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cardLogos img {
+    height: 20px;
+    width: auto;
+    object-fit: contain;
+}
+
+.splitRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.cvcWrapper {
+    padding-right: 40px;
+}
+
+.cvcIcon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.streetAddressWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tabbyPromoWrapper {
+    padding: 24px 24px 24px 48px;
+}
+
+.cardElementWrapper {
+    padding: 12px 14px;
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.freeText {
+    color: #059669;
+    font-weight: 600;
 }
 
 .modernInput {
@@ -609,7 +689,8 @@
     margin-bottom: 20px;
     max-height: 200px;
     overflow-y: auto;
-    padding-inline-end: 4px;
+    padding-inline-end: 8px;
+    /* Room for scrollbar */
 }
 
 .itemRow {
@@ -653,6 +734,10 @@
     font-size: 12px;
     font-weight: 700;
     color: #0f172a;
+    flex-shrink: 0;
+    text-align: right;
+    min-width: 100px;
+    /* Ensure enough space for large amounts */
 }
 
 .totalsGrid {
@@ -720,17 +805,24 @@
     margin-top: 24px;
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 16px;
-    opacity: 1;
+    flex-wrap: nowrap;
+    /* Force one row */
+    overflow: hidden;
 }
 
 .trustBadge {
-    height: 28px;
+    height: 24px;
+    /* Slightly smaller to fit better */
+    width: auto;
+    max-width: 100%;
     object-fit: contain;
 }
 
 .visaBadge {
-    height: 38px;
+    height: 30px;
+    /* Scaled down proportionally */
 }
 
 .animateSpin {
@@ -818,7 +910,7 @@
 
 .couponCodeTag {
     background: #10b981;
-    color: white;
+
     padding: 4px 10px;
     border-radius: 6px;
     font-size: 13px;
@@ -1147,6 +1239,14 @@
         padding: 16px;
     }
 
+    .tabbyPromoWrapper {
+        padding: 16px;
+    }
+
+    .bankDetails {
+        padding: 16px;
+    }
+
     .paymentTab {
         padding: 16px;
     }
@@ -1381,4 +1481,96 @@
     border-top: 3px solid #237073;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+}
+
+/* --- RESPONSIVE DESIGN --- */
+
+@media (max-width: 1100px) {
+    .checkoutLayout {
+        grid-template-columns: 1fr 400px;
+        gap: 30px;
+    }
+}
+
+@media (max-width: 992px) {
+    .checkoutLayout {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+
+    .rightColumn {
+        order: -1;
+    }
+
+    .summaryContainer {
+        position: static;
+        max-height: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .checkoutContainer {
+        padding: 20px 16px;
+    }
+
+    .checkoutHeader h1 {
+        font-size: 20px;
+    }
+
+    .formGrid,
+    .cardFormGrid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .fullWidth {
+        grid-column: span 1;
+    }
+
+    .checkoutSection {
+        padding: 16px;
+    }
+
+    .paymentTab {
+        padding: 12px;
+    }
+
+    .tabText {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+
+    .tabTitle {
+        font-size: 13px;
+    }
+
+    .cardFormGrid,
+    .tabbyPromoWrapper,
+    .bankDetails {
+        padding: 20px 16px;
+    }
+
+    .itemPrice {
+        min-width: 80px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 380px) {
+    .itemRow {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .itemPrice {
+        text-align: left;
+        min-width: 0;
+    }
+
+    .trustBadges {
+        gap: 8px;
+        /* Tighter gap on small phones to keep one row */
+    }
 }

@@ -6,7 +6,7 @@
 
 .mainContent {
     flex: 1;
-    margin-inline-start: 220px;
+    margin-inline-start: 260px;
     display: flex;
     flex-direction: column;
 }

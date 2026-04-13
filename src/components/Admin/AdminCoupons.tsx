@@ -7,6 +7,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
+import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 
 const AdminCoupons = () => {
     const [coupons, setCoupons] = useState<any[]>([]);
@@ -30,7 +31,7 @@ const AdminCoupons = () => {
         isOpen: false,
         title: '',
         message: '',
-        onConfirm: () => {},
+        onConfirm: () => { },
         type: 'danger'
     });
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -278,7 +279,7 @@ const AdminCoupons = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>Loading coupons...</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Coupons Catalog..." /></td></tr>
                         ) : coupons.length === 0 ? (
                             <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>No coupons found.</td></tr>
                         ) : (

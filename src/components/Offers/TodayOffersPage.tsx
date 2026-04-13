@@ -11,7 +11,8 @@ import {
     Search,
     Coins,
     ShoppingCart,
-    Phone
+    Phone,
+    X
 } from 'lucide-react';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Loader from '@/components/shared/Loader/Loader';
@@ -44,6 +45,8 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
     const [priceRange, setPriceRange] = useState({ min: '', max: '' });
     const [openFilters, setOpenFilters] = useState<string[]>([]);
     const [isAboutExpanded, setIsAboutExpanded] = useState(false);
+    const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+    const [isSortOpen, setIsSortOpen] = useState(false);
 
     // Debounce price filtering
     useEffect(() => {
@@ -211,6 +214,16 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
         }));
     };
 
+    const getSortLabel = (key: string) => {
+        switch (key) {
+            case 'price_asc': return t('priceLowHigh');
+            case 'price_desc': return t('priceHighLow');
+            case 'newest': return t('newestFirst');
+            case 'relevance':
+            default: return t('relevance');
+        }
+    };
+
     const formatTime = (num: number) => num.toString().padStart(2, '0');
 
     return (
@@ -219,7 +232,13 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
 
             <div className={styles.mainLayout}>
                 {/* Sidebar */}
-                <div className={styles.sidebarWrapper}>
+                <div className={`${styles.sidebarWrapper} ${isMobileFilterOpen ? styles.sidebarOpen : ''}`}>
+                    <div className={styles.mobileFilterHeader}>
+                        <h3>{t('filter')}</h3>
+                        <button onClick={() => setIsMobileFilterOpen(false)}>
+                            <X size={24} />
+                        </button>
+                    </div>
                     <DefaultShopFilter
                         inStockOnly={false}
                         setInStockOnly={() => { }}
@@ -249,9 +268,12 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             style={{ objectFit: 'cover' }}
+                            unoptimized
                         />
                     </div>
                 </div>
+
+                {isMobileFilterOpen && <div className={styles.filterOverlay} onClick={() => setIsMobileFilterOpen(false)} />}
 
                 {/* Content Area */}
                 <main className={styles.contentArea}>
@@ -267,6 +289,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                                     height={400}
                                     className={styles.fullBannerImg}
                                     priority
+                                    unoptimized
                                 />
                             </div>
                             <button className={styles.slideBtn}><ChevronRight /></button>
@@ -279,20 +302,30 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                             {loading ? t('searching') : t('resultsFound', { count: products.length })}
                         </div>
                         <div className={styles.sortBox}>
-                            <div className={styles.sortLabel}>
-                                <Filter size={18} fill="currentColor" />
-                                <span>{t('sort')}</span>
-                            </div>
-                            <select
-                                className={styles.sortSelect}
-                                value={activeFilters.sort}
-                                onChange={(e) => setActiveFilters(prev => ({ ...prev, sort: e.target.value }))}
+                            <button
+                                className={styles.mobileFilterToggle}
+                                onClick={() => setIsMobileFilterOpen(true)}
                             >
-                                <option value="relevance">{t('relevance')}</option>
-                                <option value="price_asc">{t('priceLowHigh')}</option>
-                                <option value="price_desc">{t('priceHighLow')}</option>
-                                <option value="newest">{t('newestFirst')}</option>
-                            </select>
+                                <Filter size={20} />
+                                <span>{t('filter')}</span>
+                            </button>
+                            <div className={styles.sortLabel}>
+                                <Filter size={18} fill="currentColor" className={styles.desktopOnly} />
+                                <span className={styles.desktopOnly}>{t('sort')}</span>
+                            </div>
+                            <div className={styles.sortDropdown} onClick={() => setIsSortOpen(!isSortOpen)}>
+                                <span>{getSortLabel(activeFilters.sort)}</span>
+                                <ChevronDown size={16} className={isSortOpen ? styles.rotateIcon : ''} />
+
+                                {isSortOpen && (
+                                    <div className={styles.dropdownContent}>
+                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'relevance' }))}>{t('relevance')}</div>
+                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'price_asc' }))}>{t('priceLowHigh')}</div>
+                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'price_desc' }))}>{t('priceHighLow')}</div>
+                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'newest' }))}>{t('newestFirst')}</div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -318,6 +351,8 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                                         primary_image: product.primary_image || product.image_url || product.image,
                                         brand_name: product.brand_name || product.brand,
                                         brand_image: product.brand_image,
+                                        images: product.images,
+                                        gallery: product.gallery,
                                         slug: product.slug,
                                         stock_quantity: product.stock_quantity,
                                         is_best_seller: product.is_best_seller,
@@ -375,6 +410,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                                     width={120}
                                     height={40}
                                     style={{ objectFit: 'contain' }}
+                                    unoptimized
                                 />
                             </div>
                         </div>

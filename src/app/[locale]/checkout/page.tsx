@@ -35,7 +35,7 @@ import { API_BASE_URL, BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import styles from './checkout.module.css';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || '');
 
@@ -376,11 +376,11 @@ function CheckoutContent() {
             if (data.success) {
                 // Stripe Card Payment handling
                 if (data.requires_payment && data.client_secret) {
-                    const cardElement = elements?.getElement(CardElement);
-                    if (cardElement && stripe) {
+                    const cardNumberElement = elements?.getElement(CardNumberElement);
+                    if (cardNumberElement && stripe) {
                         const { error, paymentIntent } = await stripe.confirmCardPayment(data.client_secret, {
                             payment_method: {
-                                card: cardElement,
+                                card: cardNumberElement,
                                 billing_details: {
                                     name: cardDetails.name,
                                     email: form.email || undefined,
@@ -582,7 +582,7 @@ function CheckoutContent() {
 
                                 <div className={`${styles.formGroup} ${styles.fullWidth}`}>
                                     <label>{t('streetAddress')} <span>*</span></label>
-                                    <div className={styles.inputWrapper} style={{ flexDirection: 'column', gap: '10px', alignItems: 'flex-start' }}>
+                                    <div className={styles.streetAddressWrapper}>
                                         <div style={{ position: 'relative', width: '100%' }}>
                                             <input className={styles.formInput} type="text" name="streetAddress" placeholder={t('houseNumberPlaceholder')} value={form.streetAddress} onChange={handleInputChange} required />
                                             <MapPin className={styles.inputIcon} size={15} />
@@ -658,28 +658,60 @@ function CheckoutContent() {
                                 </div>
                                 {paymentMethod === 'card' && (
                                     <div className={styles.tabContent} onClick={(e) => e.stopPropagation()}>
-                                        <div className={styles.cardFormGrid}>
-                                            <div className={`${styles.fieldGroup} ${styles.fullWidth}`}>
-                                                <label className={styles.fieldLabel}>{t('cardName')}</label>
-                                                <input className={styles.modernInput} type="text" name="name" placeholder={t('placeholderName')} value={cardDetails.name} onChange={handleCardChange} />
-                                            </div>
-                                            <div className={`${styles.fieldGroup} ${styles.fullWidth}`}>
-                                                <label className={styles.fieldLabel}>Card Details</label>
-                                                <div className={styles.modernInput} style={{ padding: '12px 16px', background: 'white' }}>
-                                                    <CardElement options={{
+                                        <div className={styles.cardFormContent}>
+                                            <div className={styles.fieldGroup}>
+                                                <label className={styles.fieldLabel}>Credit or Debit Cards*</label>
+                                                <div className={styles.cardNumberContainer}>
+                                                    <CardNumberElement options={{
+                                                        showIcon: true,
                                                         style: {
                                                             base: {
                                                                 fontSize: '16px',
-                                                                color: '#424770',
-                                                                '::placeholder': {
-                                                                    color: '#aab7c4',
-                                                                },
-                                                            },
-                                                            invalid: {
-                                                                color: '#9e2146',
+                                                                color: '#334155',
+                                                                fontFamily: 'Inter, sans-serif',
+                                                                '::placeholder': { color: '#cbd5e1' },
                                                             },
                                                         },
                                                     }} />
+                                                    <div className={styles.cardLogos}>
+                                                        <img src="/assets/visa-logo.svg" alt="Visa" />
+                                                        <img src="/assets/mastercard-logo.svg" alt="Mastercard" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className={styles.splitRow}>
+                                                <div className={styles.fieldGroup}>
+                                                    <label className={styles.fieldLabel}>Expiry*</label>
+                                                    <div className={styles.expiryWrapper}>
+                                                        <CardExpiryElement options={{
+                                                            style: {
+                                                                base: {
+                                                                    fontSize: '16px',
+                                                                    color: '#334155',
+                                                                    fontFamily: 'Inter, sans-serif',
+                                                                    '::placeholder': { color: '#cbd5e1' },
+                                                                },
+                                                            },
+                                                        }} />
+                                                    </div>
+                                                </div>
+                                                <div className={styles.fieldGroup}>
+                                                    <label className={styles.fieldLabel}>CVC*</label>
+                                                    <div className={styles.cvcWrapper}>
+                                                        <CardCvcElement options={{
+                                                            style: {
+                                                                base: {
+                                                                    fontSize: '16px',
+                                                                    color: '#334155',
+                                                                    fontFamily: 'Inter, sans-serif',
+                                                                    '::placeholder': { color: '#cbd5e1' },
+                                                                },
+                                                            },
+                                                        }} />
+                                                        <div className={styles.cvcIcon}>
+                                                            <CreditCard size={18} />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -744,7 +776,7 @@ function CheckoutContent() {
                                 {/* Tabby Promo - Shown when Tabby is selected as payment */}
                                 {paymentMethod === 'tabby' && (
                                     <div className={styles.tabContent}>
-                                        <div style={{ padding: '24px 24px 24px 48px' }}>
+                                        <div className={styles.tabbyPromoWrapper}>
                                             <Script
                                                 src="https://checkout.tabby.ai/tabby-promo.js"
                                                 strategy="lazyOnload"
@@ -869,7 +901,7 @@ function CheckoutContent() {
 
                                     <div className={styles.totalRow}>
                                         <span>{common('shipping')}</span>
-                                        <span style={{ color: '#059669', fontWeight: '600' }}>{common('free')}</span>
+                                        <span className={styles.freeText}>{common('free')}</span>
                                     </div>
 
                                     <div className={styles.totalRow}>
@@ -968,7 +1000,7 @@ function CheckoutContent() {
                                 {isLoadingCoupons ? (
                                     <div className={styles.modalLoader}>
                                         <div className={styles.tinySpinner}></div>
-                                        <span>Fetching best offers...</span>
+                                        <span>{t('loadingCoupons')}</span>
                                     </div>
                                 ) : availableCoupons.length > 0 ? (
                                     availableCoupons.map((coupon) => {
@@ -981,22 +1013,22 @@ function CheckoutContent() {
                                                 <div className={styles.couponMain}>
                                                     <div className={styles.couponCodeRow}>
                                                         <div className={styles.couponCodeDisplay}>{coupon.code}</div>
-                                                        {isExpired && <span className={styles.expiredBadge}>Expired</span>}
-                                                        {!isExpired && isInactive && <span className={styles.expiredBadge}>Inactive</span>}
+                                                        {isExpired && <span className={styles.expiredBadge}>{t('expired')}</span>}
+                                                        {!isExpired && isInactive && <span className={styles.expiredBadge}>{t('inactive')}</span>}
                                                     </div>
                                                     <div className={styles.couponDetails}>
                                                         <p className={styles.couponValue}>
                                                             {coupon.discount_type === 'percentage'
-                                                                ? `${Number(coupon.discount_value).toFixed(0)}% OFF`
-                                                                : `AED ${Number(coupon.discount_value).toFixed(0)} OFF`}
+                                                                ? `${Number(coupon.discount_value).toFixed(0)}% ${common('off')}`
+                                                                : `${common('currency')} ${Number(coupon.discount_value).toFixed(0)} ${common('off')}`}
                                                         </p>
                                                         <p className={styles.couponMinOrder}>
-                                                            Min. Order: AED {coupon.min_order_amount}
+                                                            {t('minOrder', { currency: common('currency'), amount: coupon.min_order_amount })}
                                                         </p>
                                                         <div className={styles.couponRestrictions}>
                                                             {coupon.applicable_brands && (
                                                                 <div className={styles.restrictionTag}>
-                                                                    Valid for only
+                                                                    {t('validForOnly')}
                                                                     <span
                                                                         className={styles.restrictionLink}
                                                                         onClick={(e) => {
@@ -1005,12 +1037,12 @@ function CheckoutContent() {
                                                                             setActiveBrandsPopup(activeBrandsPopup === coupon.id ? null : coupon.id);
                                                                         }}
                                                                     >
-                                                                        selected brands
+                                                                        {t('selectedBrands')}
                                                                     </span>
                                                                     {activeBrandsPopup === coupon.id && (
                                                                         <div className={styles.restrictionPopup} onClick={e => e.stopPropagation()}>
                                                                             <div className={styles.popupHeader}>
-                                                                                <span>Applicable Brands</span>
+                                                                                <span>{t('applicableBrands')}</span>
                                                                                 <CloseIcon size={12} className={styles.closePopup} onClick={() => setActiveBrandsPopup(null)} />
                                                                             </div>
                                                                             <div className={styles.popupTags}>
@@ -1027,7 +1059,7 @@ function CheckoutContent() {
                                                             )}
                                                             {coupon.applicable_products && (
                                                                 <div className={styles.restrictionTag}>
-                                                                    {coupon.applicable_brands ? ' & ' : 'Valid for only '}
+                                                                    {coupon.applicable_brands ? ' & ' : t('validForOnly') + ' '}
                                                                     <span
                                                                         className={styles.restrictionLink}
                                                                         onClick={(e) => {
@@ -1036,12 +1068,12 @@ function CheckoutContent() {
                                                                             setActiveProductsPopup(activeProductsPopup === coupon.id ? null : coupon.id);
                                                                         }}
                                                                     >
-                                                                        selected products
+                                                                        {t('selectedProducts')}
                                                                     </span>
                                                                     {activeProductsPopup === coupon.id && (
                                                                         <div className={styles.restrictionPopup} onClick={e => e.stopPropagation()}>
                                                                             <div className={styles.popupHeader}>
-                                                                                <span>Applicable Products</span>
+                                                                                <span>{t('applicableProducts')}</span>
                                                                                 <CloseIcon size={12} className={styles.closePopup} onClick={() => setActiveProductsPopup(null)} />
                                                                             </div>
                                                                             <div className={styles.popupTags}>
@@ -1057,7 +1089,7 @@ function CheckoutContent() {
                                                                 </div>
                                                             )}
                                                             {!coupon.applicable_brands && !coupon.applicable_products && (
-                                                                <span className={styles.allBrandsLabel}>Valid for site-wide products</span>
+                                                                <span className={styles.allBrandsLabel}>{t('validSitewide')}</span>
                                                             )}
                                                         </div>
                                                     </div>
@@ -1067,14 +1099,14 @@ function CheckoutContent() {
                                                     onClick={() => handleApplyCoupon(coupon.code)}
                                                     disabled={isApplyingCoupon || isDisabled}
                                                 >
-                                                    {isDisabled ? 'Use' : 'Use'}
+                                                    {t('useCoupon')}
                                                 </button>
                                             </div>
                                         );
                                     })
                                 ) : (
                                     <div className={styles.noCoupons}>
-                                        <p>No coupons available at the moment.</p>
+                                        <p>{t('noCoupons')}</p>
                                     </div>
                                 )}
                             </div>

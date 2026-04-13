@@ -7,10 +7,10 @@ import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
-import { CATEGORIES_STRUCTURE } from '@/data/categories';
 import { stripHtml } from '@/utils/formatters';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
+import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 
 // Searchable Select Component
 const SearchableSelect = ({ label, name, options, value, onChange, placeholder = "Search..." }: any) => {
@@ -22,7 +22,7 @@ const SearchableSelect = ({ label, name, options, value, onChange, placeholder =
         (opt.name || opt).toLowerCase().includes(search.toLowerCase())
     );
 
-    const selectedOption = options.find((opt: any) => String(opt.id || opt) === String(value));
+    const selectedOption = options.find((opt: any) => String(opt.id !== undefined ? opt.id : opt) === String(value));
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -35,8 +35,8 @@ const SearchableSelect = ({ label, name, options, value, onChange, placeholder =
     }, []);
 
     return (
-        <div className={styles.formGroup} ref={containerRef}>
-            <label>{label}</label>
+        <div className={styles.formGroup} ref={containerRef} style={!label ? { marginBottom: 0 } : {}}>
+            {label && <label>{label}</label>}
             <div className={styles.customSelectWrapper}>
                 <div
                     className={styles.customSelectTrigger}
@@ -63,10 +63,10 @@ const SearchableSelect = ({ label, name, options, value, onChange, placeholder =
                             {filteredOptions.length > 0 ? (
                                 filteredOptions.map((opt: any) => (
                                     <div
-                                        key={opt.id || opt}
-                                        className={`${styles.selectOption} ${String(opt.id || opt) === String(value) ? styles.selected : ''}`}
+                                        key={opt.id !== undefined ? opt.id : opt}
+                                        className={`${styles.selectOption} ${String(opt.id !== undefined ? opt.id : opt) === String(value) ? styles.selected : ''}`}
                                         onClick={() => {
-                                            onChange({ target: { name: name, value: String(opt.id || opt) } });
+                                            onChange({ target: { name: name, value: String(opt.id !== undefined ? opt.id : opt) } });
                                             setIsOpen(false);
                                             setSearch('');
                                         }}
@@ -93,6 +93,7 @@ const AdminProducts = () => {
     const { showNotification } = useNotification();
 
     const [categories, setCategories] = useState<any[]>([]);
+    const [hierarchicalCategories, setHierarchicalCategories] = useState<any[]>([]);
     const [brands, setBrands] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
     const [exporting, setExporting] = useState(false);
@@ -309,6 +310,8 @@ const AdminProducts = () => {
         offer_price: '',
         stock_quantity: '',
         category_id: '1',
+        sub_category_id: '',
+        sub_sub_category_id: '',
         brand_id: '1',
         product_group: '',
         sub_category: '',
@@ -386,6 +389,27 @@ const AdminProducts = () => {
         fetchCategories();
         fetchBrands();
     }, []);
+
+    useEffect(() => {
+        if (categories.length > 0) {
+            const buildPath = (cat: any): string => {
+                if (!cat.parent_id) return cat.name;
+                const parent = categories.find(c => String(c.id) === String(cat.parent_id));
+                if (parent) return `${buildPath(parent)} > ${cat.name}`;
+                return cat.name;
+            };
+
+            const transformed = categories.map(cat => ({
+                id: cat.id,
+                name: buildPath(cat),
+                type: cat.type
+            })).sort((a, b) => a.name.localeCompare(b.name));
+
+            setHierarchicalCategories([{ id: '', name: 'All Categories' }, ...transformed]);
+        } else {
+            setHierarchicalCategories([{ id: '', name: 'All Categories' }]);
+        }
+    }, [categories]);
 
     const fetchCategories = async () => {
         try {
@@ -695,6 +719,8 @@ const AdminProducts = () => {
             offer_price: product.offer_price || '',
             stock_quantity: product.stock_quantity,
             category_id: product.category_id || '',
+            sub_category_id: product.sub_category_id || '',
+            sub_sub_category_id: product.sub_sub_category_id || '',
             brand_id: product.brand_id || '',
             product_group: product.product_group || product.heading || '',
             sub_category: product.sub_category || '',
@@ -1169,17 +1195,19 @@ const AdminProducts = () => {
                     />
                 </div>
                 <div className={styles.filterBtns}>
-                    <select
-                        className={styles.filterSelect}
-                        name="category"
-                        value={filters.category}
-                        onChange={handleFilterChange}
-                    >
-                        <option value="">All Categories</option>
-                        {categories.map(cat => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                    </select>
+                    <div className={styles.filterDropdownWrapper}>
+                        <SearchableSelect
+                            label=""
+                            name="category"
+                            options={hierarchicalCategories}
+                            value={filters.category}
+                            onChange={(e: any) => {
+                                setFilters(prev => ({ ...prev, category: e.target.value }));
+                                setCurrentPage(1);
+                            }}
+                            placeholder="All Categories"
+                        />
+                    </div>
                     <select
                         className={styles.filterSelect}
                         name="brand"
@@ -1251,7 +1279,7 @@ const AdminProducts = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={9} style={{ textAlign: 'center', padding: '60px' }}><Loader2 className={styles.spinnerIcon} size={32} /></td></tr>
+                            <tr><td colSpan={9} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Products Inventory..." /></td></tr>
                         ) : products.length === 0 ? (
                             <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px' }}>No products found.</td></tr>
                         ) : (
@@ -1696,31 +1724,50 @@ const AdminProducts = () => {
                                                 <p>Organize products and set special promotional deals.</p>
                                             </div>
                                             <div className={styles.formGrid}>
-                                                <SearchableSelect label="Main Category" name="category_id" options={categories} value={formData.category_id} onChange={(e: any) => { handleInputChange(e); setFormData(prev => ({ ...prev, product_group: '', sub_category: '' })); }} />
+                                                <SearchableSelect label="Main Category" name="category_id" options={categories.filter(c => c.type === 'main_category')} value={formData.category_id} onChange={(e: any) => { handleInputChange(e); setFormData(prev => ({ ...prev, sub_category_id: '', sub_sub_category_id: '', product_group: '', sub_category: '' })); }} />
                                                 <SearchableSelect label="Brand" name="brand_id" options={brands} value={formData.brand_id} onChange={handleInputChange} />
                                             </div>
                                             <div className={styles.formGrid} style={{ marginTop: '15px' }}>
                                                 {(() => {
-                                                    const selectedCat = categories.find(c => String(c.id) === String(formData.category_id));
-                                                    if (!selectedCat) return null;
-                                                    const structure = CATEGORIES_STRUCTURE[selectedCat.slug];
-                                                    if (!structure || Array.isArray(structure)) return null;
-                                                    const headingOptions = [...(structure.left || []).map(g => g.title), ...(structure.right || []).map(g => g.title)];
-                                                    if (headingOptions.length === 0) return null;
+                                                    const subCategories = categories.filter(c => c.type === 'sub_category' && Number(c.parent_id) === Number(formData.category_id));
+                                                    if (subCategories.length === 0) return null;
                                                     return (
-                                                        <SearchableSelect label="Sub-Group" name="product_group" options={headingOptions} value={formData.product_group} onChange={(e: any) => { handleInputChange(e); setFormData(prev => ({ ...prev, sub_category: '' })); }} />
+                                                        <SearchableSelect
+                                                            label="Sub-Group"
+                                                            name="sub_category_id"
+                                                            options={subCategories}
+                                                            value={formData.sub_category_id}
+                                                            onChange={(e: any) => {
+                                                                const selected = subCategories.find(c => String(c.id) === String(e.target.value));
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    sub_category_id: e.target.value,
+                                                                    product_group: selected ? selected.name : '',
+                                                                    sub_sub_category_id: '',
+                                                                    sub_category: ''
+                                                                }));
+                                                            }}
+                                                        />
                                                     );
                                                 })()}
-                                                {formData.product_group && (() => {
-                                                    const selectedCat = categories.find(c => String(c.id) === String(formData.category_id));
-                                                    if (!selectedCat) return null;
-                                                    const structure = CATEGORIES_STRUCTURE[selectedCat.slug];
-                                                    if (!structure || Array.isArray(structure)) return null;
-                                                    const allGroups = [...(structure.left || []), ...(structure.right || [])];
-                                                    const group = allGroups.find(g => g.title === formData.product_group);
-                                                    if (!group || !group.items) return null;
+                                                {formData.sub_category_id && (() => {
+                                                    const subSubCategories = categories.filter(c => c.type === 'sub_sub_category' && Number(c.parent_id) === Number(formData.sub_category_id));
+                                                    if (subSubCategories.length === 0) return null;
                                                     return (
-                                                        <SearchableSelect label="Final Sub-category" name="sub_category" options={group.items} value={formData.sub_category} onChange={handleInputChange} />
+                                                        <SearchableSelect
+                                                            label="Final Sub-category"
+                                                            name="sub_sub_category_id"
+                                                            options={subSubCategories}
+                                                            value={formData.sub_sub_category_id}
+                                                            onChange={(e: any) => {
+                                                                const selected = subSubCategories.find(c => String(c.id) === String(e.target.value));
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    sub_sub_category_id: e.target.value,
+                                                                    sub_category: selected ? selected.name : ''
+                                                                }));
+                                                            }}
+                                                        />
                                                     );
                                                 })()}
                                             </div>

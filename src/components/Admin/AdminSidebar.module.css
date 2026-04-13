@@ -1,5 +1,5 @@
 .sidebar {
-    width: 220px;
+    width: 260px;
     height: 100vh;
     background-color: #0f172a;
     color: #94a3b8;
@@ -98,6 +98,15 @@
     flex: 1;
     overflow-y: auto;
     padding: 24px 12px;
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+.nav::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
 }
 
 .navLabel {
@@ -132,10 +141,10 @@
 
 @media (hover: hover) {
 
-.menuItem:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.05);
-}
+    .menuItem:hover {
+        color: white;
+        background-color: rgba(255, 255, 255, 0.05);
+    }
 }
 
 .active {
@@ -230,8 +239,8 @@
 
 @media (hover: hover) {
 
-.logoutBtn:hover {
-    background-color: #fa5252;
-    color: white;
-}
+    .logoutBtn:hover {
+        background-color: #fa5252;
+        color: white;
+    }
 }
