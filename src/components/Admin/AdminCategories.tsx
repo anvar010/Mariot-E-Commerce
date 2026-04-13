@@ -142,7 +142,7 @@ const AdminCategories = () => {
         setEditingId(null);
         setIsQuickAdd(type !== 'main_category');
 
-        let mainId = '';
+        let mainId: number | string = '';
         if (type === 'sub_category') {
             mainId = parentId;
         } else if (type === 'sub_sub_category') {
