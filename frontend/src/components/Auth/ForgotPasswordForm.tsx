@@ -30,10 +30,10 @@ const ForgotPasswordForm: React.FC = () => {
             if (data.success) {
                 setSubmitted(true);
             } else {
-                setError(data.message || 'Something went wrong');
+                setError(data.message || t('somethingWentWrong'));
             }
         } catch (err) {
-            setError('Failed to connect to the server');
+            setError(t('failedConnectServer'));
         } finally {
             setLoading(false);
         }
@@ -95,7 +95,7 @@ const ForgotPasswordForm: React.FC = () => {
                             disabled={loading}
                             style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
                         >
-                            {loading ? 'Sending...' : t('resetButton')}
+                            {loading ? t('sending') : t('resetButton')}
                         </button>
                     </form>
 

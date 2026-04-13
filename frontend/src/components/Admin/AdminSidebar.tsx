@@ -30,6 +30,7 @@ const AdminSidebar = () => {
     const menuItems = [
         { name: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/admin' },
         { name: 'Products', icon: <Package size={18} />, path: '/admin/products' },
+        { name: 'Categories', icon: <FolderTree size={18} />, path: '/admin/categories' },
         { name: 'Brands', icon: <Tag size={18} />, path: '/admin/brands' },
         { name: 'Orders', icon: <ShoppingCart size={18} />, path: '/admin/orders' },
         { name: 'Coupons', icon: <Ticket size={18} />, path: '/admin/coupons' },

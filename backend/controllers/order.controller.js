@@ -117,7 +117,7 @@ exports.createOrder = async (req, res, next) => {
             const actualPoints = userRows[0]?.reward_points || 0;
 
             // Fetch dynamic point value
-            const [settingRows] = await db.execute('SELECT `value` FROM settings WHERE `key` = "aed_per_point"');
+            const [settingRows] = await db.execute('SELECT `value` FROM settings WHERE `key` = \'aed_per_point\'');
             if (settingRows[0]) aedPerPoint = parseFloat(settingRows[0].value);
 
             // Ensure user actually has enough points

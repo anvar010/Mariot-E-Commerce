@@ -6,6 +6,7 @@ import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
+import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import {
     TrendingUp,
     ArrowRight,
@@ -139,7 +140,7 @@ const AdminDashboard = () => {
     ];
 
     if (loading && !stats) {
-        return <div className={styles.dashboard}><div style={{ padding: '80px', textAlign: 'center' }}>Loading dashboard data...</div></div>;
+        return <div className={styles.dashboard}><div style={{ padding: '80px', textAlign: 'center' }}><AdminLoader message="Gathering performance insights..." /></div></div>;
     }
 
     return (

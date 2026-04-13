@@ -144,27 +144,6 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
                 )}
             </div>
 
-            {/* Placeholder Sections to match screenshot */}
-            <div className={styles.filterSection}>
-                <div className={styles.sectionHeader}>
-                    <h3>FILTER BY GAS/ELECTRIC</h3>
-                    <ChevronDown size={14} className={styles.collapsedIcon} />
-                </div>
-            </div>
-
-            <div className={styles.filterSection}>
-                <div className={styles.sectionHeader}>
-                    <h3>FILTER BY SERIES</h3>
-                    <ChevronDown size={14} className={styles.collapsedIcon} />
-                </div>
-            </div>
-
-            <div className={styles.filterSection}>
-                <div className={styles.sectionHeader}>
-                    <h3>FILTER BY PRODUCT TYPE</h3>
-                    <ChevronDown size={14} className={styles.collapsedIcon} />
-                </div>
-            </div>
         </aside>
     );
 };

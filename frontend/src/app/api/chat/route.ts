@@ -3,6 +3,66 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
+// --- Rate Limiting (in-memory, per-IP) ---
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_MAX = 20;        // max requests per window
+const RATE_LIMIT_WINDOW = 60000;  // 1 minute window
+
+function isRateLimited(ip: string): boolean {
+    const now = Date.now();
+    const entry = rateLimitMap.get(ip);
+    if (!entry || now > entry.resetTime) {
+        rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+        return false;
+    }
+    entry.count++;
+    return entry.count > RATE_LIMIT_MAX;
+}
+
+// Clean up stale entries every 5 minutes to prevent memory leaks
+setInterval(() => {
+    const now = Date.now();
+    Array.from(rateLimitMap.entries()).forEach(([key, value]) => {
+        if (now > value.resetTime) rateLimitMap.delete(key);
+    });
+}, 5 * 60 * 1000);
+
+// --- Input Sanitization ---
+const MAX_MESSAGE_LENGTH = 2000;  // max chars per message
+const MAX_MESSAGES = 50;          // max messages in conversation history
+
+function sanitizeText(text: string): string {
+    return text
+        .replace(/<[^>]*>/g, '')    // Strip HTML tags
+        .replace(/&[#\w]+;/g, '')   // Strip HTML entities
+        .trim();
+}
+
+function validateMessages(messages: any): { valid: boolean; error?: string } {
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+        return { valid: false, error: 'Messages array is required and must not be empty' };
+    }
+
+    if (messages.length > MAX_MESSAGES) {
+        return { valid: false, error: `Too many messages (max ${MAX_MESSAGES})` };
+    }
+
+    for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        if (!msg || typeof msg.content !== 'string' || typeof msg.role !== 'string') {
+            return { valid: false, error: `Invalid message format at index ${i}` };
+        }
+        if (!['user', 'assistant'].includes(msg.role)) {
+            return { valid: false, error: `Invalid role "${msg.role}" at index ${i}` };
+        }
+        if (msg.content.length > MAX_MESSAGE_LENGTH) {
+            return { valid: false, error: `Message at index ${i} exceeds max length of ${MAX_MESSAGE_LENGTH} characters` };
+        }
+    }
+
+    return { valid: true };
+}
+
 const SYSTEM_PROMPT_EN = `You are the Mariot Kitchen Expert — the official AI assistant for Mariot Kitchen Equipment, the #1 commercial kitchen equipment supplier in the UAE.
 
 PERSONALITY:
@@ -67,16 +127,40 @@ const SYSTEM_PROMPT_AR = `أنت خبير مطابخ ماريوت — المسا
 
 export async function POST(request: NextRequest) {
     try {
-        const { messages, locale } = await request.json();
+        // Rate limiting by IP
+        const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+            || request.headers.get('x-real-ip')
+            || 'unknown';
 
-        if (!messages || !Array.isArray(messages) || messages.length === 0) {
+        if (isRateLimited(ip)) {
             return NextResponse.json(
-                { error: 'Messages are required' },
+                { error: 'Too many requests. Please wait a moment and try again.' },
+                { status: 429 }
+            );
+        }
+
+        const body = await request.json();
+        const { messages, locale } = body;
+
+        // Validate messages
+        const validation = validateMessages(messages);
+        if (!validation.valid) {
+            return NextResponse.json(
+                { error: validation.error },
                 { status: 400 }
             );
         }
 
-        const systemPrompt = locale === 'ar' ? SYSTEM_PROMPT_AR : SYSTEM_PROMPT_EN;
+        // Validate locale
+        const safeLocale = ['en', 'ar'].includes(locale) ? locale : 'en';
+
+        // Sanitize all message content
+        const sanitizedMessages = messages.map((msg: { role: string; content: string }) => ({
+            role: msg.role,
+            content: sanitizeText(msg.content),
+        }));
+
+        const systemPrompt = safeLocale === 'ar' ? SYSTEM_PROMPT_AR : SYSTEM_PROMPT_EN;
 
         const model = genAI.getGenerativeModel({
             model: 'gemini-flash-latest',
@@ -84,21 +168,22 @@ export async function POST(request: NextRequest) {
         });
 
         // Build conversation history for Gemini
-        const history = messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
+        const history = sanitizedMessages.slice(0, -1).map((msg: { role: string; content: string }) => ({
             role: msg.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: msg.content }],
         }));
 
         const chat = model.startChat({ history });
 
-        const lastMessage = messages[messages.length - 1].content;
+        const lastMessage = sanitizedMessages[sanitizedMessages.length - 1].content;
         const result = await chat.sendMessage(lastMessage);
         const response = result.response;
         const text = response.text();
 
         return NextResponse.json({ message: text });
     } catch (error: any) {
-        console.error('Chat API Error:', error);
+        console.error('Chat API Error:', error?.message || error);
+        // Don't leak internal error details to client
         return NextResponse.json(
             { error: 'Failed to generate response. Please try again.' },
             { status: 500 }

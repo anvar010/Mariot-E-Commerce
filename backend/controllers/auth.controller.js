@@ -18,7 +18,7 @@ const sendTokenResponse = (user, statusCode, res) => {
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? 'lax' : 'strict', // 'lax' allows OAuth redirects in production
+        sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-domain cookies (Vercel <-> Render)
         path: '/'
     };
 
@@ -40,7 +40,7 @@ exports.register = async (req, res, next) => {
 
         const userId = await User.create({ name, email, password });
         const user = { id: userId, name, email, role: 'user', reward_points: 1000 };
-        
+
         // Send Welcome Email
         sendWelcomeEmail(email, name).catch(err => console.error('Failed to send welcome email:', err));
 
@@ -103,7 +103,7 @@ exports.googleLogin = async (req, res, next) => {
             const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
             const userId = await User.create({ name, email, password: randomPassword });
             user = await User.findById(userId);
-            
+
             // Send Welcome Email for new Google users
             sendWelcomeEmail(email, name).catch(err => console.error('Failed to send welcome email (Google):', err));
         }
@@ -166,7 +166,7 @@ exports.logout = async (req, res, next) => {
         expires: new Date(Date.now() + 10 * 1000),
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? 'lax' : 'strict',
+        sameSite: isProduction ? 'none' : 'lax',
         path: '/'
     });
     res.status(200).json({ success: true, data: {} });

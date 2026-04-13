@@ -8,6 +8,7 @@ import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
+import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 
 const AdminBrands = () => {
     const [brands, setBrands] = useState<any[]>([]);
@@ -404,7 +405,7 @@ const AdminBrands = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>Loading brands...</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Brands Catalog..." /></td></tr>
                         ) : filteredBrands.length === 0 ? (
                             <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>No brands found.</td></tr>
                         ) : (

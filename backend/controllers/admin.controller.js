@@ -357,9 +357,15 @@ exports.exportProducts = async (req, res, next) => {
     try {
         const [products] = await db.query(`
             SELECT p.id, p.name, p.slug, p.price, p.discount_percentage, p.offer_price, 
-                   p.stock_quantity, c.name as category, b.name as brand, p.status, p.created_at
+                   p.stock_quantity, 
+                   c.name as main_category, 
+                   sc.name as sub_category, 
+                   ssc.name as sub_sub_category,
+                   b.name as brand, p.status, p.created_at
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN categories sc ON p.sub_category_id = sc.id
+            LEFT JOIN categories ssc ON p.sub_sub_category_id = ssc.id
             LEFT JOIN brands b ON p.brand_id = b.id
             ORDER BY p.id ASC
         `);

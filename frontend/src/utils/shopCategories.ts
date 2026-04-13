@@ -46,7 +46,7 @@ export const SHOP_CATEGORIES = [
 export const SHOP_SUBCATEGORIES: { [key: string]: { left: any[], right: any[] } } = {
     'coffee-makers': {
         left: [
-            { title: "Espresso Machines", items: ["Volumetric Espresso Machines", "Gravimetric Espresso Machines", "Super Automatic Espresso Machines"] },
+            { title: "Espresso Machines", items: ["Volumetric Espresso Machines", "Gravimetric Espresso Machines"] },
             { title: "Coffee Grinders", items: ["Espresso Grinders", "Brewed Coffee Grinders"] },
             { title: "Coffee & Tea Brewers", items: ["Pour Overs", "Batch Brewers", "Water Boilers", "Filters", "Tea Makers"] },
             { title: "Coffee Roasters", items: [] },
@@ -185,17 +185,6 @@ export const SHOP_SUBCATEGORIES: { [key: string]: { left: any[], right: any[] } 
             { title: "Carts, Trucks and Dollies", items: [] },
             { title: "Delivery Bags and Boxes", items: [] },
             { title: "Dinnerware Storage and Transport", items: [] }
-        ]
-    },
-    'parts': {
-        left: [
-            { title: "Somerset Parts", items: [] },
-            { title: "Amana Menumaster Parts", items: [] },
-            { title: "Ansul Parts", items: [] }
-        ],
-        right: [
-            { title: "APW Parts", items: [] },
-            { title: "Bakers Pride Parts", items: [] }
         ]
     },
     'used-equipment': {

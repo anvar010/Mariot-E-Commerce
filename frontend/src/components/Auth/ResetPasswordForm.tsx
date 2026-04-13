@@ -86,10 +86,10 @@ const ResetPasswordForm: React.FC = () => {
             if (data.success) {
                 setSuccess(true);
             } else {
-                setError(data.message || 'Something went wrong');
+                setError(data.message || t('somethingWentWrong'));
             }
         } catch (err) {
-            setError('Failed to connect to the server');
+            setError(t('failedConnectServer'));
         } finally {
             setLoading(false);
         }

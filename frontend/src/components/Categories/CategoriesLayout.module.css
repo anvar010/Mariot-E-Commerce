@@ -229,10 +229,10 @@
 .nestedLink::after {
     content: '';
     position: absolute;
-    bottom: 6px;
+    bottom: 2px;
     inset-inline-start: 0;
     width: 0;
-    height: 2px;
+    height: 1.5px;
     background-color: #5bb377;
     transition: width 0.3s ease;
 }

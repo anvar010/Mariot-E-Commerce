@@ -7,6 +7,7 @@ import { useNotification } from '@/context/NotificationContext';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 
 const AdminUsers = () => {
     const [users, setUsers] = useState<any[]>([]);
@@ -36,7 +37,7 @@ const AdminUsers = () => {
         isOpen: false,
         title: '',
         message: '',
-        onConfirm: () => {},
+        onConfirm: () => { },
         type: 'danger'
     });
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -223,7 +224,7 @@ const AdminUsers = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}>Loading member directory...</td></tr>
+                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Member Directory..." /></td></tr>
                         ) : filteredUsers.length === 0 ? (
                             <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}>No users found Matching your search.</td></tr>
                         ) : (

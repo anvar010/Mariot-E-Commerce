@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './ProductCardPromotion.module.css';
-import { Heart, ShoppingCart, Check, Clock, MessageCircle, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Check, Clock, MessageCircle, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import Image from "next/legacy/image";
 import { useCart } from '@/context/CartContext';
@@ -114,7 +114,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         if (isInStock) {
             addToCart({
                 id: product.id,
-                name: product.name,
+                name: (isArabic && product.name_ar) ? product.name_ar : product.name,
                 price: displayPrice,
                 image: resolveUrl(product.primary_image),
                 brand: product.brand_name,
@@ -127,6 +127,76 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     };
 
     const [logoError, setLogoError] = React.useState(false);
+
+    let allImages = [displayImage];
+    if (product.images && Array.isArray(product.images)) {
+        const addImages = product.images.map((img: any) => resolveUrl(img.image_url || img.image || img)).filter(Boolean);
+        allImages = [...allImages, ...addImages];
+    } else if (product.gallery && Array.isArray(product.gallery)) {
+        const addImages = product.gallery.map((img: any) => resolveUrl(img.image_url || img.image || img)).filter(Boolean);
+        allImages = [...allImages, ...addImages];
+    }
+    allImages = Array.from(new Set(allImages));
+
+    const [isHovered, setIsHovered] = useState(false);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const scrollTrackRef = useRef<HTMLDivElement>(null);
+    const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
+
+    const scrollToIndex = (index: number) => {
+        if (scrollTrackRef.current) {
+            const offset = scrollTrackRef.current.clientWidth * index;
+            scrollTrackRef.current.scrollTo({ left: offset, behavior: 'smooth' });
+        }
+    };
+
+    useEffect(() => {
+        const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches;
+
+        if (isHovered && allImages.length > 1 && !isTouchDevice) {
+            autoScrollTimer.current = setInterval(() => {
+                setActiveImageIndex(prev => {
+                    const nextId = (prev + 1) % allImages.length;
+                    scrollToIndex(nextId);
+                    return nextId;
+                });
+            }, 2000);
+        } else {
+            if (autoScrollTimer.current) clearInterval(autoScrollTimer.current);
+            if (!isHovered && activeImageIndex !== 0) {
+                setActiveImageIndex(0);
+                scrollToIndex(0);
+            }
+        }
+        return () => {
+            if (autoScrollTimer.current) clearInterval(autoScrollTimer.current);
+        };
+    }, [isHovered, allImages.length, disableHover]);
+
+    const handleScroll = () => {
+        if (scrollTrackRef.current && !isHovered) {
+            const index = Math.round(scrollTrackRef.current.scrollLeft / scrollTrackRef.current.clientWidth);
+            if (index !== activeImageIndex) {
+                setActiveImageIndex(index);
+            }
+        }
+    };
+
+    const handleNextImage = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const nextId = (activeImageIndex + 1) % allImages.length;
+        setActiveImageIndex(nextId);
+        scrollToIndex(nextId);
+    };
+
+    const handlePrevImage = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const prevId = (activeImageIndex - 1 + allImages.length) % allImages.length;
+        setActiveImageIndex(prevId);
+        scrollToIndex(prevId);
+    };
 
     return (
         <div className={`${styles.card} ${disableHover ? styles.noHover : ''}`}>
@@ -152,15 +222,46 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
             )}
 
             <Link href={`/product/${product.slug || product.id}`} className={styles.imageLink}>
-                <div className={styles.imageContainer}>
-                    <Image
-                        src={displayImage}
-                        alt={product.name}
-                        layout="fill"
-                        objectFit="contain"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                    />
-                    {showTimer && (product.is_weekly_deal || product.is_limited_offer || product.is_daily_offer) && activeTimer && (
+                <div
+                    className={styles.imageContainer}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                >
+                    <div
+                        className={styles.imageTrack}
+                        ref={scrollTrackRef}
+                        onScroll={handleScroll}
+                    >
+                        {allImages.map((img, i) => (
+                            <div key={i} className={styles.imageSlide}>
+                                <Image
+                                    src={img}
+                                    alt={`${isArabic && product.name_ar ? product.name_ar : product.name} - ${i + 1}`}
+                                    layout="fill"
+                                    objectFit="contain"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                />
+                            </div>
+                        ))}
+                    </div>
+
+                    {allImages.length > 1 && (
+                        <>
+                            <button className={`${styles.navArrow} ${styles.leftArrow}`} onClick={handlePrevImage}>
+                                <ChevronLeft size={16} strokeWidth={2.5} />
+                            </button>
+                            <button className={`${styles.navArrow} ${styles.rightArrow}`} onClick={handleNextImage}>
+                                <ChevronRight size={16} strokeWidth={2.5} />
+                            </button>
+                            <div className={styles.dotsContainer}>
+                                {allImages.map((_, i) => (
+                                    <span key={i} className={`${styles.dot} ${activeImageIndex === i ? styles.activeDot : ''}`} />
+                                ))}
+                            </div>
+                        </>
+                    )}
+
+                    {showTimer && (!!product.is_weekly_deal || !!product.is_limited_offer || !!product.is_daily_offer) && activeTimer && (
                         <div className={styles.timerWrapper}>
                             <Clock size={16} color="#ff3b30" />
                             <div className={styles.timer}>
@@ -189,7 +290,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                     )}
                 </div>
 
-                <h3 className={styles.productName}>{product.name}</h3>
+                <h3 className={styles.productName}>{(isArabic && product.name_ar) ? product.name_ar : product.name}</h3>
                 <p className={styles.description}>{t('modelLabel')} {product?.model || product?.slug?.toUpperCase() || product.id}</p>
 
                 <Link

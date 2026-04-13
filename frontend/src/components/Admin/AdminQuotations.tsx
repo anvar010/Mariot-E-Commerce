@@ -9,6 +9,7 @@ import { getAuthHeaders } from '@/utils/authHeaders';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
 import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
+import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 
 const AdminQuotations = () => {
     const [quotations, setQuotations] = useState<any[]>([]);
@@ -31,7 +32,7 @@ const AdminQuotations = () => {
         isOpen: false,
         title: '',
         message: '',
-        onConfirm: () => {},
+        onConfirm: () => { },
         type: 'danger'
     });
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -160,8 +161,7 @@ const AdminQuotations = () => {
                         {loading ? (
                             <tr>
                                 <td colSpan={6} style={{ textAlign: 'center', padding: '100px 0' }}>
-                                    <Loader2 size={40} className={styles.spin} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
-                                    <p style={{ color: '#64748b', fontSize: '14px', fontWeight: 500 }}>Scanning quotation archives...</p>
+                                    <AdminLoader message="Scanning Quotation Archives..." />
                                 </td>
                             </tr>
                         ) : filteredQuotations.length === 0 ? (
@@ -266,9 +266,9 @@ const AdminQuotations = () => {
                                 <div className={styles.itemList}>
                                     {JSON.parse(selectedQuotation.items).map((item: any, idx: number) => (
                                         <div key={idx} className={styles.itemCard}>
-                                            <img 
-                                                src={resolveUrl(item.image_url) || '/assets/placeholder-image.webp'} 
-                                                alt={item.name} 
+                                            <img
+                                                src={resolveUrl(item.image_url) || '/assets/placeholder-image.webp'}
+                                                alt={item.name}
                                                 className={styles.itemImage}
                                                 onError={(e) => { e.currentTarget.src = '/assets/placeholder-image.webp'; }}
                                             />

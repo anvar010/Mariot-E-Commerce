@@ -84,6 +84,7 @@
     width: 100%;
     padding: 14px 16px;
     padding-inline-start: 44px;
+    padding-inline-end: 44px;
     border: 1.5px solid #e2e8f0;
     border-radius: 12px;
     font-size: 15px;
@@ -136,10 +137,10 @@
 
 @media (hover: hover) {
 
-.submitBtn:hover {
-    background: #4abccb;
-    transform: translateY(-2px);
-}
+    .submitBtn:hover {
+        background: #4abccb;
+        transform: translateY(-2px);
+    }
 }
 
 .divider {
@@ -183,9 +184,9 @@
 
 @media (hover: hover) {
 
-.googleBtn:hover {
-    background: #f1f5f9;
-}
+    .googleBtn:hover {
+        background: #f1f5f9;
+    }
 }
 
 .googleIcon {

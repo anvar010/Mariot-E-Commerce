@@ -7,7 +7,7 @@ import { useRouter } from '@/i18n/navigation';
 
 interface AuthContextType {
     user: any;
-    token: string | null;
+    isAuthenticated: boolean;
     loading: boolean;
     login: (credentials: any, redirectTo?: string) => Promise<void>;
     googleLogin: (token: string, redirectTo?: string) => Promise<void>;
@@ -15,52 +15,56 @@ interface AuthContextType {
     logout: () => void;
     updateUser: (userData: any) => Promise<void>;
     error: string | null;
+    // Keep `token` as a derived boolean for backward compatibility
+    // Components that check `if (token)` will still work
+    token: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<any>(null);
-    const [token, setToken] = useState<string | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
+    // On mount: clean up legacy token from LocalStorage (cookie handles auth now),
+    // check if we have saved user info for instant UI, then verify with server
     useEffect(() => {
-        const savedToken = localStorage.getItem('token');
-        if (savedToken) {
-            setToken(savedToken);
+        // One-time cleanup: remove old Bearer token from localStorage
+        localStorage.removeItem('token');
+
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            try {
+                const parsed = JSON.parse(savedUser);
+                setUser(parsed);
+                setIsAuthenticated(true);
+            } catch {
+                localStorage.removeItem('user');
+            }
         }
         loadUser();
     }, []);
 
     const loadUser = async () => {
-        const savedToken = localStorage.getItem('token');
-        if (!savedToken || savedToken === 'undefined' || savedToken === 'null' || savedToken === 'none') {
-            setLoading(false);
-            if (savedToken === 'undefined' || savedToken === 'null' || savedToken === 'none') {
-                localStorage.removeItem('token');
-            }
-            return;
-        }
-
         try {
+            // Cookie is sent automatically via credentials: "include" in authApi.getMe()
             const data = await authApi.getMe();
             setUser(data.data);
-            setToken(savedToken);
+            setIsAuthenticated(true);
+            // Update localStorage with latest user info for UI persistence
+            localStorage.setItem('user', JSON.stringify(data.data));
         } catch (err: any) {
             console.error('Failed to load user', err);
-            // Only clear token on explicit 401 (unauthorized) from backend.
-            // Network/CORS errors should NOT log the user out — keep the token
-            // so it can be retried on next navigation or refresh.
             if (err.status === 401) {
-                setToken(null);
-                localStorage.removeItem('token');
-            } else {
-                // Keep the token — the error is likely a network/CORS issue.
-                // Set the user to null but preserve the token for retry.
-                setToken(savedToken);
+                // Cookie is invalid or expired
+                setUser(null);
+                setIsAuthenticated(false);
+                localStorage.removeItem('user');
             }
+            // For network/CORS errors, keep whatever we had from localStorage
         } finally {
             setLoading(false);
         }
@@ -71,9 +75,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setError(null);
         try {
             const data = await authApi.login(credentials);
-            setToken(data.token);
-            localStorage.setItem('token', data.token);
+            // Backend sets HTTP-Only cookie automatically
             setUser(data.user);
+            setIsAuthenticated(true);
+            // Store user info in localStorage for UI persistence (NOT the token)
+            localStorage.setItem('user', JSON.stringify(data.user));
             router.push(redirectTo || '/');
         } catch (err: any) {
             setError(err.message);
@@ -83,14 +89,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const googleLogin = async (token: string, redirectTo?: string) => {
+    const googleLogin = async (googleToken: string, redirectTo?: string) => {
         setLoading(true);
         setError(null);
         try {
-            const data = await authApi.googleLogin(token);
-            setToken(data.token);
-            localStorage.setItem('token', data.token);
+            const data = await authApi.googleLogin(googleToken);
+            // Backend sets HTTP-Only cookie automatically
             setUser(data.user);
+            setIsAuthenticated(true);
+            localStorage.setItem('user', JSON.stringify(data.user));
             router.push(redirectTo || '/');
         } catch (err: any) {
             setError(err.message);
@@ -105,9 +112,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setError(null);
         try {
             const data = await authApi.register(userData);
-            setToken(data.token);
-            localStorage.setItem('token', data.token);
+            // Backend sets HTTP-Only cookie automatically
             setUser(data.user);
+            setIsAuthenticated(true);
+            localStorage.setItem('user', JSON.stringify(data.user));
             router.push(redirectTo || '/');
         } catch (err: any) {
             setError(err.message);
@@ -119,9 +127,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const updateUser = async (userData: any) => {
         try {
-            const currentToken = localStorage.getItem('token') || '';
-            const data = await authApi.updateMe(currentToken, userData);
+            const data = await authApi.updateMe('', userData);
             setUser(data.data);
+            localStorage.setItem('user', JSON.stringify(data.data));
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -132,14 +140,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             await fetch(`${API_BASE_URL}/auth/logout`, { credentials: "include" });
         } catch (e) { }
-        setToken(null);
         setUser(null);
-        localStorage.removeItem('token');
+        setIsAuthenticated(false);
+        localStorage.removeItem('user');
         router.push('/signin');
     };
 
+    // Backward compatibility: `token` is kept as a derived value
+    // so components checking `if (token)` still work correctly.
+    const token = isAuthenticated ? 'cookie-auth' : null;
+
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, googleLogin, register, logout, updateUser, error }}>
+        <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, googleLogin, register, logout, updateUser, error }}>
             {children}
         </AuthContext.Provider>
     );

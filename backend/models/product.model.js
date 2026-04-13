@@ -4,7 +4,11 @@ const slugify = require('slugify');
 class Product {
     static async findAll({ category, brand, seller, minPrice, maxPrice, search, sort, limit, offset, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, is_best_seller, status, stockStatus }) {
         let query = `
-            SELECT p.*, c.name as category_name, c.slug as category_slug, b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image, 
+            SELECT p.*, 
+            c.name as category_name, c.slug as category_slug,
+            sc.name as sub_category_name,
+            ssc.name as sub_sub_category_name,
+            b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image, 
             s.name as seller_name, s.company_name as seller_company, s.id as seller_id,
             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
             COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = p.id), 0) as average_rating,
@@ -12,6 +16,8 @@ class Product {
             COALESCE((SELECT SUM(quantity) FROM order_items WHERE product_id = p.id), 0) as sold_count
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN categories sc ON p.sub_category_id = sc.id
+            LEFT JOIN categories ssc ON p.sub_sub_category_id = ssc.id
             LEFT JOIN brands b ON p.brand_id = b.id
             LEFT JOIN users s ON p.seller_id = s.id
         `;
@@ -60,8 +66,8 @@ class Product {
 
         if (category) {
             const categoryPattern = category.replace(/-/g, '%');
-            whereClauses.push('(c.slug = ? OR c.id = ? OR p.product_group LIKE ? OR p.sub_category LIKE ?)');
-            params.push(category, category, categoryPattern, categoryPattern);
+            whereClauses.push('(c.slug = ? OR c.id = ? OR sc.slug = ? OR sc.id = ? OR ssc.slug = ? OR ssc.id = ? OR p.product_group LIKE ? OR p.sub_category LIKE ?)');
+            params.push(category, category, category, category, category, category, categoryPattern, categoryPattern);
         }
         if (brand) {
             whereClauses.push('(b.slug = ? OR b.id = ?)');
@@ -135,7 +141,13 @@ class Product {
             }
 
             // Count query
-            let countQuery = 'SELECT COUNT(*) as total FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN brands b ON p.brand_id = b.id';
+            let countQuery = `
+                SELECT COUNT(*) as total FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                LEFT JOIN categories sc ON p.sub_category_id = sc.id
+                LEFT JOIN categories ssc ON p.sub_sub_category_id = ssc.id
+                LEFT JOIN brands b ON p.brand_id = b.id
+            `;
             if (whereClauses.length > 0) {
                 countQuery += ' WHERE ' + whereClauses.join(' AND ');
             }
@@ -153,13 +165,19 @@ class Product {
 
     static async findById(id) {
         const [rows] = await db.execute(`
-            SELECT p.*, c.name as category_name, c.slug as category_slug, b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image, b.description as brand_description, b.description_ar as brand_description_ar,
+            SELECT p.*, 
+            c.name as category_name, c.slug as category_slug,
+            sc.name as sub_category_name,
+            ssc.name as sub_sub_category_name,
+            b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image, b.description as brand_description, b.description_ar as brand_description_ar,
             s.name as seller_name, s.company_name as seller_company, s.id as seller_id,
             COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = p.id), 0) as average_rating,
             (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as total_reviews,
             COALESCE((SELECT SUM(quantity) FROM order_items WHERE product_id = p.id), 0) as sold_count
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN categories sc ON p.sub_category_id = sc.id
+            LEFT JOIN categories ssc ON p.sub_sub_category_id = ssc.id
             LEFT JOIN brands b ON p.brand_id = b.id
             LEFT JOIN users s ON p.seller_id = s.id
             WHERE p.id = ? OR p.slug = ?
@@ -218,6 +236,8 @@ class Product {
             const offer_price = data.offer_price ? parseFloat(data.offer_price) : (discount_percentage > 0 ? price - (price * discount_percentage / 100) : null);
             const stock_quantity = parseInt(data.stock_quantity) || 0;
             const category_id = (data.category_id && !isNaN(parseInt(data.category_id))) ? parseInt(data.category_id) : null;
+            const sub_category_id = (data.sub_category_id && !isNaN(parseInt(data.sub_category_id))) ? parseInt(data.sub_category_id) : null;
+            const sub_sub_category_id = (data.sub_sub_category_id && !isNaN(parseInt(data.sub_sub_category_id))) ? parseInt(data.sub_sub_category_id) : null;
             const brand_id = (data.brand_id && !isNaN(parseInt(data.brand_id))) ? parseInt(data.brand_id) : null;
             const isTrue = (val) => val === true || val === 'true' || val === 1 || val === '1';
             const is_featured = isTrue(data.is_featured) ? 1 : 0;
@@ -249,6 +269,8 @@ class Product {
                 stock_quantity,
                 track_inventory,
                 category_id,
+                sub_category_id,
+                sub_sub_category_id,
                 brand_id,
                 seller_id,
                 is_featured,
@@ -267,7 +289,7 @@ class Product {
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -299,7 +321,7 @@ class Product {
     static async update(id, data) {
         const allowedColumns = [
             'name', 'name_ar', 'slug', 'description', 'description_ar', 'short_description', 'short_description_ar', 'specifications', 'price', 'discount_percentage', 'offer_price',
-            'stock_quantity', 'track_inventory', 'category_id', 'brand_id', 'seller_id',
+            'stock_quantity', 'track_inventory', 'category_id', 'sub_category_id', 'sub_sub_category_id', 'brand_id', 'seller_id',
             'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'status',
             'product_group', 'sub_category', 'model', 'youtube_video_link', 'resources', 'offer_start', 'offer_end'
         ];
@@ -327,7 +349,7 @@ class Product {
                 if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'track_inventory'].includes(key)) {
                     const val = data[key];
                     cleanData[key] = (val === true || val === 'true' || val === 1 || val === '1') ? 1 : 0;
-                } else if (['category_id', 'brand_id'].includes(key)) {
+                } else if (['category_id', 'sub_category_id', 'sub_sub_category_id', 'brand_id'].includes(key)) {
                     // Handle numeric foreign keys: empty string or null -> null
                     const val = data[key];
                     if (val === '' || val === null || val === undefined) {

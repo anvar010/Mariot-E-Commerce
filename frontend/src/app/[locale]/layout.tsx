@@ -34,8 +34,6 @@ export async function generateMetadata({ params: { locale } }: { params: { local
         viewport: {
             width: 'device-width',
             initialScale: 1,
-            maximumScale: 1,
-            userScalable: false,
         },
         icons: {
             icon: '/favicon.ico',

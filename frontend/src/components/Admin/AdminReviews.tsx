@@ -9,6 +9,7 @@ import { getAuthHeaders } from '@/utils/authHeaders';
 import { stripHtml } from '@/utils/formatters';
 import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
+import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 
 const AdminReviews = () => {
     const [reviews, setReviews] = useState<any[]>([]);
@@ -28,7 +29,7 @@ const AdminReviews = () => {
         isOpen: false,
         title: '',
         message: '',
-        onConfirm: () => {},
+        onConfirm: () => { },
         type: 'danger'
     });
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -148,8 +149,7 @@ const AdminReviews = () => {
                         {loading ? (
                             <tr>
                                 <td colSpan={6} style={{ textAlign: 'center', padding: '100px 0' }}>
-                                    <Loader2 size={40} className={styles.spin} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
-                                    <p style={{ color: '#64748b', fontSize: '14px', fontWeight: 500 }}>Scanning feedback archives...</p>
+                                    <AdminLoader message="Modifying Feedback Archives..." />
                                 </td>
                             </tr>
                         ) : filteredReviews.length === 0 ? (

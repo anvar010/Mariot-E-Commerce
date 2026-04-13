@@ -8,29 +8,33 @@ import { ChevronLeft, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
+import { API_BASE_URL } from '@/config';
+import { normalizeSlug } from '@/utils/shopCategories';
 
-const categories = [
-    { id: 1, name: "Coffee Makers", slug: "coffee-makers", image: "/assets/product_images/coffeemakers.webp" },
-    { id: 2, name: "Ice Equipment", slug: "ice-equipment", image: "/assets/product_images/ice-equipment.webp" },
-    { id: 3, name: "Cooking Equipment", slug: "cooking-equipment", image: "/assets/product_images/cooking-equipment.webp" },
-    { id: 4, name: "Refrigeration", slug: "refrigeration", image: "/assets/product_images/refrigeration.webp" },
-    { id: 5, name: "Beverage Equipment", slug: "beverage-equipment", image: "/assets/product_images/beverage-equipment.webp" },
-    { id: 6, name: "Commercial Ovens", slug: "commercial-ovens", image: "/assets/product_images/commercial-ovens.webp" },
-    { id: 7, name: "Food Preparation", slug: "food-preparation", image: "/assets/product_images/food-preparation.webp" },
-    { id: 8, name: "Food Holding & Warming", slug: "food-holding-and-warming-line", image: "/assets/product_images/food-holding-and-warming-line.webp" },
-    { id: 9, name: "Delivery & Storage", slug: "delivery-and-storage", image: "/assets/product_images/delivery-and-storage.webp" },
-    { id: 10, name: "Parts", slug: "parts", image: "/assets/product_images/parts.webp" },
-    { id: 11, name: "Used Equipment", slug: "used-equipment", image: "/assets/product_images/coffeemakers.webp" },
-    { id: 12, name: "Dishwashing", slug: "dishwashing", image: "/assets/product_images/dishwashing.webp" },
-    { id: 13, name: "Stainless Steel Equipment", slug: "stainless-steel-equipment", image: "/assets/product_images/stainless-steel-equipment.webp" },
-    { id: 14, name: "Janitorial & Safety", slug: "janitorial-safety-supplies", image: "/assets/product_images/janitorial-safety-supplies.webp" },
-    { id: 15, name: "Water Treatment", slug: "water-treatment", image: "/assets/product_images/water-treatment.webp" },
-    { id: 16, name: "Home Use", slug: "home-use", image: "/assets/product_images/home-use.webp" },
-    { id: 17, name: "Dining Room", slug: "dining-room", image: "/assets/product_images/dining-room.webp" },
-    { id: 18, name: "Smallwares", slug: "smallwares", image: "/assets/product_images/smallwares.webp" },
-    { id: 19, name: "Disposables", slug: "disposables", image: "/assets/product_images/disposables.webp" },
-    { id: 20, name: "Food & Beverage", slug: "food-beverage-ingredients", image: "/assets/product_images/food-beverage-ingredients.webp" }
-];
+// Static image mapping for public/assets/product_images
+// This matches the updated categories and ensures professional images are used
+const CATEGORY_IMAGE_MAP: { [key: string]: string } = {
+    'coffee-makers': '/assets/product_images/coffeemakers.webp',
+    'ice-equipment': '/assets/product_images/ice-equipment.webp',
+    'cooking-equipment': '/assets/product_images/cooking-equipment.webp',
+    'refrigeration': '/assets/product_images/refrigeration.webp',
+    'beverage-equipment': '/assets/product_images/beverage-equipment.webp',
+    'commercial-ovens': '/assets/product_images/commercial-ovens.webp',
+    'food-preparation': '/assets/product_images/food-preparation.webp',
+    'food-holding-and-warming-line': '/assets/product_images/food-holding-and-warming-line.webp',
+    'delivery-and-storage': '/assets/product_images/delivery-and-storage.webp',
+    'parts': '/assets/product_images/parts.webp',
+    'used-equipment': '/assets/product_images/used-equipment.webp',
+    'dishwashing': '/assets/product_images/dishwashing.webp',
+    'stainless-steel-equipment': '/assets/product_images/stainless-steel-equipment.webp',
+    'janitorial-safety-supplies': '/assets/product_images/janitorial-safety-supplies.webp',
+    'water-treatment': '/assets/product_images/water-treatment.webp',
+    'home-use': '/assets/product_images/home-use.webp',
+    'dining-room': '/assets/product_images/dining-room.webp',
+    'smallwares': '/assets/product_images/smallwares.webp',
+    'disposables': '/assets/product_images/disposables.webp',
+    'food-beverage-ingredients': '/assets/product_images/food-beverage-ingredients.webp'
+};
 
 const CategoryBrowse = () => {
     const t = useTranslations('categories');
@@ -39,15 +43,39 @@ const CategoryBrowse = () => {
     const isRtl = locale === 'ar';
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
+    const [apiCategories, setApiCategories] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const [emblaRef, emblaApi] = useEmblaCarousel({ 
-        loop: false, 
+    const [emblaRef, emblaApi] = useEmblaCarousel({
+        loop: false,
         direction: isRtl ? 'rtl' : 'ltr',
         align: 'start',
         skipSnaps: true,
         dragFree: true,
         containScroll: 'trimSnaps'
     });
+
+    // Fetch categories dynamically to keep in sync with the Mega Menu and Shop
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/categories`, { credentials: "include" });
+                const data = await res.json();
+                if (data.success) {
+                    // Filter for main categories (same logic as CategoriesLayout)
+                    const mains = data.data
+                        .filter((c: any) => c.type === 'main_category' && c.is_active)
+                        .sort((a: any, b: any) => a.id - b.id);
+                    setApiCategories(mains);
+                }
+            } catch (err) {
+                console.error('Error fetching categories for browse:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const scrollPrev = useCallback(() => {
         if (emblaApi) emblaApi.scrollPrev();
@@ -69,6 +97,17 @@ const CategoryBrowse = () => {
         emblaApi.on('select', onSelect);
         emblaApi.on('reInit', onSelect);
     }, [emblaApi, onSelect]);
+
+    const getCategoryImage = (category: any) => {
+        // If the API provides an image, use it
+        if (category.image_url) return category.image_url;
+
+        // Otherwise use our professional public images mapping
+        const slug = normalizeSlug(category.name);
+        return CATEGORY_IMAGE_MAP[slug] || '/assets/placeholder-image.webp';
+    };
+
+    if (loading && apiCategories.length === 0) return null;
 
     return (
         <section className={styles.categorySection} id="category-browse">
@@ -112,36 +151,45 @@ const CategoryBrowse = () => {
                 <div className={styles.sliderWrapper}>
                     <div className={styles.emblaViewport} ref={emblaRef}>
                         <div className={styles.categoryGrid}>
-                            {categories.map((category) => (
-                                <div key={category.id} className={styles.categoryCardWrapper}>
-                                    <Link
-                                        href={`/shop?category=${category.slug}`}
-                                        className={styles.categoryCard}
-                                    >
-                                        <div className={styles.imageBox}>
-                                            <Image
-                                                src={category.image}
-                                                alt={t.has(category.slug) ? t(category.slug) : category.name}
-                                                fill
-                                                sizes="(max-width: 768px) 150px, 120px"
-                                                style={{ objectFit: 'contain', zIndex: 10 }}
-                                                className={styles.categoryImg}
-                                            />
-                                            <div className={styles.imageOverlay}>
-                                                {category.name.split(' ')[0]}
+                            {apiCategories.map((category) => {
+                                const slug = normalizeSlug(category.name);
+                                const displayName = (isRtl && category.name_ar) ? category.name_ar : (t.has(slug) ? t(slug) : category.name);
+
+                                return (
+                                    <div key={category.id} className={styles.categoryCardWrapper}>
+                                        <Link
+                                            href={`/shop?category=${slug}`}
+                                            className={styles.categoryCard}
+                                        >
+                                            <div className={styles.imageBox}>
+                                                <Image
+                                                    src={getCategoryImage(category)}
+                                                    alt={displayName}
+                                                    fill
+                                                    sizes="(max-width: 768px) 150px, 120px"
+                                                    style={{ objectFit: 'contain', zIndex: 10 }}
+                                                    className={styles.categoryImg}
+                                                    onError={(e) => {
+                                                        const target = e.target as HTMLImageElement;
+                                                        target.src = '/assets/placeholder-image.webp';
+                                                    }}
+                                                />
+                                                <div className={styles.imageOverlay}>
+                                                    {displayName.split(' ')[0]}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className={styles.cardBottom}>
-                                            <span className={styles.categoryName}>
-                                                {t.has(category.slug) ? t(category.slug) : category.name}
-                                            </span>
-                                            <span className={styles.categoryArrow}>
-                                                {isRtl ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
-                                            </span>
-                                        </div>
-                                    </Link>
-                                </div>
-                            ))}
+                                            <div className={styles.cardBottom}>
+                                                <span className={styles.categoryName}>
+                                                    {displayName}
+                                                </span>
+                                                <span className={styles.categoryArrow}>
+                                                    {isRtl ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
+                                                </span>
+                                            </div>
+                                        </Link>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 

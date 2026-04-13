@@ -15,13 +15,14 @@ const CategoryPromotionCard = ({ title, image, link }: CategoryPromotionCardProp
     return (
         <Link href={link} className={styles.cardContainer}>
             <div className={styles.imageWrapper}>
-                <Image 
-                    src={image} 
-                    alt={title} 
-                    fill 
+                <Image
+                    src={image}
+                    alt={title}
+                    fill
                     sizes="(max-width: 1024px) 100vw, 300px"
                     className={styles.promoImage}
                     priority
+                    unoptimized={image.startsWith('/assets/')}
                 />
             </div>
             <div className={styles.textOverlay}>

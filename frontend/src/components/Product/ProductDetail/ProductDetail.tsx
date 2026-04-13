@@ -221,9 +221,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 const data = await res.json();
                 if (data.success) {
                     setProduct(data.data);
-                    // Fetch related using group if available, otherwise category
-                    const relatedCategory = data.data.product_group || data.data.category_slug;
-                    fetchRelated(relatedCategory, data.data.id);
+                    // Try categories from most specific to least specific
+                    const categoriesToTry = [
+                        data.data.sub_sub_category_id,
+                        data.data.sub_category_id,
+                        data.data.category_id,
+                        data.data.category_slug
+                    ].filter(Boolean);
+
+                    fetchRelated(categoriesToTry, data.data.id);
                     fetchReviews(data.data.id);
                 }
             } catch (err) {
@@ -233,16 +239,23 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             }
         };
 
-        const fetchRelated = async (cat: string, currentProductId: number) => {
-            if (!cat) return;
-            try {
-                const res = await fetch(`${API_BASE_URL}/products?category=${cat}&limit=16`, { credentials: "include" });
-                const data = await res.json();
-                if (data.success) {
-                    setRelatedProducts(data.data.filter((p: any) => p.id !== currentProductId));
+        const fetchRelated = async (categories: (string | number)[], currentProductId: number) => {
+            if (!categories || categories.length === 0) return;
+
+            for (const cat of categories) {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/products?category=${cat}&limit=16`, { credentials: "include" });
+                    const data = await res.json();
+                    if (data.success) {
+                        const filtered = data.data.filter((p: any) => p.id !== currentProductId);
+                        if (filtered.length > 0) {
+                            setRelatedProducts(filtered);
+                            return; // Found related products, stop searching
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error fetching related products for", cat, err);
                 }
-            } catch (err) {
-                console.error("Error fetching related products:", err);
             }
         };
 
@@ -519,6 +532,52 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     return (
         <div className={styles.productDetail}>
             <div className={styles.container}>
+                {/* Breadcrumbs */}
+                <div className={styles.breadcrumbs}>
+                    <Link href={`/${locale}`} className={styles.breadcrumbLink}>{isArabic ? 'الرئيسية' : 'Home'}</Link>
+                    <span className={styles.breadcrumbSeparator}>/</span>
+                    <Link href={`/${locale}/shop`} className={styles.breadcrumbLink}>{isArabic ? 'المتجر' : 'Shop'}</Link>
+
+                    {product.category_name && (
+                        <>
+                            <span className={styles.breadcrumbSeparator}>/</span>
+                            <Link
+                                href={`/${locale}/shop?category=${product.category_slug}`}
+                                className={styles.breadcrumbLink}
+                            >
+                                {isArabic && product.category_name_ar ? product.category_name_ar : product.category_name}
+                            </Link>
+                        </>
+                    )}
+
+                    {product.sub_category_name && (
+                        <>
+                            <span className={styles.breadcrumbSeparator}>/</span>
+                            <Link
+                                href={`/${locale}/shop?category=${product.sub_category_slug}`}
+                                className={styles.breadcrumbLink}
+                            >
+                                {isArabic && product.sub_category_name_ar ? product.sub_category_name_ar : product.sub_category_name}
+                            </Link>
+                        </>
+                    )}
+
+                    {product.sub_sub_category_name && (
+                        <>
+                            <span className={styles.breadcrumbSeparator}>/</span>
+                            <Link
+                                href={`/${locale}/shop?category=${product.sub_sub_category_name}`}
+                                className={styles.breadcrumbLink}
+                            >
+                                {isArabic && product.sub_sub_category_name_ar ? product.sub_sub_category_name_ar : product.sub_sub_category_name}
+                            </Link>
+                        </>
+                    )}
+
+                    <span className={styles.breadcrumbSeparator}>/</span>
+                    <span className={styles.breadcrumbCurrent}>{getLocalizedField('name', 'name_ar')}</span>
+                </div>
+
                 <div className={styles.layout}>
 
                     {/* Main Content (Left) */}
@@ -1044,38 +1103,40 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 {/* --- New Sections (Bottom) --- */}
 
                 {/* You may also need */}
-                {relatedProducts.length > 0 && (
-                    <div className={`${styles.extraSection} ${styles.relatedSection}`}>
-                        <div className={styles.sectionTitle}>
-                            <h2>{t('youMayAlsoNeed')}</h2>
-                        </div>
-                        <div className={styles.sliderWrapper}>
-                            <button
-                                className={`${styles.sliderArrow} ${styles.prevArrow}`}
-                                onClick={() => relatedEmblaApi?.scrollPrev()}
-                            >
-                                <ChevronLeft size={26} />
-                            </button>
-
-                            <div className={styles.relatedViewport} ref={relatedEmblaRef}>
-                                <div className={styles.relatedGrid}>
-                                    {relatedProducts.map((p) => (
-                                        <div key={p.id} className={styles.relatedSlide}>
-                                            <ProductCardPromotion product={{ ...p, price: Number(p.offer_price) > 0 ? Number(p.offer_price) : Number(p.price), old_price: Number(p.offer_price) > 0 ? Number(p.price) : (Number(p.old_price) || Number(p.originalPrice) || 0) }} />
-                                        </div>
-                                    ))}
-                                </div>
+                {
+                    relatedProducts.length > 0 && (
+                        <div className={`${styles.extraSection} ${styles.relatedSection}`}>
+                            <div className={styles.sectionTitle}>
+                                <h2>{t('youMayAlsoNeed')}</h2>
                             </div>
+                            <div className={styles.sliderWrapper}>
+                                <button
+                                    className={`${styles.sliderArrow} ${styles.prevArrow}`}
+                                    onClick={() => relatedEmblaApi?.scrollPrev()}
+                                >
+                                    <ChevronLeft size={26} />
+                                </button>
 
-                            <button
-                                className={`${styles.sliderArrow} ${styles.nextArrow}`}
-                                onClick={() => relatedEmblaApi?.scrollNext()}
-                            >
-                                <ChevronRight size={26} />
-                            </button>
+                                <div className={styles.relatedViewport} ref={relatedEmblaRef}>
+                                    <div className={styles.relatedGrid}>
+                                        {relatedProducts.map((p) => (
+                                            <div key={p.id} className={styles.relatedSlide}>
+                                                <ProductCardPromotion product={{ ...p, price: Number(p.offer_price) > 0 ? Number(p.offer_price) : Number(p.price), old_price: Number(p.offer_price) > 0 ? Number(p.price) : (Number(p.old_price) || Number(p.originalPrice) || 0) }} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button
+                                    className={`${styles.sliderArrow} ${styles.nextArrow}`}
+                                    onClick={() => relatedEmblaApi?.scrollNext()}
+                                >
+                                    <ChevronRight size={26} />
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* Reviews Section */}
                 <div className={styles.extraSection} id="reviews-section">
@@ -1231,14 +1292,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 </div>
 
                 {/* Modern Ask Experts Section */}
-                <div className={styles.extraSection}>
+                <div className={`${styles.extraSection} ${styles.expertSection}`}>
                     <div className={styles.askExpertCard}>
                         <div className={styles.askContent}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
-                                <div style={{ background: '#dcfce7', padding: '10px', borderRadius: '12px' }}>
+                            <div className={styles.expertHeader}>
+                                <div className={styles.expertIconBox}>
                                     <MessageSquare size={24} color="#059669" />
                                 </div>
-                                <span style={{ color: '#059669', fontWeight: '700', fontSize: '14px', textTransform: 'uppercase' }}>{t('expertAssistance')}</span>
+                                <span className={styles.expertLabel}>{t('expertAssistance')}</span>
                             </div>
                             <h3>{t('expertQuestions')}</h3>
                             <p>{t('expertDescription')}</p>
@@ -1253,178 +1314,184 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                     </div>
                 </div>
                 {/* Tabby Modal */}
-                {showTabbyModal && (
-                    <div className={styles.modalOverlay} onClick={() => setShowTabbyModal(false)}>
-                        <div className={styles.modal} onClick={e => e.stopPropagation()}>
-                            <div className={styles.modalHeader}>
-                                <img src="/assets/Tabby.webp" alt="Tabby" className={styles.tabbyLogoLarge} />
-                                <button className={styles.closeModal} onClick={() => setShowTabbyModal(false)}>
-                                    <X size={24} />
-                                </button>
-                            </div>
-                            <div className={styles.modalContent}>
-
-                                {/* Promo Banner */}
-                                <div className={styles.tabbyPromoBanner}>
-                                    <div className={styles.promoContent}>
-                                        <div className={styles.promoTitle}>{t('tabbyPromoTitle')}</div>
-                                        <div className={styles.promoSubtitle}>{t('tabbyPromoSubtitle')}</div>
-                                    </div>
-                                </div>
-
-                                {/* Installments */}
-                                <div className={styles.installmentRow}>
-                                    <div className={styles.installmentInfo}>
-                                        <h4>{t('payments4')}</h4>
-                                        <div className={`${styles.installmentSub} ${styles.green}`}>{t('noInterest')}</div>
-                                    </div>
-                                    <div className={styles.installmentPrice}>AED {monthlyPayment}/mo</div>
-                                </div>
-
-                                <div className={styles.installmentRow}>
-                                    <div className={styles.installmentInfo}>
-                                        <h4>{t('payments6')}</h4>
-                                        <div className={styles.installmentSub}>{t('includesFee')}</div>
-                                    </div>
-                                    <div className={styles.installmentPrice}>AED {(Number(displayPrice) / 6 * 1.025).toFixed(2)}/mo</div>
-                                </div>
-
-                                <div className={styles.installmentRow}>
-                                    <div className={styles.installmentInfo}>
-                                        <h4>{t('payments12')}</h4>
-                                        <div className={styles.installmentSub}>{t('includesFee')}</div>
-                                    </div>
-                                    <div className={styles.installmentPrice}>AED {(Number(displayPrice) / 12 * 1.025).toFixed(2)}/mo</div>
-                                </div>
-
-                                <div className={styles.continueShoppingWrapper} style={{ marginTop: '20px', paddingBottom: '0' }}>
-                                    <div
-                                        className={styles.continueBtn}
-                                        onClick={() => setShowTabbyModal(false)}
-                                        style={{ cursor: 'pointer', borderColor: '#e0e0e0', color: '#555' }}
-                                    >
-                                        <ChevronLeft size={18} style={{ transform: locale === 'ar' ? 'rotate(180deg)' : 'none' }} />
-                                        {t('continueShopping')}
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Price Match Modal */}
-                {showPriceMatchModal && (
-                    <div className={styles.pmModalOverlay} onClick={() => setShowPriceMatchModal(false)}>
-                        <div className={styles.pmModal} onClick={(e) => e.stopPropagation()}>
-                            <div className={styles.pmHeader}>
-                                <div className={styles.pmHeaderTitle}>
-                                    <Tag size={20} fill="currentColor" />
-                                    <span>{t('requestAPriceMatch') || 'Request a'} <em>{t('priceMatch') || 'Price Match'}</em></span>
-                                </div>
-                                <button className={styles.pmCloseBtn} onClick={() => setShowPriceMatchModal(false)}>
-                                    <X size={24} />
-                                </button>
-                            </div>
-
-                            <div className={styles.pmContent}>
-                                <div className={styles.pmFormGroup}>
-                                    <label className={styles.pmLabel}>{t('whereDidYouFindProduct') || 'Where did you find the product?'}</label>
-                                    <input
-                                        type="text"
-                                        className={styles.pmInputUnderline}
-                                        placeholder={t('shopNamePlaceholder') || 'Shop name or website URL'}
-                                        value={pmForm.shopName}
-                                        onChange={(e) => setPmForm({ ...pmForm, shopName: e.target.value })}
-                                    />
-                                </div>
-
-                                <div className={styles.pmFormGroup}>
-                                    <label className={styles.pmLabel}>{t('uploadImageToShowPrice') || 'Please upload an image to show the price'}</label>
-                                    <p className={styles.pmSubLabel}>{t('documentUploadDesc') || 'Or any document that clearly displays the product and its price (photo, screenshot, quotation, etc.)'}</p>
-
-                                    <input
-                                        type="file"
-                                        ref={pmFileRef}
-                                        style={{ display: 'none' }}
-                                        onChange={(e) => setPmForm({ ...pmForm, file: e.target.files?.[0] || null })}
-                                        accept="image/*,application/pdf"
-                                    />
-                                    <div className={styles.pmUploadZone} onClick={() => pmFileRef.current?.click()}>
-                                        <Upload size={32} className={styles.pmUploadIcon} />
-                                        <span className={styles.pmUploadText}>
-                                            {pmForm.file ? pmForm.file.name : (t('uploadImageOrPdf') || 'Upload image or PDF')}
-                                        </span>
-                                    </div>
-                                    <p className={styles.pmSkipText}>{t('skipStepDesc') || 'You can skip this step if the URL above shows the price.'}</p>
-                                </div>
-
-                                <div className={styles.pmFormGroup}>
-                                    <label className={styles.pmLabel}>{t('contactInfoDesc') || 'Your contact information so we can get back to you with our offer'}</label>
-                                    <div className={styles.pmContactGrid}>
-                                        <input
-                                            type="email"
-                                            className={styles.pmInputUnderline}
-                                            placeholder={t('emailPlaceholder') || 'Email'}
-                                            value={pmForm.email}
-                                            onChange={(e) => setPmForm({ ...pmForm, email: e.target.value })}
-                                        />
-                                        <div style={{ position: 'relative' }}>
-                                            <span className={styles.pmPhonePrefix}>+971</span>
-                                            <input
-                                                type="tel"
-                                                className={`${styles.pmInputUnderline} ${styles.pmPhoneInput}`}
-                                                placeholder="5XXXXXXXX"
-                                                value={pmForm.phone}
-                                                onChange={(e) => setPmForm({ ...pmForm, phone: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className={styles.pmCheckboxGroup} onClick={() => setPmForm({ ...pmForm, agreed: !pmForm.agreed })}>
-                                    <input
-                                        type="checkbox"
-                                        id="terms"
-                                        className={styles.pmCheckbox}
-                                        checked={pmForm.agreed}
-                                        onChange={() => { }} // Handled by group click
-                                    />
-                                    <label htmlFor="terms" className={styles.pmCheckboxLabel}>
-                                        {t('agreeTermsPrev') || 'I have read the'} <Link href="/price-match-policy" onClick={(e) => e.stopPropagation()}>{t('priceMatchPolicy') || 'Price Match Policy'}</Link> {t('agreeTermsMid') || 'and I agree to the'} <Link href="/terms" onClick={(e) => e.stopPropagation()}>{t('termsAndConditions') || 'Terms and Conditions'}</Link>
-                                    </label>
-                                </div>
-
-                                <div className={styles.pmActions}>
-                                    <button
-                                        className={styles.pmSubmitBtn}
-                                        onClick={handlePriceMatchSubmit}
-                                        disabled={isPmSubmitting}
-                                    >
-                                        {isPmSubmitting ? (isArabic ? 'جاري الإرسال...' : 'Submitting...') : (t('submit') || 'Submit')}
+                {
+                    showTabbyModal && (
+                        <div className={styles.modalOverlay} onClick={() => setShowTabbyModal(false)}>
+                            <div className={styles.modal} onClick={e => e.stopPropagation()}>
+                                <div className={styles.modalHeader}>
+                                    <img src="/assets/Tabby.webp" alt="Tabby" className={styles.tabbyLogoLarge} />
+                                    <button className={styles.closeModal} onClick={() => setShowTabbyModal(false)}>
+                                        <X size={24} />
                                     </button>
                                 </div>
+                                <div className={styles.modalContent}>
+
+                                    {/* Promo Banner */}
+                                    <div className={styles.tabbyPromoBanner}>
+                                        <div className={styles.promoContent}>
+                                            <div className={styles.promoTitle}>{t('tabbyPromoTitle')}</div>
+                                            <div className={styles.promoSubtitle}>{t('tabbyPromoSubtitle')}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Installments */}
+                                    <div className={styles.installmentRow}>
+                                        <div className={styles.installmentInfo}>
+                                            <h4>{t('payments4')}</h4>
+                                            <div className={`${styles.installmentSub} ${styles.green}`}>{t('noInterest')}</div>
+                                        </div>
+                                        <div className={styles.installmentPrice}>AED {monthlyPayment}/mo</div>
+                                    </div>
+
+                                    <div className={styles.installmentRow}>
+                                        <div className={styles.installmentInfo}>
+                                            <h4>{t('payments6')}</h4>
+                                            <div className={styles.installmentSub}>{t('includesFee')}</div>
+                                        </div>
+                                        <div className={styles.installmentPrice}>AED {(Number(displayPrice) / 6 * 1.025).toFixed(2)}/mo</div>
+                                    </div>
+
+                                    <div className={styles.installmentRow}>
+                                        <div className={styles.installmentInfo}>
+                                            <h4>{t('payments12')}</h4>
+                                            <div className={styles.installmentSub}>{t('includesFee')}</div>
+                                        </div>
+                                        <div className={styles.installmentPrice}>AED {(Number(displayPrice) / 12 * 1.025).toFixed(2)}/mo</div>
+                                    </div>
+
+                                    <div className={styles.continueShoppingWrapper} style={{ marginTop: '20px', paddingBottom: '0' }}>
+                                        <div
+                                            className={styles.continueBtn}
+                                            onClick={() => setShowTabbyModal(false)}
+                                            style={{ cursor: 'pointer', borderColor: '#e0e0e0', color: '#555' }}
+                                        >
+                                            <ChevronLeft size={18} style={{ transform: locale === 'ar' ? 'rotate(180deg)' : 'none' }} />
+                                            {t('continueShopping')}
+                                        </div>
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+
+                {/* Price Match Modal */}
+                {
+                    showPriceMatchModal && (
+                        <div className={styles.pmModalOverlay} onClick={() => setShowPriceMatchModal(false)}>
+                            <div className={styles.pmModal} onClick={(e) => e.stopPropagation()}>
+                                <div className={styles.pmHeader}>
+                                    <div className={styles.pmHeaderTitle}>
+                                        <Tag size={20} fill="currentColor" />
+                                        <span>{t('requestAPriceMatch') || 'Request a'} <em>{t('priceMatch') || 'Price Match'}</em></span>
+                                    </div>
+                                    <button className={styles.pmCloseBtn} onClick={() => setShowPriceMatchModal(false)}>
+                                        <X size={24} />
+                                    </button>
+                                </div>
+
+                                <div className={styles.pmContent}>
+                                    <div className={styles.pmFormGroup}>
+                                        <label className={styles.pmLabel}>{t('whereDidYouFindProduct') || 'Where did you find the product?'}</label>
+                                        <input
+                                            type="text"
+                                            className={styles.pmInputUnderline}
+                                            placeholder={t('shopNamePlaceholder') || 'Shop name or website URL'}
+                                            value={pmForm.shopName}
+                                            onChange={(e) => setPmForm({ ...pmForm, shopName: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className={styles.pmFormGroup}>
+                                        <label className={styles.pmLabel}>{t('uploadImageToShowPrice') || 'Please upload an image to show the price'}</label>
+                                        <p className={styles.pmSubLabel}>{t('documentUploadDesc') || 'Or any document that clearly displays the product and its price (photo, screenshot, quotation, etc.)'}</p>
+
+                                        <input
+                                            type="file"
+                                            ref={pmFileRef}
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => setPmForm({ ...pmForm, file: e.target.files?.[0] || null })}
+                                            accept="image/*,application/pdf"
+                                        />
+                                        <div className={styles.pmUploadZone} onClick={() => pmFileRef.current?.click()}>
+                                            <Upload size={32} className={styles.pmUploadIcon} />
+                                            <span className={styles.pmUploadText}>
+                                                {pmForm.file ? pmForm.file.name : (t('uploadImageOrPdf') || 'Upload image or PDF')}
+                                            </span>
+                                        </div>
+                                        <p className={styles.pmSkipText}>{t('skipStepDesc') || 'You can skip this step if the URL above shows the price.'}</p>
+                                    </div>
+
+                                    <div className={styles.pmFormGroup}>
+                                        <label className={styles.pmLabel}>{t('contactInfoDesc') || 'Your contact information so we can get back to you with our offer'}</label>
+                                        <div className={styles.pmContactGrid}>
+                                            <input
+                                                type="email"
+                                                className={styles.pmInputUnderline}
+                                                placeholder={t('emailPlaceholder') || 'Email'}
+                                                value={pmForm.email}
+                                                onChange={(e) => setPmForm({ ...pmForm, email: e.target.value })}
+                                            />
+                                            <div style={{ position: 'relative' }}>
+                                                <span className={styles.pmPhonePrefix}>+971</span>
+                                                <input
+                                                    type="tel"
+                                                    className={`${styles.pmInputUnderline} ${styles.pmPhoneInput}`}
+                                                    placeholder="5XXXXXXXX"
+                                                    value={pmForm.phone}
+                                                    onChange={(e) => setPmForm({ ...pmForm, phone: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.pmCheckboxGroup} onClick={() => setPmForm({ ...pmForm, agreed: !pmForm.agreed })}>
+                                        <input
+                                            type="checkbox"
+                                            id="terms"
+                                            className={styles.pmCheckbox}
+                                            checked={pmForm.agreed}
+                                            onChange={() => { }} // Handled by group click
+                                        />
+                                        <label htmlFor="terms" className={styles.pmCheckboxLabel}>
+                                            {t('agreeTermsPrev') || 'I have read the'} <Link href="/price-match-policy" onClick={(e) => e.stopPropagation()}>{t('priceMatchPolicy') || 'Price Match Policy'}</Link> {t('agreeTermsMid') || 'and I agree to the'} <Link href="/terms" onClick={(e) => e.stopPropagation()}>{t('termsAndConditions') || 'Terms and Conditions'}</Link>
+                                        </label>
+                                    </div>
+
+                                    <div className={styles.pmActions}>
+                                        <button
+                                            className={styles.pmSubmitBtn}
+                                            onClick={handlePriceMatchSubmit}
+                                            disabled={isPmSubmitting}
+                                        >
+                                            {isPmSubmitting ? (isArabic ? 'جاري الإرسال...' : 'Submitting...') : (t('submit') || 'Submit')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+            </div >
             {/* Fullscreen Image Overlay */}
-            {isFullScreen && (
-                <div className={styles.fullscreenOverlay} onClick={() => setIsFullScreen(false)}>
-                    <div className={styles.fullscreenContent} onClick={e => e.stopPropagation()}>
-                        <button className={styles.closeOverlayBtn} onClick={() => setIsFullScreen(false)}>
-                            <X size={32} />
-                        </button>
-                        <img
-                            src={images[currentImageIndex]}
-                            alt={getLocalizedField('name', 'name_ar')}
-                            className={styles.fullscreenImage}
-                        />
+            {
+                isFullScreen && (
+                    <div className={styles.fullscreenOverlay} onClick={() => setIsFullScreen(false)}>
+                        <div className={styles.fullscreenContent} onClick={e => e.stopPropagation()}>
+                            <button className={styles.closeOverlayBtn} onClick={() => setIsFullScreen(false)}>
+                                <X size={32} />
+                            </button>
+                            <img
+                                src={images[currentImageIndex]}
+                                alt={getLocalizedField('name', 'name_ar')}
+                                className={styles.fullscreenImage}
+                            />
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

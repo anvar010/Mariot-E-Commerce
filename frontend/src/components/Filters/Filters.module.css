@@ -47,9 +47,9 @@
 
 @media (hover: hover) {
 
-.resetBtn:hover {
-    color: #e31e24;
-}
+    .resetBtn:hover {
+        color: #e31e24;
+    }
 }
 
 .filterSection {
@@ -71,9 +71,9 @@
 
 @media (hover: hover) {
 
-.sectionHeader:hover {
-    background: #fdfdfd;
-}
+    .sectionHeader:hover {
+        background: #fdfdfd;
+    }
 }
 
 .sectionHeader h3 {
@@ -103,6 +103,26 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.sectionContent::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sectionContent::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.sectionContent::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.sectionContent::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 .checkboxLabel {
@@ -118,9 +138,9 @@
 
 @media (hover: hover) {
 
-.checkboxLabel:hover {
-    color: #e31e24;
-}
+    .checkboxLabel:hover {
+        color: #e31e24;
+    }
 }
 
 .checkboxLabel input {
@@ -169,11 +189,12 @@
 
 .rangeInput {
     width: 100%;
-    height: 4px;
-    background: #edf2f7;
-    border-radius: 2px;
+    height: 6px;
+    background: transparent;
     cursor: pointer;
     accent-color: #337c7f;
+    outline: none;
+    border: none;
 }
 
 @media (max-width: 1024px) {

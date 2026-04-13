@@ -25,10 +25,10 @@ class Brand {
         return rows[0];
     }
 
-    static async create({ name, slug, image_url = null }) {
+    static async create({ name, name_ar = null, slug, image_url = null }) {
         const [result] = await db.execute(
-            'INSERT INTO brands (name, slug, image_url) VALUES (?, ?, ?)',
-            [name, slug, image_url]
+            'INSERT INTO brands (name, name_ar, slug, image_url) VALUES (?, ?, ?, ?)',
+            [name, name_ar, slug, image_url]
         );
         return result.insertId;
     }
@@ -38,10 +38,10 @@ class Brand {
         return rows[0];
     }
 
-    static async upsert({ name, slug, image_url = null }) {
+    static async upsert({ name, name_ar = null, slug, image_url = null }) {
         const [result] = await db.execute(
-            'INSERT INTO brands (name, slug, image_url) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name), image_url = VALUES(image_url)',
-            [name, slug, image_url]
+            'INSERT INTO brands (name, name_ar, slug, image_url) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name), name_ar = VALUES(name_ar), image_url = VALUES(image_url)',
+            [name, name_ar, slug, image_url]
         );
         return result.insertId || result.affectedRows;
     }
