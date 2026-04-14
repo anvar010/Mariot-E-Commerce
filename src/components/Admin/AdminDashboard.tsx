@@ -31,6 +31,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { useRouter } from 'next/navigation';
 import { stripHtml } from '@/utils/formatters';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import { useTranslations } from 'next-intl';
 
 const AdminDashboard = () => {
     const { user, token } = useAuth();
@@ -40,6 +41,7 @@ const AdminDashboard = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const { showNotification } = useNotification();
     const router = useRouter();
+    const t = useTranslations('admin');
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{
@@ -83,7 +85,7 @@ const AdminDashboard = () => {
             }
         } catch (error) {
             console.error('Failed to fetch dashboard stats', error);
-            showNotification('Failed to load dashboard data', 'error');
+            showNotification(t('dashboard.notifications.fetchStatsError'), 'error');
         } finally {
             setLoading(false);
         }
@@ -98,10 +100,10 @@ const AdminDashboard = () => {
 
         setConfirmModal({
             isOpen: true,
-            title: 'Delete Review',
-            message: 'Are you sure you want to delete this review?',
+            title: t('dashboard.modals.deleteReview.title'),
+            message: t('dashboard.modals.deleteReview.message'),
             type: 'danger',
-            confirmLabel: 'Delete',
+            confirmLabel: t('dashboard.modals.deleteReview.confirm'),
             onConfirm: async () => {
                 try {
                     setIsActionLoading(true);
@@ -113,14 +115,14 @@ const AdminDashboard = () => {
 
                     const data = await res.json();
                     if (data.success) {
-                        showNotification('Review deleted successfully');
+                        showNotification(t('dashboard.notifications.deleteReviewSuccess'));
                         fetchStats(); // Refresh dashboard
                     } else {
-                        showNotification(data.message || 'Failed to delete review', 'error');
+                        showNotification(data.message || t('dashboard.notifications.deleteReviewError'), 'error');
                     }
                 } catch (err) {
                     console.error('Error deleting review:', err);
-                    showNotification('Something went wrong', 'error');
+                    showNotification(t('dashboard.notifications.genericError'), 'error');
                 } finally {
                     setIsActionLoading(false);
                     setConfirmModal(prev => ({ ...prev, isOpen: false }));
@@ -130,25 +132,25 @@ const AdminDashboard = () => {
     };
 
     const timeOptions = [
-        { label: 'Last 7 Days', value: '7d' },
-        { label: 'Last 14 Days', value: '14d' },
-        { label: 'Last 30 Days', value: '30d' },
-        { label: 'Last 3 Months', value: '3m' },
-        { label: 'Last 6 Months', value: '6m' },
-        { label: 'Last Year', value: '1y' },
-        { label: 'All Time', value: 'all' },
+        { label: t('dashboard.timeRanges.7d'), value: '7d' },
+        { label: t('dashboard.timeRanges.14d'), value: '14d' },
+        { label: t('dashboard.timeRanges.30d'), value: '30d' },
+        { label: t('dashboard.timeRanges.3m'), value: '3m' },
+        { label: t('dashboard.timeRanges.6m'), value: '6m' },
+        { label: t('dashboard.timeRanges.1y'), value: '1y' },
+        { label: t('dashboard.timeRanges.all'), value: 'all' },
     ];
 
     if (loading && !stats) {
-        return <div className={styles.dashboard}><div style={{ padding: '80px', textAlign: 'center' }}><AdminLoader message="Gathering performance insights..." /></div></div>;
+        return <div className={styles.dashboard}><div style={{ padding: '80px', textAlign: 'center' }}><AdminLoader message={t('dashboard.loader')} /></div></div>;
     }
 
     return (
         <div className={styles.dashboard}>
             <header className={styles.dashboardHeader}>
                 <div className={styles.headerInfo}>
-                    <h1 className={styles.pageTitle}>Admin Overview</h1>
-                    <p className={styles.pageSub}>Track your store's performance and growth.</p>
+                    <h1 className={styles.pageTitle}>{t('dashboard.title')}</h1>
+                    <p className={styles.pageSub}>{t('dashboard.subtitle')}</p>
                 </div>
                 <div className={styles.headerActions}>
                     <div className={styles.dropdownWrapper}>
@@ -193,7 +195,7 @@ const AdminDashboard = () => {
                     </div>
                     <button className={styles.refreshBtn} onClick={() => fetchStats()} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <RefreshCw size={14} className={loading ? styles.spin : ''} style={loading ? { animation: 'spin 1s linear infinite' } : {}} />
-                        {loading ? 'Refreshing...' : 'Refresh'}
+                        {loading ? t('dashboard.refreshing') : t('dashboard.refresh')}
                     </button>
                 </div>
             </header>
@@ -205,15 +207,15 @@ const AdminDashboard = () => {
                 transition={{ duration: 0.4 }}
             >
                 <div className={styles.bannerContent}>
-                    <h2>Marhaba, {user?.name?.split(' ')[0] || 'Admin'}!</h2>
-                    <p>Your store has generated <strong>AED {Number(stats?.totalSales || 0).toLocaleString()}</strong> in total revenue so far. Check out the latest insights below.</p>
+                    <h2>{t('dashboard.welcome', { name: user?.name?.split(' ')[0] || 'Admin' })}</h2>
+                    <p dangerouslySetInnerHTML={{ __html: t('dashboard.revenueNote', { amount: Number(stats?.totalSales || 0).toLocaleString() }) }} />
                 </div>
                 <div className={styles.bannerButtons}>
                     <button className={styles.bannerBtnSecondary} onClick={() => router.push('/admin/products?action=add')}>
-                        Add Product
+                        {t('dashboard.actions.addProduct')}
                     </button>
                     <button className={styles.bannerBtn} onClick={() => router.push('/admin/analytics')}>
-                        Advanced Analytics
+                        {t('dashboard.actions.advancedAnalytics')}
                     </button>
                 </div>
             </motion.div>
@@ -228,7 +230,7 @@ const AdminDashboard = () => {
                     transition={{ delay: 0.1 }}
                 >
                     <div className={styles.statHeader}>
-                        <span className={styles.statTitle}>Revenue</span>
+                        <span className={styles.statTitle}>{t('dashboard.stats.revenue')}</span>
                         <div className={`${styles.iconWrapper} ${styles.bgBlue}`}>
                             <TrendingUp size={18} />
                         </div>
@@ -238,7 +240,7 @@ const AdminDashboard = () => {
                         <div className={styles.statFooter}>
                             <span className={(stats?.salesGrowth ?? 0) >= 0 ? styles.trendUp : styles.trendDown}>
                                 {(stats?.salesGrowth ?? 0) >= 0 ? '+' : ''}{stats?.salesGrowth ?? 0}%
-                            </span> vs prev period
+                            </span> {t('dashboard.stats.vsPrev')}
                         </div>
                     </div>
                 </motion.div>
@@ -252,7 +254,7 @@ const AdminDashboard = () => {
                     transition={{ delay: 0.2 }}
                 >
                     <div className={styles.statHeader}>
-                        <span className={styles.statTitle}>Orders</span>
+                        <span className={styles.statTitle}>{t('dashboard.stats.orders')}</span>
                         <div className={`${styles.iconWrapper} ${styles.bgGreen}`}>
                             <CheckCircle2 size={18} />
                         </div>
@@ -262,7 +264,7 @@ const AdminDashboard = () => {
                         <div className={styles.statFooter}>
                             <span className={(stats?.ordersGrowth ?? 0) >= 0 ? styles.trendUp : styles.trendDown}>
                                 {(stats?.ordersGrowth ?? 0) >= 0 ? '+' : ''}{stats?.ordersGrowth ?? 0}%
-                            </span> vs prev period
+                            </span> {t('dashboard.stats.vsPrev')}
                         </div>
                     </div>
                 </motion.div>
@@ -276,7 +278,7 @@ const AdminDashboard = () => {
                     transition={{ delay: 0.3 }}
                 >
                     <div className={styles.statHeader}>
-                        <span className={styles.statTitle}>Customers</span>
+                        <span className={styles.statTitle}>{t('dashboard.stats.customers')}</span>
                         <div className={`${styles.iconWrapper} ${styles.bgPurple}`}>
                             <Users size={18} />
                         </div>
@@ -286,7 +288,7 @@ const AdminDashboard = () => {
                         <div className={styles.statFooter}>
                             <span className={(stats?.userGrowth ?? 0) >= 0 ? styles.trendUp : styles.trendDown}>
                                 {(stats?.userGrowth ?? 0) >= 0 ? '+' : ''}{stats?.userGrowth ?? 0}%
-                            </span> vs prev period
+                            </span> {t('dashboard.stats.vsPrev')}
                         </div>
                     </div>
                 </motion.div>
@@ -300,7 +302,7 @@ const AdminDashboard = () => {
                     transition={{ delay: 0.4 }}
                 >
                     <div className={styles.statHeader}>
-                        <span className={styles.statTitle}>Catalog</span>
+                        <span className={styles.statTitle}>{t('dashboard.stats.catalog')}</span>
                         <div className={`${styles.iconWrapper} ${styles.bgOrange}`}>
                             <LayoutDashboard size={18} />
                         </div>
@@ -308,7 +310,7 @@ const AdminDashboard = () => {
                     <div className={styles.statBody}>
                         <h3 className={styles.statValue}>{stats?.totalProducts || 0}</h3>
                         <div className={styles.statFooter}>
-                            <span className={styles.trendNeutral}>{stats?.activeProducts || 0} active</span>
+                            <span className={styles.trendNeutral}>{stats?.activeProducts || 0} {t('dashboard.stats.active')}</span>
                         </div>
                     </div>
                 </motion.div>
@@ -325,7 +327,7 @@ const AdminDashboard = () => {
                     <div className={styles.chartHeader}>
                         <div className={styles.chartTitleBox}>
                             <Activity size={16} />
-                            <h3>Sales Trend ({timeOptions.find(o => o.value === timeRange)?.label})</h3>
+                            <h3>{t('dashboard.charts.salesTrend', { range: timeOptions.find(o => o.value === timeRange)?.label })}</h3>
                         </div>
                     </div>
                     <div className={styles.chartContainer}>
@@ -358,7 +360,7 @@ const AdminDashboard = () => {
                             }
 
                             if (data.length === 0) {
-                                return <div className={styles.emptyChart}>No data for this period</div>;
+                                return <div className={styles.emptyChart}>{t('dashboard.charts.noData')}</div>;
                             }
 
                             const maxAmount = Math.max(...data.map((d: any) => parseFloat(d.amount))) || 1;
@@ -401,9 +403,9 @@ const AdminDashboard = () => {
                     <div className={`${styles.chartHeader} ${styles.inventoryHeader}`}>
                         <div className={styles.chartTitleBox}>
                             <AlertTriangle size={16} />
-                            <h3>Inventory Alerts</h3>
+                            <h3>{t('dashboard.alerts.inventory')}</h3>
                         </div>
-                        <button className={styles.smallActionBtn} onClick={() => router.push('/admin/products')}>Manage</button>
+                        <button className={styles.smallActionBtn} onClick={() => router.push('/admin/products')}>{t('dashboard.actions.manage')}</button>
                     </div>
                     <div className={styles.actionList}>
                         {stats?.lowStockAlerts?.map((p: any, i: number) => (
@@ -411,7 +413,7 @@ const AdminDashboard = () => {
                                 <div className={styles.stockIndicator} />
                                 <div className={styles.activityText}>
                                     <p><strong>{stripHtml(p.name)}</strong></p>
-                                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 'bold' }}>Only {p.stock_quantity} remaining</span>
+                                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 'bold' }}>{t('dashboard.alerts.remaining', { count: p.stock_quantity })}</span>
                                 </div>
                                 <button className={styles.quickRestockBtn} onClick={() => router.push(`/admin/products?edit=${p.id}`)}>
                                     <Edit3 size={14} />
@@ -421,7 +423,7 @@ const AdminDashboard = () => {
                         {(!stats?.lowStockAlerts || stats.lowStockAlerts.length === 0) && (
                             <div className={styles.allClear}>
                                 <CheckCircle2 size={24} color="#10b981" />
-                                <p>All items are well stocked</p>
+                                <p>{t('dashboard.alerts.allClear')}</p>
                             </div>
                         )}
                     </div>
@@ -438,7 +440,7 @@ const AdminDashboard = () => {
                     <div className={styles.chartHeader}>
                         <div className={styles.chartTitleBox}>
                             <Filter size={16} />
-                            <h3>Revenue by Category</h3>
+                            <h3>{t('dashboard.charts.revenueByCategory')}</h3>
                         </div>
                     </div>
                     <div className={styles.categoryList}>
@@ -451,7 +453,7 @@ const AdminDashboard = () => {
                                     <div className={styles.catInfoV2}>
                                         <div className={styles.catLabels}>
                                             <span className={styles.catName}>{cat.name}</span>
-                                            <span className={styles.catShare}>{share}% of total</span>
+                                            <span className={styles.catShare}>{t('dashboard.charts.shareOfTotal', { percent: share })}</span>
                                         </div>
                                         <div className={styles.catProgressWrap}>
                                             <motion.div
@@ -467,7 +469,7 @@ const AdminDashboard = () => {
                             );
                         })}
                         {(!stats?.categorySales || stats.categorySales.length === 0) && (
-                            <p className={styles.emptyState}>No categorization data available.</p>
+                            <p className={styles.emptyState}>{t('dashboard.charts.noCategoryData')}</p>
                         )}
                     </div>
                 </motion.div>
@@ -481,7 +483,7 @@ const AdminDashboard = () => {
                     <div className={styles.chartHeader}>
                         <div className={styles.chartTitleBox}>
                             <TrendingUp size={16} />
-                            <h3>Top Selling Products</h3>
+                            <h3>{t('dashboard.charts.topProducts')}</h3>
                         </div>
                     </div>
                     <div className={styles.topProductsSimple}>
@@ -490,7 +492,7 @@ const AdminDashboard = () => {
                                 <div className={styles.productRank}>{i + 1}</div>
                                 <div className={styles.productInfoSimple}>
                                     <p className={styles.productNameSimple}>{stripHtml(p.name)}</p>
-                                    <span className={styles.productCountSimple}>{p.sold_count} units sold</span>
+                                    <span className={styles.productCountSimple}>{t('dashboard.charts.unitsSold', { count: p.sold_count })}</span>
                                 </div>
                             </div>
                         ))}
@@ -502,9 +504,9 @@ const AdminDashboard = () => {
                 <div className={styles.tableHeader}>
                     <div className={styles.chartTitleBox}>
                         <Activity size={16} />
-                        <h3>Recent Reviews</h3>
+                        <h3>{t('dashboard.reviews.recent')}</h3>
                     </div>
-                    <button className={styles.filterBtn} onClick={() => router.push('/admin/reviews')}>All Reviews</button>
+                    <button className={styles.filterBtn} onClick={() => router.push('/admin/reviews')}>{t('dashboard.reviews.all')}</button>
                 </div>
                 <div className={styles.activityList}>
                     {stats?.recentReviews?.length > 0 ? (
@@ -513,7 +515,7 @@ const AdminDashboard = () => {
                                 <div className={styles.avatarMini}>{review.user_name?.charAt(0) || 'U'}</div>
                                 <div className={styles.activityText}>
                                     <p>
-                                        <strong>{review.user_name}</strong> reviewed <strong>{stripHtml(review.product_name)}</strong>
+                                        <strong>{review.user_name}</strong> {t('dashboard.reviews.reviewed')} <strong>{stripHtml(review.product_name)}</strong>
                                     </p>
                                     <span className={styles.activityRating}>
                                         {"⭐".repeat(review.rating)} - "{review.comment}"
@@ -527,7 +529,7 @@ const AdminDashboard = () => {
                                         className={styles.deleteBtn}
                                         style={{ marginInlineStart: 'auto', padding: '5px', color: '#ff4d4f' }}
                                         onClick={() => handleDeleteReview(review.id)}
-                                        title="Delete review"
+                                        title={t('dashboard.reviews.delete')}
                                     >
                                         <Trash2 size={16} />
                                     </button>
@@ -535,7 +537,7 @@ const AdminDashboard = () => {
                             </div>
                         ))
                     ) : (
-                        <p className={styles.emptyState}>No recent reviews found.</p>
+                        <p className={styles.emptyState}>{t('dashboard.reviews.empty')}</p>
                     )}
                 </div>
             </div>
@@ -544,25 +546,25 @@ const AdminDashboard = () => {
                 <div className={styles.tableHeader}>
                     <div className={styles.chartTitleBox}>
                         <Clock size={16} />
-                        <h3>Recent Orders</h3>
+                        <h3>{t('dashboard.orders.recent')}</h3>
                     </div>
-                    <button className={styles.filterBtn} onClick={() => router.push('/admin/orders')}><Filter size={14} /> All Orders</button>
+                    <button className={styles.filterBtn} onClick={() => router.push('/admin/orders')}><Filter size={14} /> {t('dashboard.orders.all')}</button>
                 </div>
                 <div className={styles.tableWrapper}>
                     <table className={styles.table}>
                         <thead>
                             <tr>
-                                <th>ORDER ID</th>
-                                <th>DATE</th>
-                                <th>CUSTOMER</th>
-                                <th>TOTAL</th>
-                                <th>STATUS</th>
-                                <th>PAYMENT</th>
+                                <th>{t('dashboard.orders.table.id')}</th>
+                                <th>{t('dashboard.orders.table.date')}</th>
+                                <th>{t('dashboard.orders.table.customer')}</th>
+                                <th>{t('dashboard.orders.table.total')}</th>
+                                <th>{t('dashboard.orders.table.status')}</th>
+                                <th>{t('dashboard.orders.table.payment')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {stats?.recentOrders?.length === 0 ? (
-                                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>No recent orders found.</td></tr>
+                                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>{t('dashboard.orders.empty')}</td></tr>
                             ) : (
                                 stats?.recentOrders?.map((order: any) => (
                                     <tr key={order.id}>

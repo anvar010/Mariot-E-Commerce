@@ -56,19 +56,9 @@ function CheckoutContent() {
     useEffect(() => {
         const tabbyStatus = searchParams.get('tabby_status');
         if (tabbyStatus === 'cancel') {
-            showNotification(
-                locale === 'ar'
-                    ? 'لقد ألغيت الدفعة. فضلاً حاول مجددًا أو اختر طريقة دفع أخرى.'
-                    : 'You aborted the payment. Please retry or choose another payment method.',
-                'error'
-            );
+            showNotification(n('tabbyCancel'), 'error');
         } else if (tabbyStatus === 'failure') {
-            showNotification(
-                locale === 'ar'
-                    ? 'نأسف، تابي غير قادرة على الموافقة على هذه العملية. الرجاء استخدام طريقة دفع أخرى.'
-                    : 'Sorry, Tabby is unable to approve this purchase, please use an alternative payment method for your order.',
-                'error'
-            );
+            showNotification(n('tabbyFailure'), 'error');
         }
     }, [searchParams]);
 
@@ -413,7 +403,7 @@ function CheckoutContent() {
                 // Dev Mock handling
                 else if (data.payment_mock) {
                     await clearCart();
-                    showNotification("Payment successful (Mock Dev Mode)");
+                    showNotification(n('mockPaymentSuccess'));
                     router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
                     return;
                 }
