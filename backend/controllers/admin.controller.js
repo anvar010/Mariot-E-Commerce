@@ -45,9 +45,9 @@ exports.getDashboardStats = async (req, res, next) => {
 
         const [[{ count: userCount }]] = await db.query(`SELECT COUNT(*) as count FROM users`);
         const [[{ count: totalProducts }]] = await db.query('SELECT COUNT(*) as count FROM products');
-        const [[{ count: activeProducts }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE status = "active" AND is_active = 1');
-        const [[{ count: totalOrders, total_sales: totalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != "cancelled" AND ${dateCondition}`);
-        const [[{ count: prevTotalOrders, total_sales: prevTotalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != "cancelled" AND ${prevDateCondition}`);
+        const [[{ count: activeProducts }]] = await db.query("SELECT COUNT(*) as count FROM products WHERE status = 'active' AND is_active = 1");
+        const [[{ count: totalOrders, total_sales: totalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != 'cancelled' AND ${dateCondition}`);
+        const [[{ count: prevTotalOrders, total_sales: prevTotalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != 'cancelled' AND ${prevDateCondition}`);
 
         const currentSales = totalSales || 0;
         const previousSales = prevTotalSales || 0;
