@@ -16,13 +16,20 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import { useTranslations } from 'next-intl';
+import { useCart } from '@/context/CartContext';
 import styles from './success.module.css';
 
 const CheckoutSuccessPage = () => {
     const router = useRouter();
     const t = useTranslations('success');
     const searchParams = useSearchParams();
+    const { clearCart } = useCart();
     const orderId = searchParams.get('orderId') || 'Order #M' + Math.floor(100000 + Math.random() * 900000);
+
+    // Defensive programming to ensure cart is cleared
+    useEffect(() => {
+        clearCart();
+    }, [clearCart]);
 
     return (
         <div className={styles.successPage}>
