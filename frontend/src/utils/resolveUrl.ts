@@ -1,4 +1,4 @@
-import { BASE_URL } from '@/config';
+import { MEDIA_BASE_URL } from '@/config';
 
 /**
  * Resolves a URL to be absolute and points to the correct backend/assets location.
@@ -13,7 +13,7 @@ export const resolveUrl = (url?: string): string => {
 
     // Normalize Windows-style backslashes to forward slashes
     let normalizedUrl = url.replace(/\\/g, '/');
-    
+
     // Legacy database migration fix: intercept frontend /assets/brands/ and map to backend /uploads/brands/
     if (normalizedUrl.includes('/assets/brands/')) {
         normalizedUrl = normalizedUrl.replace(/\/assets\/brands\//g, '/uploads/brands/');
@@ -38,15 +38,15 @@ export const resolveUrl = (url?: string): string => {
 
         for (const domain of backendDomains) {
             if (normalizedUrl.includes(domain)) {
-                // Use regex with global flag to replace all occurrences
+                // Use absolute MEDIA_BASE_URL consistently for known backend domains
                 const domainRegex = new RegExp(`https?://${domain}`, 'g');
-                return normalizedUrl.replace(domainRegex, BASE_URL).replace(/ /g, '%20');
+                return normalizedUrl.replace(domainRegex, MEDIA_BASE_URL).replace(/ /g, '%20');
             }
         }
-        
+
         // Final fallback for any onrender.com backend
-        if (normalizedUrl.includes('.onrender.com') && !normalizedUrl.includes(BASE_URL.replace(/https?:\/\//, ''))) {
-             return normalizedUrl.replace(/https?:\/\/[^/]+/g, BASE_URL).replace(/ /g, '%20');
+        if (normalizedUrl.includes('.onrender.com') && !normalizedUrl.includes(MEDIA_BASE_URL.replace(/https?:\/\//, ''))) {
+            return normalizedUrl.replace(/https?:\/\/[^/]+/g, MEDIA_BASE_URL).replace(/ /g, '%20');
         }
 
         return normalizedUrl.replace(/ /g, '%20');
@@ -59,18 +59,20 @@ export const resolveUrl = (url?: string): string => {
 
     // Automatically prepend uploads/ if it's a relative path like brands/... or products/... 
     // that lacks the /uploads prefix
-    if (!normalizedUrl.startsWith('/') && 
+    if (!normalizedUrl.startsWith('/') &&
         (normalizedUrl.startsWith('brands/') || normalizedUrl.startsWith('products/') || normalizedUrl.includes('slides/'))) {
         normalizedUrl = `uploads/${normalizedUrl}`;
     }
 
-    // Ensure leading slash for BASE_URL joining or relative paths
-    if (!normalizedUrl.startsWith('/') && !normalizedUrl.startsWith('http')) {
+    // Ensure leading slash
+    if (!normalizedUrl.startsWith('/')) {
         normalizedUrl = `/${normalizedUrl}`;
     }
 
-    const finalUrl = `${BASE_URL || ''}${normalizedUrl}`;
-    
+    // Backend assets (/uploads) must use absolute MEDIA_BASE_URL so next/image optimization works
+    const finalBaseUrl = normalizedUrl.startsWith('/uploads') ? MEDIA_BASE_URL : '';
+    const finalUrl = `${finalBaseUrl}${normalizedUrl}`;
+
     // Ensure spaces are safely URL encoded so Next.js Image loader doesn't crash in production
     return finalUrl.replace(/ /g, '%20');
 };
