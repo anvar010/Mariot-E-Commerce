@@ -121,7 +121,7 @@ exports.getDashboardStats = async (req, res, next) => {
 
         // SEO Stats calculations
         const [[{ count: missingImages }]] = await db.query('SELECT COUNT(*) as count FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1 WHERE pi.id IS NULL');
-        const [[{ count: missingDescription }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE description IS NULL OR description = ""');
+        const [[{ count: missingDescription }]] = await db.query("SELECT COUNT(*) as count FROM products WHERE description IS NULL OR description = ''");
         const [[{ count: shortTitles }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE CHAR_LENGTH(name) < 30');
         const [[{ count: longTitles }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE CHAR_LENGTH(name) > 60');
         const [[{ count: missingBrand }]] = await db.query('SELECT COUNT(*) as count FROM products WHERE brand_id IS NULL');
