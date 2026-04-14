@@ -319,6 +319,8 @@ const AdminBrands = () => {
         }
     };
 
+    const [failedLogos, setFailedLogos] = useState<Record<number, boolean>>({});
+
     const filteredBrands = brands.filter(brand => {
         const matchesSearch = brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (brand.description && brand.description.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -420,10 +422,18 @@ const AdminBrands = () => {
                                     </td>
                                     <td>
                                         <div className={styles.brandLogo}>
-                                            {brand.image_url ? (
-                                                <img src={resolveUrl(brand.image_url)} alt={brand.name} />
+                                            {brand.image_url && !failedLogos[brand.id] ? (
+                                                <img
+                                                    src={resolveUrl(brand.image_url)}
+                                                    alt={brand.name}
+                                                    onError={() => setFailedLogos(prev => ({ ...prev, [brand.id]: true }))}
+                                                />
                                             ) : (
-                                                <ImageIcon size={20} color="#adb5bd" />
+                                                <div className={styles.logoPlaceholder}>
+                                                    <span className={styles.logoInitials}>
+                                                        {brand.name.substring(0, 2).toUpperCase()}
+                                                    </span>
+                                                </div>
                                             )}
                                         </div>
                                     </td>
