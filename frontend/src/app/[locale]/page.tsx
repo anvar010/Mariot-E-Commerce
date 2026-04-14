@@ -100,7 +100,7 @@ export default async function Home({ params: { locale } }: { params: { locale: s
                 '@type': 'OpeningHoursSpecification',
                 dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
                 opens: '09:00',
-                closes: '18:00'
+                closes: '20:00'
             }
         ],
         contactPoint: {
