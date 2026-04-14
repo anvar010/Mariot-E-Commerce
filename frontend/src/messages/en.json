@@ -183,6 +183,10 @@
         "priceMatchPolicy": "Price Match Policy",
         "agreeTermsMid": "and I agree to the",
         "termsAndConditions": "Terms and Conditions",
+        "agreeToTerms": "Please agree to the Terms and Conditions",
+        "fillRequiredFields": "Please fill in all required fields",
+        "requestSuccess": "Your request has been submitted successfully. We will contact you soon.",
+        "requestError": "An error occurred while submitting your request. Please try again later.",
         "submit": "Submit"
     },
     "footer": {
@@ -715,7 +719,9 @@
             "generating": "Generating...",
             "delete": "Delete",
             "deleteTitle": "Delete Quotation",
-            "confirmDelete": "Are you sure you want to delete this quotation?"
+            "confirmDelete": "Are you sure you want to delete this quotation?",
+            "deleteSuccess": "Quotation deleted successfully",
+            "deleteError": "Failed to delete quotation"
         },
         "addresses": {
             "title": "My Addresses",
@@ -728,6 +734,10 @@
             "delete": "Delete Address",
             "deleteTitle": "Delete Address",
             "confirmDelete": "Are you sure you want to delete this address?",
+            "firstName": "First Name",
+            "lastName": "Last Name",
+            "companyName": "Company Name",
+            "email": "Email Address",
             "line1": "Address Line 1",
             "line2": "Address Line 2 (Optional)",
             "city": "City",
@@ -747,6 +757,8 @@
             "adding": "Adding...",
             "success": "Address updated successfully!",
             "addSuccess": "Address added successfully!",
+            "removeSuccess": "Address removed successfully",
+            "removeError": "Failed to remove address",
             "error": "Failed to update address",
             "addError": "Failed to add address"
         },
@@ -801,7 +813,10 @@
         "genericSuccess": "Operation successful",
         "genericError": "Something went wrong",
         "genericUpdateSuccess": "Updated successfully",
-        "genericDeleteSuccess": "Deleted successfully"
+        "genericDeleteSuccess": "Deleted successfully",
+        "tabbyCancel": "You aborted the payment. Please retry or choose another payment method.",
+        "tabbyFailure": "Sorry, Tabby is unable to approve this purchase, please use an alternative payment method for your order.",
+        "mockPaymentSuccess": "Payment successful (Mock Dev Mode)"
     },
     "cartToast": {
         "title": "Item added to your cart",
@@ -1185,5 +1200,397 @@
         "quickProductsQ": "What types of commercial kitchen equipment do you offer?",
         "quickQuote": "📋 Get a Quote",
         "quickQuoteQ": "I need a custom quote for my restaurant kitchen. How can I get one?"
+    },
+    "admin": {
+        "dashboard": {
+            "title": "Admin Overview",
+            "subtitle": "Track your store's performance and growth.",
+            "welcome": "Marhaba, {name}!",
+            "revenueNote": "Your store has generated <strong>AED {amount}</strong> in total revenue so far. Check out the latest insights below.",
+            "refresh": "Refresh",
+            "refreshing": "Refreshing...",
+            "stats": {
+                "revenue": "Revenue",
+                "orders": "Orders",
+                "customers": "Customers",
+                "catalog": "Catalog",
+                "vsPrev": "vs prev period",
+                "active": "active"
+            },
+            "alerts": {
+                "inventory": "Inventory Alerts",
+                "remaining": "Only {count} remaining",
+                "allClear": "All items are well stocked"
+            },
+            "charts": {
+                "salesTrend": "Sales Trend ({range})",
+                "revenueByCategory": "Revenue by Category",
+                "topProducts": "Top Selling Products",
+                "noData": "No data for this period",
+                "noCategoryData": "No categorization data available.",
+                "shareOfTotal": "{percent}% of total",
+                "unitsSold": "{count} units sold"
+            },
+            "reviews": {
+                "recent": "Recent Reviews",
+                "all": "All Reviews",
+                "empty": "No recent reviews found.",
+                "reviewed": "reviewed",
+                "delete": "Delete review"
+            },
+            "orders": {
+                "recent": "Recent Orders",
+                "all": "All Orders",
+                "empty": "No recent orders found.",
+                "table": {
+                    "id": "ORDER ID",
+                    "date": "DATE",
+                    "customer": "CUSTOMER",
+                    "total": "TOTAL",
+                    "status": "STATUS",
+                    "payment": "PAYMENT"
+                }
+            },
+            "notifications": {
+                "fetchStatsError": "Failed to load dashboard data",
+                "deleteReviewSuccess": "Review deleted successfully",
+                "deleteReviewError": "Failed to delete review",
+                "genericError": "Something went wrong"
+            },
+            "modals": {
+                "deleteReview": {
+                    "title": "Delete Review",
+                    "message": "Are you sure you want to delete this review?",
+                    "confirm": "Delete"
+                }
+            },
+            "actions": {
+                "addProduct": "Add Product",
+                "advancedAnalytics": "Advanced Analytics",
+                "manage": "Manage"
+            },
+            "loader": "Gathering performance insights...",
+            "timeRanges": {
+                "7d": "Last 7 Days",
+                "14d": "Last 14 Days",
+                "30d": "Last 30 Days",
+                "3m": "Last 3 Months",
+                "6m": "Last 6 Months",
+                "1y": "Last Year",
+                "all": "All Time"
+            }
+        },
+        "reviews": {
+            "title": "Product Reviews",
+            "totalBadge": "{count} Reviews",
+            "subtitle": "Manage and moderate customer feedback across all products.",
+            "searchPlaceholder": "Search by product, user, or comment...",
+            "table": {
+                "product": "Product",
+                "user": "User",
+                "rating": "Rating",
+                "comment": "Comment",
+                "date": "Date",
+                "actions": "Actions"
+            },
+            "notifications": {
+                "fetchError": "Failed to fetch reviews",
+                "networkError": "Network error while fetching reviews",
+                "deleteSuccess": "Review deleted successfully",
+                "deleteError": "Failed to delete review"
+            },
+            "modal": {
+                "deleteTitle": "Delete Review",
+                "deleteMessage": "Are you sure you want to delete this customer review? This action cannot be undone.",
+                "deleteConfirm": "Delete Review"
+            },
+            "loader": "Modifying Feedback Archives...",
+            "empty": "No reviews found matching your search."
+        },
+        "users": {
+            "title": "Users Management",
+            "totalBadge": "{count} members",
+            "subtitle": "Manage access levels and account details for your team and customers.",
+            "searchPlaceholder": "Search users by name or email...",
+            "table": {
+                "details": "User Details",
+                "role": "Role",
+                "status": "Status",
+                "joined": "Joined Date",
+                "actions": "Actions"
+            },
+            "status": {
+                "active": "ACTIVE",
+                "suspended": "SUSPENDED"
+            },
+            "roles": {
+                "admin": "ADMIN",
+                "user": "USER"
+            },
+            "tooltips": {
+                "edit": "Edit Profile",
+                "suspend": "Suspend User",
+                "activate": "Activate User",
+                "delete": "Delete Account",
+                "adminNoSuspend": "Admin accounts cannot be suspended",
+                "adminNoDelete": "Admin accounts cannot be deleted here"
+            },
+            "notifications": {
+                "deleteSuccess": "User account removed",
+                "deleteError": "Failed to delete user",
+                "updateSuccess": "User profile updated successfully",
+                "updateError": "Failed to update user",
+                "statusUpdateError": "Failed to update user status",
+                "genericError": "An error occurred"
+            },
+            "modals": {
+                "editTitle": "Edit User Account",
+                "nameLabel": "Full Name",
+                "namePlaceholder": "Enter user name",
+                "emailLabel": "Email Address",
+                "emailPlaceholder": "user@example.com",
+                "roleLabel": "Account Role",
+                "selectRole": "Select a role",
+                "cancel": "Cancel",
+                "save": "Save Changes",
+                "deleteTitle": "Delete User Account",
+                "deleteMessage": "Are you sure you want to permanently delete this user? This action cannot be undone.",
+                "deleteConfirm": "Delete Account",
+                "suspendTitle": "Suspend User",
+                "suspendMessage": "Are you sure you want to suspend this user?",
+                "suspendConfirm": "Suspend",
+                "activateTitle": "Activate User",
+                "activateMessage": "Are you sure you want to activate this user?",
+                "activateConfirm": "Activate"
+            },
+            "loader": "Loading Member Directory...",
+            "empty": "No users found Matching your search."
+        },
+        "quotations": {
+            "title": "Quotations",
+            "totalBadge": "{count} Active",
+            "subtitle": "Track wholesale inquiries and generated discount quotations.",
+            "searchPlaceholder": "Search for reference, customer name, or email...",
+            "table": {
+                "ref": "Quotation Ref",
+                "customer": "Customer Identity",
+                "date": "Date Created",
+                "value": "Value (AED)",
+                "vat": "VAT Number",
+                "actions": "Actions"
+            },
+            "modal": {
+                "title": "Quotation Details - {ref}",
+                "customerInfo": "Customer Information",
+                "summary": "Summary",
+                "quotedItems": "Quoted Items",
+                "name": "Name",
+                "email": "Email",
+                "phone": "Phone",
+                "vat": "VAT #",
+                "dateGenerated": "Date Generated",
+                "subtotal": "Subtotal",
+                "tax": "Tax (5%)",
+                "total": "Total Amount",
+                "print": "Print Quotation",
+                "generating": "Generating...",
+                "close": "Close"
+            },
+            "notifications": {
+                "deleteSuccess": "Quotation deleted successfully",
+                "deleteError": "Failed to delete quotation",
+                "pdfSuccess": "PDF generated successfully",
+                "pdfError": "Failed to generate PDF",
+                "fetchError": "Failed to fetch quotations",
+                "networkError": "Error deleting quotation"
+            },
+            "deleteModal": {
+                "title": "Delete Quotation",
+                "message": "Are you sure you want to delete this quotation?",
+                "confirm": "Delete"
+            },
+            "loader": "Scanning Quotation Archives...",
+            "empty": "No quotation records matching your search."
+        },
+        "products": {
+            "title": "Product Management",
+            "totalBadge": "{count} total",
+            "subtitle": "Organize, update, and manage your product catalog with high precision.",
+            "searchPlaceholder": "Search for product name, model, or ref...",
+            "filters": {
+                "categories": "All Categories",
+                "brands": "All Brands",
+                "status": "Status (All)",
+                "stock": "Stock (All)",
+                "offers": "Offer Tags (All)",
+                "search": "Search..."
+            },
+            "actions": {
+                "add": "Product",
+                "export": "Export",
+                "import": "Bulk Import",
+                "template": "Import Template",
+                "downloading": "Exporting...",
+                "importing": "Importing...",
+                "bulkUpdate": "Set Offer Duration",
+                "bulkUpdateSubtitle": "Updating {count} selected products.",
+                "note": "Note:",
+                "bulkUpdateNote": "This will apply these dates to all selected products. Make sure they have a discount or offer price set."
+            },
+            "table": {
+                "product": "Product Information",
+                "category": "Category",
+                "pricing": "Pricing (AED)",
+                "stock": "Stock",
+                "status": "Status",
+                "tags": "Active Offers",
+                "actions": "Actions"
+            },
+            "modal": {
+                "addTitle": "New Catalog Entry",
+                "editTitle": "Update Product SKU",
+                "tabs": {
+                    "basic": "General Info",
+                    "content": "Descriptions",
+                    "logic": "Pricing & Logic",
+                    "deals": "Categories & Marketing",
+                    "visual": "Gallery & Media"
+                },
+                "fields": {
+                    "name": "Product Name (English)",
+                    "namePlaceholder": "Enter product title in English",
+                    "nameAr": "Product Name (Arabic)",
+                    "nameArPlaceholder": "أدخل اسم المنتج بالعربية",
+                    "model": "Model/SKU",
+                    "category": "Primary Category",
+                    "logicSubtitle": "Manage prices, discounts, and real-time stock levels.",
+                    "mediaSubtitle": "High-resolution images. The first one will be the primary thumbnail.",
+                    "subGroup": "Sub-Group",
+                    "subCategory": "Sub Category",
+                    "finalSub": "Final Sub-category",
+                    "subSubCategory": "Sub-Sub Category",
+                    "brand": "Brand",
+                    "price": "Standard Price (AED)",
+                    "discount": "Discount (%)",
+                    "offerPrice": "Sale Price (AED)",
+                    "stock": "Inventory Quantity",
+                    "trackStock": "Enable stock tracking for this product",
+                    "status": "Inventory Status",
+                    "group": "Promotion Heading (Optional)",
+                    "description": "English Description",
+                    "descriptionAr": "Arabic Description",
+                    "shortDesc": "Short Summary (English)",
+                    "shortDescAr": "Short Summary (Arabic)",
+                    "specs": "Detailed Specifications",
+                    "primaryImage": "Primary Product Image",
+                    "additionalImages": "Additional Angle Images",
+                    "videos": "Product Video Showcases",
+                    "addVideo": "Add Video Link",
+                    "resources": "Product Documentation & PDF",
+                    "addResource": "Add Resource",
+                    "offerDates": "Offer Duration",
+                    "startDate": "Offer Start Date",
+                    "endDate": "Offer End Date",
+                    "bestSeller": "Include in Best Seller section",
+                    "featured": "Mark as Featured SKU",
+                    "weekly": "Add to Weekly Deals",
+                    "daily": "Add to Daily Offers",
+                    "limited": "Mark as Limited Availability"
+                },
+                "footer": {
+                    "cancel": "Discard Changes",
+                    "save": "Commit to Catalog",
+                    "saving": "Synchronizing..."
+                },
+                "import": {
+                    "title": "Bulk Product Import",
+                    "subtitle": "Upload an Excel file to add multiple products at once.",
+                    "gettingStarted": "Getting Started",
+                    "step1": "Download the template file to see the required format.",
+                    "step2": "Fill in your product details in the Excel sheet.",
+                    "step3": "Columns like name and price are mandatory.",
+                    "step4": "Categories and brands will be created automatically if they don't exist.",
+                    "step5": "For multiple images, separate URLs with a comma.",
+                    "downloadTemplate": "Download Excel Template",
+                    "processing": "Processing... {percent}%",
+                    "keepOpen": "Please keep this window open while the upload completes",
+                    "selectFile": "Click here to select your Excel file",
+                    "formats": "Supports .xlsx and .xls formats",
+                    "imported": "Products Imported",
+                    "failed": "Failed/Skipped",
+                    "errorLog": "Error Log:",
+                    "done": "Done",
+                    "importAnother": "Import Another File"
+                }
+            },
+            "notifications": {
+                "deleteSuccess": "Product removed from catalog",
+                "deleteError": "Failed to delete product",
+                "saveSuccess": "Product updated successfully",
+                "addSuccess": "New product added to catalog",
+                "saveError": "Failed to save product",
+                "uploadSuccess": "Image uploaded successfully",
+                "uploadError": "Upload failed",
+                "importSuccess": "Successfully imported {count} products!",
+                "importError": "Import failed",
+                "exportSuccess": "Product list exported successfully",
+                "exportError": "Failed to export products",
+                "templateSuccess": "Template downloaded successfully",
+                "dateError": "Offer End Date must be after Offer Start Date!"
+            },
+            "loader": "Synchronizing Inventory Data...",
+            "empty": "No product listings matched your filter criteria."
+        },
+        "orders": {
+            "title": "Orders Management",
+            "subtitle": "Track and manage customer orders and fulfillment status.",
+            "total": "{count} orders",
+            "export": "Export CSV",
+            "exporting": "Exporting...",
+            "search": "Search orders by ID or customer name...",
+            "noOrders": "No orders found matching your search.",
+            "loadeOrders": "Loading Active Orders...",
+            "table": {
+                "id": "Order ID",
+                "date": "Date",
+                "customer": "Customer",
+                "total": "Total Amount",
+                "status": "Status",
+                "payment": "Payment",
+                "actions": "Actions",
+                "ptsRedeemed": "{count} Pts Redeemed",
+                "couponDiscount": "Coupon: -{currency} {amount}"
+            },
+            "status": {
+                "pending": "Pending",
+                "processing": "Processing",
+                "shipped": "Shipped",
+                "delivered": "Delivered",
+                "cancelled": "Cancelled"
+            },
+            "payment": {
+                "pending": "Pending",
+                "paid": "Paid",
+                "failed": "Failed",
+                "refunded": "Refunded"
+            },
+            "modal": {
+                "statusTitle": "Update Order Status",
+                "statusMessage": "Are you sure you want to change the status of Order #{id} to {status}?",
+                "statusConfirm": "Update Status",
+                "paymentTitle": "Update Payment Status",
+                "paymentMessage": "Are you sure you want to change the payment status of Order #{id} to {status}?",
+                "paymentConfirm": "Update Payment"
+            },
+            "notifications": {
+                "exportSuccess": "Order history exported successfully",
+                "exportFailed": "Failed to export orders",
+                "statusUpdated": "Order #{id} status updated to {status}",
+                "paymentUpdated": "Order #{id} payment status updated to {status}",
+                "updateFailed": "Failed to update status",
+                "paymentUpdateFailed": "Failed to update payment status",
+                "error": "Error updating order"
+            }
+        }
     }
 }

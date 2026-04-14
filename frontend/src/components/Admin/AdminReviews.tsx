@@ -10,12 +10,14 @@ import { stripHtml } from '@/utils/formatters';
 import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
+import { useTranslations } from 'next-intl';
 
 const AdminReviews = () => {
     const [reviews, setReviews] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const { showNotification } = useNotification();
+    const t = useTranslations('admin.reviews');
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{
@@ -48,7 +50,7 @@ const AdminReviews = () => {
             if (!res.ok) {
                 const errorText = await res.text();
                 console.error(`Fetch failed with status ${res.status}: ${errorText}`);
-                showNotification(`Failed to fetch reviews: ${res.status}`, 'error');
+                showNotification(`${t('notifications.fetchError')}: ${res.status}`, 'error');
                 setLoading(false);
                 return;
             }
@@ -59,12 +61,12 @@ const AdminReviews = () => {
                 setReviews(data.data);
             } else {
                 console.error('API returned success: false', data.message);
-                showNotification(data.message || 'Failed to fetch reviews', 'error');
+                showNotification(data.message || t('notifications.fetchError'), 'error');
             }
             setLoading(false);
         } catch (error) {
             console.error('Failed to fetch reviews', error);
-            showNotification('Network error while fetching reviews', 'error');
+            showNotification(t('notifications.networkError'), 'error');
             setLoading(false);
         }
     };
@@ -72,10 +74,10 @@ const AdminReviews = () => {
     const handleDelete = (id: number) => {
         setConfirmModal({
             isOpen: true,
-            title: 'Delete Review',
-            message: 'Are you sure you want to delete this customer review? This action cannot be undone.',
+            title: t('modal.deleteTitle'),
+            message: t('modal.deleteMessage'),
             type: 'danger',
-            confirmLabel: 'Delete Review',
+            confirmLabel: t('modal.deleteConfirm'),
             onConfirm: async () => {
                 try {
                     setIsActionLoading(true);
@@ -86,13 +88,13 @@ const AdminReviews = () => {
                     });
                     const data = await res.json();
                     if (data.success) {
-                        showNotification('Review deleted successfully');
+                        showNotification(t('notifications.deleteSuccess'));
                         setReviews(prev => prev.filter(r => r.id !== id));
                     } else {
-                        showNotification(data.message || 'Failed to delete review', 'error');
+                        showNotification(data.message || t('notifications.deleteError'), 'error');
                     }
                 } catch (error) {
-                    showNotification('Error deleting review', 'error');
+                    showNotification(t('notifications.deleteError'), 'error');
                 } finally {
                     setIsActionLoading(false);
                     setConfirmModal(prev => ({ ...prev, isOpen: false }));
@@ -112,12 +114,12 @@ const AdminReviews = () => {
             <div className={styles.header}>
                 <div className={styles.titleArea}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <h1>Product Reviews</h1>
+                        <h1>{t('title')}</h1>
                         <span className={styles.totalBadge}>
-                            {filteredReviews.length} Reviews
+                            {t('totalBadge', { count: filteredReviews.length })}
                         </span>
                     </div>
-                    <p>Manage and moderate customer feedback across all products.</p>
+                    <p>{t('subtitle')}</p>
                 </div>
             </div>
 
@@ -126,7 +128,7 @@ const AdminReviews = () => {
                     <Search size={18} />
                     <input
                         type="text"
-                        placeholder="Search by product, user, or comment..."
+                        placeholder={t('searchPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -137,25 +139,25 @@ const AdminReviews = () => {
                 <table className={styles.table}>
                     <thead>
                         <tr>
-                            <th>Product</th>
-                            <th>User</th>
-                            <th>Rating</th>
-                            <th>Comment</th>
-                            <th>Date</th>
-                            <th>Actions</th>
+                            <th>{t('table.product')}</th>
+                            <th>{t('table.user')}</th>
+                            <th>{t('table.rating')}</th>
+                            <th>{t('table.comment')}</th>
+                            <th>{t('table.date')}</th>
+                            <th>{t('table.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
                                 <td colSpan={6} style={{ textAlign: 'center', padding: '100px 0' }}>
-                                    <AdminLoader message="Modifying Feedback Archives..." />
+                                    <AdminLoader message={t('loader')} />
                                 </td>
                             </tr>
                         ) : filteredReviews.length === 0 ? (
                             <tr>
                                 <td colSpan={6} style={{ textAlign: 'center', padding: '100px 0' }}>
-                                    <p style={{ color: '#64748b', fontSize: '14px' }}>No reviews found matching your search.</p>
+                                    <p style={{ color: '#64748b', fontSize: '14px' }}>{t('empty')}</p>
                                 </td>
                             </tr>
                         ) : (
@@ -194,7 +196,7 @@ const AdminReviews = () => {
                                         </div>
                                     </td>
                                     <td className={styles.actions}>
-                                        <button className={styles.deleteBtn} onClick={() => handleDelete(r.id)} title="Delete Review">
+                                        <button className={styles.deleteBtn} onClick={() => handleDelete(r.id)} title={t('table.actions')}>
                                             <Trash2 size={18} />
                                         </button>
                                     </td>

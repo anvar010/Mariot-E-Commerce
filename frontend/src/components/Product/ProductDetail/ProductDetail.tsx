@@ -121,12 +121,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
     const handlePriceMatchSubmit = async () => {
         if (!pmForm.agreed) {
-            showNotification(isArabic ? 'يرجى الموافقة على الشروط والأحكام' : 'Please agree to the Terms and Conditions', 'error');
+            showNotification(t('agreeToTerms'), 'error');
             return;
         }
 
         if (!pmForm.shopName || !pmForm.email || !pmForm.phone) {
-            showNotification(isArabic ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill in all required fields', 'error');
+            showNotification(t('fillRequiredFields'), 'error');
             return;
         }
 
@@ -149,7 +149,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
             const data = await res.json();
             if (data.success) {
-                showNotification(isArabic ? 'تم إرسال طلبك بنجاح. سنتواصل معك قريباً.' : 'Your request has been submitted successfully. We will contact you soon.', 'success');
+                showNotification(t('requestSuccess'), 'success');
                 setShowPriceMatchModal(false);
                 setPmForm({ shopName: '', email: '', phone: '', file: null, agreed: false });
             } else {
@@ -157,7 +157,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             }
         } catch (err) {
             console.error('Price Match Error:', err);
-            showNotification(isArabic ? 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة لاحقاً.' : 'An error occurred while submitting your request. Please try again later.', 'error');
+            showNotification(t('requestError'), 'error');
         } finally {
             setIsPmSubmitting(false);
         }

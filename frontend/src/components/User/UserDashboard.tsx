@@ -145,11 +145,11 @@ const UserDashboard = () => {
                     const data = await response.json();
                     if (data.success) {
                         setQuotations(quotations.filter(q => q.id !== id));
-                        showNotification('Quotation deleted successfully');
+                        showNotification(t('quotations.deleteSuccess'));
                     }
                 } catch (error) {
                     console.error('Error deleting quotation:', error);
-                    showNotification('Failed to delete quotation', 'error');
+                    showNotification(t('quotations.deleteError'), 'error');
                 } finally {
                     setIsActionLoading(false);
                     setConfirmModal(prev => ({ ...prev, isOpen: false }));
@@ -297,11 +297,11 @@ const UserDashboard = () => {
                     const data = await response.json();
                     if (data.success) {
                         setAddresses(addresses.filter(a => a.id !== id));
-                        showNotification('Address removed successfully');
+                        showNotification(t('addresses.removeSuccess'));
                     }
                 } catch (error) {
                     console.error('Error deleting address:', error);
-                    showNotification('Failed to remove address', 'error');
+                    showNotification(t('addresses.removeError'), 'error');
                 } finally {
                     setIsActionLoading(false);
                     setConfirmModal(prev => ({ ...prev, isOpen: false }));
@@ -908,7 +908,7 @@ const UserDashboard = () => {
                             <h3 style={{ marginBottom: '20px', color: '#0f172a' }}>{editingAddressId ? t('addresses.edit') : t('addresses.addNew')}</h3>
                             <div className={styles.formRow}>
                                 <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>First Name *</label>
+                                    <label className={styles.formLabel}>{t('addresses.firstName')} *</label>
                                     <input
                                         type="text"
                                         required
@@ -919,7 +919,7 @@ const UserDashboard = () => {
                                     />
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>Last Name *</label>
+                                    <label className={styles.formLabel}>{t('addresses.lastName')} *</label>
                                     <input
                                         type="text"
                                         required
@@ -932,7 +932,7 @@ const UserDashboard = () => {
                             </div>
                             <div className={styles.formRow}>
                                 <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>Company Name</label>
+                                    <label className={styles.formLabel}>{t('addresses.companyName')}</label>
                                     <input
                                         type="text"
                                         className={styles.formInput}
@@ -942,7 +942,7 @@ const UserDashboard = () => {
                                     />
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>Email Address *</label>
+                                    <label className={styles.formLabel}>{t('addresses.email')} *</label>
                                     <input
                                         type="email"
                                         required
@@ -1034,69 +1034,72 @@ const UserDashboard = () => {
                                 {saving ? (editingAddressId ? t('addresses.updating') : t('addresses.adding')) : (editingAddressId ? t('addresses.update') : t('addresses.add'))}
                             </button>
                         </form>
-                    )}
+                    )
+                    }
 
-                    {loadingAddresses ? (
-                        <div className={styles.loaderWrapper}><Loader /></div>
-                    ) : addresses.length === 0 ? (
-                        <div className={styles.emptyState}>
-                            <div className={styles.emptyIcon}><MapPin size={60} strokeWidth={1} /></div>
-                            <h3 className={styles.emptyText}>{t('addresses.noAddresses')}</h3>
-                            <p style={{ marginBottom: '20px' }}>{t('addresses.fasterCheckout')}</p>
-                        </div>
-                    ) : (
-                        <div className={styles.addressGrid}>
-                            {addresses.map((addr) => (
-                                <div key={addr.id} className={`${styles.addressCard} ${addr.is_default ? styles.addressCardDefault : ''}`}>
-                                    <div className={styles.addressContent}>
-                                        {!!addr.is_default && (
-                                            <div className={styles.addressBadge}>
-                                                <Check size={12} style={{ marginInlineEnd: '4px' }} />
-                                                {t('addresses.default')}
-                                            </div>
-                                        )}
-                                        <h4 className={styles.addressNameText} style={{ ...(locale === 'ar' ? { flexDirection: 'row-reverse' } : {}), marginBottom: '4px' }}>
-                                            <User size={18} color="#56cfe1" />
-                                            {addr.first_name} {addr.last_name}
-                                        </h4>
-                                        <div style={locale === 'ar' ? { textAlign: 'right' } : {}}>
-                                            {!!addr.company_name && <p className={styles.addressInfoLine} style={{ fontWeight: 600, color: '#0f172a', marginBottom: '6px' }}>{addr.company_name}</p>}
-                                            <p className={styles.addressInfoLine}>
-                                                <MapPin size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
-                                                {addr.address_line1}
-                                            </p>
-                                            {!!addr.address_line2 && <p className={styles.addressInfoLine}>{addr.address_line2}</p>}
-                                            <p className={styles.addressInfoLine}>{addr.city}, {addr.state} {addr.zip_code}</p>
-                                            <p className={styles.addressInfoLine} style={{ opacity: 0.8 }}>{addr.country}</p>
-                                            <div className={styles.addressPhoneLine} style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}>
-                                                <Phone size={14} color="#64748b" />
-                                                <span dir="ltr">{addr.phone}</span>
+                    {
+                        loadingAddresses ? (
+                            <div className={styles.loaderWrapper}><Loader /></div>
+                        ) : addresses.length === 0 ? (
+                            <div className={styles.emptyState}>
+                                <div className={styles.emptyIcon}><MapPin size={60} strokeWidth={1} /></div>
+                                <h3 className={styles.emptyText}>{t('addresses.noAddresses')}</h3>
+                                <p style={{ marginBottom: '20px' }}>{t('addresses.fasterCheckout')}</p>
+                            </div>
+                        ) : (
+                            <div className={styles.addressGrid}>
+                                {addresses.map((addr) => (
+                                    <div key={addr.id} className={`${styles.addressCard} ${addr.is_default ? styles.addressCardDefault : ''}`}>
+                                        <div className={styles.addressContent}>
+                                            {!!addr.is_default && (
+                                                <div className={styles.addressBadge}>
+                                                    <Check size={12} style={{ marginInlineEnd: '4px' }} />
+                                                    {t('addresses.default')}
+                                                </div>
+                                            )}
+                                            <h4 className={styles.addressNameText} style={{ ...(locale === 'ar' ? { flexDirection: 'row-reverse' } : {}), marginBottom: '4px' }}>
+                                                <User size={18} color="#56cfe1" />
+                                                {addr.first_name} {addr.last_name}
+                                            </h4>
+                                            <div style={locale === 'ar' ? { textAlign: 'right' } : {}}>
+                                                {!!addr.company_name && <p className={styles.addressInfoLine} style={{ fontWeight: 600, color: '#0f172a', marginBottom: '6px' }}>{addr.company_name}</p>}
+                                                <p className={styles.addressInfoLine}>
+                                                    <MapPin size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                                                    {addr.address_line1}
+                                                </p>
+                                                {!!addr.address_line2 && <p className={styles.addressInfoLine}>{addr.address_line2}</p>}
+                                                <p className={styles.addressInfoLine}>{addr.city}, {addr.state} {addr.zip_code}</p>
+                                                <p className={styles.addressInfoLine} style={{ opacity: 0.8 }}>{addr.country}</p>
+                                                <div className={styles.addressPhoneLine} style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}>
+                                                    <Phone size={14} color="#64748b" />
+                                                    <span dir="ltr">{addr.phone}</span>
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className={styles.addressCardActions} style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}>
+                                            <button
+                                                className={`${styles.addressActionBtn} ${styles.addressEditBtn}`}
+                                                onClick={() => handleEditAddress(addr)}
+                                                style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}
+                                            >
+                                                <Edit2 size={14} />
+                                                {t('addresses.edit').split(' ')[0]}
+                                            </button>
+                                            <button
+                                                className={`${styles.addressActionBtn} ${styles.addressDeleteBtn}`}
+                                                onClick={() => handleDeleteAddress(addr.id)}
+                                                style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}
+                                            >
+                                                <Trash2 size={14} />
+                                                {t('addresses.delete').split(' ')[0]}
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className={styles.addressCardActions} style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}>
-                                        <button
-                                            className={`${styles.addressActionBtn} ${styles.addressEditBtn}`}
-                                            onClick={() => handleEditAddress(addr)}
-                                            style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}
-                                        >
-                                            <Edit2 size={14} />
-                                            {t('addresses.edit').split(' ')[0]}
-                                        </button>
-                                        <button
-                                            className={`${styles.addressActionBtn} ${styles.addressDeleteBtn}`}
-                                            onClick={() => handleDeleteAddress(addr.id)}
-                                            style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}
-                                        >
-                                            <Trash2 size={14} />
-                                            {t('addresses.delete').split(' ')[0]}
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                ))}
+                            </div>
+                        )
+                    }
+                </div >
             );
         }
 

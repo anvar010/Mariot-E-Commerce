@@ -10,6 +10,7 @@ import { generateQuotationPDF } from '@/utils/pdfGenerator';
 import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
+import { useTranslations } from 'next-intl';
 
 const AdminQuotations = () => {
     const [quotations, setQuotations] = useState<any[]>([]);
@@ -19,6 +20,7 @@ const AdminQuotations = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPrinting, setIsPrinting] = useState(false);
     const { showNotification } = useNotification();
+    const t = useTranslations('admin.quotations');
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{
@@ -61,10 +63,10 @@ const AdminQuotations = () => {
     const handleDelete = (id: number) => {
         setConfirmModal({
             isOpen: true,
-            title: 'Delete Quotation',
-            message: 'Are you sure you want to delete this quotation?',
+            title: t('deleteModal.title'),
+            message: t('deleteModal.message'),
             type: 'danger',
-            confirmLabel: 'Delete',
+            confirmLabel: t('deleteModal.confirm'),
             onConfirm: async () => {
                 try {
                     setIsActionLoading(true);
@@ -75,10 +77,10 @@ const AdminQuotations = () => {
                     });
                     const data = await res.json();
                     if (data.success) {
-                        showNotification('Quotation deleted successfully');
+                        showNotification(t('notifications.deleteSuccess'));
                         setQuotations(prev => prev.filter(q => q.id !== id));
                     } else {
-                        showNotification(data.message || 'Failed to delete quotation', 'error');
+                        showNotification(data.message || t('notifications.deleteError'), 'error');
                     }
                 } catch (error) {
                     showNotification('Error deleting quotation', 'error');
@@ -110,10 +112,10 @@ const AdminQuotations = () => {
         setIsPrinting(true);
         try {
             await generateQuotationPDF(quotation);
-            showNotification('PDF generated successfully');
+            showNotification(t('notifications.pdfSuccess'));
         } catch (error) {
             console.error('PDF Generation failed', error);
-            showNotification('Failed to generate PDF', 'error');
+            showNotification(t('notifications.pdfError'), 'error');
         } finally {
             setIsPrinting(false);
         }
@@ -124,12 +126,12 @@ const AdminQuotations = () => {
             <div className={styles.header}>
                 <div className={styles.titleArea}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <h1>Quotations</h1>
+                        <h1>{t('title')}</h1>
                         <span className={styles.totalBadge}>
-                            {filteredQuotations.length} Active
+                            {t('totalBadge', { count: filteredQuotations.length })}
                         </span>
                     </div>
-                    <p>Track wholesale inquiries and generated discount quotations.</p>
+                    <p>{t('subtitle')}</p>
                 </div>
             </div>
 
@@ -138,7 +140,7 @@ const AdminQuotations = () => {
                     <Search size={18} />
                     <input
                         type="text"
-                        placeholder="Search for reference, customer name, or email..."
+                        placeholder={t('searchPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -149,25 +151,25 @@ const AdminQuotations = () => {
                 <table className={styles.table}>
                     <thead>
                         <tr>
-                            <th>Quotation Ref</th>
-                            <th>Customer Identity</th>
-                            <th>Date Created</th>
-                            <th>Value (AED)</th>
-                            <th>VAT Number</th>
-                            <th>Actions</th>
+                            <th>{t('table.ref')}</th>
+                            <th>{t('table.customer')}</th>
+                            <th>{t('table.date')}</th>
+                            <th>{t('table.value')}</th>
+                            <th>{t('table.vat')}</th>
+                            <th>{t('table.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
                                 <td colSpan={6} style={{ textAlign: 'center', padding: '100px 0' }}>
-                                    <AdminLoader message="Scanning Quotation Archives..." />
+                                    <AdminLoader message={t('loader')} />
                                 </td>
                             </tr>
                         ) : filteredQuotations.length === 0 ? (
                             <tr>
                                 <td colSpan={6} style={{ textAlign: 'center', padding: '100px 0' }}>
-                                    <p style={{ color: '#64748b', fontSize: '14px' }}>No quotation records matching your search.</p>
+                                    <p style={{ color: '#64748b', fontSize: '14px' }}>{t('empty')}</p>
                                 </td>
                             </tr>
                         ) : (
@@ -196,10 +198,10 @@ const AdminQuotations = () => {
                                         <span className={styles.vatText}>{q.vat_number || 'TRN: UNSET'}</span>
                                     </td>
                                     <td className={styles.actions}>
-                                        <button className={styles.viewBtn} onClick={() => handleViewDetails(q)} title="View Detail">
+                                        <button className={styles.viewBtn} onClick={() => handleViewDetails(q)} title={t('modal.summary')}>
                                             <Eye size={18} />
                                         </button>
-                                        <button className={styles.deleteBtn} onClick={() => handleDelete(q.id)} title="Delete Quotation">
+                                        <button className={styles.deleteBtn} onClick={() => handleDelete(q.id)} title={t('deleteModal.confirm')}>
                                             <Trash2 size={18} />
                                         </button>
                                     </td>
@@ -214,47 +216,47 @@ const AdminQuotations = () => {
                 <div className={styles.modalOverlay}>
                     <div className={styles.modal}>
                         <div className={styles.modalHeader}>
-                            <h2>Quotation Details - {selectedQuotation.quotation_ref}</h2>
+                            <h2>{t('modal.title', { ref: selectedQuotation.quotation_ref })}</h2>
                             <button className={styles.closeBtn} onClick={closeModal}><X size={24} /></button>
                         </div>
                         <div className={styles.modalBody}>
                             <div className={styles.detailGrid}>
                                 <div className={styles.detailSection}>
-                                    <h3>Customer Information</h3>
+                                    <h3>{t('modal.customerInfo')}</h3>
                                     <div className={styles.detailItem}>
                                         <User size={16} />
-                                        <span><strong>Name:</strong> {selectedQuotation.customer_name}</span>
+                                        <span><strong>{t('modal.name')}:</strong> {selectedQuotation.customer_name}</span>
                                     </div>
                                     <div className={styles.detailItem}>
                                         <Mail size={16} />
-                                        <span><strong>Email:</strong> {selectedQuotation.customer_email}</span>
+                                        <span><strong>{t('modal.email')}:</strong> {selectedQuotation.customer_email}</span>
                                     </div>
                                     <div className={styles.detailItem}>
                                         <Phone size={16} />
-                                        <span><strong>Phone:</strong> {selectedQuotation.customer_phone}</span>
+                                        <span><strong>{t('modal.phone')}:</strong> {selectedQuotation.customer_phone}</span>
                                     </div>
                                     <div className={styles.detailItem}>
                                         <Hash size={16} />
-                                        <span><strong>VAT #:</strong> {selectedQuotation.vat_number || 'N/A'}</span>
+                                        <span><strong>{t('modal.vat')}:</strong> {selectedQuotation.vat_number || 'N/A'}</span>
                                     </div>
                                 </div>
                                 <div className={styles.detailSection}>
-                                    <h3>Summary</h3>
+                                    <h3>{t('modal.summary')}</h3>
                                     <div className={styles.detailItem}>
                                         <Calendar size={16} />
-                                        <span><strong>Date Generated:</strong> {new Date(selectedQuotation.created_at).toLocaleString()}</span>
+                                        <span><strong>{t('modal.dateGenerated')}:</strong> {new Date(selectedQuotation.created_at).toLocaleString()}</span>
                                     </div>
                                     <div className={styles.summaryBox}>
                                         <div className={styles.summaryLine}>
-                                            <span>Subtotal</span>
+                                            <span>{t('modal.subtotal')}</span>
                                             <span>AED {Number(selectedQuotation.subtotal).toFixed(2)}</span>
                                         </div>
                                         <div className={styles.summaryLine}>
-                                            <span>Tax (5%)</span>
+                                            <span>{t('modal.tax')}</span>
                                             <span>AED {Number(selectedQuotation.tax_amount).toFixed(2)}</span>
                                         </div>
                                         <div className={`${styles.summaryLine} ${styles.totalLine}`}>
-                                            <span>Total Amount</span>
+                                            <span>{t('modal.total')}</span>
                                             <span>AED {Number(selectedQuotation.total_amount).toFixed(2)}</span>
                                         </div>
                                     </div>
@@ -262,7 +264,7 @@ const AdminQuotations = () => {
                             </div>
 
                             <div className={styles.itemsSection}>
-                                <h3>Quoted Items</h3>
+                                <h3>{t('modal.quotedItems')}</h3>
                                 <div className={styles.itemList}>
                                     {JSON.parse(selectedQuotation.items).map((item: any, idx: number) => (
                                         <div key={idx} className={styles.itemCard}>
@@ -289,9 +291,9 @@ const AdminQuotations = () => {
                                 disabled={isPrinting}
                             >
                                 {isPrinting ? <Loader2 size={18} className={styles.spin} /> : <Printer size={18} />}
-                                <span>{isPrinting ? 'Generating...' : 'Print Quotation'}</span>
+                                <span>{isPrinting ? t('modal.generating') : t('modal.print')}</span>
                             </button>
-                            <button className={styles.closeActionBtn} onClick={closeModal}>Close</button>
+                            <button className={styles.closeActionBtn} onClick={closeModal}>{t('modal.close')}</button>
                         </div>
                     </div>
                 </div>

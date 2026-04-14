@@ -11,9 +11,11 @@ import { stripHtml } from '@/utils/formatters';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
+import { useTranslations } from 'next-intl';
 
 // Searchable Select Component
 const SearchableSelect = ({ label, name, options, value, onChange, placeholder = "Search..." }: any) => {
+    const t = useTranslations('admin.products');
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const containerRef = React.useRef<HTMLDivElement>(null);
@@ -52,7 +54,7 @@ const SearchableSelect = ({ label, name, options, value, onChange, placeholder =
                             <Search size={14} />
                             <input
                                 type="text"
-                                placeholder="Search..."
+                                placeholder={t('filters.search')}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 autoFocus
@@ -75,7 +77,7 @@ const SearchableSelect = ({ label, name, options, value, onChange, placeholder =
                                     </div>
                                 ))
                             ) : (
-                                <div className={styles.noOptions}>No results found</div>
+                                <div className={styles.noOptions}>{t('empty')}</div>
                             )}
                         </div>
                     </div>
@@ -91,6 +93,7 @@ const AdminProducts = () => {
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<number | null>(null);
     const { showNotification } = useNotification();
+    const t = useTranslations('admin.products');
 
     const [categories, setCategories] = useState<any[]>([]);
     const [hierarchicalCategories, setHierarchicalCategories] = useState<any[]>([]);
@@ -166,7 +169,7 @@ const AdminProducts = () => {
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-        showNotification('Template downloaded successfully');
+        showNotification(t('notifications.templateSuccess'));
     };
 
     const handleBulkImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,14 +228,14 @@ const AdminProducts = () => {
 
             if (data.success) {
                 setImportResult(data.data);
-                showNotification(`Successfully imported ${data.data.success} products!`);
+                showNotification(t('notifications.importSuccess', { count: data.data.success }));
                 fetchProducts();
             } else {
-                showNotification(data.message || 'Import failed', 'error');
+                showNotification(data.message || t('notifications.importError'), 'error');
             }
         } catch (error: any) {
             console.error('Import Error:', error);
-            showNotification(error.message || 'An error occurred during import', 'error');
+            showNotification(error.message || t('notifications.importError'), 'error');
         } finally {
             setImporting(false);
             setUploadProgress(0);
@@ -254,7 +257,7 @@ const AdminProducts = () => {
             if (contentType && contentType.includes('application/json')) {
                 const data = await response.json();
                 if (!data.success) {
-                    showNotification(data.message || 'Export failed', 'error');
+                    showNotification(data.message || t('notifications.exportError'), 'error');
                     return;
                 }
             }
@@ -267,10 +270,10 @@ const AdminProducts = () => {
             document.body.appendChild(a);
             a.click();
             a.remove();
-            showNotification('Product list exported successfully');
+            showNotification(t('notifications.exportSuccess'));
         } catch (error) {
             console.error('Failed to export products:', error);
-            showNotification('Failed to export products', 'error');
+            showNotification(t('notifications.exportError'), 'error');
         } finally {
             setExporting(false);
         }
@@ -405,9 +408,9 @@ const AdminProducts = () => {
                 type: cat.type
             })).sort((a, b) => a.name.localeCompare(b.name));
 
-            setHierarchicalCategories([{ id: '', name: 'All Categories' }, ...transformed]);
+            setHierarchicalCategories([{ id: '', name: t('filters.categories') }, ...transformed]);
         } else {
-            setHierarchicalCategories([{ id: '', name: 'All Categories' }]);
+            setHierarchicalCategories([{ id: '', name: t('filters.categories') }]);
         }
     }, [categories]);
 
@@ -622,9 +625,9 @@ const AdminProducts = () => {
                     }
                     return prev;
                 });
-                showNotification('Image uploaded successfully');
+                showNotification(t('notifications.uploadSuccess'));
             } else {
-                showNotification(data.message || 'Upload failed', 'error');
+                showNotification(data.message || t('notifications.uploadError'), 'error');
             }
         } catch (error) {
             console.error(error);
@@ -652,9 +655,9 @@ const AdminProducts = () => {
             const data = await res.json();
             if (data.success) {
                 handleResourceChange(index, 'url', data.data);
-                showNotification('File uploaded successfully');
+                showNotification(t('notifications.uploadSuccess'));
             } else {
-                showNotification(data.message || 'Upload failed', 'error');
+                showNotification(data.message || t('notifications.uploadError'), 'error');
             }
         } catch (error) {
             console.error(error);
@@ -791,7 +794,7 @@ const AdminProducts = () => {
                 const start = new Date(formData.offer_start);
                 const end = new Date(formData.offer_end);
                 if (end <= start) {
-                    showNotification('Offer End Date must be after Offer Start Date!', 'error');
+                    showNotification(t('notifications.dateError'), 'error');
                     return;
                 }
             }
@@ -1091,99 +1094,21 @@ const AdminProducts = () => {
     return (
         <div className={styles.adminProducts}>
             <div className={styles.header}>
-                <div className={styles.headerTop}>
-                    <div className={styles.titleGroup}>
-                        <div className={styles.titleWithBadge}>
-                            <h1>Products Management</h1>
-                            <div className={styles.totalBadge}>
-                                <Package size={14} />
-                                <span><strong>{paginationInfo.total}</strong> products</span>
-                            </div>
-                        </div>
-                        <p className={styles.subtitle}>Manage your inventory and add new products to the catalog.</p>
-                    </div>
-
+                <div className={styles.titleSection}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {selectedIds.length > 0 && (
-                            <button className={styles.bulkDeleteBtn} onClick={handleBulkDelete}>
-                                <Trash2 size={18} />
-                                <span>Delete ({selectedIds.length})</span>
-                            </button>
-                        )}
-                        <button className={styles.addBtn} onClick={() => {
-                            setEditingId(null);
-                            setFormData({
-                                name: '',
-                                name_ar: '',
-                                model: '',
-                                youtube_video_links: [''],
-                                featured_video_index: 0,
-                                description: '',
-                                description_ar: '',
-                                short_description: '',
-                                short_description_ar: '',
-                                specifications: '',
-                                price: '',
-                                discount_percentage: '0',
-                                offer_price: '',
-                                stock_quantity: '',
-                                category_id: categories.length > 0 ? String(categories[0].id) : '1',
-                                sub_category_id: '',
-                                sub_sub_category_id: '',
-                                brand_id: brands.length > 0 ? String(brands[0].id) : '1',
-                                product_group: '',
-                                sub_category: '',
-                                image_url: '/assets/placeholder-image.webp',
-                                additional_images: ['', '', ''],
-                                is_weekly_deal: false,
-                                is_limited_offer: false,
-                                is_featured: false,
-                                is_daily_offer: false,
-                                is_best_seller: false,
-                                resources: [{ name: '', url: '' }],
-                                status: 'active',
-                                offer_start: '',
-                                offer_end: '',
-                                track_inventory: false
-                            });
-                            setActiveTab('basic');
-                            setIsModalOpen(true);
-                        }}>
-                            <Plus size={20} />
-                            <span>Add New Product</span>
-                        </button>
+                        <h1>{t('title')}</h1>
+                        <div className={styles.totalBadge}>
+                            <Package size={14} />
+                            <span>{t('totalBadge', { count: products.length })}</span>
+                        </div>
                     </div>
+                    <p>{t('subtitle')}</p>
                 </div>
-
-                <div className={styles.headerActions}>
-                    <div className={styles.actionGroup}>
-                        <button
-                            className={styles.utilBtn}
-                            onClick={handleSyncBrands}
-                            title="Sync brand logos to database"
-                        >
-                            <BarChart3 size={16} />
-                            <span>Sync Brands</span>
-                        </button>
-                        <button
-                            className={styles.utilBtn}
-                            onClick={handleExport}
-                            disabled={exporting}
-                        >
-                            <FileDown size={16} />
-                            <span>{exporting ? 'Exporting...' : 'Export CSV'}</span>
-                        </button>
-                        <button
-                            className={styles.utilBtn}
-                            onClick={() => {
-                                setImportResult(null);
-                                setIsImportModalOpen(true);
-                            }}
-                        >
-                            <FileUp size={16} />
-                            <span>Bulk Import</span>
-                        </button>
-                    </div>
+                <div className={styles.actions}>
+                    <button className={styles.addBtn} onClick={() => { setEditingId(null); setIsModalOpen(true); }}>
+                        <Plus size={20} />
+                        <span>{t('actions.add')}</span>
+                    </button>
                 </div>
             </div>
 
@@ -1192,8 +1117,8 @@ const AdminProducts = () => {
                     <Search size={18} />
                     <input
                         type="text"
+                        placeholder={t('searchPlaceholder')}
                         name="search"
-                        placeholder="Search products by model or brand..."
                         value={filters.search}
                         onChange={handleFilterChange}
                     />
@@ -1229,7 +1154,7 @@ const AdminProducts = () => {
                         value={filters.status}
                         onChange={handleFilterChange}
                     >
-                        <option value="all">All Status</option>
+                        <option value="all">{t('filters.status')}</option>
                         <option value="active">Active</option>
                         <option value="draft">Draft</option>
                     </select>
@@ -1239,7 +1164,7 @@ const AdminProducts = () => {
                         value={filters.stockStatus}
                         onChange={handleFilterChange}
                     >
-                        <option value="all">Stock Status</option>
+                        <option value="all">{t('filters.stock')}</option>
                         <option value="in_stock">In Stock</option>
                         <option value="out_of_stock">Out of Stock</option>
                     </select>
@@ -1250,7 +1175,7 @@ const AdminProducts = () => {
                         onChange={handleFilterChange}
                         style={{ borderInlineStart: '4px solid #4c6ef5' }}
                     >
-                        <option value="all">Offer Types (All)</option>
+                        <option value="all">{t('filters.offers')}</option>
                         <option value="weekly">Weekly Deals</option>
                         <option value="limited">Limited Offers</option>
                         <option value="daily">Daily Offers</option>
@@ -1271,21 +1196,21 @@ const AdminProducts = () => {
                                     onChange={toggleSelectAll}
                                 />
                             </th>
-                            <th>Product</th>
+                            <th style={{ width: '40%' }}>{t('table.product')}</th>
                             <th>Brand</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Stock</th>
-                            <th>Tags</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th>{t('table.category')}</th>
+                            <th>{t('table.pricing')}</th>
+                            <th>{t('table.stock')}</th>
+                            <th>{t('table.tags')}</th>
+                            <th>{t('table.status')}</th>
+                            <th style={{ textAlign: 'right' }}>{t('table.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={9} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Products Inventory..." /></td></tr>
+                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '100px 0' }}><AdminLoader message={t('loader')} /></td></tr>
                         ) : products.length === 0 ? (
-                            <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px' }}>No products found.</td></tr>
+                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '100px 0' }}><div className={styles.noResults}><AlertCircle size={40} /><p>{t('empty')}</p></div></td></tr>
                         ) : (
                             products.map((product) => (
                                 <tr key={product.id} className={selectedIds.includes(product.id) ? styles.selectedRow : ''}>
@@ -1350,12 +1275,9 @@ const AdminProducts = () => {
                                     <td>
                                         <div className={styles.tagsCell}>
                                             {(product.is_featured === 1 || product.is_featured === '1' || product.is_featured === true) && <span className={`${styles.tag} ${styles.tagFeatured}`}>Featured</span>}
-                                            {(product.is_weekly_deal === 1 || product.is_weekly_deal === '1' || product.is_weekly_deal === true) && <span className={`${styles.tag} ${styles.tagWeekly}`}>Weekly Deal</span>}
+                                            {(product.is_weekly_deal === 1 || product.is_weekly_deal === '1' || product.is_weekly_deal === true) && <span className={`${styles.tag} ${styles.tagWeekly}`}>Weekly</span>}
                                             {(product.is_limited_offer === 1 || product.is_limited_offer === '1' || product.is_limited_offer === true) && <span className={`${styles.tag} ${styles.tagLimited}`}>Limited</span>}
-                                            {(product.is_daily_offer === 1 || product.is_daily_offer === '1' || product.is_daily_offer === true) && <span className={`${styles.tag} ${styles.tagDaily}`}>Daily Deal</span>}
-                                            {!product.is_featured && !product.is_weekly_deal && !product.is_limited_offer && !product.is_daily_offer && (
-                                                <span className={styles.emptyTag}>-</span>
-                                            )}
+                                            {(product.is_daily_offer === 1 || product.is_daily_offer === '1' || product.is_daily_offer === true) && <span className={`${styles.tag} ${styles.tagDaily}`}>Daily</span>}
                                         </div>
                                     </td>
                                     <td>
@@ -1380,17 +1302,20 @@ const AdminProducts = () => {
                             <div className={styles.selectionCount}>
                                 <strong>{selectedIds.length}</strong> products selected
                             </div>
-                            <button className={styles.clearSelection} onClick={() => setSelectedIds([])}>Clear</button>
-                        </div>
-                        <div className={styles.bulkBtns}>
-                            <button className={styles.bulkUpdateBtn} onClick={() => setIsBulkModalOpen(true)}>
-                                <BarChart3 size={16} />
-                                Set Offer Duration
-                            </button>
-                            <button className={styles.bulkDeleteStickyBtn} onClick={handleBulkDelete}>
-                                <Trash2 size={16} />
-                                Delete Selected
-                            </button>
+                            <div className={styles.actionButtons}>
+                                <button className={styles.templateBtn} onClick={handleDownloadTemplate}>
+                                    <FileDown size={18} />
+                                    {t('actions.template')}
+                                </button>
+                                <button className={styles.importBtn} onClick={() => setIsImportModalOpen(true)}>
+                                    <FileUp size={18} />
+                                    {t('actions.import')}
+                                </button>
+                                <button className={styles.exportBtn} onClick={handleExport} disabled={exporting}>
+                                    <FileText size={18} />
+                                    {exporting ? t('actions.downloading') : t('actions.export')}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -1456,8 +1381,8 @@ const AdminProducts = () => {
                     <div className={styles.modalLarge}>
                         <div className={styles.modalSideHeader}>
                             <div className={styles.modalTitleArea}>
-                                <h2>{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-                                <p>{editingId ? `You are editing: ${stripHtml(formData.name)}` : 'Create a professional product entry for the store'}</p>
+                                <h2>{editingId ? t('modal.editTitle') : t('modal.addTitle')}</h2>
+                                <p>{editingId ? stripHtml(formData.name) : t('subtitle')}</p>
                             </div>
                             <button className={styles.closeBtn} onClick={handleCloseModal}>
                                 <X size={20} />
@@ -1472,35 +1397,35 @@ const AdminProducts = () => {
                                     onClick={() => setActiveTab('basic')}
                                 >
                                     <ClipboardCheck size={18} />
-                                    <span>Basic Information</span>
+                                    <span>{t('modal.tabs.basic')}</span>
                                 </button>
                                 <button
                                     className={`${styles.navItem} ${activeTab === 'content' ? styles.activeNav : ''}`}
                                     onClick={() => setActiveTab('content')}
                                 >
                                     <FileText size={18} />
-                                    <span>Descriptions</span>
+                                    <span>{t('modal.tabs.content')}</span>
                                 </button>
                                 <button
                                     className={`${styles.navItem} ${activeTab === 'pricing' ? styles.activeNav : ''}`}
                                     onClick={() => setActiveTab('pricing')}
                                 >
                                     <Banknote size={18} />
-                                    <span>Pricing & Stock</span>
+                                    <span>{t('modal.tabs.logic')}</span>
                                 </button>
                                 <button
                                     className={`${styles.navItem} ${activeTab === 'category' ? styles.activeNav : ''}`}
                                     onClick={() => setActiveTab('category')}
                                 >
                                     <LayoutGrid size={18} />
-                                    <span>Categories & Deals</span>
+                                    <span>{t('modal.tabs.deals')}</span>
                                 </button>
                                 <button
                                     className={`${styles.navItem} ${activeTab === 'media' ? styles.activeNav : ''}`}
                                     onClick={() => setActiveTab('media')}
                                 >
                                     <Images size={18} />
-                                    <span>Product Media</span>
+                                    <span>{t('modal.tabs.visual')}</span>
                                 </button>
                             </div>
 
@@ -1510,31 +1435,31 @@ const AdminProducts = () => {
                                     {activeTab === 'basic' && (
                                         <div className={styles.tabPane}>
                                             <div className={styles.paneHeader}>
-                                                <h3>Basic Information</h3>
-                                                <p>General product identifiers and names in both languages.</p>
+                                                <h3>{t('modal.tabs.basic')}</h3>
+                                                <p>{t('modal.fields.namePlaceholder')}</p>
                                             </div>
                                             <div className={styles.formGrid}>
                                                 <div className={styles.formGroup}>
-                                                    <label>Product Name (English)</label>
-                                                    <input type="text" name="name" required placeholder="Ex: Rational Ovens SCC 61" value={formData.name} onChange={handleInputChange} />
+                                                    <label>{t('modal.fields.name')}</label>
+                                                    <input type="text" name="name" required placeholder={t('modal.fields.namePlaceholder')} value={formData.name} onChange={handleInputChange} />
                                                 </div>
                                                 <div className={styles.formGroup}>
-                                                    <label>اسم المنتج (Arabic)</label>
-                                                    <input type="text" name="name_ar" placeholder="تفاصيل المنتج" dir="rtl" value={formData.name_ar} onChange={handleInputChange} />
+                                                    <label>{t('modal.fields.nameAr')}</label>
+                                                    <input type="text" name="name_ar" placeholder={t('modal.fields.nameArPlaceholder')} dir="rtl" value={formData.name_ar} onChange={handleInputChange} />
                                                 </div>
                                             </div>
                                             <div className={styles.formGrid}>
                                                 <div className={styles.formGroup}>
-                                                    <label>Model Number</label>
+                                                    <label>{t('modal.fields.model')}</label>
                                                     <input type="text" name="model" placeholder="Ex: SCC-61-G" value={formData.model} onChange={handleInputChange} />
                                                 </div>
                                                 <div className={styles.formGroup}>
-                                                    <label>Slug (Read-only)</label>
+                                                    <label>{t('table.status')} (Read-only)</label>
                                                     <input type="text" value={products.find(p => p.id === editingId)?.slug || 'Auto-generated'} disabled className={styles.disabledInput} />
                                                 </div>
                                             </div>
                                             <div className={styles.formGroup}>
-                                                <label>Related YouTube Videos</label>
+                                                <label>{t('modal.fields.videos')}</label>
                                                 <div className={styles.videoLinksList}>
                                                     {formData.youtube_video_links.map((link, index) => (
                                                         <div key={index} className={styles.videoLinkItem}>
@@ -1566,12 +1491,12 @@ const AdminProducts = () => {
                                                     ))}
                                                 </div>
                                                 <button type="button" className={styles.addVideoBtn} onClick={handleAddVideo}>
-                                                    <Plus size={16} /> Add Another Video
+                                                    <Plus size={16} /> {t('modal.fields.addVideo')}
                                                 </button>
                                             </div>
 
                                             <div className={styles.formGroup} style={{ marginTop: '20px' }}>
-                                                <label>Resources & Downloads</label>
+                                                <label>{t('modal.fields.resources')}</label>
                                                 <div className={styles.resourcesList}>
                                                     {formData.resources.map((res, index) => (
                                                         <div key={index} className={styles.resourceItem}>
@@ -1616,7 +1541,7 @@ const AdminProducts = () => {
                                                     ))}
                                                 </div>
                                                 <button type="button" className={styles.addResourceBtn} onClick={handleAddResource}>
-                                                    <Plus size={16} /> Add Another Resource
+                                                    <Plus size={16} /> {t('modal.fields.addResource')}
                                                 </button>
                                             </div>
                                         </div>
@@ -1625,31 +1550,31 @@ const AdminProducts = () => {
                                     {activeTab === 'content' && (
                                         <div className={styles.tabPane}>
                                             <div className={styles.paneHeader}>
-                                                <h3>Descriptions & Specs</h3>
-                                                <p>Detailed storytelling and technical specifications.</p>
+                                                <h3>{t('modal.tabs.content')}</h3>
+                                                <p>{t('modal.fields.description')}</p>
                                             </div>
                                             <div className={styles.formGrid}>
                                                 <div className={styles.formGroup}>
-                                                    <label>Long Description (EN)</label>
+                                                    <label>{t('modal.fields.description')}</label>
                                                     <textarea name="description" rows={5} value={formData.description} onChange={handleInputChange} />
                                                 </div>
                                                 <div className={styles.formGroup}>
-                                                    <label>Long Description (AR)</label>
+                                                    <label>{t('modal.fields.descriptionAr')}</label>
                                                     <textarea name="description_ar" rows={5} dir="rtl" value={formData.description_ar} onChange={handleInputChange} />
                                                 </div>
                                             </div>
                                             <div className={styles.formGrid}>
                                                 <div className={styles.formGroup}>
-                                                    <label>Short Description (EN)</label>
+                                                    <label>{t('modal.fields.shortDesc')}</label>
                                                     <textarea name="short_description" rows={3} value={formData.short_description} onChange={handleInputChange} />
                                                 </div>
                                                 <div className={styles.formGroup}>
-                                                    <label>Short Description (AR)</label>
+                                                    <label>{t('modal.fields.shortDescAr')}</label>
                                                     <textarea name="short_description_ar" rows={3} dir="rtl" value={formData.short_description_ar} onChange={handleInputChange} />
                                                 </div>
                                             </div>
                                             <div className={styles.formGroup}>
-                                                <label>Technical Specifications</label>
+                                                <label>{t('modal.fields.specs')}</label>
                                                 <textarea name="specifications" rows={4} placeholder="HTML or Plain text bullet points..." value={formData.specifications} onChange={handleInputChange} />
                                             </div>
                                         </div>
@@ -1658,24 +1583,24 @@ const AdminProducts = () => {
                                     {activeTab === 'pricing' && (
                                         <div className={styles.tabPane}>
                                             <div className={styles.paneHeader}>
-                                                <h3>Pricing & Inventory</h3>
-                                                <p>Manage prices, discounts, and real-time stock levels.</p>
+                                                <h3>{t('modal.tabs.logic')}</h3>
+                                                <p>{t('modal.fields.logicSubtitle')}</p>
                                             </div>
                                             <div className={styles.formGridFour}>
                                                 <div className={styles.formGroup}>
-                                                    <label>Base Price (AED)</label>
+                                                    <label>{t('modal.fields.price')}</label>
                                                     <input type="number" name="price" required step="0.01" value={formData.price} onChange={handleInputChange} />
                                                 </div>
                                                 <div className={styles.formGroup}>
-                                                    <label>Discount (%)</label>
+                                                    <label>{t('modal.fields.discount')}</label>
                                                     <input type="number" name="discount_percentage" step="0.01" value={formData.discount_percentage} onChange={handleInputChange} />
                                                 </div>
                                                 <div className={styles.formGroup}>
-                                                    <label>Offer Price (AED)</label>
+                                                    <label>{t('modal.fields.offerPrice')}</label>
                                                     <input type="number" name="offer_price" step="0.01" value={formData.offer_price} onChange={handleInputChange} />
                                                 </div>
                                                 <div className={styles.formGroup}>
-                                                    <label>Track Inventory</label>
+                                                    <label>{t('modal.fields.trackStock')}</label>
                                                     <div className={styles.toggleWrapper}>
                                                         <label className={styles.switch}>
                                                             <input
@@ -1690,32 +1615,32 @@ const AdminProducts = () => {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                {formData.track_inventory && (
-                                                    <div className={styles.formGroup}>
-                                                        <label>Stock Quantity</label>
-                                                        <input type="number" name="stock_quantity" required={formData.track_inventory} value={formData.stock_quantity} onChange={handleInputChange} />
-                                                    </div>
-                                                )}
                                             </div>
-                                            <div className={styles.formGroup} style={{ marginTop: '20px' }}>
-                                                <label>Inventory Status</label>
-                                                <div className={styles.statusSelector}>
-                                                    <button
-                                                        type="button"
-                                                        className={`${styles.statusOption} ${formData.status === 'active' ? styles.activeStatusActive : ''}`}
-                                                        onClick={() => setFormData(prev => ({ ...prev, status: 'active' }))}
-                                                    >
-                                                        <Eye size={18} />
-                                                        <span>Active (Visible)</span>
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className={`${styles.statusOption} ${formData.status === 'draft' ? styles.activeStatusDraft : ''}`}
-                                                        onClick={() => setFormData(prev => ({ ...prev, status: 'draft' }))}
-                                                    >
-                                                        <EyeOff size={18} />
-                                                        <span>Draft (Hidden)</span>
-                                                    </button>
+                                            <div className={styles.formGrid}>
+                                                <div className={styles.formGroup}>
+                                                    <label>{t('modal.fields.stock')}</label>
+                                                    <input type="number" name="stock_quantity" required={formData.track_inventory} value={formData.stock_quantity} onChange={handleInputChange} disabled={!formData.track_inventory} />
+                                                </div>
+                                                <div className={styles.formGroup}>
+                                                    <label>{t('modal.fields.status')}</label>
+                                                    <div className={styles.statusSelector}>
+                                                        <button
+                                                            type="button"
+                                                            className={`${styles.statusOption} ${formData.status === 'active' ? styles.activeStatusActive : ''}`}
+                                                            onClick={() => setFormData(prev => ({ ...prev, status: 'active' }))}
+                                                        >
+                                                            <Eye size={18} />
+                                                            <span>Active</span>
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className={`${styles.statusOption} ${formData.status === 'draft' ? styles.activeStatusDraft : ''}`}
+                                                            onClick={() => setFormData(prev => ({ ...prev, status: 'draft' }))}
+                                                        >
+                                                            <EyeOff size={18} />
+                                                            <span>Draft</span>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1724,12 +1649,12 @@ const AdminProducts = () => {
                                     {activeTab === 'category' && (
                                         <div className={styles.tabPane}>
                                             <div className={styles.paneHeader}>
-                                                <h3>Categories & Marketing</h3>
-                                                <p>Organize products and set special promotional deals.</p>
+                                                <h3>{t('modal.tabs.deals')}</h3>
+                                                <p>{t('modal.fields.logicSubtitle')}</p>
                                             </div>
                                             <div className={styles.formGrid}>
-                                                <SearchableSelect label="Main Category" name="category_id" options={categories.filter(c => c.type === 'main_category')} value={formData.category_id} onChange={(e: any) => { handleInputChange(e); setFormData(prev => ({ ...prev, sub_category_id: '', sub_sub_category_id: '', product_group: '', sub_category: '' })); }} />
-                                                <SearchableSelect label="Brand" name="brand_id" options={brands} value={formData.brand_id} onChange={handleInputChange} />
+                                                <SearchableSelect label={t('filters.category')} name="category_id" options={categories.filter(c => c.type === 'main_category')} value={formData.category_id} onChange={(e: any) => { handleInputChange(e); setFormData(prev => ({ ...prev, sub_category_id: '', sub_sub_category_id: '', product_group: '', sub_category: '' })); }} />
+                                                <SearchableSelect label={t('table.brand')} name="brand_id" options={brands} value={formData.brand_id} onChange={handleInputChange} />
                                             </div>
                                             <div className={styles.formGrid} style={{ marginTop: '15px' }}>
                                                 {(() => {
@@ -1737,7 +1662,7 @@ const AdminProducts = () => {
                                                     if (subCategories.length === 0) return null;
                                                     return (
                                                         <SearchableSelect
-                                                            label="Sub-Group"
+                                                            label={t('modal.fields.subGroup')}
                                                             name="sub_category_id"
                                                             options={subCategories}
                                                             value={formData.sub_category_id}
@@ -1759,7 +1684,7 @@ const AdminProducts = () => {
                                                     if (subSubCategories.length === 0) return null;
                                                     return (
                                                         <SearchableSelect
-                                                            label="Final Sub-category"
+                                                            label={t('modal.fields.finalSub')}
                                                             name="sub_sub_category_id"
                                                             options={subSubCategories}
                                                             value={formData.sub_sub_category_id}
@@ -1776,16 +1701,16 @@ const AdminProducts = () => {
                                                 })()}
                                             </div>
                                             <div className={styles.marketingFlags}>
-                                                <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_featured} onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))} /> Featured Product</label>
-                                                <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_weekly_deal} onChange={(e) => setFormData(prev => ({ ...prev, is_weekly_deal: e.target.checked, is_limited_offer: e.target.checked ? false : prev.is_limited_offer }))} /> Weekly Deal</label>
-                                                <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_limited_offer} onChange={(e) => setFormData(prev => ({ ...prev, is_limited_offer: e.target.checked, is_weekly_deal: e.target.checked ? false : prev.is_weekly_deal }))} /> Limited Offer</label>
-                                                <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_daily_offer} onChange={(e) => setFormData(prev => ({ ...prev, is_daily_offer: e.target.checked }))} /> Daily Offer</label>
-                                                <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_best_seller} onChange={(e) => setFormData(prev => ({ ...prev, is_best_seller: e.target.checked }))} /> Best Seller</label>
+                                                <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_featured} onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))} /> {t('filters.featured')}</label>
+                                                <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_weekly_deal} onChange={(e) => setFormData(prev => ({ ...prev, is_weekly_deal: e.target.checked, is_limited_offer: e.target.checked ? false : prev.is_limited_offer }))} /> {t('filters.weekly')}</label>
+                                                <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_limited_offer} onChange={(e) => setFormData(prev => ({ ...prev, is_limited_offer: e.target.checked, is_weekly_deal: e.target.checked ? false : prev.is_weekly_deal }))} /> {t('filters.limited')}</label>
+                                                <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_daily_offer} onChange={(e) => setFormData(prev => ({ ...prev, is_daily_offer: e.target.checked }))} /> {t('filters.daily')}</label>
+                                                <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_best_seller} onChange={(e) => setFormData(prev => ({ ...prev, is_best_seller: e.target.checked }))} /> {t('filters.bestseller')}</label>
                                             </div>
                                             {(formData.is_weekly_deal || formData.is_daily_offer || formData.is_limited_offer) && (
                                                 <div className={styles.formGrid} style={{ marginTop: '15px' }}>
-                                                    <div className={styles.formGroup}><label>Start Date</label><input type="datetime-local" name="offer_start" value={formData.offer_start} onChange={handleInputChange} /></div>
-                                                    <div className={styles.formGroup}><label>End Date</label><input type="datetime-local" name="offer_end" value={formData.offer_end} onChange={handleInputChange} /></div>
+                                                    <div className={styles.formGroup}><label>{t('modal.fields.startDate')}</label><input type="datetime-local" name="offer_start" value={formData.offer_start} onChange={handleInputChange} /></div>
+                                                    <div className={styles.formGroup}><label>{t('modal.fields.endDate')}</label><input type="datetime-local" name="offer_end" value={formData.offer_end} onChange={handleInputChange} /></div>
                                                 </div>
                                             )}
                                         </div>
@@ -1794,8 +1719,8 @@ const AdminProducts = () => {
                                     {activeTab === 'media' && (
                                         <div className={styles.tabPane}>
                                             <div className={styles.paneHeader}>
-                                                <h3>Product Media</h3>
-                                                <p>High-resolution images. The first one will be the primary thumbnail.</p>
+                                                <h3>{t('modal.tabs.visual')}</h3>
+                                                <p>{t('modal.fields.mediaSubtitle')}</p>
                                             </div>
                                             <div className={styles.mediaGrid}>
                                                 {[formData.image_url, ...formData.additional_images].map((img, index) => (
@@ -1816,7 +1741,7 @@ const AdminProducts = () => {
                                                     <div className={styles.mediaUploadPlaceholder} onClick={() => !uploading && document.getElementById('image-upload-input')?.click()}>
                                                         <input id="image-upload-input" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} disabled={uploading} />
                                                         <Upload size={24} />
-                                                        <span>{uploading ? 'Processing...' : 'Upload Image'}</span>
+                                                        <span>{uploading ? t('actions.processing') : t('modal.fields.uploadImage')}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -1824,8 +1749,8 @@ const AdminProducts = () => {
                                     )}
                                 </div>
                                 <div className={styles.modalContentFooter}>
-                                    <button type="button" className={styles.cancelBtn} onClick={handleCloseModal}>Cancel</button>
-                                    <button type="submit" className={styles.submitBtn}>{editingId ? 'Update Product' : 'Add Product'}</button>
+                                    <button type="button" className={styles.cancelBtn} onClick={handleCloseModal}>{t('footer.cancel')}</button>
+                                    <button type="submit" className={styles.submitBtn}>{editingId ? t('actions.update') : t('footer.save')}</button>
                                 </div>
                             </form>
                         </div>
@@ -1843,8 +1768,8 @@ const AdminProducts = () => {
                                     <FileUp size={20} />
                                 </div>
                                 <div>
-                                    <h2>Bulk Product Import</h2>
-                                    <p>Upload an Excel file to add multiple products at once.</p>
+                                    <h2>{t('import.title')}</h2>
+                                    <p>{t('import.subtitle')}</p>
                                 </div>
                             </div>
                             <button className={styles.closeBtn} onClick={() => setIsImportModalOpen(false)}>
@@ -1856,32 +1781,32 @@ const AdminProducts = () => {
                             {!importResult ? (
                                 <>
                                     <div className={styles.importInstructions}>
-                                        <h3><LayoutGrid size={18} /> Getting Started</h3>
+                                        <h3><LayoutGrid size={18} /> {t('import.gettingStarted')}</h3>
                                         <ul>
                                             <li className={styles.instructionItem}>
                                                 <div className={styles.instructionNumber}>1</div>
-                                                <span>Download the template file to see the required format.</span>
+                                                <span>{t('import.step1')}</span>
                                             </li>
                                             <li className={styles.instructionItem}>
                                                 <div className={styles.instructionNumber}>2</div>
-                                                <span>Fill in your product details in the Excel sheet.</span>
+                                                <span>{t('import.step2')}</span>
                                             </li>
                                             <li className={styles.instructionItem}>
                                                 <div className={styles.instructionNumber}>3</div>
-                                                <span>Columns like <strong>name</strong> and <strong>price</strong> are mandatory.</span>
+                                                <span>{t('import.step3')}</span>
                                             </li>
                                             <li className={styles.instructionItem}>
                                                 <div className={styles.instructionNumber}>4</div>
-                                                <span>Categories and brands will be created automatically if they don't exist.</span>
+                                                <span>{t('import.step4')}</span>
                                             </li>
                                             <li className={styles.instructionItem}>
                                                 <div className={styles.instructionNumber}>5</div>
-                                                <span>For multiple images, separate URLs with a comma.</span>
+                                                <span>{t('import.step5')}</span>
                                             </li>
                                         </ul>
                                         <button className={styles.downloadTemplateBtn} onClick={handleDownloadTemplate}>
                                             <FileDown size={18} />
-                                            Download Excel Template
+                                            {t('import.downloadTemplate')}
                                         </button>
                                     </div>
 
@@ -1900,22 +1825,22 @@ const AdminProducts = () => {
                                             {importing ? (
                                                 <div className={styles.progressContainer}>
                                                     <Loader2 size={32} className={styles.spinner} />
-                                                    <p>Processing... {uploadProgress}%</p>
+                                                    <p>{t('import.processing', { percent: uploadProgress })}</p>
                                                     <div className={styles.progressWrapper}>
                                                         <div
                                                             className={styles.progressBarFill}
                                                             style={{ width: `${uploadProgress}%` }}
                                                         ></div>
                                                     </div>
-                                                    <span className={styles.progressText}>Please keep this window open while the upload completes</span>
+                                                    <span className={styles.progressText}>{t('import.keepOpen')}</span>
                                                 </div>
                                             ) : (
                                                 <div className={styles.uploadIdleState}>
                                                     <div className={styles.uploadIconCircle}>
                                                         <Upload size={32} />
                                                     </div>
-                                                    <p>Click here to select your Excel file</p>
-                                                    <span>Supports .xlsx and .xls formats</span>
+                                                    <p>{t('import.selectFile')}</p>
+                                                    <span>{t('import.formats')}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -1927,18 +1852,18 @@ const AdminProducts = () => {
                                         <div className={styles.resultCard}>
                                             <CheckCircle2 size={32} color="#10b981" />
                                             <div className={styles.resultValue}>{importResult.success}</div>
-                                            <div className={styles.resultLabel}>Products Imported</div>
+                                            <div className={styles.resultLabel}>{t('import.imported')}</div>
                                         </div>
                                         <div className={styles.resultCard}>
                                             <AlertCircle size={32} color={importResult.failed > 0 ? "#ef4444" : "#dee2e6"} />
                                             <div className={styles.resultValue}>{importResult.failed}</div>
-                                            <div className={styles.resultLabel}>Failed/Skipped</div>
+                                            <div className={styles.resultLabel}>{t('import.failed')}</div>
                                         </div>
                                     </div>
 
                                     {importResult.errors.length > 0 && (
                                         <div className={styles.errorLog}>
-                                            <h4>Error Log:</h4>
+                                            <h4>{t('import.errorLog')}</h4>
                                             <ul>
                                                 {importResult.errors.map((err: string, idx: number) => (
                                                     <li key={idx}>{err}</li>
@@ -1949,10 +1874,10 @@ const AdminProducts = () => {
 
                                     <div className={styles.importActions}>
                                         <button className={styles.finishBtn} onClick={() => setIsImportModalOpen(false)}>
-                                            Done
+                                            {t('import.done')}
                                         </button>
                                         <button className={styles.tryAgainBtn} onClick={() => setImportResult(null)}>
-                                            Import Another File
+                                            {t('import.importAnother')}
                                         </button>
                                     </div>
                                 </div>
@@ -1961,6 +1886,7 @@ const AdminProducts = () => {
                     </div>
                 </div>
             )}
+
             {/* Bulk Update Modal */}
             {isBulkModalOpen && (
                 <div className={styles.modalOverlay}>
@@ -1969,8 +1895,8 @@ const AdminProducts = () => {
                             <div className={styles.bulkUpdateHeaderTitle}>
                                 <BarChart3 size={24} color="#4c6ef5" />
                                 <div className={styles.bulkUpdateHeaderText}>
-                                    <h2>Set Offer Duration</h2>
-                                    <p>Updating {selectedIds.length} selected products.</p>
+                                    <h2>{t('actions.bulkUpdate')}</h2>
+                                    <p>{t('actions.bulkUpdateSubtitle', { count: selectedIds.length })}</p>
                                 </div>
                             </div>
                             <button className={styles.bulkUpdateClose} onClick={() => setIsBulkModalOpen(false)}>
@@ -1980,7 +1906,7 @@ const AdminProducts = () => {
                         <div className={styles.bulkUpdateBody}>
                             <div className={styles.formGrid}>
                                 <div className={styles.formGroup}>
-                                    <label>Offer Start Time</label>
+                                    <label>{t('modal.fields.startDate')}</label>
                                     <input
                                         type="datetime-local"
                                         value={bulkFormData.offer_start}
@@ -1988,7 +1914,7 @@ const AdminProducts = () => {
                                     />
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label>Offer End Time</label>
+                                    <label>{t('modal.fields.endDate')}</label>
                                     <input
                                         type="datetime-local"
                                         value={bulkFormData.offer_end}
@@ -1997,18 +1923,17 @@ const AdminProducts = () => {
                                 </div>
                             </div>
                             <p style={{ fontSize: '13px', color: '#64748b', marginTop: '16px', lineHeight: '1.5' }}>
-                                <strong>Note:</strong> This will apply these dates to all selected products.
-                                Make sure they have a discount or offer price set to be visible in sales sections.
+                                <strong>{t('actions.note')}</strong> {t('actions.bulkUpdateNote')}
                             </p>
                         </div>
                         <div className={styles.modalContentFooter}>
-                            <button className={styles.cancelBtn} onClick={() => setIsBulkModalOpen(false)}>Cancel</button>
+                            <button className={styles.cancelBtn} onClick={() => setIsBulkModalOpen(false)}>{t('footer.cancel')}</button>
                             <button
                                 className={styles.submitBtn}
                                 onClick={handleBulkUpdate}
                                 disabled={bulkUpdating}
                             >
-                                {bulkUpdating ? 'Updating...' : 'Apply to Selection'}
+                                {bulkUpdating ? t('actions.processing') : t('actions.update')}
                             </button>
                         </div>
                     </div>
@@ -2025,7 +1950,7 @@ const AdminProducts = () => {
                 type={confirmModal.type}
                 isLoading={isActionLoading}
             />
-        </div>
+        </div >
     );
 };
 

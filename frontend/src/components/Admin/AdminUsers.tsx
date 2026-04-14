@@ -8,6 +8,7 @@ import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
+import { useTranslations } from 'next-intl';
 
 const AdminUsers = () => {
     const [users, setUsers] = useState<any[]>([]);
@@ -15,6 +16,7 @@ const AdminUsers = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const { showNotification } = useNotification();
+    const t = useTranslations('admin.users');
 
     // Edit Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,10 +85,10 @@ const AdminUsers = () => {
     const handleDeleteUser = (id: number) => {
         setConfirmModal({
             isOpen: true,
-            title: 'Delete User Account',
-            message: 'Are you sure you want to permanently delete this user? This action cannot be undone.',
+            title: t('modals.deleteTitle'),
+            message: t('modals.deleteMessage'),
             type: 'danger',
-            confirmLabel: 'Delete Account',
+            confirmLabel: t('modals.deleteConfirm'),
             onConfirm: async () => {
                 try {
                     setIsActionLoading(true);
@@ -97,11 +99,11 @@ const AdminUsers = () => {
                     });
                     const data = await res.json();
                     if (data.success) {
-                        showNotification('User account removed');
+                        showNotification(t('notifications.deleteSuccess'));
                         fetchUsers();
                     }
                 } catch (error) {
-                    showNotification('Failed to delete user', 'error');
+                    showNotification(t('notifications.deleteError'), 'error');
                 } finally {
                     setIsActionLoading(false);
                     setConfirmModal(prev => ({ ...prev, isOpen: false }));
@@ -114,10 +116,10 @@ const AdminUsers = () => {
         const action = currentStatus === 'active' ? 'suspend' : 'activate';
         setConfirmModal({
             isOpen: true,
-            title: `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
-            message: `Are you sure you want to ${action} this user?`,
-            type: action === 'suspend' ? 'warning' : 'info',
-            confirmLabel: action.charAt(0).toUpperCase() + action.slice(1),
+            title: t(currentStatus === 'active' ? 'modals.suspendTitle' : 'modals.activateTitle'),
+            message: t(currentStatus === 'active' ? 'modals.suspendMessage' : 'modals.activateMessage'),
+            type: currentStatus === 'active' ? 'warning' : 'info',
+            confirmLabel: t(currentStatus === 'active' ? 'modals.suspendConfirm' : 'modals.activateConfirm'),
             onConfirm: async () => {
                 try {
                     setIsActionLoading(true);
@@ -131,10 +133,10 @@ const AdminUsers = () => {
                         showNotification(data.message);
                         fetchUsers();
                     } else {
-                        showNotification(data.message || 'Failed to update status', 'error');
+                        showNotification(data.message || t('notifications.statusUpdateError'), 'error');
                     }
                 } catch (error) {
-                    showNotification('Failed to update user status', 'error');
+                    showNotification(t('notifications.statusUpdateError'), 'error');
                 } finally {
                     setIsActionLoading(false);
                     setConfirmModal(prev => ({ ...prev, isOpen: false }));
@@ -167,15 +169,15 @@ const AdminUsers = () => {
             });
             const data = await res.json();
             if (data.success) {
-                showNotification('User profile updated successfully');
+                showNotification(t('notifications.updateSuccess'));
                 setIsModalOpen(false);
                 setEditingUser(null);
                 fetchUsers();
             } else {
-                showNotification(data.message || 'Failed to update user', 'error');
+                showNotification(data.message || t('notifications.updateError'), 'error');
             }
         } catch (error) {
-            showNotification('An error occurred', 'error');
+            showNotification(t('notifications.genericError'), 'error');
         }
     };
 
@@ -189,13 +191,13 @@ const AdminUsers = () => {
             <div className={styles.header}>
                 <div className={styles.titleSection}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <h1>Users Management</h1>
+                        <h1>{t('title')}</h1>
                         <div className={styles.totalBadge}>
                             <Users size={14} />
-                            <span><strong>{users.length}</strong> members</span>
+                            <span>{t('totalBadge', { count: users.length })}</span>
                         </div>
                     </div>
-                    <p>Manage access levels and account details for your team and customers.</p>
+                    <p>{t('subtitle')}</p>
                 </div>
             </div>
 
@@ -204,7 +206,7 @@ const AdminUsers = () => {
                     <Search size={18} />
                     <input
                         type="text"
-                        placeholder="Search users by name or email..."
+                        placeholder={t('searchPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -215,18 +217,18 @@ const AdminUsers = () => {
                 <table className={styles.table}>
                     <thead>
                         <tr>
-                            <th>User Details</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Joined Date</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
+                            <th>{t('table.details')}</th>
+                            <th>{t('table.role')}</th>
+                            <th>{t('table.status')}</th>
+                            <th>{t('table.joined')}</th>
+                            <th style={{ textAlign: 'right' }}>{t('table.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Member Directory..." /></td></tr>
+                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message={t('loader')} /></td></tr>
                         ) : filteredUsers.length === 0 ? (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}>No users found Matching your search.</td></tr>
+                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}>{t('empty')}</td></tr>
                         ) : (
                             filteredUsers.map((user) => (
                                 <tr key={user.id}>
@@ -244,7 +246,7 @@ const AdminUsers = () => {
                                     <td>
                                         <span className={`${styles.roleBadge} ${(user.role || 'user').toLowerCase() === 'admin' ? styles.admin : styles.user}`}>
                                             {(user.role || 'user').toLowerCase() === 'admin' && <Shield size={12} style={{ marginInlineEnd: '6px' }} />}
-                                            {(user.role || 'USER').toUpperCase()}
+                                            {t(`roles.${(user.role || 'USER').toLowerCase()}` as any)}
                                         </span>
                                     </td>
                                     <td>
@@ -261,7 +263,7 @@ const AdminUsers = () => {
                                             border: `1px solid ${(user.status || 'active') === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
                                         }}>
                                             {(user.status || 'active') === 'active' ? <CheckCircle size={12} /> : <Ban size={12} />}
-                                            {(user.status || 'active').toUpperCase()}
+                                            {t(`status.${(user.status || 'active').toLowerCase()}` as any)}
                                         </span>
                                     </td>
                                     <td>
@@ -275,7 +277,7 @@ const AdminUsers = () => {
                                             <button
                                                 className={styles.editBtn}
                                                 onClick={() => handleEditClick(user)}
-                                                title="Edit Profile"
+                                                title={t('tooltips.edit')}
                                             >
                                                 <Edit2 size={16} />
                                             </button>
@@ -293,7 +295,7 @@ const AdminUsers = () => {
                                                 }}
                                                 onClick={() => handleToggleStatus(user.id, user.status || 'active')}
                                                 disabled={(user.role || 'user').toLowerCase() === 'admin'}
-                                                title={(user.role || 'user').toLowerCase() === 'admin' ? "Admin accounts cannot be suspended" : ((user.status || 'active') === 'active' ? 'Suspend User' : 'Activate User')}
+                                                title={(user.role || 'user').toLowerCase() === 'admin' ? t('tooltips.adminNoSuspend') : ((user.status || 'active') === 'active' ? t('tooltips.suspend') : t('tooltips.activate'))}
                                             >
                                                 {(user.status || 'active') === 'active' ? <Ban size={16} /> : <CheckCircle size={16} />}
                                             </button>
@@ -301,7 +303,7 @@ const AdminUsers = () => {
                                                 className={styles.deleteBtn}
                                                 onClick={() => handleDeleteUser(user.id)}
                                                 disabled={(user.role || 'user').toLowerCase() === 'admin'}
-                                                title={(user.role || 'user').toLowerCase() === 'admin' ? "Admin accounts cannot be deleted here" : "Delete Account"}
+                                                title={(user.role || 'user').toLowerCase() === 'admin' ? t('tooltips.adminNoDelete') : t('tooltips.delete')}
                                             >
                                                 <Trash2 size={16} />
                                             </button>
@@ -318,40 +320,40 @@ const AdminUsers = () => {
                 <div className={styles.modalOverlay}>
                     <div className={styles.modal}>
                         <div className={styles.modalHeader}>
-                            <h2>Edit User Account</h2>
+                            <h2>{t('modals.editTitle')}</h2>
                             <button className={styles.closeBtn} onClick={() => setIsModalOpen(false)}>
                                 <X size={20} />
                             </button>
                         </div>
                         <form className={styles.form} onSubmit={handleUpdateUser}>
                             <div className={styles.formGroup}>
-                                <label>Full Name</label>
+                                <label>{t('modals.nameLabel')}</label>
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="Enter user name"
+                                    placeholder={t('modals.namePlaceholder')}
                                     required
                                 />
                             </div>
                             <div className={styles.formGroup}>
-                                <label>Email Address</label>
+                                <label>{t('modals.emailLabel')}</label>
                                 <input
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="user@example.com"
+                                    placeholder={t('modals.emailPlaceholder')}
                                     required
                                 />
                             </div>
                             <div className={styles.formGroup}>
-                                <label>Account Role</label>
+                                <label>{t('modals.roleLabel')}</label>
                                 <select
                                     value={formData.role_id}
                                     onChange={(e) => setFormData({ ...formData, role_id: e.target.value })}
                                     required
                                 >
-                                    <option value="" disabled>Select a role</option>
+                                    <option value="" disabled>{t('modals.selectRole')}</option>
                                     {roles.map(role => (
                                         <option key={role.id} value={role.id}>
                                             {role.name}
@@ -365,13 +367,13 @@ const AdminUsers = () => {
                                     className={styles.cancelBtn}
                                     onClick={() => setIsModalOpen(false)}
                                 >
-                                    Cancel
+                                    {t('modals.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     className={styles.submitBtn}
                                 >
-                                    Save Changes
+                                    {t('modals.save')}
                                 </button>
                             </div>
                         </form>
