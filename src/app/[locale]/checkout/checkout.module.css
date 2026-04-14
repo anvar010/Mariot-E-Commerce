@@ -549,23 +549,40 @@
     flex: 1;
     height: 100%;
     padding: 12px 0;
+    padding-right: 70px;
+    /* Space for the logos on the right */
 }
 
-.stripeElementWrapper>div:last-child {
+.cvcWrapper {
+    padding-inline-end: 14px;
+}
+
+.cvcWrapper>div:first-child {
     flex: 1;
+    padding: 12px 0;
+    padding-right: 30px;
+    /* Space for the CVC icon */
 }
 
-.internalCardIcon {
-    color: #94a3b8;
-    flex-shrink: 0;
+.cvcIcon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #cbd5e1;
+    pointer-events: none;
 }
 
 .cardLogos {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     gap: 8px;
     align-items: center;
-    margin-inline-start: 12px;
-    flex-shrink: 0;
+    pointer-events: none;
+    /* Don't block clicking underneath */
 }
 
 .cardLogos img {
