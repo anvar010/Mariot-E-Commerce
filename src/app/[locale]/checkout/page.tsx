@@ -662,17 +662,21 @@ function CheckoutContent() {
                                             <div className={styles.fieldGroup}>
                                                 <label className={styles.fieldLabel}>Credit or Debit Cards*</label>
                                                 <div className={styles.cardNumberContainer}>
-                                                    <CardNumberElement options={{
-                                                        showIcon: true,
-                                                        style: {
-                                                            base: {
-                                                                fontSize: '16px',
-                                                                color: '#334155',
-                                                                fontFamily: 'Inter, sans-serif',
-                                                                '::placeholder': { color: '#cbd5e1' },
+                                                    <div className={styles.stripeElementWrapper}>
+                                                        <CreditCard size={18} className={styles.internalCardIcon} />
+                                                        <CardNumberElement options={{
+                                                            showIcon: false,
+                                                            placeholder: '1234 1234 1234 1234',
+                                                            style: {
+                                                                base: {
+                                                                    fontSize: '16px',
+                                                                    color: '#334155',
+                                                                    fontFamily: 'Inter, sans-serif',
+                                                                    '::placeholder': { color: '#cbd5e1' },
+                                                                },
                                                             },
-                                                        },
-                                                    }} />
+                                                        }} />
+                                                    </div>
                                                     <div className={styles.cardLogos}>
                                                         <img src="/assets/visa-logo.svg" alt="Visa" />
                                                         <img src="/assets/mastercard-logo.svg" alt="Mastercard" />
@@ -684,6 +688,7 @@ function CheckoutContent() {
                                                     <label className={styles.fieldLabel}>Expiry*</label>
                                                     <div className={styles.expiryWrapper}>
                                                         <CardExpiryElement options={{
+                                                            placeholder: 'MM / YY',
                                                             style: {
                                                                 base: {
                                                                     fontSize: '16px',
@@ -699,6 +704,7 @@ function CheckoutContent() {
                                                     <label className={styles.fieldLabel}>CVC*</label>
                                                     <div className={styles.cvcWrapper}>
                                                         <CardCvcElement options={{
+                                                            placeholder: 'CVC',
                                                             style: {
                                                                 base: {
                                                                     fontSize: '16px',

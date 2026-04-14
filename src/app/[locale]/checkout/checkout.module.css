@@ -516,32 +516,56 @@
 .expiryWrapper,
 .cvcWrapper {
     position: relative;
-    padding: 14px 16px;
+    padding: 12px 14px;
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: 10px;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    /* Ensure a consistent height */
+}
+
+.cardNumberContainer>div:first-child,
+.expiryWrapper>div:first-child,
+.cvcWrapper>div:first-child {
+    flex: 1;
 }
 
 .cardNumberContainer:focus-within,
 .expiryWrapper:focus-within,
 .cvcWrapper:focus-within {
     border-color: #237073;
-    box-shadow: 0 0 0 3px rgba(35, 112, 115, 0.08);
+    box-shadow: 0 0 0 4px rgba(35, 112, 115, 0.08);
+}
+
+.stripeElementWrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.stripeElementWrapper>div {
+    flex: 1;
+}
+
+.internalCardIcon {
+    color: #94a3b8;
+    flex-shrink: 0;
 }
 
 .cardLogos {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
     display: flex;
     gap: 8px;
     align-items: center;
+    margin-inline-start: 12px;
+    flex-shrink: 0;
 }
 
 .cardLogos img {
-    height: 20px;
+    height: 18px;
     width: auto;
     object-fit: contain;
 }
@@ -553,15 +577,17 @@
 }
 
 .cvcWrapper {
-    padding-right: 40px;
+    padding-inline-end: 12px;
+}
+
+.cvcWrapper>div:first-child {
+    flex: 1;
 }
 
 .cvcIcon {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #94a3b8;
+    color: #cbd5e1;
+    margin-inline-start: 8px;
+    flex-shrink: 0;
 }
 
 .streetAddressWrapper {
