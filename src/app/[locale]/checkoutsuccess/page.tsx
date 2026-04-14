@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useEffect, Suspense } from 'react';
+import React, { useEffect, Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Link, useRouter } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import {
     CheckCircle2,
     ShoppingBag,
-    ChevronRight,
     Package,
     Truck,
     MapPin,
@@ -16,20 +15,22 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import { useTranslations } from 'next-intl';
-import { useCart } from '@/context/CartContext';
 import styles from './success.module.css';
 
 const SuccessContent = () => {
-    const router = useRouter();
     const t = useTranslations('success');
     const searchParams = useSearchParams();
-    const { clearCart } = useCart();
-    const orderId = searchParams.get('orderId') || 'Order #M' + Math.floor(100000 + Math.random() * 900000);
+    const [orderId, setOrderId] = useState<string>('...');
 
-    // Defensive programming to ensure cart is cleared
     useEffect(() => {
-        clearCart();
-    }, [clearCart]);
+        const id = searchParams.get('orderId');
+        if (id) {
+            setOrderId(id);
+        } else {
+            // Stable order ID generation on client only to avoid hydration mismatch
+            setOrderId('Order #M' + Math.floor(100000 + Math.random() * 900000));
+        }
+    }, [searchParams]);
 
     return (
         <div className={styles.successPage}>
@@ -129,7 +130,7 @@ const SuccessContent = () => {
 
 const CheckoutSuccessPage = () => {
     return (
-        <Suspense fallback={<div className={styles.successPage}>Loading...</div>}>
+        <Suspense fallback={<div style={{ padding: '100px', textAlign: 'center' }}>Loading...</div>}>
             <SuccessContent />
         </Suspense>
     );
