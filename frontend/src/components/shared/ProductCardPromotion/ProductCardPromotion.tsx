@@ -127,6 +127,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     };
 
     const [logoError, setLogoError] = React.useState(false);
+    const [failedImages, setFailedImages] = React.useState<Set<number>>(new Set());
 
     let allImages = [displayImage];
     if (product.images && Array.isArray(product.images)) {
@@ -235,11 +236,14 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                         {allImages.map((img, i) => (
                             <div key={i} className={styles.imageSlide}>
                                 <Image
-                                    src={img}
+                                    src={failedImages.has(i) ? '/assets/placeholder-image.webp' : img}
                                     alt={`${isArabic && product.name_ar ? product.name_ar : product.name} - ${i + 1}`}
                                     layout="fill"
                                     objectFit="contain"
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                    onError={() => {
+                                        setFailedImages(prev => new Set(prev).add(i));
+                                    }}
                                 />
                             </div>
                         ))}

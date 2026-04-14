@@ -12,30 +12,47 @@ const nextConfig = {
             {
                 protocol: 'https',
                 hostname: 'images.unsplash.com',
+                pathname: '/**',
             },
             {
                 protocol: 'https',
-                hostname: 'plus.unsplash.com'
+                hostname: 'plus.unsplash.com',
+                pathname: '/**',
             },
             {
                 protocol: 'https',
                 hostname: 'via.placeholder.com',
+                pathname: '/**',
             },
             {
                 protocol: 'https',
-                hostname: 'www.rational-online.com'
+                hostname: 'www.rational-online.com',
+                pathname: '/**',
             },
             {
                 protocol: 'https',
                 hostname: 'mariotstore.com',
+                pathname: '/**',
             },
             {
                 protocol: 'https',
                 hostname: 'mariotgroup.com',
+                pathname: '/**',
             },
             {
                 protocol: 'https',
                 hostname: 'mariot-backend.onrender.com',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'mariot-api.onrender.com',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'mariot-ae.onrender.com',
+                pathname: '/**',
             },
             {
                 protocol: 'http',
@@ -44,6 +61,14 @@ const nextConfig = {
                 pathname: '/**',
             }
         ],
+    },
+    async rewrites() {
+        return [
+            {
+                source: '/api/v1/:path*',
+                destination: 'https://mariot-backend.onrender.com/api/v1/:path*',
+            },
+        ];
     },
     async headers() {
         return [

@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './ProductCard.module.css';
-import { Heart, MessageCircle, ShoppingCart, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Star } from 'lucide-react';
 import Link from 'next/link';
 import Image from "next/legacy/image";
 import { useLocale, useTranslations } from 'next-intl';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { getBrandLogo } from '@/utils/brandLogos';
-import { BASE_URL } from '@/config';
+
 import { resolveUrl } from '@/utils/resolveUrl';
 
 export interface Product {
@@ -74,9 +74,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
     const displayPrice = hasOffer ? Number(product.offer_price) : (Number(product?.price) || price);
 
     // Only show old price if it's an actual offer or explicitly provided as non-zero prop
-    const displayOldPrice = hasOffer
+    const displayOldPriceValue = hasOffer
         ? (Number(product?.price) || 0)
         : (product ? 0 : (oldPrice || 0));
+    const displayOldPrice = displayOldPriceValue;
 
     // Discount logic: Only show if valid percentage > 0
     const dbDiscount = product?.discount_percentage;
@@ -200,6 +201,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     };
 
     const [logoError, setLogoError] = React.useState(false);
+    const [imageError, setImageError] = React.useState(false);
 
     return (
         <div className={styles.productCard}>
@@ -210,9 +212,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     {isDailyOffer && <div className={`${styles.dealTag} ${styles.dailyTag}`}>{t('dailyOffer')}</div>}
 
                     {/* Show Top Selling tag if sold_count >= 2 OR manually marked as best seller */}
-                    {/* {((!!product?.is_best_seller) || (Number(product?.sold_count) >= 2)) && !isWeeklyDeal && !isLimitedOffer && !isDailyOffer && (
-                        <div className={`${styles.dealTag} ${styles.bestSellerTag}`}>{t('topSellingProduct')}</div>
-                    )} */}
                 </div>
 
                 {displayDiscount && !isDailyOffer && (
@@ -232,11 +231,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 <Link href={`/product/${product?.slug || displayId}`}>
                     <div className={styles.productImg} style={{ position: 'relative' }}>
                         <Image
-                            src={displayImage}
+                            src={imageError ? 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?q=80&w=1470&auto=format&fit=crop' : displayImage}
                             alt={displayModel}
                             layout="fill"
                             objectFit="contain"
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                            onError={() => setImageError(true)}
                         />
                     </div>
                 </Link>
@@ -265,7 +265,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 <p className={styles.description}>{t('modelLabel')} {product?.model || product?.slug?.toUpperCase() || displayId}</p>
 
                 <Link
-                    href={`/shop?brand=${encodeURIComponent((displayBrand || '').toLowerCase().replace(/ /g, '-'))}`}
+                    href={`/shop?brand=${encodeURIComponent((displayBrand || '').toLowerCase().replaceAll(' ', '-'))}`}
                     className={styles.brandLogoBox}
                     style={{ textDecoration: 'none' }}
                 >
