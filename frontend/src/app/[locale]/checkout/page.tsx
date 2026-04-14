@@ -403,7 +403,7 @@ function CheckoutContent() {
                         }
 
                         if (paymentIntent && paymentIntent.status === 'succeeded') {
-                            clearCart();
+                            await clearCart();
                             showNotification(n('orderSuccess'));
                             router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
                             return;
@@ -412,7 +412,7 @@ function CheckoutContent() {
                 }
                 // Dev Mock handling
                 else if (data.payment_mock) {
-                    clearCart();
+                    await clearCart();
                     showNotification("Payment successful (Mock Dev Mode)");
                     router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
                     return;
@@ -423,7 +423,7 @@ function CheckoutContent() {
                     window.location.href = data.redirect_url;
                 } else {
                     // Only clear frontend cart immediately if it's a direct completion (like Bank Transfer)
-                    clearCart();
+                    await clearCart();
                     showNotification(n('orderSuccess'));
                     router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
                 }

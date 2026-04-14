@@ -16,7 +16,13 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role_id INT DEFAULT 2, -- Default to 'user'
+    status ENUM('active', 'suspended') DEFAULT 'active',
+    phone_number VARCHAR(50),
+    company_name VARCHAR(255),
+    vat_number VARCHAR(100),
     reward_points INT DEFAULT 0,
+    reset_password_token VARCHAR(255),
+    reset_password_expires DATETIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE SET NULL
@@ -26,12 +32,29 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    name_ar VARCHAR(255),
     slug VARCHAR(255) NOT NULL UNIQUE,
     image_url VARCHAR(255),
     description TEXT,
+    parent_id INT NULL,
+    type ENUM('main_category', 'sub_category', 'sub_sub_category') DEFAULT 'main_category',
+    level INT DEFAULT 0,
+    order_index INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    brand_names TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL,
     INDEX (slug)
+);
+
+-- Category Brands Junction Table
+CREATE TABLE IF NOT EXISTS category_brands (
+    category_id INT NOT NULL,
+    brand_id INT NOT NULL,
+    PRIMARY KEY (category_id, brand_id),
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+    FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE CASCADE
 );
 
 -- Brands Table
@@ -138,12 +161,18 @@ CREATE TABLE IF NOT EXISTS orders (
     final_amount DECIMAL(10, 2) NOT NULL,
     status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
     payment_status ENUM('pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
+    is_processed BOOLEAN DEFAULT FALSE,
     payment_method VARCHAR(50),
+    stripe_payment_intent_id VARCHAR(255),
+    points_used INT DEFAULT 0,
+    points_discount DECIMAL(10, 2) DEFAULT 0.00,
+    coupon_id INT,
     shipping_address_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (shipping_address_id) REFERENCES addresses(id) ON DELETE SET NULL
+    FOREIGN KEY (shipping_address_id) REFERENCES addresses(id) ON DELETE SET NULL,
+    FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE SET NULL
 );
 
 -- Order Items Table
@@ -203,13 +232,23 @@ CREATE TABLE IF NOT EXISTS coupons (
     code VARCHAR(50) NOT NULL UNIQUE,
     discount_type ENUM('percentage', 'fixed') DEFAULT 'percentage',
     discount_value DECIMAL(10, 2) NOT NULL,
+    max_discount DECIMAL(10, 2) DEFAULT NULL,
     expiry_date DATE,
     usage_limit INT DEFAULT 0,
     used_count INT DEFAULT 0,
     min_order_amount DECIMAL(10, 2) DEFAULT 0,
+    applicable_brands JSON,
+    applicable_products JSON,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Settings Table
+CREATE TABLE IF NOT EXISTS settings (
+    \`key\` VARCHAR(100) PRIMARY KEY,
+    \`value\` TEXT,
+    \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Initial Data
