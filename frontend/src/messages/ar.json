@@ -899,6 +899,7 @@
         "pointsRedeemed": "النقاط المستخدمة",
         "completePurchase": "إتمام الشراء",
         "processing": "جاري المعالجة...",
+        "redirectingToPayment": "جاري توجيهك إلى صفحة الدفع الآمنة...",
         "securePaymentNotice": "دفعك آمن ومحفر بنسبة 100%.",
         "cardName": "الاسم على البطاقة",
         "cardNumber": "رقم البطاقة",

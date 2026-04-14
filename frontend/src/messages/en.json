@@ -901,6 +901,7 @@
         "pointsRedeemed": "Points Redeemed",
         "completePurchase": "Complete Purchase",
         "processing": "Processing...",
+        "redirectingToPayment": "Redirecting to secure payment page...",
         "securePaymentNotice": "Your payment is 100% secure and encrypted.",
         "cardName": "Name on Card",
         "cardNumber": "Card Number",
