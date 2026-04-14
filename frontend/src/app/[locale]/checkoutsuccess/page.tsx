@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import React, { useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import {
     CheckCircle2,
     ShoppingBag,
@@ -19,7 +19,7 @@ import { useTranslations } from 'next-intl';
 import { useCart } from '@/context/CartContext';
 import styles from './success.module.css';
 
-const CheckoutSuccessPage = () => {
+const SuccessContent = () => {
     const router = useRouter();
     const t = useTranslations('success');
     const searchParams = useSearchParams();
@@ -124,6 +124,14 @@ const CheckoutSuccessPage = () => {
 
             <Footer />
         </div>
+    );
+};
+
+const CheckoutSuccessPage = () => {
+    return (
+        <Suspense fallback={<div className={styles.successPage}>Loading...</div>}>
+            <SuccessContent />
+        </Suspense>
     );
 };
 
