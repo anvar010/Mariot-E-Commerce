@@ -6,4 +6,6 @@ const getBaseUrl = () => {
 };
 
 export const BASE_URL = getBaseUrl();
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `${BASE_URL}/api/v1`;
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL && process.env.NEXT_PUBLIC_API_BASE_URL.startsWith('http'))
+    ? process.env.NEXT_PUBLIC_API_BASE_URL
+    : (process.env.NEXT_PUBLIC_API_BASE_URL || `${BASE_URL}/api/v1`);
