@@ -507,23 +507,24 @@
 }
 
 .fieldLabel {
-    font-size: 14px;
-    font-weight: 600;
-    color: #475569;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
 }
 
 .cardNumberContainer,
 .expiryWrapper,
 .cvcWrapper {
     position: relative;
-    padding: 0 14px;
+    padding: 0 12px;
     background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border: 1.5px solid #f1f5f9;
+    border-radius: 8px;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    min-height: 52px;
+    min-height: 48px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -539,50 +540,42 @@
 .expiryWrapper:focus-within,
 .cvcWrapper:focus-within {
     border-color: #237073;
-    box-shadow: 0 0 0 4px rgba(35, 112, 115, 0.08);
+    border-width: 1.5px;
+    box-shadow: 0 0 0 3px rgba(35, 112, 115, 0.05);
 }
 
 .stripeElementWrapper {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     flex: 1;
     height: 100%;
-    padding: 12px 0;
-    padding-right: 70px;
-    /* Space for the logos on the right */
+    padding: 0;
+    padding-right: 65px;
+    /* Space for the absolute logos */
 }
 
-.cvcWrapper {
-    padding-inline-end: 14px;
-}
-
-.cvcWrapper>div:first-child {
+.stripeElementWrapper>div:last-child {
     flex: 1;
-    padding: 12px 0;
-    padding-right: 30px;
-    /* Space for the CVC icon */
+    height: 100%;
+    display: flex;
+    align-items: center;
 }
 
-.cvcIcon {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #cbd5e1;
-    pointer-events: none;
+.internalCardIcon {
+    color: #94a3b8;
+    flex-shrink: 0;
 }
 
 .cardLogos {
     position: absolute;
-    right: 14px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
     pointer-events: none;
-    /* Don't block clicking underneath */
 }
 
 .cardLogos img {
@@ -597,7 +590,28 @@
     gap: 16px;
 }
 
-.cvcWrapper {}
+.cvcWrapper {
+    /* Use first-child logic inherited from container */
+}
+
+.cvcWrapper>div:first-child {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-right: 25px;
+    /* Space for CVC icon */
+}
+
+.cvcIcon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #cbd5e1;
+    pointer-events: none;
+}
+
 
 .bankDetails {
     padding: 20px 24px 24px 48px;
