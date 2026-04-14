@@ -78,7 +78,8 @@
         "failedConnectServer": "Failed to connect to the server",
         "sending": "Sending...",
         "resetSuccessTitle": "Check your email",
-        "resetSuccessMessage": "We've sent a password reset link to {email}. Please check your inbox and spam folder."
+        "resetSuccessMessage": "We've sent a password reset link to {email}. Please check your inbox and spam folder.",
+        "loading": "Loading..."
     },
     "product": {
         "inStock": "IN STOCK",
