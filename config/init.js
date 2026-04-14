@@ -23,12 +23,47 @@ const initDb = async () => {
         `);
         console.log('[DB] contact_submissions table verified');
 
-        // 2. User Status Migration
+        // 1.5 Category Brands Junction Table
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS category_brands (
+                category_id INT NOT NULL,
+                brand_id INT NOT NULL,
+                PRIMARY KEY (category_id, brand_id)
+            )
+        `);
+        console.log('[DB] category_brands table verified');
+
+        // 1.6 Reward Points History Table
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS reward_points_history (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                points INT NOT NULL,
+                transaction_type ENUM('earned', 'redeemed', 'expired') NOT NULL,
+                order_id INT,
+                description VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('[DB] reward_points_history table verified');
+
+        // 2. User Status Migration & Missing Columns
         try {
-            const [columns] = await db.query("SHOW COLUMNS FROM users LIKE 'status'");
-            if (columns.length === 0) {
-                await db.query("ALTER TABLE users ADD COLUMN status ENUM('active', 'suspended') DEFAULT 'active' AFTER role_id");
-                console.log('[DB] Migration: Added status column to users table');
+            const [columns] = await db.query("SHOW COLUMNS FROM users");
+            const columnNames = columns.map(c => c.Field);
+            const userColumns = [
+                { name: 'status', definition: "ENUM('active', 'suspended') DEFAULT 'active' AFTER role_id" },
+                { name: 'phone_number', definition: "VARCHAR(50)" },
+                { name: 'company_name', definition: "VARCHAR(255)" },
+                { name: 'vat_number', definition: "VARCHAR(100)" },
+                { name: 'reset_password_token', definition: "VARCHAR(255)" },
+                { name: 'reset_password_expires', definition: "DATETIME" }
+            ];
+            for (const col of userColumns) {
+                if (!columnNames.includes(col.name)) {
+                    await db.query(`ALTER TABLE users ADD COLUMN ${col.name} ${col.definition}`);
+                    console.log(`[DB] Migration: Added ${col.name} column to users table`);
+                }
             }
         } catch (err) {
             console.error('[DB] Error migrating users table:', err.message);
@@ -128,7 +163,9 @@ const initDb = async () => {
                 { name: 'type', definition: "ENUM('main_category', 'sub_category', 'sub_sub_category') DEFAULT 'main_category'" },
                 { name: 'level', definition: "INT DEFAULT 0" },
                 { name: 'order_index', definition: "INT DEFAULT 0" },
-                { name: 'is_active', definition: "BOOLEAN DEFAULT TRUE" }
+                { name: 'is_active', definition: "BOOLEAN DEFAULT TRUE" },
+                { name: 'name_ar', definition: "VARCHAR(255)" },
+                { name: 'brand_names', definition: "TEXT" }
             ];
 
             for (const col of categoryColumns) {
@@ -146,6 +183,27 @@ const initDb = async () => {
             }
         } catch (err) {
             console.error('[DB] Error migrating categories table:', err.message);
+        }
+
+        // 6.5 Coupons missing columns migration
+        try {
+            const [columns] = await db.query("SHOW COLUMNS FROM coupons");
+            const columnNames = columns.map(c => c.Field);
+
+            const couponColumns = [
+                { name: 'max_discount', definition: "DECIMAL(10, 2) DEFAULT NULL" },
+                { name: 'applicable_brands', definition: "JSON" },
+                { name: 'applicable_products', definition: "JSON" }
+            ];
+
+            for (const col of couponColumns) {
+                if (!columnNames.includes(col.name)) {
+                    await db.query(`ALTER TABLE coupons ADD COLUMN ${col.name} ${col.definition}`);
+                    console.log(`[DB] Migration: Added ${col.name} column to coupons table`);
+                }
+            }
+        } catch (err) {
+            console.error('[DB] Error migrating coupons table:', err.message);
         }
 
         // 7. Settings Table (Ensure it exists)
