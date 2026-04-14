@@ -108,7 +108,7 @@ class Order {
             );
 
             await connection.execute(
-                'INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, "redeemed", ?, ?)',
+                'INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, \'redeemed\', ?, ?)',
                 [userId, points_to_use, orderId, `Points redeemed for order #${orderId}`]
             );
         }
@@ -125,7 +125,7 @@ class Order {
             );
 
             await connection.execute(
-                'INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, "earned", ?, ?)',
+                'INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, \'earned\', ?, ?)',
                 [userId, pointsEarned, orderId, `Points earned from order #${orderId}`]
             );
         }
