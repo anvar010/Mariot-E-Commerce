@@ -68,6 +68,10 @@ const nextConfig = {
                 source: '/api/v1/:path*',
                 destination: 'https://mariot-backend.onrender.com/api/v1/:path*',
             },
+            {
+                source: '/uploads/:path*',
+                destination: 'https://mariot-backend.onrender.com/uploads/:path*',
+            },
         ];
     },
     async headers() {
