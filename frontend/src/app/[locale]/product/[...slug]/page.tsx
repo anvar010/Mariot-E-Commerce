@@ -98,14 +98,73 @@ export async function generateMetadata({ params }: { params: { slug: string | st
     };
 }
 
-export default function ProductPage({ params }: { params: { slug: string | string[], locale: string } }) {
+export default async function ProductPage({ params }: { params: { slug: string | string[], locale: string } }) {
     // Handle both single slug and catch-all slug (array)
     // Decode each segment to properly handle slashes and special characters
     const slugArray = Array.isArray(params.slug) ? params.slug : [params.slug];
     const slug = slugArray.map(s => decodeURIComponent(s)).join('/');
+    const isArabic = params.locale === 'ar';
+    const SITE_URL = 'https://mariotstore.com';
+
+    let jsonLd = null;
+
+    try {
+        const res = await fetch(`${API_BASE_URL_SERVER}/products/${encodeURIComponent(slug)}`, { cache: 'no-store' });
+        const data = await res.json();
+
+        if (data.success && data.data) {
+            const product = data.data;
+            const title = isArabic && product.name_ar ? product.name_ar : product.name;
+            const description = isArabic && product.short_description_ar ? product.short_description_ar : product.short_description;
+
+            // Clean HTML
+            const cleanDesc = description ? description.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() : `Buy ${title} at Mariot Store.`;
+
+            const imagePath = product.primary_image || (product.images && product.images[0]?.image_url);
+            let resolvedImg = imagePath;
+            if (resolvedImg && !resolvedImg.startsWith('http') && !resolvedImg.includes('localhost')) {
+                const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+                    ? process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api/v1', '')
+                    : 'http://localhost:5000';
+                resolvedImg = resolvedImg.startsWith('/assets/')
+                    ? `${SITE_URL}${resolvedImg}`
+                    : `${BACKEND_URL}${resolvedImg.startsWith('/') ? '' : '/'}${resolvedImg}`;
+            }
+
+            jsonLd = {
+                "@context": "https://schema.org",
+                "@type": "Product",
+                "name": title,
+                "description": cleanDesc,
+                "image": resolvedImg ? [resolvedImg] : [],
+                "sku": product.model || product.slug || product.id,
+                "mpn": product.id,
+                "brand": {
+                    "@type": "Brand",
+                    "name": product.brand_name || 'Mariot'
+                },
+                "offers": {
+                    "@type": "Offer",
+                    "url": `${SITE_URL}/${params.locale}/product/${encodeURIComponent(slug)}`,
+                    "priceCurrency": "AED",
+                    "price": product.offer_price ? Number(product.offer_price) : Number(product.price || 0),
+                    "availability": product.stock_quantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                    "itemCondition": "https://schema.org/NewCondition"
+                }
+            };
+        }
+    } catch (e) {
+        console.error("Failed to generate JSON-LD", e);
+    }
 
     return (
         <main>
+            {jsonLd && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                />
+            )}
             <Header />
             <ProductDetail id={slug} />
             <Footer />
