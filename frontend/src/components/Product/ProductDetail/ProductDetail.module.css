@@ -822,14 +822,18 @@
 .accordions {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.1);
 }
 
 .detailsLayoutGrid {
     display: grid;
     grid-template-columns: 1fr 700px;
     grid-template-areas:
-        "desc desc"
         "accordions video";
     gap: 12px 40px;
     margin-top: 20px;
@@ -839,7 +843,6 @@
 .detailsLayoutGrid.noVideo {
     grid-template-columns: 1fr;
     grid-template-areas:
-        "desc"
         "accordions";
     gap: 12px;
 }
@@ -849,7 +852,6 @@
         grid-template-columns: 1fr !important;
         grid-template-areas:
             "video"
-            "desc"
             "accordions" !important;
         gap: 12px;
         margin-top: 10px;
@@ -1039,23 +1041,21 @@
     max-width: 200px;
 }
 
+/* Accordion styles moved up or handled by shared class */
+
 .accordionItem {
-    background: #ffffff;
-    border: 2px solid #cbd5e1;
-    /* Darker border */
-    border-radius: 12px;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    /* Slightly stronger shadow */
+    border: none;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0;
+    transition: all 0.2s ease;
 }
 
-@media (hover: hover) {
+.accordionItem:last-child {
+    border-bottom: none;
+}
 
-    .accordionItem:hover {
-        border-color: #cbd5e1;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-    }
+.accordionOpen {
+    background: #fcfdfe;
 }
 
 .accordionHeader {
@@ -1064,57 +1064,65 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-weight: 700;
-    font-size: 15px;
-    color: #0f172a;
-    background: linear-gradient(to right, #ffffff, #f8fafc);
+    background: transparent;
     border: none;
     cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 @media (hover: hover) {
-
     .accordionHeader:hover {
-        color: #5bb377;
+        background: #f8fafc;
+    }
+
+    .accordionHeader:hover .accordionHeaderIcon {
+        color: #e31e24;
     }
 }
 
-.accordionHeader svg {
+.accordionHeaderLeft {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.accordionHeaderIcon {
     color: #64748b;
-    transition: transform 0.3s ease, color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
 }
 
-@media (hover: hover) {
+.accordionHeaderText {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
 
-    .accordionHeader:hover svg {
-        color: #5bb377;
-    }
+.accordionHeaderRight {
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
 }
 
 .accordionContent {
     padding: 0 24px 24px 24px;
     font-size: 15px;
     color: #475569;
-    line-height: 1.7;
+    line-height: 1.8;
     background: #ffffff;
-    border-top: 1px dashed #e2e8f0;
-    margin-top: 10px;
-    padding-top: 20px;
-    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-8px);
+@media (max-width: 768px) {
+    .accordionHeader {
+        padding: 18px 20px;
     }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    .accordionHeaderText {
+        font-size: 13px;
     }
 }
 

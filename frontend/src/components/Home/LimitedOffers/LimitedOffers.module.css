@@ -122,6 +122,7 @@
 .emblaViewport {
     overflow: hidden;
     width: 100%;
+    touch-action: pan-y pinch-zoom;
 }
 
 .productGrid {

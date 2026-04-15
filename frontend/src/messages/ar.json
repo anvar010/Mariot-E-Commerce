@@ -710,6 +710,7 @@
         },
         "quotations": {
             "title": "عروضك",
+            "items": "الأصناف",
             "noQuotations": "لا توجد عروض",
             "refNumber": "رقم المرجع:",
             "date": "تاريخ العرض:",
@@ -763,6 +764,7 @@
         },
         "payments": {
             "title": "سجل المدفوعات",
+            "transactions": "المعاملات",
             "noPayments": "لا توجد مدفوعات",
             "order": "طلب رقم #",
             "date": "التاريخ:",

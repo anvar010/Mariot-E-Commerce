@@ -404,29 +404,29 @@
 
     @media (max-width: 480px) {
         .actionBtn {
-            width: 42px !important;
-            height: 42px !important;
+            width: 55px !important;
+            height: 55px !important;
         }
 
         .floatingContainer {
-            bottom: 12px !important;
-            inset-inline-end: 12px !important;
-            gap: 10px !important;
+            bottom: 20px !important;
+            inset-inline-end: 15px !important;
+            gap: 12px !important;
         }
 
         .botWrapper {
-            width: 42px !important;
-            height: 42px !important;
+            width: 55px !important;
+            height: 55px !important;
         }
 
         .actionBtn svg {
-            width: 24px !important;
-            height: 24px !important;
+            width: 28px !important;
+            height: 28px !important;
         }
 
         .fabDot {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             top: -2px;
             right: -2px;
         }

@@ -1002,6 +1002,7 @@
 
     .logoText img {
         height: 44px;
+        width: auto;
     }
 }
 
@@ -1156,6 +1157,7 @@
 
     .logoText img {
         height: 40px;
+        width: auto;
         /* Standard size */
     }
 

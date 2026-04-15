@@ -327,7 +327,7 @@ const AdminDashboard = () => {
                     <div className={styles.chartHeader}>
                         <div className={styles.chartTitleBox}>
                             <Activity size={16} />
-                            <h3>{t('dashboard.charts.salesTrend', { range: timeOptions.find(o => o.value === timeRange)?.label })}</h3>
+                            <h3>{t('dashboard.charts.salesTrend', { range: timeOptions.find(o => o.value === timeRange)?.label || '' })}</h3>
                         </div>
                     </div>
                     <div className={styles.chartContainer}>

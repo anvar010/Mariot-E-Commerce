@@ -221,7 +221,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                             disabled={loading}
                             style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
                         >
-                            {loading ? tAuth('loading') : (isSignIn ? tAuth('signIn') : tAuth('createAccount'))}
+                            {loading ? t('loading') : (isSignIn ? tAuth('signIn') : tAuth('createAccount'))}
                         </button>
                     </form>
 
