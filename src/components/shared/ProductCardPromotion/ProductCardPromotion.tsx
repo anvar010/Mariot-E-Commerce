@@ -174,6 +174,77 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         };
     }, [isHovered, allImages.length, disableHover]);
 
+    const startX = useRef<number | null>(null);
+    const startScrollLeft = useRef<number>(0);
+
+    useEffect(() => {
+        const track = scrollTrackRef.current;
+        if (!track) return;
+
+        const handleDown = (e: any) => {
+            startX.current = e.touches ? e.touches[0].clientX : e.clientX;
+            startScrollLeft.current = track.scrollLeft;
+        };
+
+        const handleMove = (e: any) => {
+            if (startX.current === null) return;
+
+            const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+            const deltaX = currentX - startX.current;
+
+            const isAtStart = track.scrollLeft <= 1;
+            const isAtEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
+
+            // Smart Swipe check: if moving towards boundaries, don't prevent parent
+            const isMovingTowardsBoundary = (deltaX > 0 && isAtStart) || (deltaX < 0 && isAtEnd);
+
+            if (!isMovingTowardsBoundary) {
+                // If we're not at a boundary, we own the swipe
+                e.stopPropagation();
+
+                // On touch devices, prevent browser default only if we are moving horizontally
+                if (Math.abs(deltaX) > 5) {
+                    if (e.cancelable) e.preventDefault();
+                    // Manually scroll the track
+                    track.scrollLeft = startScrollLeft.current - deltaX;
+                }
+            }
+        };
+
+        const handleEnd = () => {
+            if (startX.current !== null) {
+                // Snapping Logic
+                const index = Math.round(track.scrollLeft / track.clientWidth);
+                scrollToIndex(index);
+                setActiveImageIndex(index);
+            }
+            startX.current = null;
+        };
+
+        const events = [
+            { name: 'pointerdown', handler: handleDown },
+            { name: 'touchstart', handler: handleDown },
+            { name: 'pointermove', handler: handleMove },
+            { name: 'touchmove', handler: handleMove },
+            { name: 'pointerup', handler: handleEnd },
+            { name: 'touchend', handler: handleEnd },
+            { name: 'pointercancel', handler: handleEnd },
+            { name: 'touchcancel', handler: handleEnd },
+            { name: 'mousedown', handler: handleDown },
+            { name: 'mousemove', handler: handleMove },
+            { name: 'mouseup', handler: handleEnd }
+        ];
+
+        events.forEach(ev => {
+            // Passive false is important to allow e.preventDefault()
+            track.addEventListener(ev.name, ev.handler, { capture: true, passive: ev.name.includes('move') ? false : true });
+        });
+
+        return () => {
+            events.forEach(ev => track.removeEventListener(ev.name, ev.handler, { capture: true }));
+        };
+    }, [allImages.length]); // Re-bind if image count changes
+
     const handleScroll = () => {
         if (scrollTrackRef.current && !isHovered) {
             const index = Math.round(scrollTrackRef.current.scrollLeft / scrollTrackRef.current.clientWidth);

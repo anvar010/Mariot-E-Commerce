@@ -34,6 +34,7 @@ import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
+import { useSearchParams } from 'next/navigation';
 
 const UserDashboard = () => {
     const t = useTranslations('userDashboard');
@@ -43,9 +44,17 @@ const UserDashboard = () => {
     const { showNotification } = useNotification();
     const router = useRouter();
     const locale = useLocale();
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab');
 
     const [activeSection, setActiveSection] = useState('yourOrders');
     const [activeTab, setActiveTab] = useState('All Orders');
+
+    useEffect(() => {
+        if (tabParam) {
+            setActiveSection(tabParam);
+        }
+    }, [tabParam]);
 
     const [profileTab, setProfileTab] = useState('Personal Info');
     const [formData, setFormData] = useState({
@@ -1160,12 +1169,15 @@ const UserDashboard = () => {
             );
         }
 
+        const currentNavItem = navItems.find(item => item.name === activeSection);
+        const sectionDisplayName = currentNavItem ? currentNavItem.translationName : activeSection;
+
         return (
             <div className={styles.emptyState}>
                 <div className={styles.emptyIcon}>
                     <Inbox size={60} strokeWidth={1} />
                 </div>
-                <h3 className={styles.emptyText}>{t('comingSoon', { section: activeSection })}</h3>
+                <h3 className={styles.emptyText}>{t('comingSoon', { section: sectionDisplayName })}</h3>
             </div>
         );
     };
@@ -1202,6 +1214,8 @@ const UserDashboard = () => {
                                             router.push('/sellerDashboard');
                                         } else {
                                             setActiveSection(item.name);
+                                            // Update URL to keep it in sync
+                                            router.push(`/profile?tab=${item.name}`, { scroll: false });
                                         }
                                     }}
                                     className={`${styles.navLink} ${activeSection === item.name ? styles.active : ''}`}

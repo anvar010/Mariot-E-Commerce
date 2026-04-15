@@ -24,7 +24,10 @@ import {
     HelpCircle,
     Tag,
     Upload,
-    Maximize2
+    Maximize2,
+    PlayCircle,
+    Info,
+    ListChecks
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
@@ -40,6 +43,7 @@ import ProductCardPromotion from '@/components/shared/ProductCardPromotion/Produ
 import Link from 'next/link';
 import { MessageSquare, Phone } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Script from 'next/script';
 
 // Swiper imports
@@ -64,13 +68,34 @@ const TrustItem = ({ icon, title, text }: any) => (
     </div>
 );
 
-const AccordionItem = ({ title, isOpen, onToggle, children }: any) => (
-    <div className={styles.accordionItem}>
+const AccordionItem = ({ title, icon, isOpen, onToggle, children }: any) => (
+    <div className={`${styles.accordionItem} ${isOpen ? styles.accordionOpen : ''}`}>
         <button className={styles.accordionHeader} onClick={onToggle}>
-            {title}
-            {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            <div className={styles.accordionHeaderLeft}>
+                {icon && <span className={styles.accordionHeaderIcon}>{icon}</span>}
+                <span className={styles.accordionHeaderText}>{title}</span>
+            </div>
+            <div className={styles.accordionHeaderRight}>
+                <motion.div
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                >
+                    <ChevronDown size={20} />
+                </motion.div>
+            </div>
         </button>
-        {isOpen && <div className={styles.accordionContent}>{children}</div>}
+        <AnimatePresence initial={false}>
+            {isOpen && (
+                <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                >
+                    <div className={styles.accordionContent}>{children}</div>
+                </motion.div>
+            )}
+        </AnimatePresence>
     </div>
 );
 
@@ -773,7 +798,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                                 {/* Extra Services */}
                                 <div className={styles.extraServicesSection}>
-                                    <h3 className={styles.extraServicesTitle}>{t('extraServices') || 'Extra Services'}</h3>
                                     <div className={styles.priceMatchCard} onClick={() => setShowPriceMatchModal(true)}>
                                         <Tag className={styles.priceMatchIcon} size={24} fill="currentColor" />
                                         <div className={styles.priceMatchInfo}>
@@ -877,27 +901,28 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 </div>
 
                 <div className={`${styles.detailsLayoutGrid} ${!hasVideo ? styles.noVideo : ''}`}>
-                    {/* Description Accordion (area: desc) */}
-                    <div className={styles.fullWidthDescription}>
-                        <AccordionItem
-                            title={t('description')}
-                            isOpen={!!expandedAccordions['description']}
-                            onToggle={() => toggleAccordion('description')}
-                        >
-                            <div
-                                className={styles.descriptionText}
-                                dangerouslySetInnerHTML={{
-                                    __html: cleanShortcodes(getLocalizedField('description', 'description_ar')) || `<p>${t('noDescription')}</p>`
-                                }}
-                            />
-                        </AccordionItem>
-                    </div>
-
-                    {/* Left Column: Accordions (area: accordions) */}
+                    {/* Main Content Area (Accordions Column) */}
                     <div className={styles.accordionsColumn}>
                         <div className={styles.accordions}>
+                            {/* Description Accordion */}
+                            <AccordionItem
+                                title={t('description')}
+                                icon={<FileText size={20} />}
+                                isOpen={!!expandedAccordions['description']}
+                                onToggle={() => toggleAccordion('description')}
+                            >
+                                <div
+                                    className={styles.descriptionText}
+                                    dangerouslySetInnerHTML={{
+                                        __html: cleanShortcodes(getLocalizedField('description', 'description_ar')) || `<p>${t('noDescription')}</p>`
+                                    }}
+                                />
+                            </AccordionItem>
+
+                            {/* Product Specs */}
                             <AccordionItem
                                 title={t('productSpecs')}
+                                icon={<ListChecks size={20} />}
                                 isOpen={!!expandedAccordions['specs']}
                                 onToggle={() => toggleAccordion('specs')}
                             >
@@ -938,6 +963,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             </AccordionItem>
                             <AccordionItem
                                 title={t('aboutBrand')}
+                                icon={<Award size={20} />}
                                 isOpen={!!expandedAccordions['brand']}
                                 onToggle={() => toggleAccordion('brand')}
                             >
@@ -952,6 +978,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             </AccordionItem>
                             <AccordionItem
                                 title={t('resourcesDownloads')}
+                                icon={<FileDown size={20} />}
                                 isOpen={!!expandedAccordions['resources']}
                                 onToggle={() => toggleAccordion('resources')}
                             >
@@ -1001,6 +1028,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             </AccordionItem>
                             <AccordionItem
                                 title={t('relatedVideos')}
+                                icon={<PlayCircle size={20} />}
                                 isOpen={!!expandedAccordions['videos']}
                                 onToggle={() => toggleAccordion('videos')}
                             >

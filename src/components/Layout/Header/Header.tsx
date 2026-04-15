@@ -236,21 +236,16 @@ const Header = () => {
                         <div className={styles.logoSection}>
                             <Link href="/" className={styles.logo}>
                                 <div className={styles.logoWithIcon}>
-                                    <Image
+                                    <img
                                         src="/assets/mariot-icon.webp"
                                         alt="Mariot Icon"
-                                        width={40}
-                                        height={40}
                                         className={styles.miniIcon}
                                     />
                                     <div className={styles.logoText}>
-                                        <Image
+                                        <img
                                             src="/assets/mariot-logo.webp"
                                             alt="Mariot Logo"
-                                            width={150}
-                                            height={40}
                                             className={styles.logoImage}
-                                            priority
                                         />
                                     </div>
                                 </div>
@@ -391,7 +386,7 @@ const Header = () => {
                         </div>
 
                         <div className={styles.userActions}>
-                            <div className={`${styles.rewardPoints} ${styles.desktopOnly}`}>
+                            <Link href="/profile?tab=myRewards" className={`${styles.rewardPoints} ${styles.desktopOnly}`}>
                                 <Coins size={24} className={styles.pointIcon} />
                                 <div className={styles.actionText}>
                                     <span className={styles.label}>{t('rewardPoints')}</span>
@@ -410,7 +405,7 @@ const Header = () => {
                                         </div>
                                     </div>
                                 )}
-                            </div>
+                            </Link>
 
                             <div className={`${styles.langSelectorContainer} ${styles.headerLangSelector}`}>
                                 <button className={styles.langSelector} onClick={toggleLang}>

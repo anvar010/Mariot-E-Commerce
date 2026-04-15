@@ -50,9 +50,10 @@ const CategoryBrowse = () => {
         loop: false,
         direction: isRtl ? 'rtl' : 'ltr',
         align: 'start',
-        skipSnaps: true,
-        dragFree: true,
-        containScroll: 'trimSnaps'
+        skipSnaps: false,
+        dragFree: false,
+        containScroll: 'trimSnaps',
+        slidesToScroll: 3
     });
 
     // Fetch categories dynamically to keep in sync with the Mega Menu and Shop
@@ -151,45 +152,55 @@ const CategoryBrowse = () => {
                 <div className={styles.sliderWrapper}>
                     <div className={styles.emblaViewport} ref={emblaRef}>
                         <div className={styles.categoryGrid}>
-                            {apiCategories.map((category) => {
-                                const slug = normalizeSlug(category.name);
-                                const displayName = (isRtl && category.name_ar) ? category.name_ar : (t.has(slug) ? t(slug) : category.name);
+                            {(() => {
+                                const chunked = [];
+                                for (let i = 0; i < apiCategories.length; i += 2) {
+                                    chunked.push(apiCategories.slice(i, i + 2));
+                                }
+                                return chunked.map((column, idx) => (
+                                    <div key={idx} className={styles.categoryColumn}>
+                                        {column.map((category) => {
+                                            const slug = normalizeSlug(category.name);
+                                            const displayName = (isRtl && category.name_ar) ? category.name_ar : (t.has(slug) ? t(slug) : category.name);
 
-                                return (
-                                    <div key={category.id} className={styles.categoryCardWrapper}>
-                                        <Link
-                                            href={`/shop?category=${slug}`}
-                                            className={styles.categoryCard}
-                                        >
-                                            <div className={styles.imageBox}>
-                                                <Image
-                                                    src={getCategoryImage(category)}
-                                                    alt={displayName}
-                                                    fill
-                                                    sizes="(max-width: 768px) 150px, 120px"
-                                                    style={{ objectFit: 'contain', zIndex: 10 }}
-                                                    className={styles.categoryImg}
-                                                    onError={(e) => {
-                                                        const target = e.target as HTMLImageElement;
-                                                        target.src = '/assets/placeholder-image.webp';
-                                                    }}
-                                                />
-                                                <div className={styles.imageOverlay}>
-                                                    {displayName.split(' ')[0]}
+                                            return (
+                                                <div key={category.id} className={styles.categoryCardWrapper}>
+                                                    <Link
+                                                        href={`/shop?category=${slug}`}
+                                                        className={styles.categoryCard}
+                                                    >
+                                                        <div className={styles.imageBox}>
+                                                            <Image
+                                                                src={getCategoryImage(category)}
+                                                                alt={displayName}
+                                                                fill
+                                                                sizes="(max-width: 768px) 150px, 120px"
+                                                                style={{ objectFit: 'contain', zIndex: 10 }}
+                                                                className={styles.categoryImg}
+                                                                onError={(e) => {
+                                                                    const target = e.target as HTMLImageElement;
+                                                                    target.src = '/assets/placeholder-image.webp';
+                                                                }}
+                                                            />
+                                                            <div className={styles.imageOverlay}>
+                                                                {displayName.split(' ')[0]}
+                                                            </div>
+                                                        </div>
+                                                        <div className={styles.cardBottom}>
+                                                            <span className={styles.categoryName}>
+                                                                {displayName}
+                                                            </span>
+                                                            <span className={styles.categoryArrow}>
+                                                                {isRtl ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
+                                                            </span>
+                                                        </div>
+                                                    </Link>
                                                 </div>
-                                            </div>
-                                            <div className={styles.cardBottom}>
-                                                <span className={styles.categoryName}>
-                                                    {displayName}
-                                                </span>
-                                                <span className={styles.categoryArrow}>
-                                                    {isRtl ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
-                                                </span>
-                                            </div>
-                                        </Link>
+                                            );
+                                        })}
                                     </div>
-                                );
-                            })}
+                                ));
+                            })()}
                         </div>
                     </div>
 
