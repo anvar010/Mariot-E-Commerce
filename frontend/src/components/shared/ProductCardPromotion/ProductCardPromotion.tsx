@@ -181,72 +181,72 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         const track = scrollTrackRef.current;
         if (!track) return;
 
-        let startXLocal = 0;
-        let startYLocal = 0;
+        let startY: number | null = null;
         let isHorizontalSwipe = false;
-        let isFirstMove = true;
+        let isLockAttempted = false;
 
         const handleDown = (e: any) => {
-            const touch = e.touches ? e.touches[0] : e;
-            startXLocal = touch.clientX;
-            startYLocal = touch.clientY;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            startX.current = clientX;
+            startY = clientY;
+            startScrollLeft.current = track.scrollLeft;
             isHorizontalSwipe = false;
-            isFirstMove = true;
+            isLockAttempted = false;
         };
 
         const handleMove = (e: any) => {
-            if (isFirstMove) {
-                const touch = e.touches ? e.touches[0] : e;
-                const deltaX = Math.abs(touch.clientX - startXLocal);
-                const deltaY = Math.abs(touch.clientY - startYLocal);
+            if (startX.current === null || startY === null) return;
 
-                // If horizontal movement is greater than vertical, it's a swipe
-                if (deltaX > deltaY && deltaX > 5) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const deltaX = clientX - startX.current;
+            const deltaY = clientY - startY;
+
+            // Axis Locking: Decide early if this is horizontal or vertical
+            if (!isLockAttempted && (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)) {
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
                     isHorizontalSwipe = true;
                 }
-                isFirstMove = false;
+                isLockAttempted = true;
             }
 
             if (isHorizontalSwipe) {
-                const touch = e.touches ? e.touches[0] : e;
-                const deltaX = touch.clientX - startXLocal;
-
-                // RTL-aware boundary check
-                const isRTL = document.dir === 'rtl' || getComputedStyle(track).direction === 'rtl';
-                const scrollLeft = track.scrollLeft;
-                const maxScroll = track.scrollWidth - track.clientWidth;
-
-                let isAtStart = false;
-                let isAtEnd = false;
-
-                if (isRTL) {
-                    // RTL scrollLeft can be negative or positive depending on browser
-                    // In modern Chrome RTL, scrollLeft is 0 at right and negative to the left
-                    isAtStart = Math.abs(scrollLeft) <= 1;
-                    isAtEnd = Math.abs(scrollLeft) >= maxScroll - 1;
-                } else {
-                    isAtStart = scrollLeft <= 1;
-                    isAtEnd = scrollLeft >= maxScroll - 1;
-                }
-
+                const isAtStart = track.scrollLeft <= 2;
+                const isAtEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
                 const isMovingTowardsBoundary = (deltaX > 0 && isAtStart) || (deltaX < 0 && isAtEnd);
 
                 if (!isMovingTowardsBoundary) {
-                    // Stop parent from swiping
+                    // Block the Home Page Carousel from moving
                     e.stopPropagation();
+                    if (e.cancelable) e.preventDefault();
+
+                    // Manually update the scroll position
+                    track.scrollLeft = startScrollLeft.current - deltaX;
                 }
             }
         };
 
         const handleEnd = () => {
-            isFirstMove = true;
-            isHorizontalSwipe = false;
+            if (startX.current !== null && isHorizontalSwipe) {
+                // Snapping Logic
+                const index = Math.round(track.scrollLeft / track.clientWidth);
+                scrollToIndex(index);
+                setActiveImageIndex(index);
+            }
+            startX.current = null;
+            startY = null;
         };
 
         const events = [
+            { name: 'pointerdown', handler: handleDown },
             { name: 'touchstart', handler: handleDown },
+            { name: 'pointermove', handler: handleMove },
             { name: 'touchmove', handler: handleMove },
+            { name: 'pointerup', handler: handleEnd },
             { name: 'touchend', handler: handleEnd },
+            { name: 'pointercancel', handler: handleEnd },
             { name: 'touchcancel', handler: handleEnd },
             { name: 'mousedown', handler: handleDown },
             { name: 'mousemove', handler: handleMove },
@@ -254,6 +254,8 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         ];
 
         events.forEach(ev => {
+            // passive: false is critical for e.preventDefault()
+            // capture: true is critical for blocking parent carousels
             track.addEventListener(ev.name, ev.handler, { capture: true, passive: ev.name.includes('move') ? false : true });
         });
 
@@ -263,10 +265,9 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     }, [allImages.length]);
 
     const handleScroll = () => {
-        if (scrollTrackRef.current) {
-            const track = scrollTrackRef.current;
-            const index = Math.round(Math.abs(track.scrollLeft) / track.clientWidth);
-            if (index !== activeImageIndex && index >= 0 && index < allImages.length) {
+        if (scrollTrackRef.current && !isHovered) {
+            const index = Math.round(scrollTrackRef.current.scrollLeft / scrollTrackRef.current.clientWidth);
+            if (index !== activeImageIndex) {
                 setActiveImageIndex(index);
             }
         }
