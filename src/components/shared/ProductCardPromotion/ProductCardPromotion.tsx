@@ -9,6 +9,8 @@ import { BASE_URL } from '@/config';
 import { useLocale, useTranslations } from 'next-intl';
 import { resolveUrl } from '@/utils/resolveUrl';
 
+import useEmblaCarousel from 'embla-carousel-react';
+
 interface ProductCardPromotionProps {
     product: {
         id: string | number;
@@ -141,153 +143,74 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
 
     const [isHovered, setIsHovered] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
-    const scrollTrackRef = useRef<HTMLDivElement>(null);
-    const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
 
-    const scrollToIndex = (index: number) => {
-        if (scrollTrackRef.current) {
-            const offset = scrollTrackRef.current.clientWidth * index;
-            scrollTrackRef.current.scrollTo({ left: offset, behavior: 'smooth' });
-        }
-    };
+    // Embla Carousel setup
+    const [emblaRef, emblaApi] = useEmblaCarousel({
+        loop: true,
+        direction: isArabic ? 'rtl' : 'ltr',
+        align: 'center',
+        skipSnaps: false,
+        duration: 25,
+        dragFree: false
+    });
 
+    // Auto-scroll on hover (mimicking original behavior)
     useEffect(() => {
-        const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches;
+        if (!emblaApi || allImages.length <= 1 || disableHover) return;
 
-        if (isHovered && allImages.length > 1 && !isTouchDevice) {
-            autoScrollTimer.current = setInterval(() => {
-                setActiveImageIndex(prev => {
-                    const nextId = (prev + 1) % allImages.length;
-                    scrollToIndex(nextId);
-                    return nextId;
-                });
+        let interval: NodeJS.Timeout | null = null;
+        if (isHovered) {
+            interval = setInterval(() => {
+                emblaApi.scrollNext();
             }, 2000);
         } else {
-            if (autoScrollTimer.current) clearInterval(autoScrollTimer.current);
-            if (!isHovered && activeImageIndex !== 0) {
-                setActiveImageIndex(0);
-                scrollToIndex(0);
-            }
+            emblaApi.scrollTo(0);
         }
+
         return () => {
-            if (autoScrollTimer.current) clearInterval(autoScrollTimer.current);
+            if (interval) clearInterval(interval);
         };
-    }, [isHovered, allImages.length, disableHover]);
+    }, [emblaApi, isHovered, allImages.length, disableHover]);
 
-    const startX = useRef<number | null>(null);
-    const startScrollLeft = useRef<number>(0);
-
+    // Track active index
     useEffect(() => {
-        const track = scrollTrackRef.current;
-        if (!track) return;
-
-        let startY: number | null = null;
-        let isHorizontalSwipe = false;
-        let isLockAttempted = false;
-
-        const handleDown = (e: any) => {
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            startX.current = clientX;
-            startY = clientY;
-            startScrollLeft.current = track.scrollLeft;
-            isHorizontalSwipe = false;
-            isLockAttempted = false;
-        };
-
-        const handleMove = (e: any) => {
-            if (startX.current === null || startY === null) return;
-
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-            const deltaX = clientX - startX.current;
-            const deltaY = clientY - startY;
-
-            // Axis Locking: Decide early if this is horizontal or vertical
-            if (!isLockAttempted && (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)) {
-                if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    isHorizontalSwipe = true;
-                }
-                isLockAttempted = true;
-            }
-
-            if (isHorizontalSwipe) {
-                const isAtStart = track.scrollLeft <= 2;
-                const isAtEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
-                const isMovingTowardsBoundary = (deltaX > 0 && isAtStart) || (deltaX < 0 && isAtEnd);
-
-                if (!isMovingTowardsBoundary) {
-                    // Block the Home Page Carousel from moving
-                    e.stopPropagation();
-                    if (e.cancelable) e.preventDefault();
-
-                    // Manually update the scroll position
-                    track.scrollLeft = startScrollLeft.current - deltaX;
-                }
-            }
-        };
-
-        const handleEnd = () => {
-            if (startX.current !== null && isHorizontalSwipe) {
-                // Snapping Logic
-                const index = Math.round(track.scrollLeft / track.clientWidth);
-                scrollToIndex(index);
-                setActiveImageIndex(index);
-            }
-            startX.current = null;
-            startY = null;
-        };
-
-        const events = [
-            { name: 'pointerdown', handler: handleDown },
-            { name: 'touchstart', handler: handleDown },
-            { name: 'pointermove', handler: handleMove },
-            { name: 'touchmove', handler: handleMove },
-            { name: 'pointerup', handler: handleEnd },
-            { name: 'touchend', handler: handleEnd },
-            { name: 'pointercancel', handler: handleEnd },
-            { name: 'touchcancel', handler: handleEnd },
-            { name: 'mousedown', handler: handleDown },
-            { name: 'mousemove', handler: handleMove },
-            { name: 'mouseup', handler: handleEnd }
-        ];
-
-        events.forEach(ev => {
-            // passive: false is critical for e.preventDefault()
-            // capture: true is critical for blocking parent carousels
-            track.addEventListener(ev.name, ev.handler, { capture: true, passive: ev.name.includes('move') ? false : true });
-        });
-
+        if (!emblaApi) return;
+        const onSelect = () => setActiveImageIndex(emblaApi.selectedScrollSnap());
+        emblaApi.on('select', onSelect);
         return () => {
-            events.forEach(ev => track.removeEventListener(ev.name, ev.handler, { capture: true }));
+            emblaApi.off('select', onSelect);
         };
-    }, [allImages.length]);
-
-    const handleScroll = () => {
-        if (scrollTrackRef.current && !isHovered) {
-            const index = Math.round(scrollTrackRef.current.scrollLeft / scrollTrackRef.current.clientWidth);
-            if (index !== activeImageIndex) {
-                setActiveImageIndex(index);
-            }
-        }
-    };
+    }, [emblaApi]);
 
     const handleNextImage = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        const nextId = (activeImageIndex + 1) % allImages.length;
-        setActiveImageIndex(nextId);
-        scrollToIndex(nextId);
+        if (emblaApi) emblaApi.scrollNext();
     };
 
     const handlePrevImage = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        const prevId = (activeImageIndex - 1 + allImages.length) % allImages.length;
-        setActiveImageIndex(prevId);
-        scrollToIndex(prevId);
+        if (emblaApi) emblaApi.scrollPrev();
     };
+
+    // Event blocking to prevent parent carousels from moving
+    useEffect(() => {
+        const track = emblaApi?.rootNode();
+        if (!track) return;
+
+        const stop = (e: Event) => {
+            // Stop propagation to parents during bubbling
+            e.stopPropagation();
+        };
+
+        const events = ['pointerdown', 'mousedown', 'touchstart', 'pointermove', 'touchmove', 'mousemove'];
+        events.forEach(ev => track.addEventListener(ev, stop, { capture: false }));
+
+        return () => {
+            events.forEach(ev => track.removeEventListener(ev, stop, { capture: false }));
+        };
+    }, [emblaApi]);
 
     return (
         <div className={`${styles.card} ${disableHover ? styles.noHover : ''}`}>
@@ -320,23 +243,24 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                 >
                     <div
                         className={styles.imageTrack}
-                        ref={scrollTrackRef}
-                        onScroll={handleScroll}
+                        ref={emblaRef}
                     >
-                        {allImages.map((img, i) => (
-                            <div key={i} className={styles.imageSlide}>
-                                <Image
-                                    src={failedImages.has(i) ? '/assets/placeholder-image.webp' : img}
-                                    alt={`${isArabic && product.name_ar ? product.name_ar : product.name} - ${i + 1}`}
-                                    layout="fill"
-                                    objectFit="contain"
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                                    onError={() => {
-                                        setFailedImages(prev => new Set(prev).add(i));
-                                    }}
-                                />
-                            </div>
-                        ))}
+                        <div className={styles.emblaContainer}>
+                            {allImages.map((img, i) => (
+                                <div key={i} className={styles.imageSlide}>
+                                    <Image
+                                        src={failedImages.has(i) ? '/assets/placeholder-image.webp' : img}
+                                        alt={`${isArabic && product.name_ar ? product.name_ar : product.name} - ${i + 1}`}
+                                        layout="fill"
+                                        objectFit="contain"
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                        onError={() => {
+                                            setFailedImages(prev => new Set(prev).add(i));
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {allImages.length > 1 && (
