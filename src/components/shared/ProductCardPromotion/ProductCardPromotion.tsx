@@ -181,54 +181,72 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         const track = scrollTrackRef.current;
         if (!track) return;
 
+        let startXLocal = 0;
+        let startYLocal = 0;
+        let isHorizontalSwipe = false;
+        let isFirstMove = true;
+
         const handleDown = (e: any) => {
-            startX.current = e.touches ? e.touches[0].clientX : e.clientX;
-            startScrollLeft.current = track.scrollLeft;
+            const touch = e.touches ? e.touches[0] : e;
+            startXLocal = touch.clientX;
+            startYLocal = touch.clientY;
+            isHorizontalSwipe = false;
+            isFirstMove = true;
         };
 
         const handleMove = (e: any) => {
-            if (startX.current === null) return;
+            if (isFirstMove) {
+                const touch = e.touches ? e.touches[0] : e;
+                const deltaX = Math.abs(touch.clientX - startXLocal);
+                const deltaY = Math.abs(touch.clientY - startYLocal);
 
-            const currentX = e.touches ? e.touches[0].clientX : e.clientX;
-            const deltaX = currentX - startX.current;
+                // If horizontal movement is greater than vertical, it's a swipe
+                if (deltaX > deltaY && deltaX > 5) {
+                    isHorizontalSwipe = true;
+                }
+                isFirstMove = false;
+            }
 
-            const isAtStart = track.scrollLeft <= 1;
-            const isAtEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
+            if (isHorizontalSwipe) {
+                const touch = e.touches ? e.touches[0] : e;
+                const deltaX = touch.clientX - startXLocal;
 
-            // Smart Swipe check: if moving towards boundaries, don't prevent parent
-            const isMovingTowardsBoundary = (deltaX > 0 && isAtStart) || (deltaX < 0 && isAtEnd);
+                // RTL-aware boundary check
+                const isRTL = document.dir === 'rtl' || getComputedStyle(track).direction === 'rtl';
+                const scrollLeft = track.scrollLeft;
+                const maxScroll = track.scrollWidth - track.clientWidth;
 
-            if (!isMovingTowardsBoundary) {
-                // If we're not at a boundary, we own the swipe
-                e.stopPropagation();
+                let isAtStart = false;
+                let isAtEnd = false;
 
-                // On touch devices, prevent browser default only if we are moving horizontally
-                if (Math.abs(deltaX) > 5) {
-                    if (e.cancelable) e.preventDefault();
-                    // Manually scroll the track
-                    track.scrollLeft = startScrollLeft.current - deltaX;
+                if (isRTL) {
+                    // RTL scrollLeft can be negative or positive depending on browser
+                    // In modern Chrome RTL, scrollLeft is 0 at right and negative to the left
+                    isAtStart = Math.abs(scrollLeft) <= 1;
+                    isAtEnd = Math.abs(scrollLeft) >= maxScroll - 1;
+                } else {
+                    isAtStart = scrollLeft <= 1;
+                    isAtEnd = scrollLeft >= maxScroll - 1;
+                }
+
+                const isMovingTowardsBoundary = (deltaX > 0 && isAtStart) || (deltaX < 0 && isAtEnd);
+
+                if (!isMovingTowardsBoundary) {
+                    // Stop parent from swiping
+                    e.stopPropagation();
                 }
             }
         };
 
         const handleEnd = () => {
-            if (startX.current !== null) {
-                // Snapping Logic
-                const index = Math.round(track.scrollLeft / track.clientWidth);
-                scrollToIndex(index);
-                setActiveImageIndex(index);
-            }
-            startX.current = null;
+            isFirstMove = true;
+            isHorizontalSwipe = false;
         };
 
         const events = [
-            { name: 'pointerdown', handler: handleDown },
             { name: 'touchstart', handler: handleDown },
-            { name: 'pointermove', handler: handleMove },
             { name: 'touchmove', handler: handleMove },
-            { name: 'pointerup', handler: handleEnd },
             { name: 'touchend', handler: handleEnd },
-            { name: 'pointercancel', handler: handleEnd },
             { name: 'touchcancel', handler: handleEnd },
             { name: 'mousedown', handler: handleDown },
             { name: 'mousemove', handler: handleMove },
@@ -236,19 +254,19 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         ];
 
         events.forEach(ev => {
-            // Passive false is important to allow e.preventDefault()
             track.addEventListener(ev.name, ev.handler, { capture: true, passive: ev.name.includes('move') ? false : true });
         });
 
         return () => {
             events.forEach(ev => track.removeEventListener(ev.name, ev.handler, { capture: true }));
         };
-    }, [allImages.length]); // Re-bind if image count changes
+    }, [allImages.length]);
 
     const handleScroll = () => {
-        if (scrollTrackRef.current && !isHovered) {
-            const index = Math.round(scrollTrackRef.current.scrollLeft / scrollTrackRef.current.clientWidth);
-            if (index !== activeImageIndex) {
+        if (scrollTrackRef.current) {
+            const track = scrollTrackRef.current;
+            const index = Math.round(Math.abs(track.scrollLeft) / track.clientWidth);
+            if (index !== activeImageIndex && index >= 0 && index < allImages.length) {
                 setActiveImageIndex(index);
             }
         }
