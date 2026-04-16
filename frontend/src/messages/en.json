@@ -1,5 +1,7 @@
 {
     "header": {
+        "home": "Home",
+        "shopAll": "shop all",
         "topBanner": "#1 UAE KITCHEN EQUIPMENT SUPPLIER",
         "delivery": "WE DELIVER – SAUDI | KUWAIT | QATAR | OMAN | BAHRAIN",
         "searchPlaceholder": "What are you looking for?",
@@ -262,6 +264,8 @@
         "uaeTrustedSupplier": "UAE TRUSTED SUPPLIER"
     },
     "categories": {
+        "popularBrands": "Popular brands",
+        "shopAll": "shop all",
         "coffee-makers": "Coffee Makers",
         "ice-equipment": "Ice Equipment",
         "cooking-equipment": "Cooking Equipment",
@@ -1419,11 +1423,21 @@
             "searchPlaceholder": "Search for product name, model, or ref...",
             "filters": {
                 "categories": "All Categories",
+                "category": "Category",
                 "brands": "All Brands",
                 "status": "Status (All)",
                 "stock": "Stock (All)",
                 "offers": "Offer Tags (All)",
+                "featured": "Featured",
+                "weekly": "Weekly Deal",
+                "daily": "Daily Offer",
+                "limited": "Limited Offer",
+                "bestseller": "Best Seller",
                 "search": "Search..."
+            },
+            "footer": {
+                "cancel": "Discard Changes",
+                "save": "Commit to Catalog"
             },
             "actions": {
                 "add": "Product",
@@ -1432,6 +1446,8 @@
                 "template": "Import Template",
                 "downloading": "Exporting...",
                 "importing": "Importing...",
+                "processing": "Processing...",
+                "update": "Update Product",
                 "bulkUpdate": "Set Offer Duration",
                 "bulkUpdateSubtitle": "Updating {count} selected products.",
                 "note": "Note:",
@@ -1440,6 +1456,7 @@
             "table": {
                 "product": "Product Information",
                 "category": "Category",
+                "brand": "Brand",
                 "pricing": "Pricing (AED)",
                 "stock": "Stock",
                 "status": "Status",
@@ -1475,7 +1492,7 @@
                     "offerPrice": "Sale Price (AED)",
                     "stock": "Inventory Quantity",
                     "trackStock": "Enable stock tracking for this product",
-                    "status": "Inventory Status",
+                    "status": "Catalog Visibility",
                     "group": "Promotion Heading (Optional)",
                     "description": "English Description",
                     "descriptionAr": "Arabic Description",
@@ -1483,6 +1500,7 @@
                     "shortDescAr": "Short Summary (Arabic)",
                     "specs": "Detailed Specifications",
                     "primaryImage": "Primary Product Image",
+                    "uploadImage": "Click to upload image",
                     "additionalImages": "Additional Angle Images",
                     "videos": "Product Video Showcases",
                     "addVideo": "Add Video Link",
