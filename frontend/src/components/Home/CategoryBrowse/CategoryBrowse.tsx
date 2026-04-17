@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
 import { normalizeSlug } from '@/utils/shopCategories';
 
 // Static image mapping for public/assets/product_images
@@ -101,11 +101,13 @@ const CategoryBrowse = () => {
 
     const getCategoryImage = (category: any) => {
         // If the API provides an image, use it
-        if (category.image_url) return category.image_url;
+        if (category.image_url) {
+            if (category.image_url.startsWith('http')) return category.image_url;
+            return `${MEDIA_BASE_URL}${category.image_url}`;
+        }
 
-        // Otherwise use our professional public images mapping
-        const slug = normalizeSlug(category.name);
-        return CATEGORY_IMAGE_MAP[slug] || '/assets/placeholder-image.webp';
+        // Use placeholder for all others
+        return '/assets/placeholder-image.webp';
     };
 
     if (loading && apiCategories.length === 0) return null;
