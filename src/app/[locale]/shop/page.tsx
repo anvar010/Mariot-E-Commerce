@@ -44,28 +44,24 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
             ? `${API_BASE_URL_SERVER}/brands?category=${category}`
             : `${API_BASE_URL_SERVER}/brands`;
 
-        const [productsRes, brandsRes] = await Promise.all([
+        // 1. Fetch data in parallel
+        const [productsRes, brandsRes, categoriesRes] = await Promise.all([
             fetch(productUrl, { next: { revalidate: 60 } }),
-            fetch(brandsUrl, { next: { revalidate: 3600 } })
+            fetch(brandsUrl, { next: { revalidate: 3600 } }),
+            fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 3600 } })
         ]);
 
         const productsData = await productsRes.json();
         const brandsData = await brandsRes.json();
+        const categoriesData = await categoriesRes.json();
 
-        // Categorires logic (can be static or partially fetched)
-        // For simplicity and to match ShopLayout logic:
-        const requestedCategories = [
-            "Coffee Makers", "Ice Equipment", "Cooking Equipment", "Refrigeration", "Beverage Equipment", "Commercial Ovens", "Food Preparation", "Food Holding and Warming Line", "Delivery and Storage", "Parts", "Used Equipment", "Dishwashing", "Stainless Steel Equipment", "Janitorial & Safety Supplies", "Water Treatment", "Home Use", "Dining Room", "Smallwares", "Disposables", "Food & Beverage Ingredients"
-        ].map(name => {
-            const slug = name.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-').replace(/,/g, '');
-            return { name, slug }; // Translations will be handled by client
-        });
+        const allFetchedCategories = categoriesData.success ? categoriesData.data : [];
 
         return {
             products: productsData.success ? productsData.data : [],
             brands: brandsData.success ? brandsData.data.filter((b: any) => b.is_active === 1 || b.is_active === true || String(b.is_active) === '1') : [],
             total: productsData.success ? productsData.total : 0,
-            allCategories: requestedCategories
+            allCategories: allFetchedCategories
         };
     } catch (e) {
         console.error("Shop server fetch failed", e);

@@ -526,8 +526,8 @@
 
 .navBar .container {
     height: 46px;
-    gap: 10px;
-    justify-content: center;
+    gap: 30px;
+    justify-content: flex-start;
     position: relative;
 }
 
@@ -567,10 +567,10 @@
 
 .categoriesWrapper {
     height: 100%;
-    position: absolute;
-    inset-inline-start: 40px;
+    position: relative;
     display: flex;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .megaMenu {
@@ -607,6 +607,8 @@
     display: flex;
     gap: 25px;
     align-items: center;
+    flex: 1;
+    justify-content: center;
 }
 
 .navLinks a {
@@ -627,8 +629,9 @@
 }
 
 .navLinks .linkActive {
-    border-bottom: 2px solid #5bb377;
-    padding-bottom: 2px;
+    color: #5bb377 !important;
+    border-bottom: 3px solid #5bb377;
+    padding-bottom: 4px;
 }
 
 .hot {
@@ -932,7 +935,7 @@
     }
 
     .categoriesWrapper {
-        inset-inline-start: 20px;
+        position: relative;
     }
 
     .navLinks {
@@ -972,6 +975,14 @@
 
     .navLinks {
         gap: 10px;
+        justify-content: flex-start;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .navLinks::-webkit-scrollbar {
+        display: none;
     }
 
     .navLinks a {

@@ -122,59 +122,94 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
 
         {/* Layout Grid - Starting from the Heading level */}
         <div className={styles.layoutGrid}>
-          {/* Left Column: Heading + Grid */}
-          <main className={styles.mainArea}>
-            <header className={styles.headerSection}>
-              <div className={styles.offerBadge}>UP TO 20% OFF</div>
-              <h1 className={styles.title}>{categoryName}</h1>
-              <div className={styles.descriptionWrapper}>
-                <p className={styles.description}>
-                  {category.description || `Professional ${category.name} equipment is built to withstand heavy-duty commercial use while ensuring consistent quality in cafes and restaurants. Whether you need an espresso machine or a specialized coffee brewer, we have the right solution for your business needs.`}
-                </p>
-              </div>
-            </header>
+          {/* Left Column: Heading + Grid + Brands */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <main className={styles.mainArea}>
+              <header className={styles.headerSection}>
+                <div className={styles.offerBadge}>UP TO 20% OFF</div>
+                <h1 className={styles.title}>{categoryName}</h1>
+                <div className={styles.descriptionWrapper}>
+                  <p className={styles.description}>
+                    {category.description || `Professional ${category.name} equipment is built to withstand heavy-duty commercial use while ensuring consistent quality in cafes and restaurants. Whether you need an espresso machine or a specialized coffee brewer, we have the right solution for your business needs.`}
+                  </p>
+                </div>
+              </header>
 
-            <div className={styles.categoryGrid}>
-              {subCategories.map((sub) => (
-                <div key={sub.id} className={styles.categoryCard}>
-                  <Link href={`/shop?category=${sub.slug}`} className={styles.imageWrapper}>
-                    <Image
-                      src={resolveImage(sub.image_url)}
-                      alt={sub.name}
-                      width={250}
-                      height={250}
-                      className={styles.cardImage}
-                      unoptimized
-                    />
-                  </Link>
-                  <div className={styles.cardContent}>
-                    <Link href={`/shop?category=${sub.slug}`} className={styles.cardTitle}>
-                      {isArabic && sub.name_ar ? sub.name_ar : sub.name}
+              <div className={styles.categoryGrid}>
+                {subCategories.map((sub) => (
+                  <div key={sub.id} className={styles.categoryCard}>
+                    <Link href={`/shop?category=${sub.slug}`} className={styles.imageWrapper}>
+                      <Image
+                        src={resolveImage(sub.image_url)}
+                        alt={sub.name}
+                        width={250}
+                        height={250}
+                        className={styles.cardImage}
+                        unoptimized
+                      />
                     </Link>
-                    <p className={styles.cardDescription}>
-                      {sub.description || `Choosing a reliable ${sub.name.toLowerCase()} is essential to meet the needs of specialty coffee...`}
-                    </p>
+                    <div className={styles.cardContent}>
+                      <Link href={`/shop?category=${sub.slug}`} className={styles.cardTitle}>
+                        {isArabic && sub.name_ar ? sub.name_ar : sub.name}
+                      </Link>
+                      <p className={styles.cardDescription}>
+                        {sub.description || `Choosing a reliable ${sub.name.toLowerCase()} is essential to meet the needs of specialty coffee...`}
+                      </p>
 
-                    <ul className={styles.subList}>
-                      {sub.subCategories?.slice(0, 4).map((ss: any) => (
-                        <li key={ss.id}>
-                          <Link href={`/shop?category=${ss.slug}`} className={styles.subLink}>
-                            <span style={{ flex: 1 }}>{isArabic && ss.name_ar ? ss.name_ar : ss.name}</span>
-                            <ChevronRight className={styles.chevron} size={14} />
+                      <ul className={styles.subList}>
+                        {sub.subCategories?.slice(0, 4).map((ss: any) => (
+                          <li key={ss.id}>
+                            <Link href={`/shop?category=${ss.slug}`} className={styles.subLink}>
+                              <span style={{ flex: 1 }}>{isArabic && ss.name_ar ? ss.name_ar : ss.name}</span>
+                              <ChevronRight className={styles.chevron} size={14} />
+                            </Link>
+                          </li>
+                        ))}
+                        <li>
+                          <Link href={`/shop?category=${sub.slug}`} className={styles.shopAll}>
+                            {t('shopAll')} <ChevronRight size={14} />
                           </Link>
                         </li>
-                      ))}
-                      <li>
-                        <Link href={`/shop?category=${sub.slug}`} className={styles.shopAll}>
-                          {t('shopAll')} <ChevronRight size={14} />
-                        </Link>
-                      </li>
-                    </ul>
+                      </ul>
+                    </div>
                   </div>
+                ))}
+              </div>
+            </main>
+
+            {/* Popular Brands Section - After categories in the same column */}
+            {brands.length > 0 && (
+              <section className={styles.brandsSection} style={{ marginTop: 0 }}>
+                <h2 className={styles.brandsHeading}>{t('popularBrands')}</h2>
+                <div className={styles.brandsGrid}>
+                  {brands.map((brand: any) => (
+                    <Link
+                      key={brand.id}
+                      href={`/shop?brand=${encodeURIComponent(brand.slug || brand.name.toLowerCase().replace(/ /g, '-'))}`}
+                      className={styles.brandCard}
+                    >
+                      <div className={styles.brandLogoWrapper}>
+                        {brand.image_url ? (
+                          <img
+                            src={brand.image_url}
+                            alt={isArabic && brand.name_ar ? brand.name_ar : brand.name}
+                            className={styles.brandLogo}
+                          />
+                        ) : (
+                          <span className={styles.brandFallbackText}>
+                            {isArabic && brand.name_ar ? brand.name_ar : brand.name}
+                          </span>
+                        )}
+                      </div>
+                      <span className={styles.brandName}>
+                        {isArabic && brand.name_ar ? brand.name_ar : brand.name}
+                      </span>
+                    </Link>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </main>
+              </section>
+            )}
+          </div>
 
           {/* Sidebar */}
           <aside className={styles.sidebar}>
@@ -224,42 +259,6 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
             )}
           </aside>
         </div>
-
-        {/* Popular Brands Section - Separate container but same width alignment */}
-        {brands.length > 0 && (
-          <div className={styles.layoutGrid} style={{ marginTop: '-10px' }}>
-            <section className={styles.brandsSection}>
-              <h2 className={styles.brandsHeading}>{t('popularBrands')}</h2>
-              <div className={styles.brandsGrid}>
-                {brands.map((brand: any) => (
-                  <Link
-                    key={brand.id}
-                    href={`/shop?brand=${encodeURIComponent(brand.slug || brand.name.toLowerCase().replace(/ /g, '-'))}`}
-                    className={styles.brandCard}
-                  >
-                    <div className={styles.brandLogoWrapper}>
-                      {brand.image_url ? (
-                        <img
-                          src={brand.image_url}
-                          alt={isArabic && brand.name_ar ? brand.name_ar : brand.name}
-                          className={styles.brandLogo}
-                        />
-                      ) : (
-                        <span className={styles.brandFallbackText}>
-                          {isArabic && brand.name_ar ? brand.name_ar : brand.name}
-                        </span>
-                      )}
-                    </div>
-                    <span className={styles.brandName}>
-                      {isArabic && brand.name_ar ? brand.name_ar : brand.name}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-            <div /> {/* Empty space to maintain width alignment with mainArea card above */}
-          </div>
-        )}
       </div>
     </div>
   );

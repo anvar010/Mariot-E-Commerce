@@ -34,7 +34,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (!user || user.role !== 'admin') return null;
 
     return (
-        <div className={styles.adminContainer}>
+        <div className={styles.adminContainer} translate="no">
             <AdminSidebar />
             <div className={styles.mainContent}>
                 <AdminHeader />

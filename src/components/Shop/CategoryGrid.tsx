@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import { useLocale } from 'next-intl';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import styles from './ShopLayout.module.css';
@@ -12,6 +13,8 @@ interface CategoryGridProps {
 }
 
 const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc }) => {
+    const locale = useLocale();
+    const isArabic = locale === 'ar';
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
@@ -64,9 +67,10 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc 
                 style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
             >
                 {subCategoriesToShow.map((cat: any, idx: number) => {
-                    const catName = typeof cat === 'string' ? cat : cat.name;
-                    const catImage = typeof cat === 'string' ? '' : (cat.image_url || '');
-                    const slug = catName.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                    const catName = (isArabic && cat.name_ar) ? cat.name_ar : cat.name;
+                    const catImage = cat.image_url || '';
+                    const slug = cat.slug || cat.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                    
                     return (
                         <Link
                             href={`/shop?category=${slug}`}
@@ -76,14 +80,14 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc 
                             <div className={styles.categoryImage}>
                                 <img
                                     src={catImage || '/assets/placeholder-image.webp'}
-                                    alt={t.has(slug) ? t(slug) : (tc.has(slug) ? tc(slug) : catName)}
+                                    alt={catName}
                                     className={styles.demoImg}
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = '/assets/placeholder-image.webp';
                                     }}
                                 />
                             </div>
-                            <p>{t.has(slug) ? t(slug) : (tc.has(slug) ? tc(slug) : catName)}</p>
+                            <p>{catName}</p>
                         </Link>
                     );
                 })}

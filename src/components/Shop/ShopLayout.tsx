@@ -69,7 +69,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const [allCategories, setAllCategories] = useState<any[]>(initialCategories);
     const [totalProducts, setTotalProducts] = useState(initialTotal);
     const [expandedSections, setExpandedSections] = useState<string[]>([]);
-    const [apiCategories, setApiCategories] = useState<any[]>([]);
+    const [apiCategories, setApiCategories] = useState<any[]>(initialCategories);
 
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
     const [minPrice, setMinPrice] = useState<number>(0);
@@ -143,7 +143,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
 
     const getApiParentCategory = (slug: string): string | null => {
         if (!slug || apiCategories.length === 0) return null;
-        const matchedCategory = apiCategories.find((cat: any) => cat.slug === slug || normalizeSlug(cat.name) === slug);
+        const matchedCategory = apiCategories.find((cat: any) => normalizeSlug(cat.slug) === normalizeSlug(slug) || normalizeSlug(cat.name) === normalizeSlug(slug));
         if (matchedCategory && matchedCategory.parent_id) {
             const parent = apiCategories.find((cat: any) => cat.id === matchedCategory.parent_id);
             return parent ? (parent.slug || normalizeSlug(parent.name)) : null;
@@ -151,13 +151,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         return null;
     };
 
-    const matchedCategoryForGrid = targetCategoryForGrid ? apiCategories.find((cat: any) => cat.slug === targetCategoryForGrid || normalizeSlug(cat.name) === targetCategoryForGrid) : null;
-    const apiSubCategories = matchedCategoryForGrid ? apiCategories.filter((cat: any) => Number(cat.parent_id) === matchedCategoryForGrid.id && cat.is_active) : [];
-
-    // Sub-categories: use DB if possible, fallback to static ONLY if category not in DB
-    const subCategoriesToShow = matchedCategoryForGrid
-        ? apiSubCategories
-        : (targetCategoryForGrid ? getChildCategories(targetCategoryForGrid).map((name: string) => ({ name, image_url: '' })) : []);
+    const matchedCategoryForGrid = targetCategoryForGrid ? apiCategories.find((cat: any) => normalizeSlug(cat.slug) === normalizeSlug(targetCategoryForGrid) || normalizeSlug(cat.name) === normalizeSlug(targetCategoryForGrid)) : null;
+    const subCategoriesToShow = matchedCategoryForGrid ? apiCategories.filter((cat: any) => (cat.parent_id == matchedCategoryForGrid.id) && cat.is_active) : [];
 
     const parentSlug = activeCategory ? (getApiParentCategory(activeCategory) || getParentCategory(activeCategory)) : null;
 
