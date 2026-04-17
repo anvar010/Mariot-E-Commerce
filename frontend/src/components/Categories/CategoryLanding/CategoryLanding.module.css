@@ -451,6 +451,7 @@
 @media (max-width: 1024px) {
   .layoutGrid {
     grid-template-columns: 1fr;
+    gap: 30px;
   }
 
   .brandsGrid {
@@ -459,60 +460,72 @@
 }
 
 @media (max-width: 768px) {
+  .layoutGrid {
+    gap: 10px;
+  }
+
+  .container {
+    padding: 0;
+  }
+
+  .breadcrumbWrapper {
+    padding: 20px 20px 10px;
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
   .headerSection {
-    padding-bottom: 30px;
+    padding: 0 20px 20px;
   }
 
   .mainArea {
-    padding: 20px 15px;
-  }
-
-  .headerTop {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-  }
-
-  .headingIconWrapper {
-    width: 80px;
-    height: 80px;
+    padding: 0;
+    background: transparent;
+    border: none;
   }
 
   .title {
-    font-size: 32px;
+    font-size: 28px;
+  }
+
+  .descriptionWrapper {
+    padding-right: 20px;
+    /* Optional, already padded by headerSection mostly but can let text wrap cleanly */
   }
 
   .categoryGrid {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 10px;
   }
 
   .categoryCard {
+    background: #ffffff;
     flex-direction: row;
     align-items: flex-start;
     gap: 16px;
-    padding: 24px 0;
-    border-bottom: 1px solid #f1f5f9;
+    padding: 20px;
+    border-radius: 0;
   }
 
-  .categoryCard:last-child {
-    border-bottom: none;
+  .categoryCard:hover {
+    box-shadow: none;
+    background: #ffffff;
   }
 
   .imageWrapper {
-    width: 110px;
-    height: 110px;
-    min-width: 110px;
+    width: 120px;
+    height: 120px;
+    min-width: 120px;
     margin-bottom: 0;
-    padding: 10px;
-    background: #f8fafc;
-    border-radius: 12px;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
   }
 
   .cardTitle {
     font-size: 17px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .cardDescription {
@@ -530,6 +543,7 @@
 
   .subLink {
     font-size: 13px;
+    align-items: flex-start;
   }
 
   .shopAll {
@@ -537,8 +551,25 @@
     font-size: 13px;
   }
 
+  .expertCard,
+  .topProducts,
   .brandsSection {
-    margin-top: 30px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .promoCard {
+    margin: 0 20px;
+  }
+
+  .sidebar {
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .brandsSection {
+    margin-top: 20px;
     padding: 25px 20px;
   }
 
@@ -548,8 +579,12 @@
   }
 
   .brandsGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .brandLogoWrapper {
+    padding: 6px;
   }
 
   .brandName {

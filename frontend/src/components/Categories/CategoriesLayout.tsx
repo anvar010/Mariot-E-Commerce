@@ -238,7 +238,20 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                             <div className={styles.contentColumn} key={activeCategory.slug}>
                                 {activeCategory && (
                                     <>
-                                        <h2 className={styles.columnTitle}>{(isArabic && activeCategory.name_ar) ? activeCategory.name_ar : activeCategory.name}</h2>
+                                        <div className={styles.categoryHeader}>
+                                            <h2 className={styles.columnTitle}>
+                                                {(isArabic && activeCategory.name_ar) ? activeCategory.name_ar : activeCategory.name}
+                                            </h2>
+                                            {activeCategory.image_url && (
+                                                <div className={styles.featuredImageArea}>
+                                                    <img 
+                                                        src={activeCategory.image_url.startsWith('http') ? activeCategory.image_url : `${API_BASE_URL.replace('/api/v1', '')}${activeCategory.image_url}`} 
+                                                        alt={activeCategory.name} 
+                                                        className={styles.featuredImage}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className={styles.columnList}>
                                             {renderNestedSubcats(subcats)}
                                         </div>

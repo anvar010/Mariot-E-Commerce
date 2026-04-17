@@ -1617,10 +1617,12 @@ const AdminProducts = () => {
                                                 </div>
                                             </div>
                                             <div className={styles.formGrid}>
-                                                <div className={styles.formGroup}>
-                                                    <label>{t('modal.fields.stock')}</label>
-                                                    <input type="number" name="stock_quantity" required={formData.track_inventory} value={formData.stock_quantity} onChange={handleInputChange} disabled={!formData.track_inventory} />
-                                                </div>
+                                                {formData.track_inventory && (
+                                                    <div className={styles.formGroup}>
+                                                        <label>{t('modal.fields.stock')}</label>
+                                                        <input type="number" name="stock_quantity" required={formData.track_inventory} value={formData.stock_quantity} onChange={handleInputChange} />
+                                                    </div>
+                                                )}
                                                 <div className={styles.formGroup}>
                                                     <label>{t('modal.fields.status')}</label>
                                                     <div className={styles.statusSelector}>
