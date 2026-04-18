@@ -20,6 +20,8 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
   const tCommon = useTranslations('header');
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [category, setCategory] = useState<any>(null);
   const [subCategories, setSubCategories] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
@@ -30,6 +32,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
     const fetchCategoryData = async () => {
       try {
         setLoading(true);
+        setError(false);
         // 1. Fetch all categories
         const catRes = await fetch(`${API_BASE_URL}/categories`);
         const catData = await catRes.json();
@@ -71,15 +74,16 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
           }
         }
 
-      } catch (error) {
-        console.error('Error fetching category landing data:', error);
+      } catch (err) {
+        console.error('Error fetching category landing data:', err);
+        setError(true);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCategoryData();
-  }, [categorySlug]);
+  }, [categorySlug, retryCount]);
 
   if (loading) {
     return (
@@ -89,12 +93,64 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className={styles.landingPage}>
+        <div className={styles.container}>
+          <div className={styles.notFoundWrapper}>
+            <div className={styles.notFoundIcon}>
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <h1 className={styles.notFoundTitle}>
+              {isArabic ? 'حدث خطأ ما' : 'Something went wrong'}
+            </h1>
+            <p className={styles.notFoundText}>
+              {isArabic
+                ? 'تعذّر تحميل بيانات الفئة. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.'
+                : "We couldn't load the category data. Please check your connection and try again."}
+            </p>
+            <button
+              className={styles.backBtn}
+              onClick={() => { setError(false); setRetryCount(c => c + 1); }}
+            >
+              {isArabic ? 'حاول مجدداً' : 'Try again'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!category) {
     return (
-      <div className={styles.container}>
-        <div style={{ padding: '100px 0', textAlign: 'center' }}>
-          <h2>Category not found</h2>
-          <Link href="/all-categories" className={styles.readMoreBtn}>Back to all categories</Link>
+      <div className={styles.landingPage}>
+        <div className={styles.container}>
+          <div className={styles.notFoundWrapper}>
+            <div className={styles.notFoundIcon}>
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="11" y1="8" x2="11" y2="14"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
+              </svg>
+            </div>
+            <h1 className={styles.notFoundTitle}>
+              {isArabic ? 'الفئة غير موجودة' : 'Category Not Found'}
+            </h1>
+            <p className={styles.notFoundText}>
+              {isArabic 
+                ? 'عذراً، لم نتمكن من العثور على الفئة التي تبحث عنها. قد تكون تمت إزالتها أو تغيير اسمها.' 
+                : "Sorry, we couldn't find the category you're looking for. It might have been moved, renamed, or deleted."}
+            </p>
+            <Link href="/all-categories" className={styles.backBtn}>
+              {isArabic ? 'العودة إلى جميع الفئات' : 'Back to All Categories'}
+              <ChevronRight size={18} />
+            </Link>
+          </div>
         </div>
       </div>
     );

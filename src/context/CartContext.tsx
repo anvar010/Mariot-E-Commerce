@@ -21,7 +21,7 @@ interface CartItem {
 
 interface CartContextType {
     cartItems: CartItem[];
-    addToCart: (product: any) => Promise<boolean>;
+    addToCart: (product: any, options?: { silent?: boolean }) => Promise<boolean>;
     removeFromCart: (productId: string | number) => void;
     updateQuantity: (productId: string | number, quantity: number) => void;
     clearCart: () => void;
@@ -172,7 +172,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const addToCart = async (product: any): Promise<boolean> => {
+    const addToCart = async (product: any, options?: { silent?: boolean }): Promise<boolean> => {
         const productQuantity = Number(product.quantity || 1);
         const displayPrice = Number(product.offer_price) > 0 ? Number(product.offer_price) : Number(product.price || 0);
         const stockLimit = product.stock_quantity !== undefined ? Number(product.stock_quantity) : undefined;
@@ -221,7 +221,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (quantityToAdd < productQuantity) {
             // Notification already shown for partial add
-        } else {
+        } else if (!options?.silent) {
             // Calculate new cart stats for notification
             const currentTotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
             const currentCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);

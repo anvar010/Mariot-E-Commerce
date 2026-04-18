@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import Providers from './providers';
@@ -25,16 +25,17 @@ export function generateStaticParams() {
     return [{ locale: 'en' }, { locale: 'ar' }];
 }
 
+export const viewport: Viewport = {
+    width: 'device-width',
+    initialScale: 1,
+};
+
 export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
     const isArabic = locale === 'ar';
 
     return {
         title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
         description: isArabic ? 'معدات مطابخ فاخرة وتجارية في الإمارات العربية المتحدة' : 'Premium Commercial Kitchen Equipment in UAE',
-        viewport: {
-            width: 'device-width',
-            initialScale: 1,
-        },
         icons: {
             icon: '/favicon.ico',
             shortcut: '/favicon.ico',

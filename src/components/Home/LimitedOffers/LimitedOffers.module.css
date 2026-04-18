@@ -19,11 +19,6 @@
     border-bottom: 2px solid #e5e7eb;
 }
 
-.titleGroup {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
 
 .title {
     font-size: 22px;
@@ -38,7 +33,7 @@
 .headerActions {
     display: flex;
     align-items: center;
-    gap: 30px;
+    gap: 20px;
 }
 
 .mainTimer {
@@ -151,18 +146,20 @@
         padding-bottom: 8px;
     }
 
-    .titleGroup {
-        gap: 8px;
-        flex: 1;
-        overflow: hidden;
+    .headerActions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
     }
 
     .title {
-        font-size: 14px;
+        font-size: 15px;
         white-space: nowrap;
         flex-shrink: 1;
         overflow: hidden;
         text-overflow: ellipsis;
+        font-weight: 700;
     }
 
     .mainTimer {

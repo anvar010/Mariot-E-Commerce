@@ -8,6 +8,7 @@ import { getBrandLogo } from '@/utils/brandLogos';
 import { BASE_URL } from '@/config';
 import { useLocale, useTranslations } from 'next-intl';
 import { resolveUrl } from '@/utils/resolveUrl';
+import { useCountdownTimer } from '@/hooks/useCountdownTimer';
 
 import useEmblaCarousel from 'embla-carousel-react';
 
@@ -50,37 +51,8 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     const { addToCart } = useCart();
     const isBestSeller = product.is_best_seller === 1 || product.is_best_seller === true;
 
-    // Per-product countdown from its own offer_end
-    const [countdown, setCountdown] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
-
-    useEffect(() => {
-        const offerEnd = product?.offer_end;
-        if (!offerEnd) {
-            setCountdown(null);
-            return;
-        }
-
-        const endDate = new Date(offerEnd).getTime();
-
-        const tick = () => {
-            const diff = endDate - Date.now();
-            if (diff <= 0) {
-                setCountdown(null);
-                return;
-            }
-            setCountdown({
-                hours: Math.floor(diff / 3600000),
-                minutes: Math.floor((diff % 3600000) / 60000),
-                seconds: Math.floor((diff % 60000) / 1000)
-            });
-        };
-
-        tick();
-        const interval = setInterval(tick, 1000);
-        return () => clearInterval(interval);
-    }, [product?.offer_end]);
-
-    const activeTimer = timeLeft || countdown || { hours: 0, minutes: 0, seconds: 0 };
+    const countdown = useCountdownTimer(product?.offer_end);
+    const activeTimer = timeLeft ?? countdown ?? { hours: 0, minutes: 0, seconds: 0 };
 
     const rating = Number((product as any)?.average_rating || (product as any)?.rating || 0);
     const reviews = Number((product as any)?.total_reviews || (product as any)?.reviews_count || (product as any)?.review_count || 0);
@@ -356,7 +328,12 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                         e.preventDefault();
                         e.stopPropagation();
                         const productUrl = typeof window !== 'undefined' ? `${window.location.origin}/product/${product?.slug || product?.id}` : '';
-                        const msg = encodeURIComponent(t('whatsappMessage', { url: productUrl }));
+                        const msg = encodeURIComponent(t('whatsappMessage', {
+                            url: productUrl,
+                            name: (isArabic && product.name_ar) ? product.name_ar : product.name,
+                            price: displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                            model: product?.model || product?.slug?.toUpperCase() || product.id
+                        }));
                         window.open(`https://wa.me/97142882777?text=${msg}`, '_blank');
                     }}
                 >

@@ -29,22 +29,21 @@ export default function ErrorBoundary({
             <Header />
 
             <div className={styles.pageWrapper}>
-                <div className={styles.content} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <div className={styles.content}>
                     <div className={styles.staticIcon} style={{ color: '#e31e24' }}>
                         <ShieldAlert size={80} strokeWidth={1} />
                     </div>
-                    <p className={styles.sorryText} style={{ textAlign: 'center' }}>
+                    <p className={styles.sorryText}>
                         {isArabic ? 'يبدو أنه حدث خطأ ما' : 'Something went wrong'}
                     </p>
-                    <h1 className={styles.promptText} style={{ textAlign: 'center' }}>
+                    <h1 className={styles.promptText}>
                         {isArabic ? 'واجهنا مشكلة غير متوقعة أثناء تحميل هذه الصفحة.' : 'We encountered an unexpected issue while loading this page.'}
                     </h1>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '40px' }}>
+                    <div className={styles.errorActions}>
                         <button
                             onClick={() => reset()}
-                            className={styles.searchButton}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '15px 30px', borderRadius: '6px' }}
+                            className={`${styles.searchButton} ${styles.retryButton}`}
                         >
                             <RotateCcw size={18} />
                             {isArabic ? 'حاول مجدداً' : 'Try again'}

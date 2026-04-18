@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styles from './ProductCard.module.css';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ import { useWishlist } from '@/context/WishlistContext';
 import { getBrandLogo } from '@/utils/brandLogos';
 
 import { resolveUrl } from '@/utils/resolveUrl';
+import { useCountdownTimer } from '@/hooks/useCountdownTimer';
 
 export interface Product {
     id: string | number;
@@ -105,38 +106,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
     const formatTime = (num: number) => num.toString().padStart(2, '0');
 
-    // Live countdown timer from offer_end
-    const [countdown, setCountdown] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
-
-    useEffect(() => {
-        const offerEnd = product?.offer_end;
-        if (!offerEnd) {
-            setCountdown(null);
-            return;
-        }
-
-        const endDate = new Date(offerEnd).getTime();
-
-        const updateTimer = () => {
-            const now = Date.now();
-            const diff = endDate - now;
-            if (diff <= 0) {
-                setCountdown(null);
-                return;
-            }
-            setCountdown({
-                hours: Math.floor(diff / 3600000),
-                minutes: Math.floor((diff % 3600000) / 60000),
-                seconds: Math.floor((diff % 60000) / 1000)
-            });
-        };
-
-        updateTimer();
-        const interval = setInterval(updateTimer, 1000);
-        return () => clearInterval(interval);
-    }, [product?.offer_end]);
-
-    const activeTimer = countdown || { hours: 0, minutes: 0, seconds: 0 };
+    const countdown = useCountdownTimer(product?.offer_end);
+    const activeTimer = countdown ?? { hours: 0, minutes: 0, seconds: 0 };
 
     const rating = Number(product?.average_rating || product?.rating || 0);
     const reviews = Number(product?.total_reviews || product?.reviews_count || product?.review_count || 0);
@@ -300,7 +271,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
                             e.preventDefault();
                             e.stopPropagation();
                             const productUrl = typeof window !== 'undefined' ? `${window.location.origin}/product/${product?.slug || displayId}` : '';
-                            const msg = encodeURIComponent(t('whatsappMessage', { url: productUrl }));
+                            const msg = encodeURIComponent(t('whatsappMessage', {
+                                url: productUrl,
+                                name: displayModel,
+                                price: displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                model: product?.model || product?.slug?.toUpperCase() || displayId
+                            }));
                             window.open(`https://wa.me/97142882777?text=${msg}`, '_blank');
                         }}
                     >
