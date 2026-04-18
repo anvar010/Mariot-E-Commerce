@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Heart,
     ShoppingCart,
@@ -98,6 +98,172 @@ const AccordionItem = ({ title, icon, isOpen, onToggle, children }: any) => (
         </AnimatePresence>
     </div>
 );
+
+// ── Frequently Bought Together Widget ─────────────────────────────────────────
+const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl, addToCart, showNotification, t }: any) => {
+    const allItems = fbtProducts;
+    const [checked, setChecked] = useState<Record<number, boolean>>(() =>
+        Object.fromEntries(allItems.map((p: any) => [p.id, true]))
+    );
+    const [adding, setAdding] = useState(false);
+
+    const [fbtEmblaRef, fbtEmblaApi] = useEmblaCarousel({
+        loop: false,
+        direction: locale === 'ar' ? 'rtl' : 'ltr',
+        align: 'start',
+        containScroll: 'trimSnaps',
+        dragFree: true
+    });
+
+    const [canScrollPrev, setCanScrollPrev] = useState(false);
+    const [canScrollNext, setCanScrollNext] = useState(false);
+
+    const onSelect = useCallback((api: any) => {
+        setCanScrollPrev(api.canScrollPrev());
+        setCanScrollNext(api.canScrollNext());
+    }, []);
+
+    useEffect(() => {
+        if (!fbtEmblaApi) return;
+        onSelect(fbtEmblaApi);
+        fbtEmblaApi.on('select', onSelect);
+        fbtEmblaApi.on('reInit', onSelect);
+    }, [fbtEmblaApi, onSelect]);
+
+    const toggle = (id: number) => setChecked(prev => ({ ...prev, [id]: !prev[id] }));
+
+    const selectedItems = allItems.filter((p: any) => checked[p.id]);
+    const total = selectedItems.reduce((sum: number, p: any) => {
+        const price = Number(p.offer_price && Number(p.offer_price) > 0 ? p.offer_price : p.price) || 0;
+        return sum + price;
+    }, 0);
+
+    const getName = (p: any) => (isArabic && p.name_ar) ? p.name_ar : p.name;
+    const getPrice = (p: any) => Number(p.offer_price && Number(p.offer_price) > 0 ? p.offer_price : p.price) || 0;
+    const getImg = (p: any) => resolveUrl(p.primary_image || (p.images && p.images[0]?.image_url)) || '/assets/placeholder-image.webp';
+
+    const handleAddAll = async () => {
+        if (selectedItems.length === 0) return;
+        setAdding(true);
+        let anyFailed = false;
+        for (const p of selectedItems) {
+            const ok = await addToCart({
+                id: p.id,
+                name: p.name,
+                price: getPrice(p),
+                image: getImg(p),
+                brand: p.brand_name || '',
+                slug: p.slug,
+                stock_quantity: p.stock_quantity ?? 999,
+                quantity: 1,
+                oldPrice: Number(p.price) || 0
+            }, { silent: true });
+            if (!ok) anyFailed = true;
+        }
+        setAdding(false);
+        if (!anyFailed) {
+            showNotification(t('fbt.addSuccess'), 'success');
+        }
+    };
+
+    return (
+        <div className={`${styles.extraSection} ${styles.fbtSectionRoot}`}>
+            <div className={styles.sectionTitle}>
+                <h2>{t('fbt.title')}</h2>
+            </div>
+
+            <div className={styles.sliderWrapper}>
+                <button
+                    className={`${styles.sliderArrow} ${styles.prevArrow} ${(!canScrollPrev || allItems.length <= 8) ? styles.arrowHidden : ''}`}
+                    onClick={() => fbtEmblaApi?.scrollPrev()}
+                >
+                    <ChevronLeft size={24} />
+                </button>
+
+                <div className={styles.fbtViewport} ref={fbtEmblaRef}>
+                    <div className={styles.fbtGrid}>
+                        {allItems.map((p: any, idx: number) => {
+                            const isChecked = !!checked[p.id];
+                            const price = getPrice(p);
+                            return (
+                                <div key={p.id} className={styles.fbtSlide}>
+                                    {idx > 0 && (
+                                        <div className={styles.fbtSeparator}>
+                                            +
+                                        </div>
+                                    )}
+
+                                    <div
+                                        className={`${styles.fbtCard} ${isChecked ? styles.fbtCardActive : ''}`}
+                                    >
+                                        <div 
+                                            className={`${styles.fbtBadge} ${isChecked ? styles.fbtBadgeActive : ''}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggle(p.id);
+                                            }}
+                                        >
+                                            {isChecked && (
+                                                <svg width="12" height="12" viewBox="0 0 13 13" fill="none">
+                                                    <path d="M2.5 6.5L5.5 9.5L10.5 4" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                            )}
+                                        </div>
+
+                                        <Link href={`/${locale}/product/${p.slug}`} className={styles.fbtCardLink}>
+                                            <img
+                                                src={getImg(p)}
+                                                alt={getName(p)}
+                                                className={styles.fbtImage}
+                                            />
+
+                                            <div className={styles.fbtInfo}>
+                                                <div className={styles.fbtName}>{getName(p)}</div>
+                                                <div className={styles.fbtPrice}>
+                                                    AED {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <button
+                    className={`${styles.sliderArrow} ${styles.nextArrow} ${(!canScrollNext || allItems.length <= 8) ? styles.arrowHidden : ''}`}
+                    onClick={() => fbtEmblaApi?.scrollNext()}
+                >
+                    <ChevronRight size={24} />
+                </button>
+            </div>
+
+            <div className={styles.fbtSummary}>
+                <div className={styles.fbtSelectedInfo}>
+                    <div className={styles.fbtTotalLabel}>
+                        {selectedItems.length === 1
+                            ? t('fbt.itemSelected')
+                            : t('fbt.itemsSelected', { count: selectedItems.length })}
+                    </div>
+                    <div className={styles.fbtTotalPrice}>
+                        <span className={styles.fbtTotalCurrency}>AED</span>
+                        {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                </div>
+
+                <button
+                    className={styles.fbtAddBtn}
+                    onClick={handleAddAll}
+                    disabled={selectedItems.length === 0 || adding}
+                >
+                    <ShoppingCart size={20} />
+                    {adding ? t('fbt.adding') : t('fbt.addAll')}
+                </button>
+            </div>
+        </div>
+    );
+};
 
 const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [product, setProduct] = useState<any>(null);
@@ -861,7 +1027,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     className={styles.whatsappBtn}
                                     onClick={() => {
                                         const productUrl = typeof window !== 'undefined' ? window.location.href : '';
-                                        const msg = encodeURIComponent(t('whatsappMessage', { url: productUrl }));
+                                        const msg = encodeURIComponent(t('whatsappMessage', {
+                                            url: productUrl,
+                                            name: getLocalizedField('name', 'name_ar'),
+                                            price: displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                            model: product.model || product.slug?.toUpperCase() || product.id
+                                        }));
                                         window.open(`https://wa.me/97142882777?text=${msg}`, '_blank');
                                     }}
                                 >
@@ -899,6 +1070,20 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                     </div>
 
                 </div>
+
+                {/* Frequently Bought Together */}
+                {product.frequently_bought_together_products && product.frequently_bought_together_products.length > 0 && (
+                    <FbtSection
+                        currentProduct={product}
+                        fbtProducts={product.frequently_bought_together_products}
+                        locale={locale}
+                        isArabic={isArabic}
+                        resolveUrl={resolveUrl}
+                        addToCart={addToCart}
+                        showNotification={showNotification}
+                        t={t}
+                    />
+                )}
 
                 <div className={`${styles.detailsLayoutGrid} ${!hasVideo ? styles.noVideo : ''}`}>
                     {/* Main Content Area (Accordions Column) */}
@@ -1127,6 +1312,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         </div>
                     )}
                 </div>
+
 
                 {/* --- New Sections (Bottom) --- */}
 

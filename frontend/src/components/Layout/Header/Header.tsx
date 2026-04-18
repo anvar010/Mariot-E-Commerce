@@ -582,6 +582,15 @@ const Header = () => {
                             </li>
                             <li>
                                 <Link
+                                    href="/category/supermarket"
+                                    className={cleanPath === '/category/supermarket' ? styles.linkActive : ''}
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    {t('superMarket')}
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
                                     href="/category/laundry"
                                     className={cleanPath === '/category/laundry' ? styles.linkActive : ''}
                                     onClick={() => setIsMenuOpen(false)}

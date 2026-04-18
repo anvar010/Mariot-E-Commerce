@@ -8,6 +8,9 @@ node_modules
 *.log
 *.tsbuildinfo
 
+# Scratch / API response dumps
+frontend/cats.json
+
 # Project specific
 frontend/.next
 frontend/node_modules

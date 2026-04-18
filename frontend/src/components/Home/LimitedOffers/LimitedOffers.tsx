@@ -7,6 +7,7 @@ import styles from './LimitedOffers.module.css';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import { API_BASE_URL } from '@/config';
 import { useTranslations, useLocale } from 'next-intl';
+import { useCountdownTimer } from '@/hooks/useCountdownTimer';
 
 // Embla imports
 import useEmblaCarousel from 'embla-carousel-react';
@@ -21,7 +22,7 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
     const isRtl = locale === 'ar';
     const [products, setProducts] = useState<any[]>(initialProducts);
     const [loading, setLoading] = useState(initialProducts.length === 0);
-    const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+    const [effectiveEndDate, setEffectiveEndDate] = useState<number | null>(null);
 
     // Embla Carousel setup
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
@@ -61,52 +62,20 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
     }, [initialProducts]);
 
     useEffect(() => {
-        const updateTimer = () => {
-            const offerEndDates = products
-                .filter(p => p.offer_end)
-                .map(p => new Date(p.offer_end).getTime());
+        const offerEndDates = products
+            .filter(p => p.offer_end)
+            .map(p => new Date(p.offer_end).getTime());
 
-            if (offerEndDates.length === 0) {
-                const storedEndTime = localStorage.getItem('offer_end_time');
-                if (!storedEndTime) {
-                    setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
-                    return;
-                }
-                const endTime = new Date(storedEndTime).getTime();
-                const now = Date.now();
-                const difference = endTime - now;
-
-                if (difference <= 0) {
-                    setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
-                    return;
-                }
-                setTimeLeft({
-                    hours: Math.floor(difference / 3600000),
-                    minutes: Math.floor((difference % 3600000) / 60000),
-                    seconds: Math.floor((difference % 60000) / 1000)
-                });
-                return;
-            }
-
-            const endTime = Math.max(...offerEndDates);
-            const now = Date.now();
-            const difference = endTime - now;
-
-            if (difference <= 0) {
-                setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
-                return;
-            }
-            setTimeLeft({
-                hours: Math.floor(difference / 3600000),
-                minutes: Math.floor((difference % 3600000) / 60000),
-                seconds: Math.floor((difference % 60000) / 1000)
-            });
-        };
-
-        const timerId = setInterval(updateTimer, 1000);
-        updateTimer();
-        return () => clearInterval(timerId);
+        if (offerEndDates.length > 0) {
+            setEffectiveEndDate(Math.max(...offerEndDates));
+        } else {
+            const stored = localStorage.getItem('offer_end_time');
+            setEffectiveEndDate(stored ? new Date(stored).getTime() : null);
+        }
     }, [products]);
+
+    const countdown = useCountdownTimer(effectiveEndDate);
+    const timeLeft = countdown ?? { hours: 0, minutes: 0, seconds: 0 };
 
     const isEmpty = !loading && products.length === 0;
 
@@ -114,15 +83,15 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
         <section id="offers" className={styles.offersSection}>
             <div className={styles.container}>
                 <div className={styles.headerFlex}>
-                    <div className={styles.titleGroup}>
-                        <h2 className={styles.title}>{t('title')}</h2>
+                    <h2 className={styles.title}>{t('title')}</h2>
+                    <div className={styles.headerActions}>
                         <span className={styles.mainTimer}>
                             {timeLeft.hours.toString().padStart(2, '0')}{t('h')} : {timeLeft.minutes.toString().padStart(2, '0')}{t('m')} : {timeLeft.seconds.toString().padStart(2, '0')}{t('s')}
                         </span>
+                        <Link href="/shop?limited=true" className={styles.viewAll}>
+                            {t('viewAll')} <span>{isRtl ? '←' : '→'}</span>
+                        </Link>
                     </div>
-                    <Link href="/shop?limited=true" className={styles.viewAll}>
-                        {t('viewAll')} <span>{isRtl ? '←' : '→'}</span>
-                    </Link>
                 </div>
 
                 <div className={styles.sliderWrapper}>
@@ -152,7 +121,6 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
                                                 primary_image: prod.primary_image || 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1'
                                             }}
                                             showTimer={true}
-                                            timeLeft={timeLeft}
                                         />
                                     </div>
                                 ))

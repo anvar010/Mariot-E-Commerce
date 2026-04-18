@@ -57,7 +57,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return (
         <NotificationCtx.Provider value={{ showNotification }}>
             {children}
-            <div style={{
+            <div className="notification-container" style={{
                 position: 'fixed',
                 top: '50px',
                 insetInlineEnd: '20px',
@@ -217,6 +217,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                 from { transform: scaleX(1); }
                                 to { transform: scaleX(0); }
                             }
+                            @media (max-width: 576px) {
+                                .notification-container {
+                                    inset-inline-end: 10px !important;
+                                    inset-inline-start: 10px !important;
+                                    top: 10px !important;
+                                }
+                                .notification-item, .cart-notif {
+                                    width: 100% !important;
+                                    max-width: calc(100vw - 20px) !important;
+                                }
+                            }
                         `}</style>
                         {notifications.map(n => {
                             if (n.type === 'cart') {
@@ -320,8 +331,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                         </div>
                                         <div
                                             style={{ color: '#333', fontSize: '14px', lineHeight: '1.5', fontWeight: '500' }}
-                                            dangerouslySetInnerHTML={{ __html: n.message }}
-                                        />
+                                        >
+                                            {n.message}
+                                        </div>
                                     </div>
 
                                     {/* Amazon-style bottom accent line */}

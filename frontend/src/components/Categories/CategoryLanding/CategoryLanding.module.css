@@ -1,7 +1,7 @@
 .landingPage {
   background-color: #f1f5f9;
-  min-height: 100vh;
-  padding-bottom: 60px;
+  min-height: auto;
+  padding-bottom: 50px;
 }
 
 .container {
@@ -589,5 +589,119 @@
 
   .brandName {
     font-size: 12px;
+  }
+}
+
+/* Not Found State Redesign */
+.notFoundWrapper {
+  min-height: 30vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  text-align: center;
+}
+
+.notFoundIcon {
+  margin-bottom: 20px;
+  color: #2c6e73;
+  opacity: 0.8;
+  background: #f0f9fa;
+  padding: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notFoundIcon svg {
+  width: 44px;
+  height: 44px;
+}
+
+.notFoundTitle {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.notFoundText {
+  font-size: 15px;
+  color: #64748b;
+  margin-bottom: 30px;
+  max-width: 450px;
+  line-height: 1.6;
+}
+
+.backBtn {
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.backBtn:hover {
+  background: #333333;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .notFoundWrapper {
+    padding: 40px 20px 20px;
+    min-height: auto;
+  }
+
+  .notFoundTitle {
+    font-size: 24px;
+    letter-spacing: -0.5px;
+  }
+
+  .notFoundText {
+    font-size: 15px;
+    margin-bottom: 30px;
+  }
+
+  .backBtn {
+    padding: 16px 24px;
+    font-size: 13px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .notFoundIcon {
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .notFoundIcon svg {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .notFoundWrapper {
+    padding: 30px 16px;
+  }
+
+  .notFoundTitle {
+    font-size: 20px;
+  }
+
+  .notFoundText {
+    font-size: 14px;
   }
 }

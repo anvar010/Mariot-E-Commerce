@@ -187,6 +187,27 @@ class Product {
             const product = rows[0];
             const [images] = await db.execute('SELECT * FROM product_images WHERE product_id = ?', [product.id]);
             product.images = images;
+
+            // Enrich frequently_bought_together IDs with product data
+            let fbtIds = [];
+            if (product.frequently_bought_together) {
+                try {
+                    fbtIds = JSON.parse(product.frequently_bought_together);
+                } catch (e) { fbtIds = []; }
+            }
+            if (Array.isArray(fbtIds) && fbtIds.length > 0) {
+                const placeholders = fbtIds.map(() => '?').join(',');
+                const [fbtRows] = await db.query(
+                    `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+                     (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
+                     FROM products p WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
+                    fbtIds
+                );
+                product.frequently_bought_together_products = fbtRows;
+            } else {
+                product.frequently_bought_together_products = [];
+            }
+
             return product;
         }
 
@@ -285,11 +306,12 @@ class Product {
                 youtube_video_link,
                 resources,
                 offer_start,
-                offer_end
+                offer_end,
+                data.frequently_bought_together ? String(data.frequently_bought_together) : null
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -323,7 +345,8 @@ class Product {
             'name', 'name_ar', 'slug', 'description', 'description_ar', 'short_description', 'short_description_ar', 'specifications', 'price', 'discount_percentage', 'offer_price',
             'stock_quantity', 'track_inventory', 'category_id', 'sub_category_id', 'sub_sub_category_id', 'brand_id', 'seller_id',
             'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'status',
-            'product_group', 'sub_category', 'model', 'youtube_video_link', 'resources', 'offer_start', 'offer_end'
+            'product_group', 'sub_category', 'model', 'youtube_video_link', 'resources', 'offer_start', 'offer_end',
+            'frequently_bought_together'
         ];
 
         const productId = parseInt(id);

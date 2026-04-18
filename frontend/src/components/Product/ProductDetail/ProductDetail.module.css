@@ -2795,3 +2795,470 @@
     left: 0;
     z-index: 10;
 }
+
+.fbtSectionRoot {
+    padding: 0 40px 32px 40px;
+    margin-top: 0;
+}
+
+@media (max-width: 1024px) {
+    .fbtSectionRoot {
+        padding: 0 20px 32px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .fbtSectionRoot {
+        width: calc(100% + 40px);
+        margin-left: -20px;
+        margin-right: -20px;
+        padding: 16px 10px 32px 10px;
+        border-radius: 0;
+        box-shadow: none;
+        border-top: 1px solid #f0f0f0;
+        border-bottom: 1px solid #f0f0f0;
+        background: #fff;
+        margin-top: 20px;
+    }
+
+    .fbtSectionRoot .sectionTitle {
+        padding: 0 10px 12px 10px;
+        border-bottom: 1px solid #f1f5f9;
+        text-align: left;
+    }
+
+    .fbtSectionRoot .sectionTitle h2 {
+        font-size: 22px;
+    }
+
+    .fbtSummary {
+        margin: 20px 20px 0 20px;
+    }
+}
+
+/* Frequently Bought Together Carousel */
+.sliderWrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.fbtViewport {
+    overflow: hidden;
+    width: 100%;
+    cursor: grab;
+}
+
+.fbtViewport:active {
+    cursor: grabbing;
+}
+
+.fbtGrid {
+    display: flex;
+    touch-action: pan-y;
+}
+
+.fbtSlide {
+    flex: 0 0 auto;
+    padding-left: 8px;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.fbtSeparator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    margin-left: -4px;
+    margin-right: 4px;
+    font-size: 24px;
+    color: #94a3b8;
+    font-weight: 300;
+    flex-shrink: 0;
+}
+
+.fbtCard {
+    display: flex;
+    flex-direction: column;
+    width: 160px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.fbtCard:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.fbtCardActive {
+    border: 2px solid #e31e24 !important;
+    box-shadow: 0 0 0 3px rgba(227, 30, 36, 0.08) !important;
+}
+
+.fbtCardLink {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+}
+
+.fbtBadge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #cbd5e1;
+    background: #fff;
+    transition: all 0.2s;
+}
+
+.fbtBadgeActive {
+    background: #e31e24;
+    border-color: #e31e24;
+}
+
+.fbtImage {
+    width: 100%;
+    aspect-ratio: 1;
+    background: #f8fafc;
+    object-fit: cover;
+    user-drag: none;
+    -webkit-user-drag: none;
+}
+
+.fbtInfo {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fbtName {
+    font-size: 12px;
+    line-height: 1.4;
+    height: 34px;
+    color: #374151;
+    font-weight: 500;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.fbtPrice {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e31e24;
+}
+
+.fbtSummary {
+    margin-top: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 30px;
+    padding: 20px 30px;
+    background: linear-gradient(135deg, #fff 0%, #f9fafb 100%);
+    border: 1px solid #f1f5f9;
+    border-radius: 16px;
+    flex-wrap: wrap;
+}
+
+.fbtSelectedInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fbtTotalLabel {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.fbtTotalPrice {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.fbtTotalCurrency {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.fbtAddBtn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 32px;
+    background: #e31e24;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(227, 30, 36, 0.2);
+}
+
+.fbtAddBtn:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.fbtAddBtn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(227, 30, 36, 0.3);
+    background: #cc1a20;
+}
+
+.fbtAddBtn:not(:disabled):active {
+    transform: translateY(0);
+}
+
+.arrowHidden {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.sliderArrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 10;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.sliderArrow:hover {
+    background: #e31e24;
+    color: #fff;
+    border-color: #e31e24;
+    box-shadow: 0 6px 16px rgba(227, 30, 36, 0.25);
+}
+
+.prevArrow {
+    left: -42px;
+}
+
+.nextArrow {
+    right: -42px;
+}
+
+@media (max-width: 768px) {
+    .sliderArrow {
+        display: none !important;
+    }
+
+    .fbtSummary {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #f1f5f9;
+        background: #fff;
+        margin: 20px 10px 0 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .fbtAddBtn {
+        width: 100%;
+        justify-content: center;
+        height: 54px;
+        font-size: 16px;
+        order: 2;
+    }
+
+    .fbtSelectedInfo {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        order: 1;
+        padding-bottom: 4px;
+    }
+
+    .fbtTotalLabel {
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    .fbtTotalPrice {
+        font-size: 20px;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .fbtGrid {
+        margin-left: -20px;
+    }
+
+    .fbtSlide {
+        padding-left: 20px;
+    }
+
+    .fbtSeparator {
+        width: 40px;
+        margin-left: -20px;
+        font-size: 18px;
+    }
+
+    .fbtCard {
+        width: 140px;
+    }
+
+    .fbtName {
+        font-size: 11px;
+        height: 32px;
+    }
+
+    .fbtPrice {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 576px) {
+    .fbtSectionRoot .sectionTitle h2 {
+        font-size: 19px;
+    }
+
+    .fbtGrid {
+        margin-left: -12px;
+    }
+
+    .fbtSlide {
+        padding-left: 12px;
+    }
+
+    .fbtCard {
+        width: 135px;
+    }
+
+    .fbtSeparator {
+        width: 24px;
+        margin-left: -12px;
+    }
+}
+
+@media (max-width: 380px) {
+    .fbtCard {
+        width: 125px;
+    }
+}
+
+
+/* Screenshot-matching styles for FBT */
+.fbtCardMatched {
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    padding: 12px;
+    position: relative;
+    background: #fff;
+    width: 150px;
+}
+
+.fbtCardMatchedActive {
+    border: 1px solid #3366ff;
+}
+
+.fbtBadgeBlue {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 20px;
+    height: 20px;
+    background: #3366ff;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+.fbtPriceLarge {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1e293b;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.fbtPriceCurrency {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.fbtNameSmall {
+    font-size: 11px;
+    color: #64748b;
+    line-height: 1.5;
+    margin-top: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 33px;
+}
+
+.fbtBuyTogetherBtn {
+    width: 100%;
+    background: #fff;
+    border: 2px solid #3366ff;
+    color: #3366ff;
+    border-radius: 8px;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.fbtBuyTogetherBtn:hover {
+    background: #f0f4ff;
+}
+
+.fbtBuyTogetherBtn:disabled {
+    border-color: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
