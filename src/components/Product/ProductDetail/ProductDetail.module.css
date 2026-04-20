@@ -43,6 +43,7 @@
 
 .layout {
     display: flex;
+    flex-wrap: wrap;
     gap: 40px;
     align-items: flex-start;
 }
@@ -51,6 +52,7 @@
     flex: 1;
     min-width: 0;
     /* Prevent flex overflow */
+    order: 1;
 }
 
 /* Top Section: Gallery + Info */
@@ -59,6 +61,12 @@
     grid-template-columns: 1.1fr 1fr;
     gap: 40px;
     margin-bottom: 12px;
+}
+
+@media (max-width: 1024px) {
+    .topSection {
+        margin-bottom: 10px;
+    }
 }
 
 /* Gallery */
@@ -1133,6 +1141,12 @@
     background: #fff;
     border: 1px solid #ebebeb;
     padding: 0;
+    order: 2;
+}
+
+.fbtWrapper {
+    width: 100%;
+    order: 3;
 }
 
 .trustList {
@@ -2306,12 +2320,18 @@
 
     .layout {
         flex-direction: column;
+        gap: 20px;
     }
 
     .sidebar {
         width: 100%;
         display: flex;
         flex-direction: column;
+        order: 3;
+    }
+
+    .fbtWrapper {
+        order: 2;
     }
 
     .trustList {
@@ -2812,13 +2832,13 @@
         width: calc(100% + 40px);
         margin-left: -20px;
         margin-right: -20px;
-        padding: 16px 10px 32px 10px;
+        padding: 5px 10px 32px 10px;
         border-radius: 0;
         box-shadow: none;
         border-top: 1px solid #f0f0f0;
         border-bottom: 1px solid #f0f0f0;
         background: #fff;
-        margin-top: 20px;
+        margin-top: 10px;
     }
 
     .fbtSectionRoot .sectionTitle {
