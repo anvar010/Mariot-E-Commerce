@@ -196,7 +196,7 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
                                     <div
                                         className={`${styles.fbtCard} ${isChecked ? styles.fbtCardActive : ''}`}
                                     >
-                                        <div 
+                                        <div
                                             className={`${styles.fbtBadge} ${isChecked ? styles.fbtBadgeActive : ''}`}
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -1046,6 +1046,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                     </div>
 
+                    <div className={styles.fbtWrapper}>
+                        {product.frequently_bought_together_products && product.frequently_bought_together_products.length > 0 && (
+                            <FbtSection
+                                currentProduct={product}
+                                fbtProducts={product.frequently_bought_together_products}
+                                locale={locale}
+                                isArabic={isArabic}
+                                resolveUrl={resolveUrl}
+                                addToCart={addToCart}
+                                showNotification={showNotification}
+                                t={t}
+                            />
+                        )}
+                    </div>
+
                     {/* Sidebar (Right) */}
                     <div className={styles.sidebar}>
                         <div className={styles.trustList}>
@@ -1071,19 +1086,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                 </div>
 
-                {/* Frequently Bought Together */}
-                {product.frequently_bought_together_products && product.frequently_bought_together_products.length > 0 && (
-                    <FbtSection
-                        currentProduct={product}
-                        fbtProducts={product.frequently_bought_together_products}
-                        locale={locale}
-                        isArabic={isArabic}
-                        resolveUrl={resolveUrl}
-                        addToCart={addToCart}
-                        showNotification={showNotification}
-                        t={t}
-                    />
-                )}
 
                 <div className={`${styles.detailsLayoutGrid} ${!hasVideo ? styles.noVideo : ''}`}>
                     {/* Main Content Area (Accordions Column) */}
