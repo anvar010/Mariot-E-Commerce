@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminProducts.module.css';
-import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
@@ -97,6 +97,12 @@ const AdminProducts = () => {
 
     const [categories, setCategories] = useState<any[]>([]);
     const [hierarchicalCategories, setHierarchicalCategories] = useState<any[]>([]);
+
+    // Frequently Bought Together picker
+    const [fbtSearch, setFbtSearch] = useState('');
+    const [fbtResults, setFbtResults] = useState<any[]>([]);
+    const [fbtLoading, setFbtLoading] = useState(false);
+    const [fbtSelectedItems, setFbtSelectedItems] = useState<{ id: number; name: string }[]>([]);
     const [brands, setBrands] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
     const [exporting, setExporting] = useState(false);
@@ -383,6 +389,28 @@ const AdminProducts = () => {
             router.replace('/admin/products', { scroll: false });
         }
     }, [searchParams]);
+
+    useEffect(() => {
+        if (!fbtSearch.trim()) { setFbtResults([]); return; }
+        const timer = setTimeout(async () => {
+            setFbtLoading(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/products?search=${encodeURIComponent(fbtSearch)}&limit=8&page=1&status=all`, {
+                    credentials: 'include',
+                    headers: getAuthHeaders()
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setFbtResults(data.data.filter((p: any) => p.id !== editingId));
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setFbtLoading(false);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [fbtSearch, editingId]);
 
     useEffect(() => {
         fetchProducts();
@@ -739,6 +767,20 @@ const AdminProducts = () => {
             offer_end: product.offer_end ? new Date(product.offer_end).toISOString().slice(0, 16) : '',
             track_inventory: isTrue(product.track_inventory)
         });
+
+        let fbtItems: { id: number; name: string }[] = [];
+        if (product.frequently_bought_together) {
+            try {
+                const ids: number[] = JSON.parse(product.frequently_bought_together);
+                fbtItems = ids.map(id => ({
+                    id,
+                    name: products.find((p: any) => p.id === id)?.name || `Product #${id}`
+                }));
+            } catch (e) { }
+        }
+        setFbtSelectedItems(fbtItems);
+        setFbtSearch('');
+        setFbtResults([]);
         setIsModalOpen(true);
     };
 
@@ -783,6 +825,9 @@ const AdminProducts = () => {
             offer_end: '',
             track_inventory: false
         });
+        setFbtSelectedItems([]);
+        setFbtSearch('');
+        setFbtResults([]);
         setActiveTab('basic');
     };
 
@@ -826,7 +871,10 @@ const AdminProducts = () => {
                 is_limited_offer: Boolean(formData.is_limited_offer),
                 is_featured: Boolean(formData.is_featured),
                 is_daily_offer: Boolean(formData.is_daily_offer),
-                is_best_seller: Boolean(formData.is_best_seller)
+                is_best_seller: Boolean(formData.is_best_seller),
+                frequently_bought_together: fbtSelectedItems.length > 0
+                    ? JSON.stringify(fbtSelectedItems.map(p => p.id))
+                    : null
             };
 
             const res = await fetch(url, {
@@ -1427,6 +1475,13 @@ const AdminProducts = () => {
                                     <Images size={18} />
                                     <span>{t('modal.tabs.visual')}</span>
                                 </button>
+                                <button
+                                    className={`${styles.navItem} ${activeTab === 'fbt' ? styles.activeNav : ''}`}
+                                    onClick={() => setActiveTab('fbt')}
+                                >
+                                    <ShoppingCart size={18} />
+                                    <span>Linked Products</span>
+                                </button>
                             </div>
 
                             {/* Main Content Area */}
@@ -1713,6 +1768,112 @@ const AdminProducts = () => {
                                                 <div className={styles.formGrid} style={{ marginTop: '15px' }}>
                                                     <div className={styles.formGroup}><label>{t('modal.fields.startDate')}</label><input type="datetime-local" name="offer_start" value={formData.offer_start} onChange={handleInputChange} /></div>
                                                     <div className={styles.formGroup}><label>{t('modal.fields.endDate')}</label><input type="datetime-local" name="offer_end" value={formData.offer_end} onChange={handleInputChange} /></div>
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'fbt' && (
+                                        <div className={styles.tabPane}>
+                                            <div className={styles.paneHeader}>
+                                                <h3>Frequently Bought Together</h3>
+                                                <p>Link products that are commonly purchased alongside this item. They appear as an upsell widget on the product page.</p>
+                                            </div>
+                                            <div className={styles.formGroup} style={{ maxWidth: '100%' }}>
+                                                <label>Search & Add Products</label>
+                                                <div style={{ position: 'relative', width: '100%' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={fbtSearch}
+                                                        onChange={(e) => setFbtSearch(e.target.value)}
+                                                        placeholder="Type a product name..."
+                                                        autoComplete="off"
+                                                        style={{ width: '100%', paddingInlineEnd: '36px' }}
+                                                    />
+                                                    {fbtSearch && (
+                                                        <button
+                                                            type="button"
+                                                            onMouseDown={(e) => { e.preventDefault(); setFbtSearch(''); setFbtResults([]); }}
+                                                            style={{
+                                                                position: 'absolute', insetInlineEnd: '10px', top: '50%',
+                                                                transform: 'translateY(-50%)', background: 'none', border: 'none',
+                                                                cursor: 'pointer', color: '#ef4444', display: 'flex', padding: 2
+                                                            }}
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    )}
+                                                    {fbtSearch.trim() && (fbtResults.length > 0 || fbtLoading) && (
+                                                        <div style={{
+                                                            position: 'absolute', top: '100%', left: 0, right: 0,
+                                                            background: 'white', border: '1px solid #e5e7eb',
+                                                            borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                            zIndex: 200, maxHeight: '280px', overflowY: 'auto', marginTop: '4px'
+                                                        }}>
+                                                            {fbtLoading ? (
+                                                                <div style={{ padding: '10px 14px', fontSize: '13px', color: '#64748b' }}>Searching...</div>
+                                                            ) : (
+                                                                fbtResults.map(p => {
+                                                                    const alreadyAdded = fbtSelectedItems.some(s => s.id === p.id);
+                                                                    return (
+                                                                        <div
+                                                                            key={p.id}
+                                                                            style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px', background: alreadyAdded ? '#f0fdf4' : 'white' }}
+                                                                        >
+                                                                            {p.primary_image && <img src={p.primary_image} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
+                                                                            <span style={{ flex: 1, color: alreadyAdded ? '#16a34a' : 'inherit' }}>{p.name}</span>
+                                                                            <button
+                                                                                type="button"
+                                                                                disabled={alreadyAdded}
+                                                                                onMouseDown={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (!alreadyAdded) {
+                                                                                        setFbtSelectedItems(prev => [...prev, { id: p.id, name: p.name }]);
+                                                                                    }
+                                                                                }}
+                                                                                style={{
+                                                                                    flexShrink: 0, width: 28, height: 28,
+                                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                                    borderRadius: '50%', border: 'none', cursor: alreadyAdded ? 'default' : 'pointer',
+                                                                                    background: alreadyAdded ? '#16a34a' : '#3b82f6', color: 'white'
+                                                                                }}
+                                                                            >
+                                                                                {alreadyAdded ? <Check size={14} /> : <Plus size={14} />}
+                                                                            </button>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {fbtSelectedItems.length === 0 ? (
+                                                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8', fontSize: '13px' }}>
+                                                    <ShoppingCart size={32} style={{ opacity: 0.3, marginBottom: 8 }} />
+                                                    <p>No linked products yet. Search above to add some.</p>
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                                                    {fbtSelectedItems.map((item, idx) => (
+                                                        <div key={item.id} style={{
+                                                            display: 'flex', alignItems: 'center', gap: '10px',
+                                                            padding: '10px 14px', background: '#f8fafc',
+                                                            border: '1px solid #e2e8f0', borderRadius: '10px'
+                                                        }}>
+                                                            <span style={{ fontSize: '12px', color: '#94a3b8', width: 20, textAlign: 'center' }}>{idx + 1}</span>
+                                                            <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{item.name}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setFbtSelectedItems(prev => prev.filter(p => p.id !== item.id))}
+                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 4 }}
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             )}
                                         </div>

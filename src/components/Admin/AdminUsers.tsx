@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminUsers.module.css';
-import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar, Ban, CheckCircle } from 'lucide-react';
+import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar, Ban, CheckCircle, Coins } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import { API_BASE_URL } from '@/config';
@@ -26,6 +26,14 @@ const AdminUsers = () => {
         email: '',
         role_id: ''
     });
+
+    // Points form state (lives inside edit modal)
+    const [pointsForm, setPointsForm] = useState<{ amount: string; action: 'add' | 'remove' }>({
+        amount: '',
+        action: 'add'
+    });
+    const [isPointsSubmitting, setIsPointsSubmitting] = useState(false);
+    const [isStatusSubmitting, setIsStatusSubmitting] = useState(false);
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{
@@ -112,37 +120,29 @@ const AdminUsers = () => {
         });
     };
 
-    const handleToggleStatus = (id: number, currentStatus: string) => {
-        const action = currentStatus === 'active' ? 'suspend' : 'activate';
-        setConfirmModal({
-            isOpen: true,
-            title: t(currentStatus === 'active' ? 'modals.suspendTitle' : 'modals.activateTitle'),
-            message: t(currentStatus === 'active' ? 'modals.suspendMessage' : 'modals.activateMessage'),
-            type: currentStatus === 'active' ? 'warning' : 'info',
-            confirmLabel: t(currentStatus === 'active' ? 'modals.suspendConfirm' : 'modals.activateConfirm'),
-            onConfirm: async () => {
-                try {
-                    setIsActionLoading(true);
-                    const res = await fetch(`${API_BASE_URL}/admin/users/${id}/status`, {
-                        method: 'PATCH',
-                        credentials: "include",
-                        headers: getAuthHeaders()
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        showNotification(data.message);
-                        fetchUsers();
-                    } else {
-                        showNotification(data.message || t('notifications.statusUpdateError'), 'error');
-                    }
-                } catch (error) {
-                    showNotification(t('notifications.statusUpdateError'), 'error');
-                } finally {
-                    setIsActionLoading(false);
-                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
-                }
+    const handleToggleStatusInModal = async () => {
+        if (!editingUser) return;
+        const isActive = (editingUser.status || 'active') === 'active';
+        try {
+            setIsStatusSubmitting(true);
+            const res = await fetch(`${API_BASE_URL}/admin/users/${editingUser.id}/status`, {
+                method: 'PATCH',
+                credentials: 'include',
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
+            if (data.success) {
+                showNotification(data.message);
+                setEditingUser({ ...editingUser, status: isActive ? 'suspended' : 'active' });
+                fetchUsers();
+            } else {
+                showNotification(data.message || t('notifications.statusUpdateError'), 'error');
             }
-        });
+        } catch (error) {
+            showNotification(t('notifications.statusUpdateError'), 'error');
+        } finally {
+            setIsStatusSubmitting(false);
+        }
     };
 
     const handleEditClick = (user: any) => {
@@ -152,6 +152,7 @@ const AdminUsers = () => {
             email: user.email,
             role_id: user.role_id ? user.role_id.toString() : '2'
         });
+        setPointsForm({ amount: '', action: 'add' });
         setIsModalOpen(true);
     };
 
@@ -178,6 +179,37 @@ const AdminUsers = () => {
             }
         } catch (error) {
             showNotification(t('notifications.genericError'), 'error');
+        }
+    };
+
+    const handlePointsApply = async () => {
+        if (!editingUser) return;
+        const amount = parseInt(pointsForm.amount, 10);
+        if (!amount || amount <= 0) return;
+        try {
+            setIsPointsSubmitting(true);
+            const res = await fetch(`${API_BASE_URL}/admin/users/${editingUser.id}/points`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ points: amount, action: pointsForm.action })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showNotification(t('notifications.pointsUpdateSuccess'));
+                setEditingUser({ ...editingUser, reward_points: data.data.reward_points });
+                setPointsForm({ amount: '', action: 'add' });
+                fetchUsers();
+            } else {
+                showNotification(data.message || t('notifications.pointsUpdateError'), 'error');
+            }
+        } catch (error) {
+            showNotification(t('notifications.pointsUpdateError'), 'error');
+        } finally {
+            setIsPointsSubmitting(false);
         }
     };
 
@@ -220,15 +252,16 @@ const AdminUsers = () => {
                             <th>{t('table.details')}</th>
                             <th>{t('table.role')}</th>
                             <th>{t('table.status')}</th>
+                            <th>{t('table.points')}</th>
                             <th>{t('table.joined')}</th>
                             <th style={{ textAlign: 'right' }}>{t('table.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message={t('loader')} /></td></tr>
+                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message={t('loader')} /></td></tr>
                         ) : filteredUsers.length === 0 ? (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '60px' }}>{t('empty')}</td></tr>
+                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '60px' }}>{t('empty')}</td></tr>
                         ) : (
                             filteredUsers.map((user) => (
                                 <tr key={user.id}>
@@ -267,6 +300,23 @@ const AdminUsers = () => {
                                         </span>
                                     </td>
                                     <td>
+                                        <span style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '4px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            background: 'rgba(234, 179, 8, 0.1)',
+                                            color: '#ca8a04',
+                                            border: '1px solid rgba(234, 179, 8, 0.2)'
+                                        }}>
+                                            <Coins size={12} />
+                                            {Number(user.reward_points) || 0}
+                                        </span>
+                                    </td>
+                                    <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
                                             <Calendar size={14} />
                                             {new Date(user.created_at).toLocaleDateString()}
@@ -280,24 +330,6 @@ const AdminUsers = () => {
                                                 title={t('tooltips.edit')}
                                             >
                                                 <Edit2 size={16} />
-                                            </button>
-                                            <button
-                                                style={{
-                                                    background: (user.status || 'active') === 'active' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(34, 197, 94, 0.08)',
-                                                    color: (user.status || 'active') === 'active' ? '#dc2626' : '#16a34a',
-                                                    border: `1px solid ${(user.status || 'active') === 'active' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`,
-                                                    borderRadius: '8px',
-                                                    padding: '6px 8px',
-                                                    cursor: (user.role || 'user').toLowerCase() === 'admin' ? 'not-allowed' : 'pointer',
-                                                    opacity: (user.role || 'user').toLowerCase() === 'admin' ? 0.4 : 1,
-                                                    display: 'flex',
-                                                    alignItems: 'center'
-                                                }}
-                                                onClick={() => handleToggleStatus(user.id, user.status || 'active')}
-                                                disabled={(user.role || 'user').toLowerCase() === 'admin'}
-                                                title={(user.role || 'user').toLowerCase() === 'admin' ? t('tooltips.adminNoSuspend') : ((user.status || 'active') === 'active' ? t('tooltips.suspend') : t('tooltips.activate'))}
-                                            >
-                                                {(user.status || 'active') === 'active' ? <Ban size={16} /> : <CheckCircle size={16} />}
                                             </button>
                                             <button
                                                 className={styles.deleteBtn}
@@ -361,6 +393,116 @@ const AdminUsers = () => {
                                     ))}
                                 </select>
                             </div>
+
+                            {editingUser && (() => {
+                                const isAdmin = (editingUser.role || 'user').toLowerCase() === 'admin';
+                                const isActive = (editingUser.status || 'active') === 'active';
+                                return (
+                                    <div className={styles.formGroup} style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+                                        <label>{t('table.status')}</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '4px 12px',
+                                                borderRadius: '20px',
+                                                fontSize: '12px',
+                                                fontWeight: 600,
+                                                background: isActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                color: isActive ? '#16a34a' : '#dc2626',
+                                                border: `1px solid ${isActive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                                            }}>
+                                                {isActive ? <CheckCircle size={12} /> : <Ban size={12} />}
+                                                {t(`status.${(editingUser.status || 'active').toLowerCase()}` as any)}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={handleToggleStatusInModal}
+                                                disabled={isAdmin || isStatusSubmitting}
+                                                title={isAdmin ? t('tooltips.adminNoSuspend') : (isActive ? t('tooltips.suspend') : t('tooltips.activate'))}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '8px 14px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '13px',
+                                                    fontWeight: 600,
+                                                    background: isActive ? 'rgba(239, 68, 68, 0.08)' : 'rgba(34, 197, 94, 0.08)',
+                                                    color: isActive ? '#dc2626' : '#16a34a',
+                                                    border: `1px solid ${isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`,
+                                                    cursor: isAdmin || isStatusSubmitting ? 'not-allowed' : 'pointer',
+                                                    opacity: isAdmin ? 0.4 : 1
+                                                }}
+                                            >
+                                                {isActive ? <Ban size={14} /> : <CheckCircle size={14} />}
+                                                {isActive ? t('modals.suspendConfirm') : t('modals.activateConfirm')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {editingUser && (
+                                <div className={styles.formGroup} style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+                                    <label>{t('modals.pointsTitle')}</label>
+                                    <div style={{ marginBottom: '10px' }}>
+                                        <span style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '6px 12px',
+                                            borderRadius: '10px',
+                                            background: 'rgba(234, 179, 8, 0.1)',
+                                            color: '#ca8a04',
+                                            border: '1px solid rgba(234, 179, 8, 0.2)',
+                                            fontSize: '13px',
+                                            fontWeight: 600
+                                        }}>
+                                            <Coins size={14} />
+                                            {t('modals.pointsCurrent')}: {Number(editingUser.reward_points) || 0}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                        <select
+                                            value={pointsForm.action}
+                                            onChange={(e) => setPointsForm({ ...pointsForm, action: e.target.value as 'add' | 'remove' })}
+                                            style={{ flex: '1 1 140px' }}
+                                        >
+                                            <option value="add">{t('modals.pointsActionAdd')}</option>
+                                            <option value="remove">{t('modals.pointsActionRemove')}</option>
+                                        </select>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={pointsForm.amount}
+                                            onChange={(e) => setPointsForm({ ...pointsForm, amount: e.target.value })}
+                                            placeholder={t('modals.pointsAmountPlaceholder')}
+                                            style={{ flex: '1 1 140px' }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handlePointsApply}
+                                            disabled={isPointsSubmitting || !pointsForm.amount}
+                                            style={{
+                                                padding: '8px 16px',
+                                                borderRadius: '8px',
+                                                fontSize: '13px',
+                                                fontWeight: 600,
+                                                background: 'rgba(234, 179, 8, 0.1)',
+                                                color: '#ca8a04',
+                                                border: '1px solid rgba(234, 179, 8, 0.3)',
+                                                cursor: isPointsSubmitting || !pointsForm.amount ? 'not-allowed' : 'pointer',
+                                                opacity: isPointsSubmitting || !pointsForm.amount ? 0.5 : 1
+                                            }}
+                                        >
+                                            {t('modals.pointsApply')}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className={styles.modalFooter}>
                                 <button
                                     type="button"
