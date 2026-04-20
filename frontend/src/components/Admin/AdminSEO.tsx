@@ -67,7 +67,8 @@ const AdminSEO = () => {
         );
     }
 
-    const { seoStats, totalProducts } = stats || { seoStats: {}, totalProducts: 0 };
+    const { seoStats, totalProducts, userGrowth, dbLatencyMs } = stats || { seoStats: { score: 100, issues: {} }, totalProducts: 0, userGrowth: 0, dbLatencyMs: null };
+    const seoIssuesData = seoStats?.issues || {};
 
     return (
         <div className={styles.adminSEO}>
@@ -98,7 +99,7 @@ const AdminSEO = () => {
                         <Globe size={20} />
                     </div>
                     <div>
-                        <div className={styles.statValue}>{seoStats?.seoScore || 100}/100</div>
+                        <div className={styles.statValue}>{seoStats?.score ?? 100}/100</div>
                         <div className={styles.statLabel}>Global SEO Score</div>
                     </div>
                 </div>
@@ -108,7 +109,7 @@ const AdminSEO = () => {
                         <CheckCircle2 size={20} />
                     </div>
                     <div>
-                        <div className={styles.statValue}>{totalProducts - (seoStats?.missingDescription || 0)}</div>
+                        <div className={styles.statValue}>{totalProducts - (seoIssuesData.missingDescription || 0)}</div>
                         <div className={styles.statLabel}>Indexed Pages</div>
                     </div>
                 </div>
@@ -128,7 +129,7 @@ const AdminSEO = () => {
                         <TrendingUp size={20} />
                     </div>
                     <div>
-                        <div className={styles.statValue}>{seoStats?.growth > 0 ? `+${seoStats.growth}%` : `${seoStats?.growth || 0}%`}</div>
+                        <div className={styles.statValue}>{userGrowth > 0 ? `+${userGrowth}%` : `${userGrowth || 0}%`}</div>
                         <div className={styles.statLabel}>User Growth (30d)</div>
                     </div>
                 </div>
@@ -144,25 +145,25 @@ const AdminSEO = () => {
                         {[
                             {
                                 label: 'Missing Primary Images',
-                                count: seoStats?.missingImages || 0,
+                                count: seoIssuesData.missingImages || 0,
                                 color: '#ef4444',
                                 badgeClass: styles.countBad
                             },
                             {
                                 label: 'Missing Meta Descriptions',
-                                count: seoStats?.missingDescription || 0,
+                                count: seoIssuesData.missingDescription || 0,
                                 color: '#f59e0b',
                                 badgeClass: styles.countWarning
                             },
                             {
                                 label: 'Title Tag Issues (Length)',
-                                count: (seoStats?.shortTitles || 0) + (seoStats?.longTitles || 0),
+                                count: (seoIssuesData.shortTitles || 0) + (seoIssuesData.longTitles || 0),
                                 color: '#6366f1',
                                 badgeClass: styles.countInfo
                             },
                             {
                                 label: 'Missing Brand Tags',
-                                count: seoStats?.missingBrand || 0,
+                                count: seoIssuesData.missingBrand || 0,
                                 color: '#10b981',
                                 badgeClass: styles.countGood
                             }
@@ -178,7 +179,7 @@ const AdminSEO = () => {
                                     <div
                                         className={styles.progressFill}
                                         style={{
-                                            width: `${Math.min(100, (item.count / totalProducts) * 100)}%`,
+                                            width: `${totalProducts ? Math.min(100, (item.count / totalProducts) * 100) : 0}%`,
                                             backgroundColor: item.color
                                         }}
                                     />
@@ -196,8 +197,7 @@ const AdminSEO = () => {
                     <div className={styles.cardContent}>
                         {[
                             { label: 'API', desc: 'Server Response Time', value: loadTime, status: parseFloat(loadTime) < 0.5 ? 'EXCELLENT' : 'GOOD' },
-                            { label: 'DB', desc: 'Database Query Latency', value: '12ms', status: 'STABLE' },
-                            { label: 'CDN', desc: 'Content Delivery Network', value: 'Edge', status: 'ACTIVE' }
+                            { label: 'DB', desc: 'Database Query Latency', value: dbLatencyMs != null ? `${dbLatencyMs}ms` : '—', status: dbLatencyMs == null ? '—' : dbLatencyMs < 10 ? 'EXCELLENT' : dbLatencyMs < 50 ? 'GOOD' : 'SLOW' }
                         ].map((vite, idx) => (
                             <div key={idx} className={styles.perfItem}>
                                 <div className={styles.perfLabel}>
@@ -217,7 +217,7 @@ const AdminSEO = () => {
             <div className={styles.actionPlan}>
                 <h3>SEO Optimization Plan</h3>
                 <div className={styles.actionGrid}>
-                    {seoStats?.missingImages > 0 && (
+                    {seoIssuesData.missingImages > 0 && (
                         <div
                             className={styles.actionItem}
                             style={{ background: '#fef2f2' }}
@@ -229,7 +229,7 @@ const AdminSEO = () => {
                                 </div>
                                 <div className={styles.actionText}>
                                     <h4 style={{ color: '#991b1b' }}>Critical: Recover Missing Visuals</h4>
-                                    <p style={{ color: '#b91c1c' }}>{seoStats.missingImages} products have no primary images, affecting image search ranking.</p>
+                                    <p style={{ color: '#b91c1c' }}>{seoIssuesData.missingImages} products have no primary images, affecting image search ranking.</p>
                                 </div>
                                 <ChevronDown size={18} className={`${styles.chevron} ${expandedSection === 'images' ? styles.chevronActive : ''}`} />
                             </div>
@@ -249,7 +249,7 @@ const AdminSEO = () => {
                         </div>
                     )}
 
-                    {seoStats?.missingDescription > 0 && (
+                    {seoIssuesData.missingDescription > 0 && (
                         <div
                             className={styles.actionItem}
                             style={{ background: '#fffbeb' }}
@@ -261,7 +261,7 @@ const AdminSEO = () => {
                                 </div>
                                 <div className={styles.actionText}>
                                     <h4 style={{ color: '#92400e' }}>High: Meta Description Audit</h4>
-                                    <p style={{ color: '#b45309' }}>Optimize {seoStats.missingDescription} descriptions to improve CTR on Google Search.</p>
+                                    <p style={{ color: '#b45309' }}>Optimize {seoIssuesData.missingDescription} descriptions to improve CTR on Google Search.</p>
                                 </div>
                                 <ChevronDown size={18} className={`${styles.chevron} ${expandedSection === 'desc' ? styles.chevronActive : ''}`} />
                             </div>
@@ -281,7 +281,7 @@ const AdminSEO = () => {
                         </div>
                     )}
 
-                    {seoStats?.missingBrand > 0 && (
+                    {seoIssuesData.missingBrand > 0 && (
                         <div className={styles.actionItem} style={{ background: '#f0fdf4' }}>
                             <div className={styles.actionMain}>
                                 <div className={styles.actionIcon} style={{ background: '#dcfce7', color: '#16a34a' }}>
@@ -289,7 +289,7 @@ const AdminSEO = () => {
                                 </div>
                                 <div className={styles.actionText}>
                                     <h4 style={{ color: '#166534' }}>Brand Association Audit</h4>
-                                    <p style={{ color: '#15803d' }}>{seoStats.missingBrand} products are missing brand tags. Linking brands improves semantic search.</p>
+                                    <p style={{ color: '#15803d' }}>{seoIssuesData.missingBrand} products are missing brand tags. Linking brands improves semantic search.</p>
                                 </div>
                             </div>
                         </div>

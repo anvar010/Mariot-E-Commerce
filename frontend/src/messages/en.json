@@ -1332,6 +1332,7 @@
                 "details": "User Details",
                 "role": "Role",
                 "status": "Status",
+                "points": "Reward Points",
                 "joined": "Joined Date",
                 "actions": "Actions"
             },
@@ -1349,7 +1350,8 @@
                 "activate": "Activate User",
                 "delete": "Delete Account",
                 "adminNoSuspend": "Admin accounts cannot be suspended",
-                "adminNoDelete": "Admin accounts cannot be deleted here"
+                "adminNoDelete": "Admin accounts cannot be deleted here",
+                "points": "Manage Reward Points"
             },
             "notifications": {
                 "deleteSuccess": "User account removed",
@@ -1357,6 +1359,8 @@
                 "updateSuccess": "User profile updated successfully",
                 "updateError": "Failed to update user",
                 "statusUpdateError": "Failed to update user status",
+                "pointsUpdateSuccess": "Reward points updated",
+                "pointsUpdateError": "Failed to update reward points",
                 "genericError": "An error occurred"
             },
             "modals": {
@@ -1377,7 +1381,15 @@
                 "suspendConfirm": "Suspend",
                 "activateTitle": "Activate User",
                 "activateMessage": "Are you sure you want to activate this user?",
-                "activateConfirm": "Activate"
+                "activateConfirm": "Activate",
+                "pointsTitle": "Manage Reward Points",
+                "pointsCurrent": "Current Balance",
+                "pointsAmountLabel": "Points Amount",
+                "pointsAmountPlaceholder": "Enter amount",
+                "pointsActionLabel": "Action",
+                "pointsActionAdd": "Add Points",
+                "pointsActionRemove": "Remove Points",
+                "pointsApply": "Apply"
             },
             "loader": "Loading Member Directory...",
             "empty": "No users found Matching your search."

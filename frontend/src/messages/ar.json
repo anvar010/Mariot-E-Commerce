@@ -1332,6 +1332,7 @@
                 "details": "تفاصيل المستخدم",
                 "role": "الدور",
                 "status": "الحالة",
+                "points": "نقاط المكافآت",
                 "joined": "تاريخ الانضمام",
                 "actions": "الإجراءات"
             },
@@ -1349,7 +1350,8 @@
                 "activate": "تفعيل المستخدم",
                 "delete": "حذف الحساب",
                 "adminNoSuspend": "لا يمكن إيقاف حسابات المسؤولين",
-                "adminNoDelete": "لا يمكن حذف حسابات المسؤولين هنا"
+                "adminNoDelete": "لا يمكن حذف حسابات المسؤولين هنا",
+                "points": "إدارة نقاط المكافآت"
             },
             "notifications": {
                 "deleteSuccess": "تمت إزالة حساب المستخدم",
@@ -1357,6 +1359,8 @@
                 "updateSuccess": "تم تحديث ملف المستخدم بنجاح",
                 "updateError": "فشل تحديث المستخدم",
                 "statusUpdateError": "فشل تحديث حالة المستخدم",
+                "pointsUpdateSuccess": "تم تحديث نقاط المكافآت",
+                "pointsUpdateError": "فشل تحديث نقاط المكافآت",
                 "genericError": "حدث خطأ ما"
             },
             "modals": {
@@ -1377,7 +1381,15 @@
                 "suspendConfirm": "إيقاف",
                 "activateTitle": "تفعيل المستخدم",
                 "activateMessage": "هل أنت متأكد أنك تريد تفعيل هذا المستخدم؟",
-                "activateConfirm": "تفعيل"
+                "activateConfirm": "تفعيل",
+                "pointsTitle": "إدارة نقاط المكافآت",
+                "pointsCurrent": "الرصيد الحالي",
+                "pointsAmountLabel": "عدد النقاط",
+                "pointsAmountPlaceholder": "أدخل الكمية",
+                "pointsActionLabel": "الإجراء",
+                "pointsActionAdd": "إضافة نقاط",
+                "pointsActionRemove": "خصم نقاط",
+                "pointsApply": "تطبيق"
             },
             "loader": "جاري تحميل دليل الأعضاء...",
             "empty": "لم يتم العثور على مستخدمين يطابقون بحثك."
