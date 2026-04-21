@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const slugify = require('slugify');
+const ProductVariant = require('./productVariant.model');
 
 class Product {
     static async findAll({ category, brand, seller, minPrice, maxPrice, search, sort, limit, offset, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, is_best_seller, status, stockStatus }) {
@@ -208,6 +209,16 @@ class Product {
                 product.frequently_bought_together_products = [];
             }
 
+            // Attach options + variants if any
+            if (Number(product.has_variants) === 1) {
+                const { options, variants } = await ProductVariant.getByProductId(product.id);
+                product.options = options;
+                product.variants = variants;
+            } else {
+                product.options = [];
+                product.variants = [];
+            }
+
             return product;
         }
 
@@ -333,10 +344,29 @@ class Product {
                 );
             }
 
+            if (Array.isArray(data.options) && Array.isArray(data.variants) && data.options.length > 0) {
+                await this._persistVariants(productId, data.options, data.variants);
+            }
+
             return productId;
         } catch (error) {
             console.error('Database Error in Product.create:', error);
             throw error;
+        }
+    }
+
+    static async _persistVariants(productId, options, variants) {
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            await ProductVariant.saveForProduct(conn, productId, options, variants);
+            await conn.commit();
+        } catch (error) {
+            await conn.rollback();
+            console.error('Failed to persist variants for product', productId, error);
+            throw error;
+        } finally {
+            conn.release();
         }
     }
 
@@ -435,12 +465,16 @@ class Product {
             }
         }
 
-        if (Object.keys(cleanData).length === 0) return;
+        if (Object.keys(cleanData).length > 0) {
+            const fields = Object.keys(cleanData).map(key => `${key} = ?`).join(', ');
+            const values = [...Object.values(cleanData), productId];
+            await db.execute(`UPDATE products SET ${fields} WHERE id = ?`, values);
+        }
 
-        const fields = Object.keys(cleanData).map(key => `${key} = ?`).join(', ');
-        const values = [...Object.values(cleanData), productId];
-
-        await db.execute(`UPDATE products SET ${fields} WHERE id = ?`, values);
+        // Persist variants if payload includes them. An empty variants array clears them.
+        if (Array.isArray(data.options) && Array.isArray(data.variants)) {
+            await this._persistVariants(productId, data.options, data.variants);
+        }
     }
 
     static async bulkUpdate(ids, data) {

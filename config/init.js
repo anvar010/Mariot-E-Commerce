@@ -165,6 +165,7 @@ const initDb = async () => {
                 { name: 'order_index', definition: "INT DEFAULT 0" },
                 { name: 'is_active', definition: "BOOLEAN DEFAULT TRUE" },
                 { name: 'name_ar', definition: "VARCHAR(255)" },
+                { name: 'description_ar', definition: "TEXT NULL" },
                 { name: 'brand_names', definition: "TEXT" }
             ];
 
@@ -204,6 +205,77 @@ const initDb = async () => {
             }
         } catch (err) {
             console.error('[DB] Error migrating coupons table:', err.message);
+        }
+
+        // 6.7 Product Variants Tables
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS product_options (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    product_id INT NOT NULL,
+                    name VARCHAR(50) NOT NULL,
+                    name_ar VARCHAR(50) NULL,
+                    position INT DEFAULT 0,
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+                    INDEX idx_po_product (product_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS product_variants (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    product_id INT NOT NULL,
+                    sku VARCHAR(100) NULL,
+                    price DECIMAL(10,2) NOT NULL DEFAULT 0,
+                    offer_price DECIMAL(10,2) NULL,
+                    stock_quantity INT NOT NULL DEFAULT 0,
+                    image_url VARCHAR(500) NULL,
+                    use_primary_image TINYINT(1) NOT NULL DEFAULT 1,
+                    options_signature VARCHAR(500) NOT NULL,
+                    is_active TINYINT(1) NOT NULL DEFAULT 1,
+                    is_default TINYINT(1) NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+                    UNIQUE KEY uk_variant_sig (product_id, options_signature),
+                    UNIQUE KEY uk_variant_sku (sku),
+                    INDEX idx_pv_product (product_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS product_variant_options (
+                    variant_id INT NOT NULL,
+                    option_id INT NOT NULL,
+                    value VARCHAR(100) NOT NULL,
+                    value_ar VARCHAR(100) NULL,
+                    PRIMARY KEY (variant_id, option_id),
+                    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+                    FOREIGN KEY (option_id) REFERENCES product_options(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            console.log('[DB] product variant tables verified');
+
+            // Add has_variants column to products
+            const [pColumns] = await db.query("SHOW COLUMNS FROM products");
+            if (!pColumns.map(c => c.Field).includes('has_variants')) {
+                await db.query("ALTER TABLE products ADD COLUMN has_variants TINYINT(1) NOT NULL DEFAULT 0");
+                console.log('[DB] Migration: Added has_variants column to products table');
+            }
+
+            // Add variant_id to cart_items
+            const [ciColumns] = await db.query("SHOW COLUMNS FROM cart_items");
+            if (!ciColumns.map(c => c.Field).includes('variant_id')) {
+                await db.query("ALTER TABLE cart_items ADD COLUMN variant_id INT NULL AFTER product_id");
+                await db.query("ALTER TABLE cart_items ADD CONSTRAINT fk_ci_variant FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE");
+                console.log('[DB] Migration: Added variant_id column to cart_items table');
+            }
+
+            // Add variant_id to order_items
+            const [oiColumns] = await db.query("SHOW COLUMNS FROM order_items");
+            if (!oiColumns.map(c => c.Field).includes('variant_id')) {
+                await db.query("ALTER TABLE order_items ADD COLUMN variant_id INT NULL AFTER product_id");
+                console.log('[DB] Migration: Added variant_id column to order_items table');
+            }
+        } catch (err) {
+            console.error('[DB] Error migrating product variant tables:', err.message);
         }
 
         // 7. Settings Table (Ensure it exists)

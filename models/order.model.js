@@ -50,9 +50,9 @@ class Order {
             // 2. Create order items (No stock deduction yet)
             for (const item of items) {
                 await connection.execute(
-                    `INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase) 
-                     VALUES (?, ?, ?, ?)`,
-                    [orderId, item.product_id, item.quantity, item.price]
+                    `INSERT INTO order_items (order_id, product_id, variant_id, quantity, price_at_purchase)
+                     VALUES (?, ?, ?, ?, ?)`,
+                    [orderId, item.product_id, item.variant_id || null, item.quantity, item.price]
                 );
             }
 
@@ -86,12 +86,19 @@ class Order {
      * Use this when an order successfully completes payment (Tabby redirect, Stripe Webhook, or immediate Card).
      */
     static async processOrderCompletion(connection, userId, orderId, items, points_to_use, adjustedFinalAmount) {
-        // 1. Reduce stock (only if track_inventory is enabled)
+        // 1. Reduce stock — variant stock when line has a variant, else product stock (respecting track_inventory)
         for (const item of items) {
-            await connection.execute(
-                'UPDATE products SET stock_quantity = GREATEST(0, stock_quantity - ?) WHERE id = ? AND track_inventory = 1',
-                [item.quantity, item.product_id]
-            );
+            if (item.variant_id) {
+                await connection.execute(
+                    'UPDATE product_variants SET stock_quantity = GREATEST(0, stock_quantity - ?) WHERE id = ?',
+                    [item.quantity, item.variant_id]
+                );
+            } else {
+                await connection.execute(
+                    'UPDATE products SET stock_quantity = GREATEST(0, stock_quantity - ?) WHERE id = ? AND track_inventory = 1',
+                    [item.quantity, item.product_id]
+                );
+            }
         }
 
         // 2. Clear cart
@@ -227,7 +234,7 @@ class Order {
             // If it's transitioning to paid, and wasn't processed before, process completion
             if (payment_status === 'paid' && !is_processed) {
                 // Fetch items for stock reduction
-                const [items] = await connection.execute('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [id]);
+                const [items] = await connection.execute('SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ?', [id]);
 
                 await this.processOrderCompletion(
                     connection,
