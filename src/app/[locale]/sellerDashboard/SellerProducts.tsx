@@ -92,7 +92,6 @@ const SellerProducts = () => {
     const [categories, setCategories] = useState<any[]>([]);
     const [brands, setBrands] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
 
     // Filter state
     const [filters, setFilters] = useState({
@@ -319,7 +318,6 @@ const SellerProducts = () => {
 
     const handleSaveProduct = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSaving(true);
         try {
             const url = editingId
                 ? `${API_BASE_URL}/seller/products/${editingId}`
@@ -358,8 +356,6 @@ const SellerProducts = () => {
         } catch (error: any) {
             console.error('Update failed:', error);
             showNotification(`An error occurred: ${error.message || 'Unknown error'}`, 'error');
-        } finally {
-            setIsSaving(false);
         }
     };
 
@@ -1140,8 +1136,8 @@ const SellerProducts = () => {
                                 <button type="button" className={styles.cancelBtn} onClick={handleCloseModal}>
                                     Cancel
                                 </button>
-                                <button type="submit" className={styles.submitBtn} disabled={isSaving}>
-                                    {isSaving ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update Product' : 'Add Product')}
+                                <button type="submit" className={styles.submitBtn}>
+                                    {editingId ? 'Update Product' : 'Add Product'}
                                 </button>
                             </div>
                         </form>
