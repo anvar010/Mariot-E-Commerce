@@ -336,6 +336,7 @@ function CheckoutContent() {
             const orderData = {
                 items: cartItems.map(item => ({
                     product_id: item.id,
+                    variant_id: item.variant_id ?? null,
                     quantity: item.quantity,
                     price: item.price
                 })),

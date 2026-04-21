@@ -162,6 +162,8 @@
         "videosText": "عروض توضيحية ودروس تعليمية.",
         "featuredVideo": "فيديو مميز",
         "whatsappMessage": "مرحباً ماريوت! هل يمكنني طلب هذا {url} \nهل يمكنك تزويدي بمزيد من التفاصيل؟",
+        "selectOptions": "اختر الخيارات",
+        "selectOptionsFirst": "يرجى اختيار جميع الخيارات أولاً",
         "added": "تمت الإضافة ✓",
         "verifiedCustomer": "عميل موثق",
         "customerReviews": "تقييمات العملاء",

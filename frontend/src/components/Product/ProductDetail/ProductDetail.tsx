@@ -270,6 +270,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [loading, setLoading] = useState(true);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [qty, setQty] = useState(1);
+    const [selectedValues, setSelectedValues] = useState<Record<number, string>>({});
     const [showTabbyModal, setShowTabbyModal] = useState(false);
     const [showPriceMatchModal, setShowPriceMatchModal] = useState(false);
     const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({
@@ -412,6 +413,48 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 const data = await res.json();
                 if (data.success) {
                     setProduct(data.data);
+                    // Auto-select default variant; fall back to first value of each option
+                    if (data.data.has_variants === 1 && Array.isArray(data.data.options) && Array.isArray(data.data.variants)) {
+                        const activeVariants = data.data.variants.filter((v: any) => v.is_active !== 0 && v.is_active !== false && v.is_active !== '0');
+                        
+                        // Prefer a default variant that has valid options populated
+                        let defaultVariant = activeVariants.find((v: any) => (v.is_default === 1 || v.is_default === true || v.is_default === '1') && Array.isArray(v.options) && v.options.length > 0);
+                        
+                        if (!defaultVariant) {
+                            defaultVariant = activeVariants.find((v: any) => (v.is_default === 1 || v.is_default === true || v.is_default === '1'));
+                        }
+                        if (!defaultVariant) {
+                            defaultVariant = activeVariants[0];
+                        }
+
+                        const defaults: Record<number, string> = {};
+                        if (defaultVariant && Array.isArray(defaultVariant.options) && defaultVariant.options.length > 0) {
+                            defaultVariant.options.forEach((vo: any) => {
+                                const key = (vo.value || '').trim() || (vo.value_ar || '').trim();
+                                if (key) defaults[vo.option_id] = key;
+                            });
+                        } else if (defaultVariant && defaultVariant.options_signature) {
+                            // Fallback to parsing the signature if options array is missing
+                            defaultVariant.options_signature.split('|').forEach((part: string) => {
+                                const [optId, ...valParts] = part.split(':');
+                                if (optId && valParts.length > 0) {
+                                    defaults[Number(optId)] = valParts.join(':');
+                                }
+                            });
+                        }
+                        
+                        // If defaults is still empty, grab the first value of each option
+                        if (Object.keys(defaults).length === 0) {
+                            data.data.options.forEach((o: any) => {
+                                const firstVal = o.values?.[0];
+                                if (firstVal) {
+                                    const key = (firstVal.value || '').trim() || (firstVal.value_ar || '').trim();
+                                    if (key) defaults[o.id] = key;
+                                }
+                            });
+                        }
+                        setSelectedValues(defaults);
+                    }
                     // Try categories from most specific to least specific
                     const categoriesToTry = [
                         data.data.sub_sub_category_id,
@@ -635,9 +678,96 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
     const resolveUrlLocal = resolveUrl;
 
-    const images = product.images?.length > 0
+    // ── Variant resolution ────────────────────────────────────────────────
+    const hasVariants = product.has_variants === 1
+        && Array.isArray(product.options) && product.options.length > 0
+        && Array.isArray(product.variants) && product.variants.length > 0;
+
+    // Only active variants are shown on the storefront
+    const productVariants: any[] = hasVariants
+        ? product.variants.filter((v: any) => v.is_active !== 0 && v.is_active !== false && v.is_active !== '0')
+        : [];
+
+    // Build options with cascading filtering:
+    // For each option at position i, only show values that have at least one active variant
+    // which also matches every already-selected option at positions 0..i-1.
+    const allRawOptions: any[] = hasVariants ? product.options : [];
+
+    const productOptions: any[] = allRawOptions.map((opt: any, optIdx: number) => {
+        // Collect the selections for all options BEFORE this one
+        const priorSelections = allRawOptions
+            .slice(0, optIdx)
+            .map((prevOpt: any) => ({ optionId: prevOpt.id, value: selectedValues[prevOpt.id] }))
+            .filter((s: any) => !!s.value);
+
+        const activeValues = new Map<string, string | null>();
+        productVariants.forEach((v: any) => {
+            // Check that this variant satisfies all prior selections
+            const matchesPrior = priorSelections.every((sel: any) => {
+                const vo = v.options?.find((o: any) => o.option_id === sel.optionId);
+                return vo && ((vo.value || '').trim() || (vo.value_ar || '').trim()) === sel.value;
+            });
+            if (!matchesPrior) return;
+
+            const vo = v.options?.find((o: any) => o.option_id === opt.id);
+            if (vo) {
+                const key = (vo.value || '').trim() || (vo.value_ar || '').trim();
+                if (key && !activeValues.has(key)) activeValues.set(key, vo.value_ar || null);
+            }
+        });
+
+        return {
+            ...opt,
+            values: Array.from(activeValues.entries()).map(([value, value_ar]) => ({ value, value_ar }))
+        };
+    }).filter((opt: any) => opt.values.length > 0);
+
+    const variantSignature = (values: Record<number, string>) => {
+        const ids = productOptions.map(o => o.id).sort((a, b) => a - b);
+        return ids.map(oid => `${oid}:${values[oid] ?? ''}`).join('|');
+    };
+
+    const allOptionsSelected = hasVariants && productOptions.every(o => !!selectedValues[o.id]);
+    const selectedVariant = allOptionsSelected
+        ? productVariants.find((v: any) => v.options_signature === variantSignature(selectedValues)) || null
+        : null;
+
+    const variantHasOffer = !!(selectedVariant && selectedVariant.offer_price !== null && Number(selectedVariant.offer_price) > 0);
+    const productHasOffer = !!(product.offer_price && Number(product.offer_price) > 0);
+    const hasOffer = selectedVariant ? variantHasOffer : productHasOffer;
+
+    const displayPrice = selectedVariant
+        ? (variantHasOffer ? Number(selectedVariant.offer_price) : Number(selectedVariant.price))
+        : (productHasOffer ? Number(product.offer_price) : Number(product.price || 0));
+    const oldPrice = selectedVariant
+        ? (variantHasOffer ? Number(selectedVariant.price) : null)
+        : (productHasOffer ? Number(product.price) : null);
+
+    const variantsTotalStock = hasVariants
+        ? productVariants.reduce((s: number, v: any) => s + Number(v.stock_quantity || 0), 0)
+        : 0;
+    const effectiveStock = hasVariants
+        ? (selectedVariant ? Number(selectedVariant.stock_quantity) : variantsTotalStock)
+        : Number(product.stock_quantity || 0);
+
+    const baseImages: string[] = product.images?.length > 0
         ? product.images.map((img: any) => resolveUrl(img.image_url))
         : ['/assets/placeholder-image.webp'];
+    const images: string[] = (selectedVariant && !selectedVariant.use_primary_image && selectedVariant.image_url)
+        ? [resolveUrl(selectedVariant.image_url), ...baseImages]
+        : baseImages;
+
+    const variantLabel = selectedVariant
+        ? productOptions
+            .map(o => {
+                const val = selectedValues[o.id];
+                const valMeta = o.values?.find((v: any) => v.value === val);
+                const optName = (isArabic && o.name_ar) ? o.name_ar : o.name;
+                const valLabel = (isArabic && valMeta?.value_ar) ? valMeta.value_ar : val;
+                return `${optName}: ${valLabel}`;
+            })
+            .join(' / ')
+        : '';
 
     const toggleWishlist = () => {
         if (isFav) {
@@ -655,15 +785,22 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
 
     const handleAddToCart = async () => {
+        if (hasVariants && !selectedVariant) {
+            showNotification(t('selectOptionsFirst', { defaultValue: 'Please select all options first' }), 'error');
+            return;
+        }
         const success = await addToCart({
             id: product.id,
+            variant_id: selectedVariant?.id || null,
+            variant_label: variantLabel || undefined,
             name: product.name,
             price: displayPrice,
             image: images[0],
             brand: product.brand_name,
             slug: product.slug,
-            stock_quantity: product.stock_quantity,
-            quantity: qty, // Pass selected quantity here
+            stock_quantity: effectiveStock,
+            track_inventory: hasVariants ? 1 : product.track_inventory,
+            quantity: qty,
             oldPrice: oldPrice
         });
 
@@ -680,9 +817,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         }));
     };
 
-    const hasOffer = product.offer_price && Number(product.offer_price) > 0;
-    const displayPrice = hasOffer ? Number(product.offer_price) : Number(product.price || 0);
-    const oldPrice = hasOffer ? Number(product.price) : null;
     const monthlyPayment = (displayPrice / 4).toFixed(2);
 
     // Calculate if video exists
@@ -778,9 +912,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             <div className={styles.gallerySection}>
                                 <div
                                     className={styles.stockBadge}
-                                    style={{ backgroundColor: product.stock_quantity > 0 ? '#62d972' : '#ff4d4f' }}
+                                    style={{ backgroundColor: effectiveStock > 0 ? '#62d972' : '#ff4d4f' }}
                                 >
-                                    {product.stock_quantity > 0 ? t('inStock') : t('outOfStock')}
+                                    {effectiveStock > 0 ? t('inStock') : t('outOfStock')}
                                 </div>
                                 <button className={styles.wishlistBtn} onClick={toggleWishlist}>
                                     <Heart size={20} fill={isFav ? "#e31e24" : "none"} color={isFav ? "#e31e24" : "#999"} />
@@ -908,6 +1042,107 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 </div>
                                 <div className={styles.modelNumber}>{t('modelLabel')} : {product.model || product.slug?.toUpperCase() || product.id}</div>
 
+                                {hasVariants && (
+                                    <div className={styles.variantOptionsWrapper}>
+                                        {productOptions.map((opt: any, optIdx: number) => {
+                                            const optName = (isArabic && opt.name_ar) ? opt.name_ar : opt.name;
+                                            const selectedVal = selectedValues[opt.id];
+                                            const selectedMeta = opt.values?.find((v: any) =>
+                                                (v.value.trim() || v.value_ar.trim()) === selectedVal
+                                            );
+                                            const selectedLabel = (isArabic && selectedMeta?.value_ar) ? selectedMeta.value_ar : (selectedMeta?.value || selectedVal);
+
+                                            // Only the first option (e.g. Color) uses image cards.
+                                            // All subsequent options (Size, Memory, etc.) always use text chips.
+                                            const showAsImageCards = optIdx === 0 && productVariants.some((v: any) =>
+                                                !v.use_primary_image && v.image_url
+                                            );
+
+                                            const primaryFallback = product.images?.[0]
+                                                ? resolveUrl(product.images[0].image_url)
+                                                : '/assets/placeholder-image.webp';
+
+                                            return (
+                                                <div key={opt.id} className={styles.variantOption}>
+                                                    <div className={styles.variantOptionHeader}>
+                                                        <span className={styles.variantOptionName}>{optName.toUpperCase()}</span>
+                                                        {selectedVal && <span className={styles.variantOptionValue}>{selectedLabel}</span>}
+                                                    </div>
+                                                    <div className={showAsImageCards ? styles.variantImageCards : styles.variantChips}>
+                                                        {opt.values?.map((val: any) => {
+                                                            const key = val.value.trim() || val.value_ar.trim();
+                                                            const isSelected = selectedVal === key;
+                                                            const label = (isArabic && val.value_ar) ? val.value_ar : (val.value || val.value_ar);
+
+                                                            const handleSelect = () => {
+                                                                setSelectedValues(prev => {
+                                                                    const next = { ...prev, [opt.id]: key };
+                                                                    // Clear selections for options AFTER this one if they're no longer valid
+                                                                    allRawOptions.slice(optIdx + 1).forEach((laterOpt: any) => {
+                                                                        const currentVal = next[laterOpt.id];
+                                                                        if (!currentVal) return;
+                                                                        const priorSels = allRawOptions.slice(0, allRawOptions.indexOf(laterOpt))
+                                                                            .map((o: any) => ({ optionId: o.id, value: next[o.id] }))
+                                                                            .filter((s: any) => !!s.value);
+                                                                        const stillValid = productVariants.some((v: any) => {
+                                                                            const matchesPrior = priorSels.every((sel: any) => {
+                                                                                const vo = v.options?.find((o: any) => o.option_id === sel.optionId);
+                                                                                return vo && ((vo.value || '').trim() || (vo.value_ar || '').trim()) === sel.value;
+                                                                            });
+                                                                            if (!matchesPrior) return false;
+                                                                            const vo = v.options?.find((o: any) => o.option_id === laterOpt.id);
+                                                                            return vo && ((vo.value || '').trim() || (vo.value_ar || '').trim()) === currentVal;
+                                                                        });
+                                                                        if (!stillValid) delete next[laterOpt.id];
+                                                                    });
+                                                                    return next;
+                                                                });
+                                                                setCurrentImageIndex(0);
+                                                                setQty(1);
+                                                            };
+
+                                                            if (showAsImageCards) {
+                                                                const matchingVariant = productVariants.find((v: any) =>
+                                                                    v.options_signature?.includes(`${opt.id}:${key}`) &&
+                                                                    !v.use_primary_image && v.image_url
+                                                                );
+                                                                const thumbSrc = matchingVariant?.image_url
+                                                                    ? resolveUrl(matchingVariant.image_url)
+                                                                    : primaryFallback;
+
+                                                                return (
+                                                                    <button
+                                                                        key={key}
+                                                                        type="button"
+                                                                        className={`${styles.variantImageCard} ${isSelected ? styles.variantImageCardActive : ''}`}
+                                                                        onClick={handleSelect}
+                                                                    >
+                                                                        <div className={styles.variantImageCardThumb}>
+                                                                            <img src={thumbSrc} alt={label} />
+                                                                        </div>
+                                                                        <span className={styles.variantImageCardLabel}>{label}</span>
+                                                                    </button>
+                                                                );
+                                                            }
+
+                                                            return (
+                                                                <button
+                                                                    key={key}
+                                                                    type="button"
+                                                                    className={`${styles.variantChip} ${isSelected ? styles.variantChipActive : ''}`}
+                                                                    onClick={handleSelect}
+                                                                >
+                                                                    {label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
                                 <div className={styles.priceSection}>
                                     <div className={styles.currentPrice}>
                                         AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -979,10 +1214,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         <div
                                             className={`${styles.qtyCustomSelect} ${isQtyOpen ? styles.open : ''}`}
                                             onClick={() => setIsQtyOpen(!isQtyOpen)}
-                                            style={{ opacity: product.stock_quantity === 0 ? 0.6 : 1, pointerEvents: product.stock_quantity === 0 ? 'none' : 'auto' }}
+                                            style={{ opacity: effectiveStock === 0 ? 0.6 : 1, pointerEvents: effectiveStock === 0 ? 'none' : 'auto' }}
                                         >
                                             <span className={styles.qtyCustomSelectText}>
-                                                {product.stock_quantity > 0 ? `${t('qty')} ${qty}` : '0'}
+                                                {effectiveStock > 0 ? `${t('qty')} ${qty}` : '0'}
                                             </span>
                                             {isQtyOpen ? (
                                                 <ChevronUp size={18} className={styles.qtyArrow} />
@@ -991,9 +1226,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             )}
                                         </div>
 
-                                        {isQtyOpen && product.stock_quantity > 0 && (
+                                        {isQtyOpen && effectiveStock > 0 && (
                                             <div className={styles.qtyCustomOptions}>
-                                                {Array.from({ length: Math.min(product.stock_quantity, 10) }, (_, i) => i + 1).map(n => (
+                                                {Array.from({ length: Math.min(effectiveStock, 10) }, (_, i) => i + 1).map(n => (
                                                     <div
                                                         key={n}
                                                         className={`${styles.qtyCustomOption} ${n === qty ? styles.selected : ''}`}
@@ -1011,15 +1246,19 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     <button
                                         className={styles.addToCartBtn}
                                         onClick={handleAddToCart}
-                                        disabled={product.stock_quantity === 0 || cartAdded}
+                                        disabled={effectiveStock === 0 || cartAdded || (hasVariants && !selectedVariant)}
                                         style={{
-                                            opacity: product.stock_quantity === 0 ? 0.6 : 1,
-                                            cursor: product.stock_quantity === 0 ? 'not-allowed' : 'pointer',
+                                            opacity: effectiveStock === 0 ? 0.6 : 1,
+                                            cursor: effectiveStock === 0 ? 'not-allowed' : 'pointer',
                                             backgroundColor: cartAdded ? '#28a745' : ''
                                         }}
                                     >
                                         {cartAdded ? null : <ShoppingCart size={24} />}
-                                        {cartAdded ? t('added') : (product.stock_quantity > 0 ? t('addToCart') : t('outOfStock'))}
+                                        {cartAdded
+                                            ? t('added')
+                                            : (hasVariants && !selectedVariant
+                                                ? t('selectOptions', { defaultValue: 'Select options' })
+                                                : (effectiveStock > 0 ? t('addToCart') : t('outOfStock')))}
                                     </button>
                                 </div>
 

@@ -2,16 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminProducts.module.css';
-import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { stripHtml } from '@/utils/formatters';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import { useTranslations } from 'next-intl';
+import VariantsEditor, { VariantOption, VariantRow } from './VariantsEditor';
 
 // Searchable Select Component
 const SearchableSelect = ({ label, name, options, value, onChange, placeholder = "Search..." }: any) => {
@@ -103,6 +105,11 @@ const AdminProducts = () => {
     const [fbtResults, setFbtResults] = useState<any[]>([]);
     const [fbtLoading, setFbtLoading] = useState(false);
     const [fbtSelectedItems, setFbtSelectedItems] = useState<{ id: number; name: string }[]>([]);
+
+    // Variants state
+    const [variantsEnabled, setVariantsEnabled] = useState(false);
+    const [variantOptions, setVariantOptions] = useState<VariantOption[]>([]);
+    const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
     const [brands, setBrands] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
     const [exporting, setExporting] = useState(false);
@@ -697,7 +704,11 @@ const AdminProducts = () => {
 
     const handleEditClick = (product: any) => {
         setEditingId(product.id);
-        // Get additional images from product.images array (excluding primary)
+        // Extract primary and additional images from product.images array
+        const primaryImg = product.images?.find((img: any) => img.is_primary)?.image_url
+            || product.images?.[0]?.image_url
+            || product.primary_image
+            || '';
         const additionalImgs = product.images?.filter((img: any) => !img.is_primary).map((img: any) => img.image_url) || [];
         const paddedImages = [...additionalImgs, '', '', ''].slice(0, 3);
 
@@ -755,7 +766,7 @@ const AdminProducts = () => {
             brand_id: product.brand_id || '',
             product_group: product.product_group || product.heading || '',
             sub_category: product.sub_category || '',
-            image_url: product.primary_image || product.image_url || '',
+            image_url: primaryImg,
             additional_images: paddedImages,
             is_weekly_deal: isTrue(product.is_weekly_deal),
             is_limited_offer: isTrue(product.is_limited_offer),
@@ -781,6 +792,45 @@ const AdminProducts = () => {
         setFbtSelectedItems(fbtItems);
         setFbtSearch('');
         setFbtResults([]);
+
+        // Variants
+        const hasVariants = Number(product.has_variants) === 1 && Array.isArray(product.options) && product.options.length > 0;
+        if (hasVariants) {
+            const loadedOptions: VariantOption[] = product.options.map((o: any) => ({
+                name: o.name || '',
+                name_ar: o.name_ar || '',
+                values: (o.values || []).map((v: any) => ({ value: v.value || '', value_ar: v.value_ar || '' }))
+            }));
+            const optionIdToIndex = new Map<number, number>();
+            product.options.forEach((o: any, i: number) => optionIdToIndex.set(o.id, i));
+
+            const loadedVariants: VariantRow[] = (product.variants || []).map((v: any) => {
+                const combo = new Array(loadedOptions.length).fill('');
+                (v.options || []).forEach((vo: any) => {
+                    const idx = optionIdToIndex.get(vo.option_id);
+                    if (idx !== undefined) combo[idx] = (vo.value || '').trim() || (vo.value_ar || '').trim();
+                });
+                return {
+                    combo,
+                    sku: v.sku || '',
+                    price: v.price != null ? String(v.price) : '',
+                    offer_price: v.offer_price != null ? String(v.offer_price) : '',
+                    stock_quantity: v.stock_quantity != null ? String(v.stock_quantity) : '0',
+                    use_primary_image: Number(v.use_primary_image) === 1,
+                    image_url: v.image_url || '',
+                    is_active: Number(v.is_active) === 1,
+                    is_default: Number(v.is_default) === 1
+                };
+            });
+            setVariantsEnabled(true);
+            setVariantOptions(loadedOptions);
+            setVariantRows(loadedVariants);
+        } else {
+            setVariantsEnabled(false);
+            setVariantOptions([]);
+            setVariantRows([]);
+        }
+
         setIsModalOpen(true);
     };
 
@@ -828,6 +878,9 @@ const AdminProducts = () => {
         setFbtSelectedItems([]);
         setFbtSearch('');
         setFbtResults([]);
+        setVariantsEnabled(false);
+        setVariantOptions([]);
+        setVariantRows([]);
         setActiveTab('basic');
     };
 
@@ -874,8 +927,40 @@ const AdminProducts = () => {
                 is_best_seller: Boolean(formData.is_best_seller),
                 frequently_bought_together: fbtSelectedItems.length > 0
                     ? JSON.stringify(fbtSelectedItems.map(p => p.id))
-                    : null
+                    : null,
+                // Variants payload — only send when enabled; an empty array clears them server-side
+                options: variantsEnabled
+                    ? variantOptions.map(o => ({ name: o.name.trim(), name_ar: o.name_ar.trim() }))
+                    : [],
+                variants: variantsEnabled
+                    ? variantRows.map(v => ({
+                        sku: v.sku.trim() || null,
+                        price: v.price === '' ? 0 : Number(v.price),
+                        offer_price: v.offer_price === '' ? null : Number(v.offer_price),
+                        stock_quantity: v.stock_quantity === '' ? 0 : Number(v.stock_quantity),
+                        image_url: v.image_url || null,
+                        use_primary_image: v.use_primary_image,
+                        is_active: v.is_active,
+                        is_default: v.is_default,
+                        options: v.combo.map((value, idx) => ({
+                            option_index: idx,
+                            value,
+                            value_ar: variantOptions[idx]?.values.find(x => x.value === value)?.value_ar || null
+                        }))
+                    }))
+                    : []
             };
+
+            if (variantsEnabled) {
+                if (variantOptions.some(o => (!o.name.trim() && !o.name_ar.trim()) || o.values.every(v => !v.value.trim() && !v.value_ar.trim()))) {
+                    showNotification('Every option needs a name and at least one value', 'error');
+                    return;
+                }
+                if (variantRows.length === 0) {
+                    showNotification('Click Regenerate to build combinations before saving', 'error');
+                    return;
+                }
+            }
 
             const res = await fetch(url, {
                 credentials: "include",
@@ -1271,7 +1356,7 @@ const AdminProducts = () => {
                                     </td>
                                     <td className={styles.productCell}>
                                         <div className={styles.productImgWrapper}>
-                                            <img src={product.primary_image || product.image_url || '/assets/placeholder-image.webp'} alt={product.name} />
+                                            <img src={resolveUrl(product.primary_image) || '/assets/placeholder-image.webp'} alt={product.name} />
                                         </div>
                                         <div className={styles.productInfo}>
                                             <span className={styles.productName}>
@@ -1334,7 +1419,13 @@ const AdminProducts = () => {
                                         </span>
                                     </td>
                                     <td className={styles.actions}>
-                                        <button className={styles.editBtn} onClick={() => handleEditClick(product)}><Edit2 size={16} /></button>
+                                        <button className={styles.editBtn} onClick={async () => {
+                                            try {
+                                                const res = await fetch(`${API_BASE_URL}/products/${product.id}`, { credentials: 'include', headers: getAuthHeaders() });
+                                                const data = await res.json();
+                                                handleEditClick(data.success ? data.data : product);
+                                            } catch { handleEditClick(product); }
+                                        }}><Edit2 size={16} /></button>
                                         <button className={styles.deleteBtn} onClick={() => handleDeleteProduct(product.id)}><Trash2 size={16} /></button>
                                     </td>
                                 </tr>
@@ -1481,6 +1572,14 @@ const AdminProducts = () => {
                                 >
                                     <ShoppingCart size={18} />
                                     <span>Linked Products</span>
+                                </button>
+                                <button
+                                    className={`${styles.navItem} ${activeTab === 'variants' ? styles.activeNav : ''}`}
+                                    onClick={() => setActiveTab('variants')}
+                                    type="button"
+                                >
+                                    <Layers size={18} />
+                                    <span>Variants</span>
                                 </button>
                             </div>
 
@@ -1879,6 +1978,24 @@ const AdminProducts = () => {
                                         </div>
                                     )}
 
+                                    {activeTab === 'variants' && (
+                                        <div className={styles.tabPane}>
+                                            <div className={styles.paneHeader}>
+                                                <h3>Product Variants</h3>
+                                                <p>Define Color / Size / etc. Each combination gets its own price, stock, SKU, and optional image.</p>
+                                            </div>
+                                            <VariantsEditor
+                                                enabled={variantsEnabled}
+                                                onEnabledChange={setVariantsEnabled}
+                                                options={variantOptions}
+                                                onOptionsChange={setVariantOptions}
+                                                variants={variantRows}
+                                                onVariantsChange={setVariantRows}
+                                                primaryImage={formData.image_url}
+                                            />
+                                        </div>
+                                    )}
+
                                     {activeTab === 'media' && (
                                         <div className={styles.tabPane}>
                                             <div className={styles.paneHeader}>
@@ -1889,7 +2006,7 @@ const AdminProducts = () => {
                                                 {[formData.image_url, ...formData.additional_images].map((img, index) => (
                                                     img && (
                                                         <div key={index} className={styles.mediaItem}>
-                                                            <img src={img} alt="" />
+                                                            <img src={resolveUrl(img)} alt="" />
                                                             <button type="button" onClick={() => {
                                                                 const currentImages = [formData.image_url, ...formData.additional_images];
                                                                 currentImages.splice(index, 1);

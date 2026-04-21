@@ -253,7 +253,7 @@ const CartDrawer = () => {
 
                             <div className={styles.itemsList}>
                                 {cartItems.map((item) => (
-                                    <div key={item.id} className={styles.cartItem}>
+                                    <div key={`${item.id}-${item.variant_id ?? 'base'}`} className={styles.cartItem}>
                                         <div className={styles.itemImg} onClick={() => { setIsDrawerOpen(false); router.push(`/product/${item.slug}`); }}>
                                             <img
                                                 src={item.image || '/assets/placeholder-image.webp'}
@@ -265,8 +265,11 @@ const CartDrawer = () => {
                                             <div className={styles.itemNameRow}>
                                                 <div className={styles.itemNameMain}>
                                                     <h4 className={styles.itemName}>{item.name}</h4>
+                                                    {item.variant_label && (
+                                                        <p className={styles.itemVariant}>{item.variant_label}</p>
+                                                    )}
                                                 </div>
-                                                <button className={styles.removeBtn} onClick={() => removeFromCart(item.id)}>
+                                                <button className={styles.removeBtn} onClick={() => removeFromCart(item.id, item.variant_id ?? null)}>
                                                     <Trash2 size={18} />
                                                 </button>
                                             </div>
@@ -278,7 +281,7 @@ const CartDrawer = () => {
                                                 <span className={styles.qtyLabel}>{t('qty')}</span>
                                                 <select
                                                     value={item.quantity}
-                                                    onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                                                    onChange={(e) => updateQuantity(item.id, parseInt(e.target.value), item.variant_id ?? null)}
                                                     className={styles.qtySelect}
                                                 >
                                                     {[...Array(10)].map((_, i) => (

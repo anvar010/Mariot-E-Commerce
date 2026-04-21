@@ -186,7 +186,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                 <h1 className={styles.title}>{categoryName}</h1>
                 <div className={styles.descriptionWrapper}>
                   <p className={styles.description}>
-                    {category.description || `Professional ${category.name} equipment is built to withstand heavy-duty commercial use while ensuring consistent quality in cafes and restaurants. Whether you need an espresso machine or a specialized coffee brewer, we have the right solution for your business needs.`}
+                    {(isArabic && category.description_ar) ? category.description_ar : category.description || `Professional ${category.name} equipment is built to withstand heavy-duty commercial use while ensuring consistent quality in cafes and restaurants. Whether you need an espresso machine or a specialized coffee brewer, we have the right solution for your business needs.`}
                   </p>
                 </div>
               </header>
@@ -209,7 +209,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                         {isArabic && sub.name_ar ? sub.name_ar : sub.name}
                       </Link>
                       <p className={styles.cardDescription}>
-                        {sub.description || `Choosing a reliable ${sub.name.toLowerCase()} is essential to meet the needs of specialty coffee...`}
+                        {(isArabic && sub.description_ar) ? sub.description_ar : sub.description || `Choosing a reliable ${sub.name.toLowerCase()} is essential to meet the needs of specialty coffee...`}
                       </p>
 
                       <ul className={styles.subList}>
