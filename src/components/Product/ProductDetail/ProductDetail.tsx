@@ -1653,7 +1653,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     style={{ marginTop: '30px', width: '100%' }}
                                     onClick={() => {
                                         if (user) setShowReviewForm(true);
-                                        else window.location.href = `/${locale}/signin`;
+                                        else {
+                                            const returnTo = encodeURIComponent(window.location.pathname + '#reviews-section');
+                                            window.location.href = `/${locale}/signin?redirectTo=${returnTo}`;
+                                        }
                                     }}
                                 >
                                     {user ? t('writeReview') : t('signInToReview')}
