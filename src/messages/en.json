@@ -1474,6 +1474,8 @@
                 "importing": "Importing...",
                 "processing": "Processing...",
                 "update": "Update Product",
+                "updating": "Updating...",
+                "saving": "Saving...",
                 "bulkUpdate": "Set Offer Duration",
                 "bulkUpdateSubtitle": "Updating {count} selected products.",
                 "note": "Note:",

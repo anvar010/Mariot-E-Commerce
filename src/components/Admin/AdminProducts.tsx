@@ -125,6 +125,7 @@ const AdminProducts = () => {
         offer_end: ''
     });
     const [bulkUpdating, setBulkUpdating] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{
@@ -962,22 +963,27 @@ const AdminProducts = () => {
                 }
             }
 
-            const res = await fetch(url, {
-                credentials: "include",
-                method,
-                headers: {
-                    ...getAuthHeaders(),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification(`Product ${editingId ? 'updated' : 'added'} successfully!`);
-                handleCloseModal();
-                fetchProducts();
-            } else {
-                showNotification(data.message || 'Operation failed', 'error');
+            setIsSaving(true);
+            try {
+                const res = await fetch(url, {
+                    credentials: "include",
+                    method,
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showNotification(`Product ${editingId ? 'updated' : 'added'} successfully!`);
+                    handleCloseModal();
+                    fetchProducts();
+                } else {
+                    showNotification(data.message || 'Operation failed', 'error');
+                }
+            } finally {
+                setIsSaving(false);
             }
         } catch (error: any) {
             console.error('Update failed:', error);
@@ -2030,7 +2036,12 @@ const AdminProducts = () => {
                                 </div>
                                 <div className={styles.modalContentFooter}>
                                     <button type="button" className={styles.cancelBtn} onClick={handleCloseModal}>{t('footer.cancel')}</button>
-                                    <button type="submit" className={styles.submitBtn}>{editingId ? t('actions.update') : t('footer.save')}</button>
+                                    <button type="submit" className={styles.submitBtn} disabled={isSaving}>
+                                        {isSaving
+                                            ? (editingId ? t('actions.updating') : t('actions.saving'))
+                                            : (editingId ? t('actions.update') : t('footer.save'))
+                                        }
+                                    </button>
                                 </div>
                             </form>
                         </div>

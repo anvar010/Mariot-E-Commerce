@@ -1086,18 +1086,11 @@
     border: none;
     cursor: pointer;
     box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
-    transition: all 0.2s ease;
-}
-
-.submitBtn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
 }
 
 @media (hover: hover) {
-    .submitBtn:hover:not(:disabled) {
+
+    .submitBtn:hover {
         background: #2563eb;
         transform: translateY(-1px);
     }
