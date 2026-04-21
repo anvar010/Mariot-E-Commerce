@@ -516,8 +516,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         if (loading) return;
         const hash = window.location.hash;
         if (!hash) return;
-        const el = document.querySelector(hash);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const timer = setTimeout(() => {
+            const el = document.querySelector(hash) as HTMLElement | null;
+            if (!el) return;
+            const stickyHeader = document.querySelector('header') as HTMLElement | null;
+            const offset = stickyHeader ? stickyHeader.offsetHeight : 80;
+            const top = el.getBoundingClientRect().top + window.scrollY - offset - 16;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }, 800);
+        return () => clearTimeout(timer);
     }, [loading]);
 
     const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -1003,13 +1010,47 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             <div className={styles.infoSection}>
                                 {product.brand_image && (
                                     <div className={styles.brandLogoBox}>
-                                        <span className={styles.brandLabel}>{t('brand', { defaultValue: 'Brand' })}:</span>
-                                        <Link
-                                            href={`/shop?brand=${encodeURIComponent(product.brand_slug || product.brand_name?.toLowerCase().replace(/ /g, '-'))}`}
-                                            className={styles.brandLogoWrapper}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <span className={styles.brandLabel}>{t('brand', { defaultValue: 'Brand' })}:</span>
+                                            <Link
+                                                href={`/shop?brand=${encodeURIComponent(product.brand_slug || product.brand_name?.toLowerCase().replace(/ /g, '-'))}`}
+                                                className={styles.brandLogoWrapper}
+                                            >
+                                                <img src={resolveUrl(product.brand_image)} alt={getLocalizedField('brand_name', 'brand_name_ar')} className={styles.brandLogo} />
+                                            </Link>
+                                        </div>
+                                        <div
+                                            className={styles.brandRatingMobile}
+                                            onClick={() => {
+                                                const el = document.getElementById('reviews-section');
+                                                if (el) {
+                                                    const y = el.getBoundingClientRect().top + window.scrollY - 160;
+                                                    window.scrollTo({ top: y, behavior: 'smooth' });
+                                                }
+                                            }}
+                                            style={{ cursor: 'pointer' }}
                                         >
-                                            <img src={resolveUrl(product.brand_image)} alt={getLocalizedField('brand_name', 'brand_name_ar')} className={styles.brandLogo} />
-                                        </Link>
+                                            <div className={styles.titleStars}>
+                                                {[1, 2, 3, 4, 5].map((star) => {
+                                                    const isFull = star <= fullStarsTitle || (roundUpTitle && star <= fullStarsTitle + 1);
+                                                    const isHalf = !isFull && hasHalfTitle && star === fullStarsTitle + 1;
+                                                    return (
+                                                        <div key={`mobile-star-${star}`} style={{ position: 'relative', width: 16, height: 16 }}>
+                                                            <Star size={16} fill="none" color="#d1d5db" style={{ position: 'absolute', top: 0, insetInlineStart: 0 }} />
+                                                            {(isFull || isHalf) && (
+                                                                <div style={{ position: 'absolute', top: 0, insetInlineStart: 0, width: isHalf ? '50%' : '100%', height: '100%', overflow: 'hidden' }}>
+                                                                    <Star size={16} fill="#f59e0b" color="#f59e0b" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            <span className={styles.titleReviewCount}>
+                                                <span>{avgRatingRaw.toFixed(1)}</span>
+                                                <span>({reviewsCount} {reviewsCount === 1 ? t('review') : t('reviews')})</span>
+                                            </span>
+                                        </div>
                                     </div>
                                 )}
 
@@ -1162,7 +1203,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         <span className={styles.vatLabel}>{t('vatIncluded')}</span>
                                     </div>
                                     {oldPrice && (
-                                        <div className={styles.oldPrice}>AED {oldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                        <div className={styles.priceRow}>
+                                            <div className={styles.oldPrice}>AED {oldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                            {oldPrice > displayPrice && (
+                                                <span className={styles.saveBadge}>
+                                                    {t('save')} AED {(oldPrice - displayPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    {' '}({Math.round((oldPrice - displayPrice) / oldPrice * 100)}% {t('off')})
+                                                </span>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
 

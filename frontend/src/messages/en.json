@@ -834,7 +834,8 @@
         "genericDeleteSuccess": "Deleted successfully",
         "tabbyCancel": "You aborted the payment. Please retry or choose another payment method.",
         "tabbyFailure": "Sorry, Tabby is unable to approve this purchase, please use an alternative payment method for your order.",
-        "mockPaymentSuccess": "Payment successful (Mock Dev Mode)"
+        "mockPaymentSuccess": "Payment successful (Mock Dev Mode)",
+        "loading": "Loading..."
     },
     "cartToast": {
         "title": "Item added to your cart",

@@ -40,7 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // Fetch dynamic products
     try {
-        const res = await fetch(`${API_BASE_URL_SERVER}/products?limit=5000`, { cache: 'force-cache' });
+        const res = await fetch(`${API_BASE_URL_SERVER}/products?limit=5000`, { cache: 'no-store' });
         const data = await res.json();
 
         if (data.success && data.data && Array.isArray(data.data)) {

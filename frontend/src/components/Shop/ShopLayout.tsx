@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/navigation';
 import styles from './ShopLayout.module.css';
@@ -65,6 +65,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const [loading, setLoading] = useState(initialProducts.length === 0);
     const [fetchingProducts, setFetchingProducts] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
+    const sortRef = useRef<HTMLDivElement>(null);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [allCategories, setAllCategories] = useState<any[]>(initialCategories);
     const [totalProducts, setTotalProducts] = useState(initialTotal);
@@ -86,6 +87,17 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         if (brandParam) setSelectedBrands(brandParam.split(','));
         else setSelectedBrands([]);
     }, [brandParam]);
+
+    useEffect(() => {
+        if (!isSortOpen) return;
+        const handler = (e: MouseEvent) => {
+            if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+                setIsSortOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [isSortOpen]);
 
     // Handle Scrolling sections moved to CategoryGrid.tsx
 
@@ -341,15 +353,15 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                             <div className={styles.sortLabel}>
                                 <Filter size={20} fill="#333" className={styles.desktopOnly} /><span className={styles.desktopOnly}>{tc("sort")}</span>
                             </div>
-                            <div className={styles.sortDropdown} onClick={() => setIsSortOpen(!isSortOpen)}>
+                            <div ref={sortRef} className={styles.sortDropdown} onClick={() => setIsSortOpen(!isSortOpen)}>
                                 <span>{getSortLabel(sortBy)}</span>
                                 <ChevronDown size={16} className={isSortOpen ? styles.rotateIcon : ''} />
                                 {isSortOpen && (
                                     <div className={styles.dropdownContent}>
-                                        <div onClick={() => setSortBy('relevance')}>{tc("relevance")}</div>
-                                        <div onClick={() => setSortBy('best_offer')}>{tc("best-offer")}</div>
-                                        <div onClick={() => setSortBy('price_asc')}>{tc("price-low-to-high")}</div>
-                                        <div onClick={() => setSortBy('price_desc')}>{tc("price-high-to-low")}</div>
+                                        <div onClick={() => { setSortBy('relevance'); setIsSortOpen(false); }}>{tc("relevance")}</div>
+                                        <div onClick={() => { setSortBy('best_offer'); setIsSortOpen(false); }}>{tc("best-offer")}</div>
+                                        <div onClick={() => { setSortBy('price_asc'); setIsSortOpen(false); }}>{tc("price-low-to-high")}</div>
+                                        <div onClick={() => { setSortBy('price_desc'); setIsSortOpen(false); }}>{tc("price-high-to-low")}</div>
                                     </div>
                                 )}
                             </div>
