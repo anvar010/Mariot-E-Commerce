@@ -512,6 +512,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         fetchProduct();
     }, [id]);
 
+    useEffect(() => {
+        if (loading) return;
+        const hash = window.location.hash;
+        if (!hash) return;
+        const el = document.querySelector(hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, [loading]);
+
     const handleReviewSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user || !token) return;
