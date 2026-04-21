@@ -5,6 +5,7 @@ const {
     updateUser,
     deleteUser,
     toggleUserStatus,
+    adjustUserPoints,
     getAllOrders,
     updateHomepageCMS,
     getHeroSlides,
@@ -38,6 +39,7 @@ router.route('/users/:id')
     .delete(authorize('admin'), deleteUser);
 
 router.patch('/users/:id/status', authorize('admin'), toggleUserStatus);
+router.post('/users/:id/points', authorize('admin'), adjustUserPoints);
 
 router.route('/orders')
     .get(authorize('admin'), getAllOrders);

@@ -119,6 +119,11 @@ exports.getDashboardStats = async (req, res, next) => {
             LIMIT 5
         `);
 
+        // DB latency
+        const dbPingStart = Date.now();
+        await db.query('SELECT 1');
+        const dbLatencyMs = Date.now() - dbPingStart;
+
         // SEO Stats calculations
         const [[{ count: missingImages }]] = await db.query('SELECT COUNT(*) as count FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1 WHERE pi.id IS NULL');
         const [[{ count: missingDescription }]] = await db.query("SELECT COUNT(*) as count FROM products WHERE description IS NULL OR description = ''");
@@ -130,6 +135,16 @@ exports.getDashboardStats = async (req, res, next) => {
         const totalPossibleIssues = totalProductsCount * 5;
         const actualIssues = (missingImages || 0) + (missingDescription || 0) + (shortTitles || 0) + (longTitles || 0) + (missingBrand || 0);
         const seoScore = totalProductsCount > 0 ? Math.round(((totalPossibleIssues - actualIssues) / totalPossibleIssues) * 100) : 100;
+
+        const [seoIssues] = await db.query(`
+            SELECT p.id, p.name,
+                CASE WHEN pi.id IS NULL THEN 1 ELSE 0 END as missing_image,
+                CASE WHEN p.description IS NULL OR p.description = '' THEN 1 ELSE 0 END as missing_desc
+            FROM products p
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
+            WHERE pi.id IS NULL OR p.description IS NULL OR p.description = ''
+            LIMIT 200
+        `);
 
         // Users Growth
         const [[userGrowthStats]] = await db.query(`
@@ -168,7 +183,9 @@ exports.getDashboardStats = async (req, res, next) => {
                         longTitles,
                         missingBrand
                     }
-                }
+                },
+                seoIssues,
+                dbLatencyMs
             }
         });
     } catch (error) {
@@ -237,6 +254,41 @@ exports.deleteUser = async (req, res, next) => {
     try {
         await db.query('DELETE FROM users WHERE id = ?', [req.params.id]);
         res.json({ success: true, message: 'User deleted' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Adjust user reward points (add or remove)
+// @route   POST /api/v1/admin/users/:id/points
+// @access  Private/Admin
+exports.adjustUserPoints = async (req, res, next) => {
+    try {
+        const { points, action } = req.body;
+        const amount = parseInt(points, 10);
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ success: false, message: 'Points must be a positive number' });
+        }
+        if (action !== 'add' && action !== 'remove') {
+            return res.status(400).json({ success: false, message: 'Action must be "add" or "remove"' });
+        }
+
+        const [rows] = await db.query('SELECT reward_points FROM users WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const current = Number(rows[0].reward_points) || 0;
+        const newBalance = action === 'add' ? current + amount : Math.max(0, current - amount);
+
+        await db.query('UPDATE users SET reward_points = ? WHERE id = ?', [newBalance, req.params.id]);
+
+        res.json({
+            success: true,
+            message: action === 'add' ? `Added ${amount} points` : `Removed ${amount} points`,
+            data: { reward_points: newBalance }
+        });
     } catch (error) {
         next(error);
     }
