@@ -26,6 +26,8 @@ test-import.js
 test-aiven.js
 power-import.js
 aiven-migrate.js
+*aiven*
+*Aiven*
 import_log.txt
 push_log.txt
 push_error*.txt
