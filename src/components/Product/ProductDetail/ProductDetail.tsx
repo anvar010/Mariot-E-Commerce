@@ -41,6 +41,7 @@ import { useNotification } from '@/context/NotificationContext';
 import Loader from '@/components/shared/Loader/Loader';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { MessageSquare, Phone } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -359,6 +360,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const { user, token } = useAuth();
     const { showNotification } = useNotification();
+    const router = useRouter();
     const locale = useLocale();
     const t = useTranslations('product');
     const isArabic = locale === 'ar';
@@ -564,6 +566,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         totalReviews: reviewData.stats?.totalReviews || 0
                     });
                 }
+                router.refresh();
             } else {
                 setReviewError(data.message || t('failedDeleteReview')); // Use failed delete or generic
             }
