@@ -1654,7 +1654,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     onClick={() => {
                                         if (user) setShowReviewForm(true);
                                         else {
-                                            const returnTo = encodeURIComponent(window.location.pathname + '#reviews-section');
+                                            const pathWithoutLocale = window.location.pathname.replace(new RegExp(`^/${locale}`), '') || '/';
+                                            const returnTo = encodeURIComponent(pathWithoutLocale + '#reviews-section');
                                             window.location.href = `/${locale}/signin?redirectTo=${returnTo}`;
                                         }
                                     }}
