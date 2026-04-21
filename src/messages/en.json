@@ -162,6 +162,8 @@
         "videosText": "Video demonstrations and tutorials.",
         "featuredVideo": "Featured Video",
         "whatsappMessage": "Hello Mariot! I'm interested in: {name} ({model})\nPrice: {price}\nLink: {url}\nCan you provide more details?",
+        "selectOptions": "SELECT OPTIONS",
+        "selectOptionsFirst": "Please select all options first",
         "added": "ADDED ✓",
         "verifiedCustomer": "Verified Customer",
         "customerReviews": "Customer Reviews",

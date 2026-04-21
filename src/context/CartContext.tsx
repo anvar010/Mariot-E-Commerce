@@ -9,6 +9,9 @@ import { useTranslations } from 'next-intl';
 
 interface CartItem {
     id: string | number;
+    variant_id?: number | null;
+    variant_label?: string;
+    variant_options?: any[] | null;
     name: string;
     price: number;
     image: string;
@@ -22,8 +25,8 @@ interface CartItem {
 interface CartContextType {
     cartItems: CartItem[];
     addToCart: (product: any, options?: { silent?: boolean }) => Promise<boolean>;
-    removeFromCart: (productId: string | number) => void;
-    updateQuantity: (productId: string | number, quantity: number) => void;
+    removeFromCart: (productId: string | number, variantId?: number | null) => void;
+    updateQuantity: (productId: string | number, quantity: number, variantId?: number | null) => void;
     clearCart: () => void;
     cartCount: number;
     cartTotal: number;
@@ -95,7 +98,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                     },
                                     body: JSON.stringify({
                                         product_id: item.id,
-                                        quantity: item.quantity
+                                        quantity: item.quantity,
+                                        variant_id: item.variant_id || null
                                     })
                                 })
                             ));
@@ -154,17 +158,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
             const data = await res.json();
             if (data.success && Array.isArray(data.data)) {
-                const items = data.data.map((item: any) => ({
-                    id: item.product_id || item.id,
-                    name: item.name || item.product?.name || 'Product',
-                    slug: item.slug || item.product?.slug || '',
-                    price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price || item.product?.price || 0),
-                    image: item.image || item.product?.image_url || '',
-                    quantity: Number(item.quantity),
-                    brand: item.brand || item.brand_name || item.product?.brand?.name || '',
-                    stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined,
-                    track_inventory: item.track_inventory
-                }));
+                const items = data.data.map((item: any) => {
+                    const variantOpts = item.variant_options || null;
+                    const variantLabel = Array.isArray(variantOpts) && variantOpts.length > 0
+                        ? variantOpts.map((o: any) => `${o.name}: ${o.value}`).join(' / ')
+                        : undefined;
+                    return {
+                        id: item.product_id || item.id,
+                        variant_id: item.variant_id ?? null,
+                        variant_label: variantLabel,
+                        variant_options: variantOpts,
+                        name: item.name || item.product?.name || 'Product',
+                        slug: item.slug || item.product?.slug || '',
+                        price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price || item.product?.price || 0),
+                        image: item.image || item.product?.image_url || '',
+                        quantity: Number(item.quantity),
+                        brand: item.brand || item.brand_name || item.product?.brand?.name || '',
+                        stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined,
+                        track_inventory: item.track_inventory
+                    };
+                });
                 setCartItems(items);
             }
         } catch (error) {
@@ -176,9 +189,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const productQuantity = Number(product.quantity || 1);
         const displayPrice = Number(product.offer_price) > 0 ? Number(product.offer_price) : Number(product.price || 0);
         const stockLimit = product.stock_quantity !== undefined ? Number(product.stock_quantity) : undefined;
+        const variantId: number | null = product.variant_id ?? null;
 
         // Validation against current state
-        const existingItem = cartItems.find(item => item.id === product.id);
+        const existingItem = cartItems.find(item => item.id === product.id && (item.variant_id ?? null) === variantId);
         const isInventoryTracked = product.track_inventory === 1 || String(product.track_inventory) === '1' || product.track_inventory === true;
 
         let quantityToAdd = productQuantity;
@@ -200,14 +214,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Optimistic UI Update
         setCartItems(prev => {
-            const existing = prev.find(item => item.id === product.id);
+            const existing = prev.find(item => item.id === product.id && (item.variant_id ?? null) === variantId);
             if (existing) {
                 return prev.map(item =>
-                    item.id === product.id ? { ...item, quantity: item.quantity + quantityToAdd } : item
+                    item.id === product.id && (item.variant_id ?? null) === variantId
+                        ? { ...item, quantity: item.quantity + quantityToAdd }
+                        : item
                 );
             }
             return [...prev, {
                 id: product.id,
+                variant_id: variantId,
+                variant_label: product.variant_label,
                 name: product.name || product.model || 'Product',
                 slug: product.slug || '',
                 price: displayPrice,
@@ -226,7 +244,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const currentTotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
             const currentCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-            const isNewItem = !cartItems.some(item => item.id === product.id);
+            const isNewItem = !cartItems.some(item => item.id === product.id && (item.variant_id ?? null) === variantId);
             const newTotal = currentTotal + (displayPrice * quantityToAdd);
             const newCount = currentCount + quantityToAdd;
 
@@ -257,7 +275,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     },
                     body: JSON.stringify({
                         product_id: product.id,
-                        quantity: quantityToAdd
+                        quantity: quantityToAdd,
+                        variant_id: variantId
                     })
                 });
             } catch (error) {
@@ -267,9 +286,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
     };
 
-    const removeFromCart = async (productId: string | number) => {
-        const itemToRemove = cartItems.find(i => i.id === productId);
-        setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+    const removeFromCart = async (productId: string | number, variantId: number | null = null) => {
+        const itemToRemove = cartItems.find(i => i.id === productId && (i.variant_id ?? null) === variantId);
+        setCartItems(prevItems => prevItems.filter(item => !(item.id === productId && (item.variant_id ?? null) === variantId)));
 
         if (itemToRemove) {
             showNotification(t('cartRemove', { name: itemToRemove.name }), 'error', { title: t('itemRemoved') });
@@ -277,7 +296,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (token) {
             try {
-                await fetch(`${API_BASE_URL}/cart/${productId}`, {
+                const qs = variantId != null ? `?variant_id=${variantId}` : '';
+                await fetch(`${API_BASE_URL}/cart/${productId}${qs}`, {
                     method: 'DELETE',
                     credentials: "include",
                     headers: getAuthHeaders()
@@ -288,11 +308,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const updateQuantity = async (productId: string | number, quantity: number) => {
+    const updateQuantity = async (productId: string | number, quantity: number, variantId: number | null = null) => {
         if (quantity < 1) return;
 
         // Validation against current state
-        const item = cartItems.find(i => i.id === productId);
+        const item = cartItems.find(i => i.id === productId && (i.variant_id ?? null) === variantId);
         let validQuantity = quantity;
 
         const isInventoryTracked = item && (item.track_inventory === 1 || String(item.track_inventory) === '1' || item.track_inventory === true);
@@ -303,8 +323,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         setCartItems(prevItems => {
-            return prevItems.map(item =>
-                item.id === productId ? { ...item, quantity: validQuantity } : item
+            return prevItems.map(it =>
+                it.id === productId && (it.variant_id ?? null) === variantId
+                    ? { ...it, quantity: validQuantity }
+                    : it
             );
         });
 
@@ -319,7 +341,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     },
                     body: JSON.stringify({
                         product_id: productId,
-                        quantity: validQuantity
+                        quantity: validQuantity,
+                        variant_id: variantId
                     })
                 });
             } catch (error) {

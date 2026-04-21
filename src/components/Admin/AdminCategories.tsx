@@ -31,6 +31,7 @@ const AdminCategories = () => {
         name: '',
         name_ar: '',
         description: '',
+        description_ar: '',
         image_url: '',
         is_active: true,
         type: 'main_category' as string,
@@ -161,6 +162,7 @@ const AdminCategories = () => {
             name: category.name,
             name_ar: category.name_ar || '',
             description: category.description || '',
+            description_ar: category.description_ar || '',
             image_url: category.image_url || '',
             is_active: Boolean(category.is_active),
             type: category.type || 'main_category',
@@ -187,6 +189,7 @@ const AdminCategories = () => {
             name: '',
             name_ar: '',
             description: '',
+            description_ar: '',
             image_url: '',
             is_active: true,
             type,
@@ -207,6 +210,7 @@ const AdminCategories = () => {
             name: '',
             name_ar: '',
             description: '',
+            description_ar: '',
             image_url: '',
             is_active: true,
             type: 'main_category',
@@ -242,6 +246,7 @@ const AdminCategories = () => {
                     name: cat.name,
                     name_ar: cat.name_ar,
                     description: formData.description,
+                    description_ar: formData.description_ar,
                     image_url: formData.image_url,
                     is_active: formData.is_active ? 1 : 0,
                     type: formData.type,
@@ -497,18 +502,18 @@ const AdminCategories = () => {
                                         {/* Actions Section */}
                                         <div className={styles.stickyActions}>
                                             <div className={styles.mainActions}>
-                                                <button 
-                                                    type="button" 
-                                                    className={styles.editBtn} 
-                                                    onClick={(e) => { e.stopPropagation(); handleEditClick(main); }} 
+                                                <button
+                                                    type="button"
+                                                    className={styles.editBtn}
+                                                    onClick={(e) => { e.stopPropagation(); handleEditClick(main); }}
                                                     title="Edit"
                                                 >
                                                     <Edit2 size={16} />
                                                 </button>
-                                                <button 
-                                                    type="button" 
-                                                    className={styles.deleteBtn} 
-                                                    onClick={(e) => { e.stopPropagation(); handleDeleteCategory(main.id); }} 
+                                                <button
+                                                    type="button"
+                                                    className={styles.deleteBtn}
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteCategory(main.id); }}
                                                     title="Delete"
                                                 >
                                                     <Trash2 size={16} />
@@ -807,6 +812,31 @@ const AdminCategories = () => {
                                 </div>
                             </div>
 
+                            {(formData.type === 'main_category' || formData.type === 'sub_category') && (
+                                <div className={styles.formGroup}>
+                                    <label>Category Description</label>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <textarea
+                                            name="description"
+                                            placeholder="English description..."
+                                            value={formData.description}
+                                            onChange={handleInputChange}
+                                            rows={3}
+                                            style={{ flex: 1, resize: 'vertical', padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none', fontFamily: 'inherit' }}
+                                        />
+                                        <textarea
+                                            name="description_ar"
+                                            placeholder="الوصف بالعربية..."
+                                            value={formData.description_ar}
+                                            onChange={handleInputChange}
+                                            rows={3}
+                                            dir="rtl"
+                                            style={{ flex: 1, resize: 'vertical', padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none', fontFamily: 'inherit' }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             <div className={styles.formGroup}>
                                 <label>Category Image</label>
                                 <div className={styles.imageUploadSection}>
@@ -814,9 +844,9 @@ const AdminCategories = () => {
                                         {formData.image_url ? (
                                             <div className={styles.previewContainer}>
                                                 <img src={formData.image_url} alt="Preview" />
-                                                <button 
-                                                    type="button" 
-                                                    className={styles.removeImgBtn} 
+                                                <button
+                                                    type="button"
+                                                    className={styles.removeImgBtn}
                                                     onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
                                                 >
                                                     <X size={14} />
@@ -831,8 +861,8 @@ const AdminCategories = () => {
                                     </div>
                                     <div className={styles.uploadControls}>
                                         <div className={styles.uploadActions}>
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 className={styles.secondaryUploadBtn}
                                                 onClick={() => document.getElementById('category-image-upload')?.click()}
                                                 disabled={uploading}
@@ -840,11 +870,11 @@ const AdminCategories = () => {
                                                 {uploading ? <Loader2 size={16} className={styles.spinner} /> : <Upload size={16} />}
                                                 {uploading ? 'Uploading...' : 'Upload Image'}
                                             </button>
-                                            <input 
+                                            <input
                                                 id="category-image-upload"
-                                                type="file" 
-                                                accept="image/*" 
-                                                onChange={handleFileUpload} 
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleFileUpload}
                                                 style={{ display: 'none' }}
                                             />
                                         </div>
@@ -881,8 +911,8 @@ const AdminCategories = () => {
                                             allBrands.filter(b => b.name.toLowerCase().includes(brandSearchTerm.toLowerCase())).map(brand => {
                                                 const isActive = formData.brands.includes(brand.id);
                                                 return (
-                                                    <label 
-                                                        key={brand.id} 
+                                                    <label
+                                                        key={brand.id}
                                                         className={`${styles.brandLabel} ${isActive ? styles.brandActive : ''}`}
                                                     >
                                                         <input
