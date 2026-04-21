@@ -1054,9 +1054,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                                             // Only the first option (e.g. Color) uses image cards.
                                             // All subsequent options (Size, Memory, etc.) always use text chips.
-                                            const showAsImageCards = optIdx === 0 && productVariants.some((v: any) =>
-                                                !v.use_primary_image && v.image_url
-                                            );
+                                            const showAsImageCards = optIdx === 0;
 
                                             const primaryFallback = product.images?.[0]
                                                 ? resolveUrl(product.images[0].image_url)
@@ -1102,10 +1100,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                             };
 
                                                             if (showAsImageCards) {
-                                                                const matchingVariant = productVariants.find((v: any) =>
+                                                                // First try to find a variant with a custom image for this option value
+                                                                let matchingVariant = productVariants.find((v: any) =>
                                                                     v.options_signature?.includes(`${opt.id}:${key}`) &&
                                                                     !v.use_primary_image && v.image_url
                                                                 );
+                                                                // If no custom image, find any variant that matches this option value and has an image_url
+                                                                if (!matchingVariant) {
+                                                                    matchingVariant = productVariants.find((v: any) =>
+                                                                        v.options_signature?.includes(`${opt.id}:${key}`) && v.image_url
+                                                                    );
+                                                                }
                                                                 const thumbSrc = matchingVariant?.image_url
                                                                     ? resolveUrl(matchingVariant.image_url)
                                                                     : primaryFallback;
