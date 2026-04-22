@@ -317,46 +317,35 @@
 }
 
 @media (max-width: 768px) {
-    .brandBio {
-        display: grid;
-        grid-template-columns: 100px 1fr;
-        gap: 10px 20px;
-        align-items: center;
-        text-align: left;
-        padding: 24px 20px;
+    .aboutBrandSection {
+        margin-top: 32px;
+        padding: 0 16px 30px;
     }
 
-    .aboutBrandSection {
-        margin-top: 40px;
-        padding: 0 0 30px;
+    .brandBio {
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px 16px;
     }
 
     .brandBioLogoBox {
-        width: 100px;
+        width: 120px;
         height: 70px;
         padding: 10px;
-        grid-row: 1;
-        grid-column: 1;
     }
 
     .brandBioContent {
-        display: contents;
+        flex: 1;
     }
 
     .brandBioTitle {
-        grid-row: 1;
-        grid-column: 2;
-        font-size: 20px;
-        margin: 0;
-        text-align: left;
+        font-size: 18px;
+        margin: 0 0 8px;
     }
 
     .brandBioDescription {
-        grid-row: 2;
-        grid-column: 1 / span 2;
         font-size: 14px;
         line-height: 1.6;
-        text-align: left;
     }
 }
 
@@ -1114,29 +1103,45 @@
     user-select: none;
 }
 
-/* Brand Banner Styling - Cushioned Landscape Ribbon */
+/* Brand Banner */
 .brandBanner {
-    width: auto;
-    margin: 24px 40px 0;
-    height: 150px;
     position: relative;
     overflow: hidden;
     background-color: #f8fafc;
+}
+
+.desktopBanner {
+    width: calc(100% - 80px);
+    margin: 24px 40px 0;
+    height: 150px;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.mobileBanner {
+    display: none;
 }
 
 .brandBannerImg {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
+    display: block;
 }
 
 @media (max-width: 768px) {
-    .brandBanner {
-        margin: 16px 16px 0;
-        height: 100px;
-        border-radius: 8px;
+    .desktopBanner {
+        display: none;
+    }
+
+    .mobileBanner {
+        display: block;
+        width: 100%;
+        margin: 0;
+        height: 120px;
+        border-radius: 0;
+        box-shadow: none;
     }
 }
 
