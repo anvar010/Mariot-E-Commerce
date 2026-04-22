@@ -315,9 +315,13 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const renderSidebar = () => {
         const commonProps = {
             inStockOnly, setInStockOnly, brands, selectedBrands,
-            handleBrandToggle: (slug: string) => setSelectedBrands(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]),
+            handleBrandToggle: (slug: string) => {
+                setSelectedBrands(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]);
+                setIsMobileFilterOpen(false);
+            },
             allCategories, brandCategories, activeCategory, minPrice, setMinPrice, maxPrice, setMaxPrice,
-            resetFilters, toggleSection, expandedSections, onCategoryChange: handleCategoryChange
+            resetFilters, toggleSection, expandedSections,
+            onCategoryChange: (slug: string) => { handleCategoryChange(slug); setIsMobileFilterOpen(false); }
         };
         if (brandParam) return <FilterShopByBrand {...commonProps} />;
         if (activeCategory) {
