@@ -10,6 +10,15 @@
     height: fit-content;
 }
 
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+        border: none;
+    }
+}
+
 .filterHeader {
     display: flex;
     align-items: center;
@@ -216,8 +225,3 @@
     padding: 4px 0;
 }
 
-@media (max-width: 1024px) {
-    .sidebar {
-        display: none;
-    }
-}
