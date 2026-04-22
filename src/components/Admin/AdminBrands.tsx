@@ -22,6 +22,8 @@ const AdminBrands = () => {
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [bannerFile, setBannerFile] = useState<File | null>(null);
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+    const [bannerMobileFile, setBannerMobileFile] = useState<File | null>(null);
+    const [bannerMobilePreview, setBannerMobilePreview] = useState<string | null>(null);
     const { showNotification } = useNotification();
 
     const categoryOptions = [
@@ -36,6 +38,7 @@ const AdminBrands = () => {
         description_ar: '',
         image_url: '',
         banner_url: '',
+        banner_url_mobile: '',
         website_url: '',
         is_active: true,
         brand_type: ''
@@ -107,6 +110,16 @@ const AdminBrands = () => {
         }
     };
 
+    const handleBannerMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setBannerMobileFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setBannerMobilePreview(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleEditClick = (brand: any) => {
         setEditingId(brand.id);
         setFormData({
@@ -116,6 +129,7 @@ const AdminBrands = () => {
             description_ar: brand.description_ar || '',
             image_url: brand.image_url || '',
             banner_url: brand.banner_url || '',
+            banner_url_mobile: brand.banner_url_mobile || '',
             website_url: brand.website_url || '',
             is_active: Boolean(brand.is_active),
             brand_type: brand.brand_type || ''
@@ -124,6 +138,8 @@ const AdminBrands = () => {
         setLogoFile(null);
         setBannerPreview(brand.banner_url || null);
         setBannerFile(null);
+        setBannerMobilePreview(brand.banner_url_mobile || null);
+        setBannerMobileFile(null);
         setIsModalOpen(true);
     };
 
@@ -137,6 +153,7 @@ const AdminBrands = () => {
             description_ar: '',
             image_url: '',
             banner_url: '',
+            banner_url_mobile: '',
             website_url: '',
             is_active: true,
             brand_type: ''
@@ -145,6 +162,8 @@ const AdminBrands = () => {
         setLogoFile(null);
         setBannerPreview(null);
         setBannerFile(null);
+        setBannerMobilePreview(null);
+        setBannerMobileFile(null);
     };
 
     const handleCategoryToggle = (cat: string) => {
@@ -195,6 +214,18 @@ const AdminBrands = () => {
                 }
             }
 
+            let currentBannerMobileUrl = formData.banner_url_mobile;
+            if (bannerMobileFile) {
+                const uploadData = await uploadImage(bannerMobileFile);
+                if (uploadData.success) {
+                    currentBannerMobileUrl = uploadData.data;
+                } else {
+                    showNotification(uploadData.message || 'Mobile banner upload failed', 'error');
+                    setLoading(false);
+                    return;
+                }
+            }
+
             const url = editingId
                 ? `${API_BASE_URL}/brands/${editingId}`
                 : `${API_BASE_URL}/brands`;
@@ -211,6 +242,7 @@ const AdminBrands = () => {
                     ...formData,
                     image_url: currentImageUrl,
                     banner_url: currentBannerUrl,
+                    banner_url_mobile: currentBannerMobileUrl,
                     is_active: formData.is_active ? 1 : 0
                 })
             });
@@ -606,6 +638,31 @@ const AdminBrands = () => {
                                                 </label>
                                             )}
                                         </div>
+                                    </div>
+                                </div>
+
+                                <div className={styles.formGroup}>
+                                    <label>Mobile Banner <span className={styles.uploadHint}>(optional — shown on phones)</span></label>
+                                    <div className={styles.fileUploadWrapper}>
+                                        {bannerMobilePreview ? (
+                                            <div className={styles.bannerPreviewContainer}>
+                                                <img src={resolveUrl(bannerMobilePreview)} alt="Mobile Banner Preview" className={styles.bannerPreviewImage} />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setBannerMobilePreview(null); setBannerMobileFile(null); }}
+                                                    className={styles.bannerRemoveBtn}
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <label className={styles.fileLabel} style={{ height: '90px' }}>
+                                                <Plus size={20} />
+                                                <span>Click to upload mobile banner</span>
+                                                <span className={styles.uploadHint}>Recommended: 800 × 120 px</span>
+                                                <input type="file" accept="image/*" onChange={handleBannerMobileChange} hidden />
+                                            </label>
+                                        )}
                                     </div>
                                 </div>
 

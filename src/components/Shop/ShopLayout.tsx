@@ -90,13 +90,17 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
 
     useEffect(() => {
         if (!isSortOpen) return;
-        const handler = (e: MouseEvent) => {
-            if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        const handleClick = (e: MouseEvent) => {
+            if (sortRef.current && !sortRef.current.contains(e.target as Node))
                 setIsSortOpen(false);
-            }
         };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        const handleScroll = () => setIsSortOpen(false);
+        document.addEventListener('mousedown', handleClick);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+            window.removeEventListener('scroll', handleScroll);
+        };
     }, [isSortOpen]);
 
     // Handle Scrolling sections moved to CategoryGrid.tsx
@@ -307,12 +311,13 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     return (
         <div className={styles.shopLayout}>
             {brandParam && activeBrandInfo?.banner_url && (
-                <div className={styles.brandBanner}>
-                    <img
-                        src={resolveUrl(activeBrandInfo.banner_url)}
-                        alt={getBrandDisplayName() || ""}
-                        className={styles.brandBannerImg}
-                    />
+                <div className={`${styles.brandBanner} ${styles.desktopBanner}`}>
+                    <img src={resolveUrl(activeBrandInfo.banner_url)} alt={getBrandDisplayName() || ""} className={styles.brandBannerImg} />
+                </div>
+            )}
+            {brandParam && activeBrandInfo?.banner_url_mobile && (
+                <div className={`${styles.brandBanner} ${styles.mobileBanner}`}>
+                    <img src={resolveUrl(activeBrandInfo.banner_url_mobile)} alt={getBrandDisplayName() || ""} className={styles.brandBannerImg} />
                 </div>
             )}
             <div className={styles.topInfo}>
