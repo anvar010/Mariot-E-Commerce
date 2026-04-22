@@ -88,8 +88,12 @@ class Product {
             }
         }
         if (brand) {
-            whereClauses.push('(b.slug = ? OR b.id = ?)');
-            params.push(brand, brand);
+            const brandList = String(brand).split(',').map(s => s.trim()).filter(Boolean);
+            if (brandList.length > 0) {
+                const placeholders = brandList.map(() => '?').join(',');
+                whereClauses.push(`(b.slug IN (${placeholders}) OR b.id IN (${placeholders}))`);
+                params.push(...brandList, ...brandList);
+            }
         }
         if (seller) {
             if (seller === 'admin') {
