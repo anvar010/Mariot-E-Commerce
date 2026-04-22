@@ -17,6 +17,20 @@ class Category {
         }));
     }
 
+    static async findByBrand(brandSlug) {
+        const [rows] = await db.execute(`
+            SELECT DISTINCT c.id, c.name, c.name_ar, c.slug, c.type, c.is_active, c.parent_id,
+                   COUNT(p.id) as product_count
+            FROM categories c
+            JOIN products p ON p.category_id = c.id
+            JOIN brands b ON p.brand_id = b.id
+            WHERE b.slug = ? AND p.status = 'active' AND c.is_active = 1
+            GROUP BY c.id
+            ORDER BY c.name ASC
+        `, [brandSlug]);
+        return rows;
+    }
+
     static async findBySlug(slug) {
         const [rows] = await db.execute(`
             SELECT c.*, 

@@ -37,7 +37,7 @@ const ShopBreadcrumbs: React.FC<ShopBreadcrumbsProps> = ({
                     </span>
                 </>
             )}
-            {brandParam && !activeCategory && (
+            {brandParam && (
                 <>
                     <span className={styles.separator}>/</span>
                     <Link href="/shop-by-brands">{tc("shop-by-brand")}</Link>

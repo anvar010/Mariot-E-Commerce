@@ -3,7 +3,10 @@ const slugify = require('slugify');
 
 exports.getCategories = async (req, res, next) => {
     try {
-        const categories = await Category.findAll();
+        const { brand } = req.query;
+        const categories = brand
+            ? await Category.findByBrand(brand)
+            : await Category.findAll();
         res.json({ success: true, data: categories });
     } catch (error) {
         next(error);
