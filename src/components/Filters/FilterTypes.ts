@@ -6,6 +6,7 @@ export interface FilterProps {
     selectedBrands: string[];
     handleBrandToggle: (brandSlug: string) => void;
     allCategories: any[];
+    brandCategories?: any[];
     activeCategory: string | null;
     minPrice: number;
     setMinPrice: (value: number) => void;

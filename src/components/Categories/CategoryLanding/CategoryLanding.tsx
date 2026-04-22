@@ -192,9 +192,11 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
               </header>
 
               <div className={styles.categoryGrid}>
-                {subCategories.map((sub) => (
+                {subCategories.map((sub) => {
+                  const subSlug = sub.slug || sub.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                  return (
                   <div key={sub.id} className={styles.categoryCard}>
-                    <Link href={`/shop?category=${sub.slug}`} className={styles.imageWrapper}>
+                    <Link href={`/shop?category=${subSlug}`} className={styles.imageWrapper}>
                       <Image
                         src={resolveImage(sub.image_url)}
                         alt={sub.name}
@@ -205,7 +207,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                       />
                     </Link>
                     <div className={styles.cardContent}>
-                      <Link href={`/shop?category=${sub.slug}`} className={styles.cardTitle}>
+                      <Link href={`/shop?category=${subSlug}`} className={styles.cardTitle}>
                         {isArabic && sub.name_ar ? sub.name_ar : sub.name}
                       </Link>
                       <p className={styles.cardDescription}>
@@ -213,23 +215,26 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                       </p>
 
                       <ul className={styles.subList}>
-                        {sub.subCategories?.slice(0, 4).map((ss: any) => (
+                        {sub.subCategories?.slice(0, 4).map((ss: any) => {
+                          const ssSlug = ss.slug || ss.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                          return (
                           <li key={ss.id}>
-                            <Link href={`/shop?category=${ss.slug}`} className={styles.subLink}>
+                            <Link href={`/shop?category=${ssSlug}`} className={styles.subLink}>
                               <span style={{ flex: 1 }}>{isArabic && ss.name_ar ? ss.name_ar : ss.name}</span>
                               <ChevronRight className={styles.chevron} size={14} />
                             </Link>
                           </li>
-                        ))}
+                        )})}
                         <li>
-                          <Link href={`/shop?category=${sub.slug}`} className={styles.shopAll}>
+                          <Link href={`/shop?category=${subSlug}`} className={styles.shopAll}>
                             {t('shopAll')} <ChevronRight size={14} />
                           </Link>
                         </li>
                       </ul>
                     </div>
                   </div>
-                ))}
+                )})}
+
               </div>
             </main>
 

@@ -67,7 +67,10 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const [isSortOpen, setIsSortOpen] = useState(false);
     const sortRef = useRef<HTMLDivElement>(null);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-    const [allCategories, setAllCategories] = useState<any[]>(initialCategories);
+    const [allCategories, setAllCategories] = useState<any[]>(
+        initialCategories.filter((c: any) => c.type === 'main_category' && c.is_active)
+    );
+    const [brandCategories, setBrandCategories] = useState<any[]>([]);
     const [totalProducts, setTotalProducts] = useState(initialTotal);
     const [expandedSections, setExpandedSections] = useState<string[]>([]);
     const [apiCategories, setApiCategories] = useState<any[]>(initialCategories);
@@ -134,12 +137,12 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const getFormattedCategoryName = () => {
         if (categoryNameOverride) return categoryNameOverride;
         if (searchQuery) return tc("search-results-for", { query: searchQuery });
+        if (brandParam) return getBrandDisplayName() || '';
         if (activeCategory) {
             if (tc.has(activeCategory)) return tc(activeCategory);
             if (t.has(activeCategory)) return t(activeCategory);
             return activeCategory.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
         }
-        if (brandParam) return getBrandDisplayName() || '';
         if (sellerParam) {
             return products.length > 0 ? (products[0].seller_company || products[0].seller_name || 'Seller Store') : 'Seller Store';
         }
@@ -193,6 +196,18 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     }, [activeCategory, initialBrands.length]);
 
     useEffect(() => {
+        if (!brandParam) { setBrandCategories([]); return; }
+        fetch(`${API_BASE_URL}/categories?brand=${encodeURIComponent(brandParam)}`, { credentials: 'include' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    setBrandCategories(data.data.filter((c: any) => c.type === 'main_category' && c.is_active));
+                }
+            })
+            .catch(() => {});
+    }, [brandParam]);
+
+    useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const res = await fetch(`${API_BASE_URL}/categories`, { credentials: "include" });
@@ -220,7 +235,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             if (selectedBrands.length > 0) url += `&brand=${selectedBrands.join(',')}`;
             if (minPrice > 0) url += `&minPrice=${minPrice}`;
             if (maxPrice < 99999) url += `&maxPrice=${maxPrice}`;
-            if (inStockOnly) url += `&status=active`;
+            if (inStockOnly) url += `&stockStatus=in_stock`;
             if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
             if (isFeatured) url += `&is_featured=1`;
             if (isLimited) url += `&is_limited_offer=true`;
@@ -253,12 +268,13 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     }, [fetchProducts, initialProducts.length]);
 
     const resetFilters = () => {
-        setSelectedBrands([]);
         setMinPrice(0);
         setMaxPrice(99999);
         setInStockOnly(false);
         setSortBy('relevance');
-        handlePageChange(1);
+        const newParams = new URLSearchParams();
+        if (brandParam) newParams.set('brand', brandParam);
+        router.push(`/shop${newParams.toString() ? '?' + newParams.toString() : ''}`, { scroll: false });
     };
 
     const handlePageChange = (page: number) => {
@@ -291,19 +307,22 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         const newParams = new URLSearchParams(searchParams.toString());
         if (!slug) newParams.delete('category');
         else newParams.set('category', slug);
-        router.push(`/shop?${newParams.toString()}`);
+        newParams.delete('page');
+        router.push(`/shop?${newParams.toString()}`, { scroll: false });
     };
 
     const renderSidebar = () => {
         const commonProps = {
             inStockOnly, setInStockOnly, brands, selectedBrands,
             handleBrandToggle: (slug: string) => setSelectedBrands(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]),
-            allCategories, activeCategory, minPrice, setMinPrice, maxPrice, setMaxPrice,
+            allCategories, brandCategories, activeCategory, minPrice, setMinPrice, maxPrice, setMaxPrice,
             resetFilters, toggleSection, expandedSections, onCategoryChange: handleCategoryChange
         };
-        if (filterType === 'brand') return <FilterShopByBrand {...commonProps} />;
-        if (filterType === 'category') return <FilterCategory {...commonProps} />;
-        return <DefaultShopFilter {...commonProps} enableBrandFilter={!brandParam} />;
+        if (brandParam) return <FilterShopByBrand {...commonProps} />;
+        if (activeCategory) return subCategoriesToShow.length > 0
+            ? <FilterCategory {...commonProps} />
+            : <DefaultShopFilter {...commonProps} enableCategoryFilter={false} />;
+        return <DefaultShopFilter {...commonProps} />;
     };
 
     if (loading) return <div style={{ minHeight: '600px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>;
@@ -343,7 +362,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 {isMobileFilterOpen && <div className={styles.filterOverlay} onClick={() => setIsMobileFilterOpen(false)} />}
 
                 <main className={styles.content}>
-                    {!hideCategoryGrid && <CategoryGrid subCategoriesToShow={subCategoriesToShow} t={t} tc={tc} />}
+                    {!hideCategoryGrid && (!searchParams.get('category') || subCategoriesToShow.length > 0) && <CategoryGrid subCategoriesToShow={subCategoriesToShow} t={t} tc={tc} />}
 
                     <div className={styles.resultsHeader}>
                         <span className={styles.resultsCount}>
