@@ -564,20 +564,11 @@ const Header = () => {
                             </li>
                             <li>
                                 <Link
-                                    href="/category/coffee-makers"
-                                    className={cleanPath === '/category/coffee-makers' ? styles.linkActive : ''}
+                                    href="/category/stainless-steel-fabrications"
+                                    className={cleanPath === '/category/stainless-steel-fabrications' ? styles.linkActive : ''}
                                     onClick={() => setIsMenuOpen(false)}
                                 >
-                                    {t('coffeeMakers')}
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    href="/category/fryers"
-                                    className={cleanPath === '/category/fryers' ? styles.linkActive : ''}
-                                    onClick={() => setIsMenuOpen(false)}
-                                >
-                                    {t('fryers')}
+                                    {t('stainlessSteelFabrications')}
                                 </Link>
                             </li>
                             <li>

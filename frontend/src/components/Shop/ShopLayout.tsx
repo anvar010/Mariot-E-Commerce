@@ -306,13 +306,12 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
 
     return (
         <div className={styles.shopLayout}>
-            {brandParam && activeBrandInfo && (
+            {brandParam && activeBrandInfo?.banner_url && (
                 <div className={styles.brandBanner}>
                     <img
-                        src={resolveUrl(activeBrandInfo.banner || activeBrandInfo.image) || 'https://images.unsplash.com/photo-1557821552-17105176677c?q=80&w=1600&auto=format&fit=crop'}
+                        src={resolveUrl(activeBrandInfo.banner_url)}
                         alt={getBrandDisplayName() || ""}
                         className={styles.brandBannerImg}
-                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1557821552-17105176677c?q=80&w=1600&auto=format&fit=crop'; }}
                     />
                 </div>
             )}
