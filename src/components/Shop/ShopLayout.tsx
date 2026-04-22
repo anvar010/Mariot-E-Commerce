@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Link, useRouter } from '@/i18n/navigation';
+import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import styles from './ShopLayout.module.css';
 import { Filter, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
@@ -53,6 +53,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const tc = useTranslations('categoryContent');
     const searchParams = useSearchParams();
     const router = useRouter();
+    const pathname = usePathname();
     const activeCategory = defaultCategory || searchParams.get('category')?.toLowerCase() || null;
     const brandParam = searchParams.get('brand');
     const searchQueryRaw = searchParams.get('search');
@@ -274,14 +275,14 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         setSortBy('relevance');
         const newParams = new URLSearchParams();
         if (brandParam) newParams.set('brand', brandParam);
-        router.push(`/shop${newParams.toString() ? '?' + newParams.toString() : ''}`, { scroll: false });
+        router.push(`${pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`, { scroll: false });
     };
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.set('page', page.toString());
-        router.push(`/shop?${newParams.toString()}`, { scroll: false });
+        router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
     };
 
     // Effect to sync currentPage with URL (e.g., when clicking browser back button)
@@ -308,7 +309,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         if (!slug) newParams.delete('category');
         else newParams.set('category', slug);
         newParams.delete('page');
-        router.push(`/shop?${newParams.toString()}`, { scroll: false });
+        router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
     };
 
     const renderSidebar = () => {
@@ -319,9 +320,11 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             resetFilters, toggleSection, expandedSections, onCategoryChange: handleCategoryChange
         };
         if (brandParam) return <FilterShopByBrand {...commonProps} />;
-        if (activeCategory) return subCategoriesToShow.length > 0
-            ? <FilterCategory {...commonProps} />
-            : <DefaultShopFilter {...commonProps} enableCategoryFilter={false} />;
+        if (activeCategory) {
+            const isMainCategory = !matchedCategoryForGrid?.parent_id;
+            if (isMainCategory && subCategoriesToShow.length > 0) return <FilterCategory {...commonProps} />;
+            return <DefaultShopFilter {...commonProps} enableCategoryFilter={false} />;
+        }
         return <DefaultShopFilter {...commonProps} />;
     };
 
