@@ -66,9 +66,26 @@ class Product {
         }
 
         if (category) {
-            const categoryPattern = category.replace(/-/g, '%');
-            whereClauses.push('(c.slug = ? OR c.id = ? OR sc.slug = ? OR sc.id = ? OR ssc.slug = ? OR ssc.id = ? OR p.product_group LIKE ? OR p.sub_category LIKE ?)');
-            params.push(category, category, category, category, category, category, categoryPattern, categoryPattern);
+            // Collect the matched category ID and all its descendants
+            const [catRows] = await db.execute(
+                'SELECT id FROM categories WHERE slug = ? OR id = ? LIMIT 1',
+                [category, category]
+            );
+            if (catRows.length > 0) {
+                const rootId = catRows[0].id;
+                const [allCatRows] = await db.execute(
+                    'SELECT id FROM categories WHERE id = ? OR parent_id = ? OR parent_id IN (SELECT id FROM categories WHERE parent_id = ?)',
+                    [rootId, rootId, rootId]
+                );
+                const catIds = allCatRows.map(r => r.id);
+                const placeholders = catIds.map(() => '?').join(',');
+                whereClauses.push(`(p.category_id IN (${placeholders}) OR p.sub_category_id IN (${placeholders}) OR p.sub_sub_category_id IN (${placeholders}))`);
+                params.push(...catIds, ...catIds, ...catIds);
+            } else {
+                const categoryPattern = category.replace(/-/g, '%');
+                whereClauses.push('(c.slug = ? OR sc.slug = ? OR ssc.slug = ? OR p.product_group LIKE ? OR p.sub_category LIKE ?)');
+                params.push(category, category, category, categoryPattern, categoryPattern);
+            }
         }
         if (brand) {
             whereClauses.push('(b.slug = ? OR b.id = ?)');

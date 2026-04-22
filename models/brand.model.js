@@ -7,16 +7,30 @@ class Brand {
     }
 
     static async findByCategoryId(categoryId) {
-        let query = `
+        const [catRows] = await db.execute(
+            'SELECT id FROM categories WHERE slug = ? OR id = ? LIMIT 1',
+            [categoryId, categoryId]
+        );
+        if (catRows.length === 0) return [];
+
+        const rootId = catRows[0].id;
+        const [allCatRows] = await db.execute(
+            'SELECT id FROM categories WHERE id = ? OR parent_id = ? OR parent_id IN (SELECT id FROM categories WHERE parent_id = ?)',
+            [rootId, rootId, rootId]
+        );
+        const catIds = allCatRows.map(r => r.id);
+        const placeholders = catIds.map(() => '?').join(',');
+
+        const query = `
             SELECT b.*, COUNT(p.id) as product_count
             FROM brands b
             JOIN products p ON b.id = p.brand_id
-            JOIN categories c ON p.category_id = c.id
-            WHERE (c.slug = ? OR c.id = ?) AND p.status = 'active'
+            WHERE (p.category_id IN (${placeholders}) OR p.sub_category_id IN (${placeholders}) OR p.sub_sub_category_id IN (${placeholders}))
+              AND p.status = 'active' AND b.is_active = 1
             GROUP BY b.id
             ORDER BY b.name ASC
         `;
-        const [rows] = await db.execute(query, [categoryId, categoryId]);
+        const [rows] = await db.execute(query, [...catIds, ...catIds, ...catIds]);
         return rows;
     }
 
