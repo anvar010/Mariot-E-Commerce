@@ -58,7 +58,8 @@ const CartDrawer = () => {
         pointsToUse,
         pointsDiscountAmount,
         applyPoints,
-        removePoints
+        removePoints,
+        clearCart
     } = useCart();
 
     // Local States
@@ -66,6 +67,7 @@ const CartDrawer = () => {
     const [pointsInput, setPointsInput] = useState<number | string>(pointsToUse > 0 ? pointsToUse : '');
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const [showCoupons, setShowCoupons] = useState(false);
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
 
     // Quotation States
@@ -230,10 +232,28 @@ const CartDrawer = () => {
 
                     <div className={styles.cartTitleRow}>
                         <h2 className={styles.cartTitle}>{t('title')}</h2>
-                        <div className={styles.headerBadge}>
-                            {cartCount} {cartCount === 1 ? t('item') : t('items')}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div className={styles.headerBadge}>
+                                {cartCount} {cartCount === 1 ? t('item') : t('items')}
+                            </div>
+                            {cartItems.length > 0 && (
+                                <button className={styles.clearCartBtn} onClick={() => setShowClearConfirm(true)}>
+                                    <Trash2 size={12} />
+                                    {t('clearCart')}
+                                </button>
+                            )}
                         </div>
                     </div>
+
+                    {showClearConfirm && (
+                        <div className={styles.clearConfirmBox}>
+                            <p className={styles.clearConfirmText}>{t('clearCartConfirm')}</p>
+                            <div className={styles.clearConfirmActions}>
+                                <button className={styles.clearConfirmCancel} onClick={() => setShowClearConfirm(false)}>{t('cancel')}</button>
+                                <button className={styles.clearConfirmOk} onClick={() => { clearCart(); setShowClearConfirm(false); }}>{t('clearCart')}</button>
+                            </div>
+                        </div>
+                    )}
 
                     {cartItems.length === 0 ? (
                         <div className={styles.emptyCart}>

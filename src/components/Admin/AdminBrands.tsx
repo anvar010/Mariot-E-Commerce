@@ -20,6 +20,8 @@ const AdminBrands = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [bannerFile, setBannerFile] = useState<File | null>(null);
+    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const { showNotification } = useNotification();
 
     const categoryOptions = [
@@ -33,6 +35,7 @@ const AdminBrands = () => {
         description: '',
         description_ar: '',
         image_url: '',
+        banner_url: '',
         website_url: '',
         is_active: true,
         brand_type: ''
@@ -89,9 +92,17 @@ const AdminBrands = () => {
         if (file) {
             setLogoFile(file);
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setLogoPreview(reader.result as string);
-            };
+            reader.onloadend = () => setLogoPreview(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setBannerFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setBannerPreview(reader.result as string);
             reader.readAsDataURL(file);
         }
     };
@@ -104,12 +115,15 @@ const AdminBrands = () => {
             description: brand.description || '',
             description_ar: brand.description_ar || '',
             image_url: brand.image_url || '',
+            banner_url: brand.banner_url || '',
             website_url: brand.website_url || '',
             is_active: Boolean(brand.is_active),
             brand_type: brand.brand_type || ''
         });
         setLogoPreview(brand.image_url || null);
         setLogoFile(null);
+        setBannerPreview(brand.banner_url || null);
+        setBannerFile(null);
         setIsModalOpen(true);
     };
 
@@ -122,12 +136,15 @@ const AdminBrands = () => {
             description: '',
             description_ar: '',
             image_url: '',
+            banner_url: '',
             website_url: '',
             is_active: true,
             brand_type: ''
         });
         setLogoPreview(null);
         setLogoFile(null);
+        setBannerPreview(null);
+        setBannerFile(null);
     };
 
     const handleCategoryToggle = (cat: string) => {
@@ -145,24 +162,34 @@ const AdminBrands = () => {
         try {
             setLoading(true);
             let currentImageUrl = formData.image_url;
+            let currentBannerUrl = formData.banner_url;
 
-            // Upload new image if exists
-            if (logoFile) {
-                const uploadFormData = new FormData();
-                uploadFormData.append('image', logoFile);
-
-                const uploadRes = await fetch(`${API_BASE_URL}/upload/image?folder=brands`, {
-                    method: 'POST',
-                    credentials: "include",
-                    body: uploadFormData,
-                    headers: getAuthHeaders()
+            const uploadImage = async (file: File) => {
+                const fd = new FormData();
+                fd.append('image', file);
+                const res = await fetch(`${API_BASE_URL}/upload/image?folder=brands`, {
+                    method: 'POST', credentials: "include", body: fd, headers: getAuthHeaders()
                 });
+                return res.json();
+            };
 
-                const uploadData = await uploadRes.json();
+            if (logoFile) {
+                const uploadData = await uploadImage(logoFile);
                 if (uploadData.success) {
                     currentImageUrl = uploadData.data;
                 } else {
-                    showNotification(uploadData.message || 'Image upload failed', 'error');
+                    showNotification(uploadData.message || 'Logo upload failed', 'error');
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            if (bannerFile) {
+                const uploadData = await uploadImage(bannerFile);
+                if (uploadData.success) {
+                    currentBannerUrl = uploadData.data;
+                } else {
+                    showNotification(uploadData.message || 'Banner upload failed', 'error');
                     setLoading(false);
                     return;
                 }
@@ -183,6 +210,7 @@ const AdminBrands = () => {
                 body: JSON.stringify({
                     ...formData,
                     image_url: currentImageUrl,
+                    banner_url: currentBannerUrl,
                     is_active: formData.is_active ? 1 : 0
                 })
             });
@@ -530,32 +558,54 @@ const AdminBrands = () => {
                             </div>
 
                             <div className={styles.formRight}>
-                                <div className={styles.formGroup}>
-                                    <label>Brand Logo</label>
-                                    <div className={styles.fileUploadWrapper}>
-                                        {logoPreview ? (
-                                            <div className={styles.previewContainer}>
-                                                <img src={resolveUrl(logoPreview)} alt="Preview" className={styles.previewImage} />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => { setLogoPreview(null); setLogoFile(null); }}
-                                                    className={styles.removeFileBtn}
-                                                >
-                                                    <X size={16} />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <label className={styles.fileLabel}>
-                                                <Plus size={24} />
-                                                <span>Click to upload brand logo</span>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleFileChange}
-                                                    hidden
-                                                />
-                                            </label>
-                                        )}
+                                <div className={styles.imageUploadsRow}>
+                                    <div className={styles.formGroup}>
+                                        <label>Brand Logo</label>
+                                        <div className={styles.fileUploadWrapper}>
+                                            {logoPreview ? (
+                                                <div className={styles.previewContainer}>
+                                                    <img src={resolveUrl(logoPreview)} alt="Preview" className={styles.previewImage} />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setLogoPreview(null); setLogoFile(null); }}
+                                                        className={styles.removeFileBtn}
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <label className={styles.fileLabel}>
+                                                    <Plus size={24} />
+                                                    <span>Click to upload brand logo</span>
+                                                    <input type="file" accept="image/*" onChange={handleFileChange} hidden />
+                                                </label>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label>Brand Banner</label>
+                                        <div className={`${styles.fileUploadWrapper} ${styles.bannerUploadWrapper}`}>
+                                            {bannerPreview ? (
+                                                <div className={styles.bannerPreviewContainer}>
+                                                    <img src={resolveUrl(bannerPreview)} alt="Banner Preview" className={styles.bannerPreviewImage} />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setBannerPreview(null); setBannerFile(null); }}
+                                                        className={styles.bannerRemoveBtn}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <label className={styles.fileLabel}>
+                                                    <Plus size={24} />
+                                                    <span>Click to upload brand banner</span>
+                                                    <span className={styles.uploadHint}>Recommended: 1400 × 150 px</span>
+                                                    <input type="file" accept="image/*" onChange={handleBannerChange} hidden />
+                                                </label>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
