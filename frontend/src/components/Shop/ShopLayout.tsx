@@ -75,7 +75,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     );
     const [brandCategories, setBrandCategories] = useState<any[]>([]);
     const [totalProducts, setTotalProducts] = useState(initialTotal);
-    const [expandedSections, setExpandedSections] = useState<string[]>([]);
+    const [expandedSections, setExpandedSections] = useState<string[]>(['brand', 'price']);
     const [apiCategories, setApiCategories] = useState<any[]>(initialCategories);
 
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
@@ -290,6 +290,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         setMaxPrice(99999);
         setInStockOnly(false);
         setSortBy('relevance');
+        setSelectedBrands(brandParam ? brandParam.split(',') : []);
         const newParams = new URLSearchParams();
         if (brandParam) newParams.set('brand', brandParam);
         router.push(`${pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`, { scroll: false });

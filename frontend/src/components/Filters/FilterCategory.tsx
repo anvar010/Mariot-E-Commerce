@@ -125,7 +125,30 @@ const FilterCategory: React.FC<FilterProps> = ({
                             </div>
                         </div>
                         <div className={styles.sliderContainer}>
-                            <input type="range" min="0" max="100000" value={maxPrice} onChange={(e) => setMaxPrice(Number(e.target.value))} className={styles.rangeInput} />
+                            <div className={styles.sliderBase}></div>
+                            <div
+                                className={styles.sliderProgress}
+                                style={{
+                                    insetInlineStart: `${(minPrice / 100000) * 100}%`,
+                                    insetInlineEnd: `${100 - (maxPrice / 100000) * 100}%`
+                                }}
+                            ></div>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100000"
+                                value={minPrice}
+                                onChange={(e) => setMinPrice(Math.min(Number(e.target.value), maxPrice - 100))}
+                                className={styles.rangeInput}
+                            />
+                            <input
+                                type="range"
+                                min="0"
+                                max="100000"
+                                value={maxPrice}
+                                onChange={(e) => setMaxPrice(Math.max(Number(e.target.value), minPrice + 100))}
+                                className={styles.rangeInput}
+                            />
                         </div>
                     </div>
                 )}
