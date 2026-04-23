@@ -43,7 +43,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
         maxPrice: ''
     });
     const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-    const [openFilters, setOpenFilters] = useState<string[]>([]);
+    const [openFilters, setOpenFilters] = useState<string[]>(['brand', 'price']);
     const [isAboutExpanded, setIsAboutExpanded] = useState(false);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
