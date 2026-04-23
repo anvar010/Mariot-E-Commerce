@@ -5,6 +5,7 @@ import styles from './Filters.module.css';
 import { Filter, ChevronDown } from 'lucide-react';
 import { FilterProps } from './FilterTypes';
 import { useTranslations, useLocale } from 'next-intl';
+import { BASE_URL } from '@/config';
 
 const DefaultShopFilter: React.FC<FilterProps> = ({
     inStockOnly,
@@ -29,6 +30,15 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
     const t = useTranslations('categoryContent');
     const locale = useLocale();
     const isArabic = locale === 'ar';
+
+    const resolveUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.includes('127.0.0.1:5000')) {
+            return url.replace('http://127.0.0.1:5000', BASE_URL);
+        }
+        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
+        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
 
     return (
         <aside className={styles.sidebar}>
@@ -86,16 +96,27 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
                     {expandedSections.includes('brand') && (
                         <div className={styles.sectionContent}>
                             {brands.length > 0 ? (
-                                brands.map(brand => (
-                                    <label key={brand.id} className={styles.checkboxLabel}>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedBrands.includes(brand.slug)}
-                                            onChange={() => handleBrandToggle(brand.slug)}
-                                        />
-                                        <span>{isArabic && brand.name_ar ? brand.name_ar : brand.name}</span>
-                                    </label>
-                                ))
+                                <div className={styles.brandGrid}>
+                                    {brands.map(brand => (
+                                        <div
+                                            key={brand.id}
+                                            onClick={() => handleBrandToggle(brand.slug)}
+                                            className={`${styles.brandLogoCard} ${selectedBrands.includes(brand.slug) ? styles.brandLogoCardActive : ''}`}
+                                        >
+                                            {brand.image_url ? (
+                                                <img
+                                                    src={resolveUrl(brand.image_url)}
+                                                    alt={isArabic && brand.name_ar ? brand.name_ar : brand.name}
+                                                    className={styles.brandLogoImg}
+                                                />
+                                            ) : (
+                                                <span className={styles.brandLogoFallback}>
+                                                    {isArabic && brand.name_ar ? brand.name_ar : brand.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             ) : (
                                 <p style={{ fontSize: '12px', color: '#999' }}>{t("no-brands-found")}</p>
                             )}
