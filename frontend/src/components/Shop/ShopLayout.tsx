@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import styles from './ShopLayout.module.css';
-import { Filter, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Filter, ChevronDown, ChevronLeft, ChevronRight, X, ListFilter } from 'lucide-react';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import Loader from '@/components/shared/Loader/Loader';
@@ -67,6 +67,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const [fetchingProducts, setFetchingProducts] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
     const sortRef = useRef<HTMLDivElement>(null);
+    const [isMobileSortOpen, setIsMobileSortOpen] = useState(false);
+    const mobileSortRef = useRef<HTMLDivElement>(null);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [allCategories, setAllCategories] = useState<any[]>(
         initialCategories.filter((c: any) => c.type === 'main_category' && c.is_active)
@@ -106,6 +108,21 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             window.removeEventListener('scroll', handleScroll);
         };
     }, [isSortOpen]);
+
+    useEffect(() => {
+        if (!isMobileSortOpen) return;
+        const handleClick = (e: MouseEvent) => {
+            if (mobileSortRef.current && !mobileSortRef.current.contains(e.target as Node))
+                setIsMobileSortOpen(false);
+        };
+        const handleScroll = () => setIsMobileSortOpen(false);
+        document.addEventListener('mousedown', handleClick);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [isMobileSortOpen]);
 
     // Handle Scrolling sections moved to CategoryGrid.tsx
 
@@ -205,7 +222,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                     setBrandCategories(data.data.filter((c: any) => c.type === 'main_category' && c.is_active));
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
     }, [brandParam]);
 
     useEffect(() => {
@@ -422,6 +439,26 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
 
                     <BrandBio activeBrandInfo={activeBrandInfo} isArabic={isArabic} resolveUrl={resolveUrl} />
                 </main>
+            </div>
+
+            {/* Mobile Bottom Action Pill */}
+            <div className={styles.mobileBottomActionPill}>
+                <button className={styles.actionPillBtn} onClick={() => setIsMobileFilterOpen(true)}>
+                    <Filter size={18} /><span>{tc("filters")}</span>
+                </button>
+                <div className={styles.actionPillDivider}></div>
+                <div className={styles.actionPillBtn} ref={mobileSortRef} onClick={() => setIsMobileSortOpen(!isMobileSortOpen)}>
+                    <ListFilter size={18} />
+                    <span>{tc("sort")}</span>
+                    {isMobileSortOpen && (
+                        <div className={styles.mobileSortDropdown}>
+                            <div onClick={(e) => { e.stopPropagation(); setSortBy('relevance'); setIsMobileSortOpen(false); }}>{tc("relevance")}</div>
+                            <div onClick={(e) => { e.stopPropagation(); setSortBy('best_offer'); setIsMobileSortOpen(false); }}>{tc("best-offer")}</div>
+                            <div onClick={(e) => { e.stopPropagation(); setSortBy('price_asc'); setIsMobileSortOpen(false); }}>{tc("price-low-to-high")}</div>
+                            <div onClick={(e) => { e.stopPropagation(); setSortBy('price_desc'); setIsMobileSortOpen(false); }}>{tc("price-high-to-low")}</div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

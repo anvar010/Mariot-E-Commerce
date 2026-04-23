@@ -1208,3 +1208,92 @@
         opacity: 1;
     }
 }
+
+/* Mobile Bottom Action Pill */
+.mobileBottomActionPill {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(243, 244, 246, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 30px;
+    z-index: 2000;
+}
+
+.actionPillBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    color: #1a565c;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-radius: 30px;
+}
+
+.actionPillBtn:active {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.actionPillDivider {
+    width: 1px;
+    height: 24px;
+    background-color: #cbd5e1;
+}
+
+.mobileSortDropdown {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    width: 200px;
+    overflow: hidden;
+    z-index: 2001;
+}
+
+.mobileSortDropdown div {
+    padding: 14px 20px;
+    font-size: 14px;
+    color: #334155;
+    text-align: left;
+    background: white;
+    transition: background 0.2s;
+}
+
+.mobileSortDropdown div:active {
+    background: #f1f5f9;
+}
+
+.mobileSortDropdown div:not(:last-child) {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+@media (max-width: 768px) {
+    .mobileBottomActionPill {
+        display: flex;
+        align-items: center;
+    }
+
+    .shopLayout {
+        padding-bottom: 80px;
+    }
+
+    .mobileFilterToggle,
+    .sortDropdown,
+    .sortLabel {
+        display: none !important;
+    }
+}
