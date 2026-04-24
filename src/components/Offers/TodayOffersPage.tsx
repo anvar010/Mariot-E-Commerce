@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from "next/image";
 import styles from './TodayOffersPage.module.css';
 import {
@@ -12,7 +12,8 @@ import {
     Coins,
     ShoppingCart,
     Phone,
-    X
+    X,
+    ListFilter
 } from 'lucide-react';
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Loader from '@/components/shared/Loader/Loader';
@@ -31,6 +32,7 @@ interface TodayOffersPageProps {
 
 const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initialBrands = [] }: TodayOffersPageProps) => {
     const t = useTranslations('todayOffers');
+    const tc = useTranslations('categoryContent');
     const [products, setProducts] = useState<any[]>(initialProducts);
     const [categories, setCategories] = useState<any[]>(initialCategories);
     const [brands, setBrands] = useState<any[]>(initialBrands);
@@ -47,6 +49,23 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
     const [isAboutExpanded, setIsAboutExpanded] = useState(false);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
+    const [isMobileSortOpen, setIsMobileSortOpen] = useState(false);
+    const mobileSortRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isMobileSortOpen) return;
+        const handleClick = (e: MouseEvent) => {
+            if (mobileSortRef.current && !mobileSortRef.current.contains(e.target as Node))
+                setIsMobileSortOpen(false);
+        };
+        const handleScroll = () => setIsMobileSortOpen(false);
+        document.addEventListener('mousedown', handleClick);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [isMobileSortOpen]);
 
     // Debounce price filtering
     useEffect(() => {
@@ -216,11 +235,11 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
 
     const getSortLabel = (key: string) => {
         switch (key) {
-            case 'price_asc': return t('priceLowHigh');
-            case 'price_desc': return t('priceHighLow');
-            case 'newest': return t('newestFirst');
+            case 'price_asc': return tc('price-low-to-high');
+            case 'price_desc': return tc('price-high-to-low');
+            case 'best_offer': return tc('best-offer');
             case 'relevance':
-            default: return t('relevance');
+            default: return tc('relevance');
         }
     };
 
@@ -319,10 +338,10 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
 
                                 {isSortOpen && (
                                     <div className={styles.dropdownContent}>
-                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'relevance' }))}>{t('relevance')}</div>
-                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'price_asc' }))}>{t('priceLowHigh')}</div>
-                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'price_desc' }))}>{t('priceHighLow')}</div>
-                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'newest' }))}>{t('newestFirst')}</div>
+                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'relevance' }))}>{tc('relevance')}</div>
+                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'best_offer' }))}>{tc('best-offer')}</div>
+                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'price_asc' }))}>{tc('price-low-to-high')}</div>
+                                        <div onClick={() => setActiveFilters(prev => ({ ...prev, sort: 'price_desc' }))}>{tc('price-high-to-low')}</div>
                                     </div>
                                 )}
                             </div>
@@ -427,6 +446,26 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                         </div>
                     </section>
                 </main>
+            </div>
+
+            {/* Mobile Bottom Action Pill */}
+            <div className={styles.mobileBottomActionPill}>
+                <button className={styles.actionPillBtn} onClick={() => setIsMobileFilterOpen(true)}>
+                    <Filter size={18} /><span>{tc('filters')}</span>
+                </button>
+                <div className={styles.actionPillDivider}></div>
+                <div className={styles.actionPillBtn} ref={mobileSortRef} onClick={() => setIsMobileSortOpen(!isMobileSortOpen)}>
+                    <ListFilter size={18} />
+                    <span>{tc('sort')}</span>
+                    {isMobileSortOpen && (
+                        <div className={styles.mobileSortDropdown}>
+                            <div onClick={(e) => { e.stopPropagation(); setActiveFilters(prev => ({ ...prev, sort: 'relevance' })); setIsMobileSortOpen(false); }}>{tc('relevance')}</div>
+                            <div onClick={(e) => { e.stopPropagation(); setActiveFilters(prev => ({ ...prev, sort: 'best_offer' })); setIsMobileSortOpen(false); }}>{tc('best-offer')}</div>
+                            <div onClick={(e) => { e.stopPropagation(); setActiveFilters(prev => ({ ...prev, sort: 'price_asc' })); setIsMobileSortOpen(false); }}>{tc('price-low-to-high')}</div>
+                            <div onClick={(e) => { e.stopPropagation(); setActiveFilters(prev => ({ ...prev, sort: 'price_desc' })); setIsMobileSortOpen(false); }}>{tc('price-high-to-low')}</div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div >
     );
