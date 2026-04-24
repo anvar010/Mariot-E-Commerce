@@ -5,7 +5,7 @@ import Footer from '@/components/Layout/Footer/Footer';
 import ProductDetail from '@/components/Product/ProductDetail/ProductDetail';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 
-const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
+const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://mariot-backend.onrender.com/api/v1';
 
 export async function generateMetadata({ params }: { params: { slug: string | string[], locale: string } }): Promise<Metadata> {
     const slugArray = Array.isArray(params.slug) ? params.slug : [params.slug];
@@ -40,7 +40,13 @@ export async function generateMetadata({ params }: { params: { slug: string | st
     };
 
     try {
-        const res = await fetch(`${API_BASE_URL_SERVER}/products/${encodeURIComponent(id)}`, { cache: 'no-store' });
+        const res = await fetch(`${API_BASE_URL_SERVER}/products/${encodeURIComponent(id)}`, {
+            next: { revalidate: 300 },
+            signal: AbortSignal.timeout(8000),
+        });
+        if (!res.ok) {
+            console.error(`[generateMetadata] Product fetch failed: ${res.status} for slug "${id}" from ${API_BASE_URL_SERVER}`);
+        }
         const data = await res.json();
 
         if (data.success && data.data) {
@@ -89,12 +95,33 @@ export async function generateMetadata({ params }: { params: { slug: string | st
             };
         }
     } catch (e) {
-        console.error("Metadata fetch failed", e);
+        console.error(`[generateMetadata] Product fetch error for slug "${id}" from ${API_BASE_URL_SERVER}:`, e);
     }
 
+    // Fallback: avoid generic site-wide OG bleed-through by emitting product-scoped tags.
+    const fallbackTitle = slugArray
+        .map(s => decodeURIComponent(s).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))
+        .join(' ');
+    const fallbackDescription = `Shop ${fallbackTitle} at Mariot Store — premium commercial kitchen equipment in UAE.`;
+    const fallbackUrl = `${SITE_URL}/${params.locale}/product/${encodeURIComponent(id)}`;
+    const fallbackImage = `${SITE_URL}/assets/mariot-logo.webp`;
     return {
-        title: 'Product Details | Mariot Store',
-        description: 'Explore our wide range of premium kitchen equipment.'
+        title: `${fallbackTitle} | Mariot Store`,
+        description: fallbackDescription,
+        openGraph: {
+            title: `${fallbackTitle} | Mariot Store`,
+            description: fallbackDescription,
+            url: fallbackUrl,
+            siteName: 'Mariot Kitchen Equipment',
+            images: [{ url: fallbackImage, width: 1200, height: 630, alt: fallbackTitle }],
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: `${fallbackTitle} | Mariot Store`,
+            description: fallbackDescription,
+            images: [fallbackImage],
+        },
     };
 }
 
