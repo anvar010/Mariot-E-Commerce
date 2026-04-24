@@ -41,10 +41,10 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
         category: '',
         brand: '',
         sort: 'relevance',
-        minPrice: '',
-        maxPrice: ''
+        minPrice: 0,
+        maxPrice: 99999
     });
-    const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+    const [priceRange, setPriceRange] = useState({ min: 0, max: 99999 });
     const [openFilters, setOpenFilters] = useState<string[]>(['brand', 'price']);
     const [isAboutExpanded, setIsAboutExpanded] = useState(false);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -190,24 +190,15 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                 if (activeFilters.category) url += `&category=${activeFilters.category}`;
                 if (activeFilters.brand) url += `&brand=${activeFilters.brand}`;
                 if (activeFilters.sort) url += `&sort=${activeFilters.sort}`;
-                if (activeFilters.minPrice) url += `&minPrice=${activeFilters.minPrice}`;
-                if (activeFilters.maxPrice) url += `&maxPrice=${activeFilters.maxPrice}`;
+                if (activeFilters.minPrice > 0) url += `&minPrice=${activeFilters.minPrice}`;
+                if (activeFilters.maxPrice < 99999) url += `&maxPrice=${activeFilters.maxPrice}`;
 
                 const res = await fetch(url, { credentials: "include" });
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const data = await res.json();
 
-                if (data.success && data.data.length > 0) {
+                if (data.success) {
                     setProducts(data.data);
-                } else {
-                    // Fallback: If no daily offers, fetch products with any discount
-                    console.warn('No daily offers found, fetching generic discounted products...');
-                    let fallbackUrl = `${API_BASE_URL}/products?limit=20&sort=newest`;
-                    const fallbackRes = await fetch(fallbackUrl, { credentials: "include" });
-                    const fallbackData = await fallbackRes.json();
-                    if (fallbackData.success) {
-                        setProducts(fallbackData.data);
-                    }
                 }
             } catch (error) {
                 console.error('Error fetching offers:', error);
@@ -266,13 +257,13 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                         handleBrandToggle={(brandSlug: string) => handleFilterChange('brand', brandSlug)}
                         allCategories={categories}
                         activeCategory={activeFilters.category}
-                        minPrice={Number(priceRange.min) || 0}
-                        setMinPrice={(val: number) => setPriceRange(prev => ({ ...prev, min: val.toString() }))}
-                        maxPrice={Number(priceRange.max) || 0}
-                        setMaxPrice={(val: number) => setPriceRange(prev => ({ ...prev, max: val.toString() }))}
+                        minPrice={priceRange.min}
+                        setMinPrice={(val: number) => setPriceRange(prev => ({ ...prev, min: val }))}
+                        maxPrice={priceRange.max}
+                        setMaxPrice={(val: number) => setPriceRange(prev => ({ ...prev, max: val }))}
                         resetFilters={() => {
-                            setActiveFilters({ category: '', brand: '', sort: 'relevance', minPrice: '', maxPrice: '' });
-                            setPriceRange({ min: '', max: '' });
+                            setActiveFilters({ category: '', brand: '', sort: 'relevance', minPrice: 0, maxPrice: 99999 });
+                            setPriceRange({ min: 0, max: 99999 });
                         }}
                         toggleSection={toggleSection}
                         expandedSections={openFilters}
@@ -395,8 +386,8 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                                 <button
                                     className={styles.resetBtnLarge}
                                     onClick={() => {
-                                        setActiveFilters({ category: '', brand: '', sort: 'relevance', minPrice: '', maxPrice: '' });
-                                        setPriceRange({ min: '', max: '' });
+                                        setActiveFilters({ category: '', brand: '', sort: 'relevance', minPrice: 0, maxPrice: 99999 });
+                                        setPriceRange({ min: 0, max: 99999 });
                                     }}
                                 >
                                     {t('resetAll')}
