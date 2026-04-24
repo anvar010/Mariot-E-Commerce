@@ -2,7 +2,7 @@ const Product = require('../models/product.model');
 const Category = require('../models/category.model');
 const Brand = require('../models/brand.model');
 const db = require('../config/db'); // Fix: Import db
-const slugify = require('slugify');
+const generateUniqueSlug = require('../utils/generateSlug');
 const ExcelJS = require('exceljs');
 const fs = require('fs');
 
@@ -56,9 +56,10 @@ exports.bulkImport = async (req, res, next) => {
             const mainName = (row.category || row.Category || row.main_category)?.toString().trim();
             if (mainName) {
                 if (!categoryMap[mainName]) {
-                    let cat = await Category.findBySlug(slugify(mainName, { lower: true }));
+                    let cat = await Category.findBySlug(await generateUniqueSlug(mainName, 'categories')); // Check if exists
                     if (!cat) {
-                        mainId = await Category.create({ name: mainName, slug: slugify(mainName, { lower: true }), type: 'main_category' });
+                        const slug = await generateUniqueSlug(mainName, 'categories');
+                        mainId = await Category.create({ name: mainName, slug: slug, type: 'main_category' });
                     } else {
                         mainId = cat.id;
                     }
@@ -77,7 +78,8 @@ exports.bulkImport = async (req, res, next) => {
                     // Search for existing sub category under this parent
                     let [existing] = await db.query('SELECT id FROM categories WHERE name = ? AND parent_id = ? AND type = "sub_category"', [subName, mainId]);
                     if (existing.length === 0) {
-                        subId = await Category.create({ name: subName, slug: slugify(subName, { lower: true }), type: 'sub_category', parent_id: mainId });
+                        const slug = await generateUniqueSlug(subName, 'categories');
+                        subId = await Category.create({ name: subName, slug: slug, type: 'sub_category', parent_id: mainId });
                     } else {
                         subId = existing[0].id;
                     }
@@ -95,7 +97,8 @@ exports.bulkImport = async (req, res, next) => {
                 if (!subSubCategoryMap[mapKey]) {
                     let [existing] = await db.query('SELECT id FROM categories WHERE name = ? AND parent_id = ? AND type = "sub_sub_category"', [subSubName, subId]);
                     if (existing.length === 0) {
-                        subSubId = await Category.create({ name: subSubName, slug: slugify(subSubName, { lower: true }), type: 'sub_sub_category', parent_id: subId });
+                        const slug = await generateUniqueSlug(subSubName, 'categories');
+                        subSubId = await Category.create({ name: subSubName, slug: slug, type: 'sub_sub_category', parent_id: subId });
                     } else {
                         subSubId = existing[0].id;
                     }
@@ -108,9 +111,10 @@ exports.bulkImport = async (req, res, next) => {
             if (row.brand) {
                 const brandName = row.brand.trim();
                 if (!brandMap[brandName]) {
-                    let brand = await Brand.findBySlug(slugify(brandName, { lower: true }));
+                    let brand = await Brand.findBySlug(await generateUniqueSlug(brandName, 'brands')); // Potential fix: check by generated slug
                     if (!brand) {
-                        const newId = await Brand.create({ name: brandName, slug: slugify(brandName, { lower: true }) });
+                        const slug = await generateUniqueSlug(brandName, 'brands');
+                        const newId = await Brand.create({ name: brandName, slug: slug });
                         brandMap[brandName] = newId;
                     } else {
                         brandMap[brandName] = brand.id;

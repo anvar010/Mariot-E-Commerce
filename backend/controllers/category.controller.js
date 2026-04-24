@@ -1,5 +1,5 @@
 const Category = require('../models/category.model');
-const slugify = require('slugify');
+const generateUniqueSlug = require('../utils/generateSlug');
 
 exports.getCategories = async (req, res, next) => {
     try {
@@ -28,10 +28,11 @@ exports.getCategory = async (req, res, next) => {
 exports.createCategory = async (req, res, next) => {
     try {
         const { name, name_ar, description, image_url, is_active, parent_id, type, brands } = req.body;
+        const slug = await generateUniqueSlug(name, 'categories');
         const data = {
             name,
             name_ar: name_ar || null,
-            slug: slugify(name, { lower: true }),
+            slug,
             description: description || null,
             image_url: image_url || null,
             is_active: is_active !== undefined ? is_active : 1,
@@ -52,16 +53,13 @@ exports.createCategory = async (req, res, next) => {
 
 exports.updateCategory = async (req, res, next) => {
     try {
-        console.log('=== UPDATE CATEGORY ===');
-        console.log('ID:', req.params.id);
-        console.log('Body:', JSON.stringify(req.body));
+        const id = req.params.id;
         const updateData = { ...req.body };
         if (updateData.name) {
-            updateData.slug = slugify(updateData.name, { lower: true });
+            updateData.slug = await generateUniqueSlug(updateData.name, 'categories', id);
         }
         if (updateData.parent_id === '') updateData.parent_id = null;
-        console.log('Final updateData:', JSON.stringify(updateData));
-        await Category.update(req.params.id, updateData);
+        await Category.update(id, updateData);
         res.json({ success: true, message: 'Category updated' });
     } catch (error) {
         console.error('UPDATE ERROR:', error);

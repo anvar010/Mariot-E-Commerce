@@ -1,5 +1,5 @@
 const Brand = require('../models/brand.model');
-const slugify = require('slugify');
+const generateUniqueSlug = require('../utils/generateSlug');
 
 exports.getBrands = async (req, res, next) => {
     try {
@@ -30,10 +30,11 @@ exports.getBrand = async (req, res, next) => {
 
 exports.createBrand = async (req, res, next) => {
     try {
+        const slug = await generateUniqueSlug(req.body.name, 'brands');
         const data = {
             name: req.body.name,
             name_ar: req.body.name_ar || null,
-            slug: slugify(req.body.name, { lower: true }),
+            slug,
             image_url: req.body.image_url || null
         };
         const id = await Brand.create(data);
@@ -67,7 +68,7 @@ exports.syncBrands = async (req, res, next) => {
 
         for (const brand of brands) {
             try {
-                const slug = slugify(brand.name, { lower: true });
+                const slug = await generateUniqueSlug(brand.name, 'brands');
                 await Brand.upsert({
                     name: brand.name,
                     name_ar: brand.name_ar || null,
@@ -95,7 +96,7 @@ exports.syncBrands = async (req, res, next) => {
 exports.updateBrand = async (req, res, next) => {
     try {
         if (req.body.name) {
-            req.body.slug = slugify(req.body.name, { lower: true });
+            req.body.slug = await generateUniqueSlug(req.body.name, 'brands', req.params.id);
         }
         await Brand.update(req.params.id, req.body);
         res.json({ success: true, message: 'Brand updated' });
