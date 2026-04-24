@@ -232,7 +232,6 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 const data = await res.json();
                 if (data.success) {
                     setApiCategories(data.data);
-                    // Filter to show only main categories in the sidebar by default
                     const mainCats = data.data.filter((c: any) => c.type === 'main_category' && c.is_active);
                     setAllCategories(mainCats);
                 }
@@ -240,10 +239,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 console.error('Error fetching categories:', err);
             }
         };
-        if (initialCategories.length === 0) {
-            fetchCategories();
-        }
-    }, [initialCategories.length]);
+        fetchCategories();
+    }, []);
 
     const fetchProducts = useCallback(async () => {
         setFetchingProducts(true);
