@@ -16,6 +16,10 @@ const {
     addHeroPoster,
     updateHeroPoster,
     deleteHeroPoster,
+    getPromotions,
+    addPromotion,
+    updatePromotion,
+    deletePromotion,
     exportProducts,
     exportOrders,
     getRoles
@@ -62,6 +66,14 @@ router.route('/cms/hero-posters')
 router.route('/cms/hero-posters/:id')
     .put(authorize('admin'), updateHeroPoster)
     .delete(authorize('admin'), deleteHeroPoster);
+
+router.route('/cms/promotions')
+    .get(authorize('admin'), getPromotions)
+    .post(authorize('admin'), addPromotion);
+
+router.route('/cms/promotions/:id')
+    .put(authorize('admin'), updatePromotion)
+    .delete(authorize('admin'), deletePromotion);
 
 router.get('/export/products', authorize('admin'), exportProducts);
 router.get('/export/orders', authorize('admin'), exportOrders);

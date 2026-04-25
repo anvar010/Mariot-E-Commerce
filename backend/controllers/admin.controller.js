@@ -578,3 +578,148 @@ exports.deleteHeroPoster = async (req, res, next) => {
         next(error);
     }
 };
+
+// ============================================================================
+// PROMOTIONS (Banners + Popups)
+// Single feature; display_type switches between top banner and modal popup.
+// ============================================================================
+
+const ensurePromotionsTable = async () => {
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS promotions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            display_type ENUM('banner_top','popup_modal') NOT NULL DEFAULT 'banner_top',
+            title VARCHAR(255),
+            title_ar VARCHAR(255),
+            description TEXT,
+            description_ar TEXT,
+            image_url TEXT,
+            coupon_code VARCHAR(60),
+            cta_text VARCHAR(80),
+            cta_text_ar VARCHAR(80),
+            cta_link VARCHAR(255),
+            bg_color VARCHAR(20) DEFAULT '#ff3b30',
+            text_color VARCHAR(20) DEFAULT '#ffffff',
+            target_mode ENUM('all','include','exclude') NOT NULL DEFAULT 'all',
+            target_pages TEXT,
+            popup_trigger ENUM('on_load','delay_seconds','scroll_percent','exit_intent') DEFAULT 'delay_seconds',
+            popup_trigger_value INT DEFAULT 5,
+            popup_frequency ENUM('every_visit','once_per_session','once_per_days') DEFAULT 'once_per_session',
+            popup_frequency_value INT DEFAULT 7,
+            start_date DATETIME NULL,
+            end_date DATETIME NULL,
+            priority INT DEFAULT 0,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    `);
+};
+
+const PROMO_FIELDS = [
+    'display_type','title','title_ar','description','description_ar','image_url',
+    'coupon_code','cta_text','cta_text_ar','cta_link','bg_color','text_color',
+    'target_mode','target_pages','popup_trigger','popup_trigger_value',
+    'popup_frequency','popup_frequency_value','start_date','end_date',
+    'priority','is_active'
+];
+
+const sanitizePromoBody = (body) => {
+    const out = {};
+    for (const f of PROMO_FIELDS) {
+        if (body[f] !== undefined) out[f] = body[f];
+    }
+    if (Array.isArray(out.target_pages)) {
+        out.target_pages = JSON.stringify(out.target_pages);
+    }
+    if (out.is_active !== undefined) out.is_active = out.is_active ? 1 : 0;
+    if (out.start_date === '') out.start_date = null;
+    if (out.end_date === '') out.end_date = null;
+    return out;
+};
+
+// @route GET /api/v1/admin/cms/promotions
+exports.getPromotions = async (req, res, next) => {
+    try {
+        await ensurePromotionsTable();
+        const [rows] = await db.query('SELECT * FROM promotions ORDER BY priority DESC, id DESC');
+        res.json({ success: true, data: rows });
+    } catch (e) { next(e); }
+};
+
+// @route POST /api/v1/admin/cms/promotions
+exports.addPromotion = async (req, res, next) => {
+    try {
+        await ensurePromotionsTable();
+        const data = sanitizePromoBody(req.body);
+        const cols = Object.keys(data);
+        if (cols.length === 0) {
+            return res.status(400).json({ success: false, message: 'No fields provided' });
+        }
+        const placeholders = cols.map(() => '?').join(', ');
+        const values = cols.map(c => data[c]);
+        const [result] = await db.query(
+            `INSERT INTO promotions (${cols.join(', ')}) VALUES (${placeholders})`,
+            values
+        );
+        res.status(201).json({ success: true, message: 'Promotion created', data: { id: result.insertId } });
+    } catch (e) { next(e); }
+};
+
+// @route PUT /api/v1/admin/cms/promotions/:id
+exports.updatePromotion = async (req, res, next) => {
+    try {
+        await ensurePromotionsTable();
+        const data = sanitizePromoBody(req.body);
+        const cols = Object.keys(data);
+        if (cols.length === 0) {
+            return res.status(400).json({ success: false, message: 'No fields provided' });
+        }
+        const setClause = cols.map(c => `${c} = ?`).join(', ');
+        const values = cols.map(c => data[c]);
+        values.push(req.params.id);
+        await db.query(`UPDATE promotions SET ${setClause} WHERE id = ?`, values);
+        res.json({ success: true, message: 'Promotion updated' });
+    } catch (e) { next(e); }
+};
+
+// @route DELETE /api/v1/admin/cms/promotions/:id
+exports.deletePromotion = async (req, res, next) => {
+    try {
+        await db.query('DELETE FROM promotions WHERE id = ?', [req.params.id]);
+        res.json({ success: true, message: 'Promotion deleted' });
+    } catch (e) { next(e); }
+};
+
+// @route GET /api/v1/cms/promotions/active?page=<key>
+// Public — returns active promotions matching the page key, schedule, and is_active.
+exports.getActivePromotions = async (req, res, next) => {
+    try {
+        await ensurePromotionsTable();
+        const pageKey = (req.query.page || '').toString().trim();
+        const now = new Date();
+        const [rows] = await db.query(`
+            SELECT * FROM promotions
+            WHERE is_active = 1
+              AND (start_date IS NULL OR start_date <= ?)
+              AND (end_date IS NULL OR end_date >= ?)
+            ORDER BY priority DESC, id DESC
+        `, [now, now]);
+
+        const matches = rows.filter(p => {
+            if (p.target_mode === 'all' || !p.target_mode) return true;
+            let pages = [];
+            try {
+                pages = p.target_pages ? JSON.parse(p.target_pages) : [];
+            } catch (e) { pages = []; }
+            const inList = Array.isArray(pages) && pages.includes(pageKey);
+            return p.target_mode === 'include' ? inList : !inList;
+        });
+
+        // One banner + one popup max — highest priority wins.
+        const banner = matches.find(p => p.display_type === 'banner_top') || null;
+        const popup = matches.find(p => p.display_type === 'popup_modal') || null;
+
+        res.json({ success: true, data: { banner, popup } });
+    } catch (e) { next(e); }
+};

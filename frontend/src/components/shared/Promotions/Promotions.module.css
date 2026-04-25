@@ -1,0 +1,190 @@
+/* ---------- Banner ---------- */
+.banner {
+    padding: 8px 44px 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    position: relative;
+    flex-wrap: wrap;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.bannerTitle {
+    max-width: 100%;
+}
+
+.bannerCoupon {
+    border: 1px dashed rgba(255, 255, 255, 0.6);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.bannerCta {
+    color: inherit;
+    text-decoration: underline;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.bannerClose {
+    position: absolute;
+    inset-inline-end: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    line-height: 0;
+}
+
+@media (max-width: 640px) {
+    .banner {
+        padding: 8px 36px 8px 12px;
+        gap: 8px;
+        font-size: 12px;
+    }
+    .bannerCoupon { font-size: 11px; padding: 2px 8px; }
+    .bannerCta    { font-size: 11px; }
+}
+
+/* ---------- Popup ---------- */
+.popupOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.popupCard {
+    background: #fff;
+    border-radius: 16px;
+    max-width: 440px;
+    width: 100%;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+}
+
+.popupClose {
+    position: absolute;
+    top: 10px;
+    inset-inline-end: 10px;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.popupImage {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+
+.popupBody {
+    padding: 24px;
+}
+
+.popupTitle {
+    margin: 0 0 8px 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: #111;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+.popupDesc {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    color: #555;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.popupCoupon {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 16px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    font-family: inherit;
+}
+
+.popupCouponLabel {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.popupCouponCode {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    word-break: break-all;
+}
+
+.popupCta {
+    display: block;
+    text-align: center;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 800;
+    text-decoration: none;
+    font-size: 15px;
+}
+
+@media (max-width: 640px) {
+    .popupOverlay     { padding: 16px; }
+    .popupCard        { border-radius: 14px; max-width: 340px; max-height: 90vh; }
+    .popupImage       { height: 130px; }
+    .popupBody        { padding: 16px; }
+    .popupTitle       { font-size: 16px; line-height: 1.25; }
+    .popupDesc        { font-size: 12.5px; margin-bottom: 12px; }
+    .popupCoupon      { padding: 10px; margin-bottom: 12px; }
+    .popupCouponLabel { font-size: 10px; letter-spacing: 0.5px; }
+    .popupCouponCode  { font-size: 16px; letter-spacing: 1px; }
+    .popupCta         { font-size: 13px; padding: 11px; }
+    .popupClose       { width: 32px; height: 32px; top: 6px; }
+}
+
+@media (max-width: 380px) {
+    .popupCard        { max-width: 300px; }
+    .popupImage       { height: 110px; }
+    .popupBody        { padding: 14px; }
+    .popupTitle       { font-size: 15px; }
+    .popupDesc        { font-size: 12px; }
+    .popupCouponCode  { font-size: 15px; }
+    .popupCta         { font-size: 12.5px; padding: 10px; }
+}
