@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import styles from './AdminAnalytics.module.css'; // Reusing styles for consistency, or I'll create new ones
 import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/context/AuthContext';
-import { Save, RefreshCw, Layout, Megaphone, Plus, Trash2, ChevronLeft, ChevronRight, ShoppingBag, MessageSquare } from 'lucide-react';
+import { Save, RefreshCw, Layout, Megaphone, Plus, Trash2, ChevronLeft, ChevronRight, ShoppingBag, MessageSquare, Tag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNotification } from '@/context/NotificationContext';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import AdminCMS_Promotions from './AdminCMS_Promotions';
 
 const AdminCMS = () => {
     const { token } = useAuth();
@@ -571,6 +572,25 @@ const AdminCMS = () => {
                     border: '1px solid #ffedd5'
                 }}>
                     <Megaphone size={14} /> Global Announcement Bar
+                </a>
+
+                <a href="#promotions-section" className={styles.jumpLink} style={{
+                    textDecoration: 'none',
+                    padding: '8px 18px',
+                    background: '#ecfdf5',
+                    color: '#10b981',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: '0 2px 5px rgba(16, 185, 129, 0.08)',
+                    border: '1px solid #d1fae5'
+                }}>
+                    <Tag size={14} /> Promotions (Banners & Popups)
                 </a>
             </div>
 
@@ -1403,6 +1423,9 @@ const AdminCMS = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Promotions (Banners + Popups) */}
+                <AdminCMS_Promotions />
             </div>
 
             <style jsx>{`
