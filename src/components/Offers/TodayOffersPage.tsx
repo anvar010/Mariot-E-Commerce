@@ -37,9 +37,15 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
     const [categories, setCategories] = useState<any[]>(initialCategories);
     const [brands, setBrands] = useState<any[]>(initialBrands);
     const [loading, setLoading] = useState(initialProducts.length === 0);
-    const [activeFilters, setActiveFilters] = useState({
+    const [activeFilters, setActiveFilters] = useState<{
+        category: string;
+        brand: string[];
+        sort: string;
+        minPrice: number;
+        maxPrice: number;
+    }>({
         category: '',
-        brand: '',
+        brand: [],
         sort: 'relevance',
         minPrice: 0,
         maxPrice: 99999
@@ -148,29 +154,31 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
         return () => clearInterval(timer);
     }, [products]);
 
-    // Fetch initial filter data (brands/categories)
+    // Categories — fetch once
     useEffect(() => {
-        if (initialBrands.length > 0 && initialCategories.length > 0) return;
+        if (initialCategories.length > 0) return;
+        fetch(`${API_BASE_URL}/categories`, { credentials: 'include' })
+            .then(r => r.json())
+            .then(json => { if (json.success) setCategories(json.data); })
+            .catch(err => console.error('Error fetching categories:', err));
+    }, [initialCategories]);
 
-        const fetchFilters = async () => {
-            try {
-                const [brandRes, catRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/brands`, { credentials: "include" }),
-                    fetch(`${API_BASE_URL}/categories`, { credentials: "include" })
-                ]);
-                const brandData = await brandRes.json();
-                const catData = await catRes.json();
-                if (brandData.success) {
-                    const activeBrands = brandData.data.filter((b: any) => b.is_active === 1 || b.is_active === true || String(b.is_active) === '1');
-                    setBrands(activeBrands);
-                }
-                if (catData.success) setCategories(catData.data);
-            } catch (err) {
-                console.error("Error fetching filters:", err);
-            }
-        };
-        fetchFilters();
-    }, [initialBrands, initialCategories]);
+    // Brands — only show brands that actually have daily-offer products.
+    // If a category is selected, narrow further to that category subtree.
+    useEffect(() => {
+        const params = new URLSearchParams({ is_daily_offer: '1' });
+        if (activeFilters.category) params.set('category', activeFilters.category);
+        fetch(`${API_BASE_URL}/brands?${params.toString()}`, { credentials: 'include' })
+            .then(r => r.json())
+            .then(json => {
+                if (!json.success) return;
+                const activeBrands = json.data.filter((b: any) =>
+                    b.is_active === 1 || b.is_active === true || String(b.is_active) === '1'
+                );
+                setBrands(activeBrands);
+            })
+            .catch(err => console.error('Error fetching brands:', err));
+    }, [activeFilters.category]);
 
     const [hasInitialMount, setHasInitialMount] = useState(false);
 
@@ -188,7 +196,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                 // Try fetching specifically marked daily offers first
                 let url = `${API_BASE_URL}/products?limit=40&is_daily_offer=1`;
                 if (activeFilters.category) url += `&category=${activeFilters.category}`;
-                if (activeFilters.brand) url += `&brand=${activeFilters.brand}`;
+                if (activeFilters.brand.length > 0) url += `&brand=${activeFilters.brand.join(',')}`;
                 if (activeFilters.sort) url += `&sort=${activeFilters.sort}`;
                 if (activeFilters.minPrice > 0) url += `&minPrice=${activeFilters.minPrice}`;
                 if (activeFilters.maxPrice < 99999) url += `&maxPrice=${activeFilters.maxPrice}`;
@@ -218,10 +226,15 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
     const displayedProducts = products.slice(0, visibleCount);
 
     const handleFilterChange = (type: 'category' | 'brand', value: string) => {
-        setActiveFilters(prev => ({
-            ...prev,
-            [type]: prev[type as keyof typeof prev] === value ? '' : value
-        }));
+        setActiveFilters(prev => {
+            if (type === 'brand') {
+                const next = prev.brand.includes(value)
+                    ? prev.brand.filter(b => b !== value)
+                    : [...prev.brand, value];
+                return { ...prev, brand: next };
+            }
+            return { ...prev, category: prev.category === value ? '' : value };
+        });
     };
 
     const getSortLabel = (key: string) => {
@@ -253,7 +266,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                         inStockOnly={false}
                         setInStockOnly={() => { }}
                         brands={brands}
-                        selectedBrands={activeFilters.brand ? [activeFilters.brand] : []}
+                        selectedBrands={activeFilters.brand}
                         handleBrandToggle={(brandSlug: string) => handleFilterChange('brand', brandSlug)}
                         allCategories={categories}
                         activeCategory={activeFilters.category}
@@ -262,7 +275,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                         maxPrice={priceRange.max}
                         setMaxPrice={(val: number) => setPriceRange(prev => ({ ...prev, max: val }))}
                         resetFilters={() => {
-                            setActiveFilters({ category: '', brand: '', sort: 'relevance', minPrice: 0, maxPrice: 99999 });
+                            setActiveFilters({ category: '', brand: [], sort: 'relevance', minPrice: 0, maxPrice: 99999 });
                             setPriceRange({ min: 0, max: 99999 });
                         }}
                         toggleSection={toggleSection}
@@ -386,7 +399,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                                 <button
                                     className={styles.resetBtnLarge}
                                     onClick={() => {
-                                        setActiveFilters({ category: '', brand: '', sort: 'relevance', minPrice: 0, maxPrice: 99999 });
+                                        setActiveFilters({ category: '', brand: [], sort: 'relevance', minPrice: 0, maxPrice: 99999 });
                                         setPriceRange({ min: 0, max: 99999 });
                                     }}
                                 >
