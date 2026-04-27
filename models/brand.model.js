@@ -34,6 +34,45 @@ class Brand {
         return rows;
     }
 
+    static async findWithDailyOffers(category) {
+        // Brands that have at least one product with is_daily_offer = 1.
+        // If a category is provided, also restricts to that category subtree.
+        let catIds = null;
+        if (category) {
+            const [catRows] = await db.execute(
+                'SELECT id FROM categories WHERE slug = ? OR id = ? LIMIT 1',
+                [category, category]
+            );
+            if (catRows.length === 0) return [];
+            const rootId = catRows[0].id;
+            const [allCatRows] = await db.execute(
+                'SELECT id FROM categories WHERE id = ? OR parent_id = ? OR parent_id IN (SELECT id FROM categories WHERE parent_id = ?)',
+                [rootId, rootId, rootId]
+            );
+            catIds = allCatRows.map(r => r.id);
+        }
+
+        let query = `
+            SELECT b.*, COUNT(p.id) as product_count
+            FROM brands b
+            JOIN products p ON b.id = p.brand_id
+            WHERE p.is_daily_offer = 1
+              AND p.status = 'active'
+              AND b.is_active = 1
+        `;
+        const params = [];
+
+        if (catIds && catIds.length > 0) {
+            const placeholders = catIds.map(() => '?').join(',');
+            query += ` AND (p.category_id IN (${placeholders}) OR p.sub_category_id IN (${placeholders}) OR p.sub_sub_category_id IN (${placeholders}))`;
+            params.push(...catIds, ...catIds, ...catIds);
+        }
+
+        query += ' GROUP BY b.id ORDER BY b.name ASC';
+        const [rows] = await db.execute(query, params);
+        return rows;
+    }
+
     static async findBySlug(slug) {
         const [rows] = await db.execute('SELECT * FROM brands WHERE slug = ?', [slug]);
         return rows[0];
