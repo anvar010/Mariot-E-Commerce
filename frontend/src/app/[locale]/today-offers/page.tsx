@@ -24,7 +24,7 @@ const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://loca
 async function getInitialData() {
     try {
         const [brandsRes, catsRes, productsRes] = await Promise.all([
-            fetch(`${API_BASE_URL_SERVER}/brands`, { next: { revalidate: 3600 } }),
+            fetch(`${API_BASE_URL_SERVER}/brands?is_daily_offer=1`, { next: { revalidate: 3600 } }),
             fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 3600 } }),
             fetch(`${API_BASE_URL_SERVER}/products?limit=40&is_daily_offer=1`, { next: { revalidate: 60 } })
         ]);

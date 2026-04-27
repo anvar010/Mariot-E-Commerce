@@ -3,9 +3,12 @@ const generateUniqueSlug = require('../utils/generateSlug');
 
 exports.getBrands = async (req, res, next) => {
     try {
-        const { category } = req.query;
+        const { category, is_daily_offer } = req.query;
+        const dailyOnly = is_daily_offer === '1' || is_daily_offer === 'true';
         let brands;
-        if (category) {
+        if (dailyOnly) {
+            brands = await Brand.findWithDailyOffers(category || null);
+        } else if (category) {
             brands = await Brand.findByCategoryId(category);
         } else {
             brands = await Brand.findAll();
