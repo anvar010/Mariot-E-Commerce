@@ -36,6 +36,7 @@ import { getAuthHeaders } from '@/utils/authHeaders';
 import styles from './checkout.module.css';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import OtpVerifyModal from '@/components/shared/OtpVerifyModal/OtpVerifyModal';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || '');
 
@@ -43,7 +44,8 @@ function CheckoutContent() {
     const stripe = useStripe();
     const elements = useElements();
     const { cartItems, cartTotal, discountAmount, pointsToUse, pointsDiscountAmount, appliedCoupon, clearCart, applyDiscount, removeDiscount } = useCart();
-    const { user, token, loading } = useAuth();
+    const { user, token, loading, refreshUser } = useAuth();
+    const [otpOpen, setOtpOpen] = useState(false);
     const { showNotification } = useNotification();
     const n = useTranslations('notifications');
     const t = useTranslations('checkout');
@@ -314,6 +316,11 @@ function CheckoutContent() {
 
         if (cartItems.length === 0) {
             showNotification(n('cartEmpty'), 'error');
+            return;
+        }
+
+        if (!user?.phone_verified) {
+            setOtpOpen(true);
             return;
         }
 
@@ -649,67 +656,116 @@ function CheckoutContent() {
                                 </div>
                                 {paymentMethod === 'card' && (
                                     <div className={styles.tabContent} onClick={(e) => e.stopPropagation()}>
+                                        <div className={styles.cardSecureHeader}>
+                                            <div className={styles.secureHeaderLeft}>
+                                                <Lock size={14} />
+                                                <span>{t('cardSecureHeader')}</span>
+                                            </div>
+                                            <div className={styles.secureHeaderLogos}>
+                                                <img src="/assets/visa-logo.svg" alt="Visa" />
+                                                <img src="/assets/mastercard-logo.svg" alt="Mastercard" />
+                                            </div>
+                                        </div>
+
                                         <div className={styles.cardFormContent}>
                                             <div className={styles.fieldGroup}>
-                                                <label className={styles.fieldLabel}>Credit or Debit Cards*</label>
+                                                <label className={styles.fieldLabel}>
+                                                    {t('cardName')} <span className={styles.requiredMark}>*</span>
+                                                </label>
+                                                <div className={styles.cardInputWrapper}>
+                                                    <User size={16} className={styles.fieldLeadingIcon} />
+                                                    <input
+                                                        className={styles.cardTextInput}
+                                                        type="text"
+                                                        name="name"
+                                                        value={cardDetails.name}
+                                                        onChange={handleCardChange}
+                                                        placeholder={t('placeholderName')}
+                                                        autoComplete="cc-name"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className={styles.fieldGroup}>
+                                                <label className={styles.fieldLabel}>
+                                                    {t('cardNumber')} <span className={styles.requiredMark}>*</span>
+                                                </label>
                                                 <div className={styles.cardNumberContainer}>
+                                                    <CreditCard size={16} className={styles.fieldLeadingIcon} />
                                                     <div className={styles.stripeElementWrapper}>
-                                                        <CreditCard size={18} className={styles.internalCardIcon} />
                                                         <CardNumberElement options={{
-                                                            showIcon: false,
-                                                            placeholder: '1234 1234 1234 1234',
+                                                            showIcon: true,
+                                                            placeholder: t('placeholderCard'),
                                                             style: {
                                                                 base: {
-                                                                    fontSize: '16px',
-                                                                    color: '#334155',
+                                                                    fontSize: '15px',
+                                                                    color: '#0f172a',
                                                                     fontFamily: 'Inter, sans-serif',
+                                                                    fontWeight: '500',
                                                                     '::placeholder': { color: '#cbd5e1' },
+                                                                    iconColor: '#237073',
                                                                 },
+                                                                invalid: { color: '#dc2626', iconColor: '#dc2626' },
                                                             },
                                                         }} />
-                                                    </div>
-                                                    <div className={styles.cardLogos}>
-                                                        <img src="/assets/visa-logo.svg" alt="Visa" />
-                                                        <img src="/assets/mastercard-logo.svg" alt="Mastercard" />
                                                     </div>
                                                 </div>
                                             </div>
+
                                             <div className={styles.splitRow}>
                                                 <div className={styles.fieldGroup}>
-                                                    <label className={styles.fieldLabel}>Expiry*</label>
+                                                    <label className={styles.fieldLabel}>
+                                                        {t('cardExpiry')} <span className={styles.requiredMark}>*</span>
+                                                    </label>
                                                     <div className={styles.expiryWrapper}>
-                                                        <CardExpiryElement options={{
-                                                            placeholder: 'MM / YY',
-                                                            style: {
-                                                                base: {
-                                                                    fontSize: '16px',
-                                                                    color: '#334155',
-                                                                    fontFamily: 'Inter, sans-serif',
-                                                                    '::placeholder': { color: '#cbd5e1' },
+                                                        <div className={styles.stripeElementWrapper}>
+                                                            <CardExpiryElement options={{
+                                                                placeholder: 'MM / YY',
+                                                                style: {
+                                                                    base: {
+                                                                        fontSize: '15px',
+                                                                        color: '#0f172a',
+                                                                        fontFamily: 'Inter, sans-serif',
+                                                                        fontWeight: '500',
+                                                                        '::placeholder': { color: '#cbd5e1' },
+                                                                    },
+                                                                    invalid: { color: '#dc2626' },
                                                                 },
-                                                            },
-                                                        }} />
-                                                    </div>
-                                                </div>
-                                                <div className={styles.fieldGroup}>
-                                                    <label className={styles.fieldLabel}>CVC*</label>
-                                                    <div className={styles.cvcWrapper}>
-                                                        <CardCvcElement options={{
-                                                            placeholder: 'CVC',
-                                                            style: {
-                                                                base: {
-                                                                    fontSize: '16px',
-                                                                    color: '#334155',
-                                                                    fontFamily: 'Inter, sans-serif',
-                                                                    '::placeholder': { color: '#cbd5e1' },
-                                                                },
-                                                            },
-                                                        }} />
-                                                        <div className={styles.cvcIcon}>
-                                                            <CreditCard size={18} />
+                                                            }} />
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <div className={styles.fieldGroup}>
+                                                    <label className={styles.fieldLabel}>
+                                                        {t('cardCvc')} <span className={styles.requiredMark}>*</span>
+                                                    </label>
+                                                    <div className={styles.cvcWrapper}>
+                                                        <div className={styles.stripeElementWrapper}>
+                                                            <CardCvcElement options={{
+                                                                placeholder: '•••',
+                                                                style: {
+                                                                    base: {
+                                                                        fontSize: '15px',
+                                                                        color: '#0f172a',
+                                                                        fontFamily: 'Inter, sans-serif',
+                                                                        fontWeight: '500',
+                                                                        '::placeholder': { color: '#cbd5e1' },
+                                                                    },
+                                                                    invalid: { color: '#dc2626' },
+                                                                },
+                                                            }} />
+                                                        </div>
+                                                        <div className={styles.cvcIcon}>
+                                                            <CreditCard size={16} />
+                                                        </div>
+                                                    </div>
+                                                    <span className={styles.fieldHelp}>{t('cvcHelp')}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className={styles.cardSecureFooter}>
+                                                <ShieldCheck size={14} />
+                                                <span>{t('securePaymentNotice')}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1114,6 +1170,19 @@ function CheckoutContent() {
 
             <Footer />
             <FloatingActions />
+
+            <OtpVerifyModal
+                open={otpOpen}
+                onClose={() => setOtpOpen(false)}
+                onVerified={async () => {
+                    await refreshUser();
+                    setOtpOpen(false);
+                    showNotification('Mobile verified — you can now complete your purchase.', 'success');
+                }}
+                phoneNumber={user?.phone_number}
+                title="Verify your mobile number to continue"
+                description="Your mobile number is not verified. Please verify to place your order. We will send a 6-digit OTP via WhatsApp."
+            />
         </div >
     );
 }

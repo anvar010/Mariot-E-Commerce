@@ -118,9 +118,9 @@
 
 @media (hover: hover) {
 
-.table tr:hover {
-    background-color: #f8fafc;
-}
+    .table tr:hover {
+        background-color: #f8fafc;
+    }
 }
 
 .userCell {
@@ -175,6 +175,72 @@
     border: 1px solid #e2e8f0;
 }
 
+.staff {
+    background: #fdf4ff;
+    color: #7c3aed;
+    border: 1px solid #e9d5ff;
+}
+
+.createBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    background: #0f172a;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+@media (hover: hover) {
+    .createBtn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18);
+    }
+}
+
+.permissionsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+}
+
+.permCheckbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.permCheckbox input[type="checkbox"] {
+    accent-color: #7c3aed;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.permCheckbox.checked {
+    border-color: #c4b5fd;
+    background: #fdf4ff;
+    color: #7c3aed;
+}
+
 .actions {
     display: flex;
     gap: 8px;
@@ -197,10 +263,10 @@
 
 @media (hover: hover) {
 
-.editBtn:hover {
-    border-color: #0ea5e9;
-    background-color: #f0f9ff;
-}
+    .editBtn:hover {
+        border-color: #0ea5e9;
+        background-color: #f0f9ff;
+    }
 }
 
 .deleteBtn {
@@ -209,11 +275,11 @@
 
 @media (hover: hover) {
 
-.deleteBtn:hover:not(:disabled) {
-    color: #ef4444;
-    border-color: #ef4444;
-    background-color: #fef2f2;
-}
+    .deleteBtn:hover:not(:disabled) {
+        color: #ef4444;
+        border-color: #ef4444;
+        background-color: #fef2f2;
+    }
 }
 
 .deleteBtn:disabled {
@@ -297,10 +363,10 @@
 
 @media (hover: hover) {
 
-.closeBtn:hover {
-    background: #f1f3f5;
-    color: #0f172a;
-}
+    .closeBtn:hover {
+        background: #f1f3f5;
+        color: #0f172a;
+    }
 }
 
 .form {
@@ -371,8 +437,8 @@
 
 @media (hover: hover) {
 
-.submitBtn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.15);
-}
+    .submitBtn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.15);
+    }
 }

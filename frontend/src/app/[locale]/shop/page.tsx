@@ -40,9 +40,12 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
         if (limited) productUrl += `&is_limited_offer=true`;
 
         // Build brands URL
-        const brandsUrl = category
-            ? `${API_BASE_URL_SERVER}/brands?category=${category}`
-            : `${API_BASE_URL_SERVER}/brands`;
+        const bParams = new URLSearchParams();
+        if (category) bParams.set('category', category);
+        if (search) bParams.set('search', search);
+        if (limited) bParams.set('is_limited', 'true');
+        if (seller) bParams.set('seller', seller);
+        const brandsUrl = `${API_BASE_URL_SERVER}/brands?${bParams.toString()}`;
 
         // 1. Fetch data in parallel
         const [productsRes, brandsRes, categoriesRes] = await Promise.all([

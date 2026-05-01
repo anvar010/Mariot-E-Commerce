@@ -63,6 +63,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
 
     const [products, setProducts] = useState<any[]>(initialProducts);
     const [brands, setBrands] = useState<any[]>(initialBrands);
+    const [didYouMean, setDidYouMean] = useState<string | null>(null);
     const [loading, setLoading] = useState(initialProducts.length === 0);
     const [fetchingProducts, setFetchingProducts] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
@@ -75,7 +76,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     );
     const [brandCategories, setBrandCategories] = useState<any[]>([]);
     const [totalProducts, setTotalProducts] = useState(initialTotal);
-    const [expandedSections, setExpandedSections] = useState<string[]>(['brand', 'price']);
+    const [expandedSections, setExpandedSections] = useState<string[]>(['brand', 'price', 'categories']);
     const [apiCategories, setApiCategories] = useState<any[]>(initialCategories);
 
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
@@ -196,10 +197,13 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const isInitialMount = React.useRef(true);
 
     useEffect(() => {
-        if (isInitialMount.current && initialBrands.length > 0) return;
+        if (isInitialMount.current && initialBrands.length > 0 && !searchQuery) return;
         const fetchBrands = async () => {
             try {
-                const url = activeCategory ? `${API_BASE_URL}/brands?category=${activeCategory}` : `${API_BASE_URL}/brands`;
+                let url = `${API_BASE_URL}/brands?`;
+                if (activeCategory) url += `category=${activeCategory}&`;
+                if (searchQuery) url += `search=${encodeURIComponent(searchQuery)}&`;
+
                 const res = await fetch(url, { credentials: "include" });
                 const data = await res.json();
                 if (data.success) {
@@ -211,7 +215,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             }
         };
         fetchBrands();
-    }, [activeCategory, initialBrands.length]);
+    }, [activeCategory, searchQuery, initialBrands.length]);
 
     useEffect(() => {
         if (!brandParam) { setBrandCategories([]); return; }
@@ -219,7 +223,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    setBrandCategories(data.data.filter((c: any) => c.type === 'main_category' && c.is_active));
+                    setBrandCategories(data.data.filter((c: any) => c.is_active));
                 }
             })
             .catch(() => { });
@@ -264,6 +268,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             if (data.success) {
                 setProducts(data.data);
                 setTotalProducts(data.total);
+                setDidYouMean(data.didYouMean || null);
             }
         } catch (err) {
             console.error('Error fetching products:', err);
@@ -362,15 +367,23 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 </div>
             )}
             <div className={styles.topInfo}>
-                <ShopBreadcrumbs
-                    parentSlug={parentSlug}
-                    brandParam={brandParam}
-                    activeCategory={activeCategory}
-                    formattedCategoryName={formattedCategoryName}
-                    t={t}
-                    tc={tc}
-                />
-                <h1 className={styles.mainTitle}>{formattedCategoryName}</h1>
+                <div className={styles.headerFlex}>
+                    <div className={styles.breadcrumbColumn}>
+                        <ShopBreadcrumbs
+                            parentSlug={parentSlug}
+                            brandParam={brandParam}
+                            activeCategory={activeCategory}
+                            formattedCategoryName={formattedCategoryName}
+                            t={t}
+                            tc={tc}
+                        />
+                    </div>
+                    {brandParam && !activeCategory && brandCategories.length > 0 && (
+                        <div className={styles.headingColumn}>
+                            <h2 className={styles.brandCatHeading}>{tc('shop-by-category')}</h2>
+                        </div>
+                    )}
+                </div>
             </div>
             <div className={styles.container}>
                 <div className={`${styles.sidebar} ${isMobileFilterOpen ? styles.sidebarOpen : ''}`}>
@@ -378,18 +391,56 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                         <h3>{tc('filters')}</h3>
                         <button onClick={() => setIsMobileFilterOpen(false)}><X size={24} /></button>
                     </div>
+                    <h1 className={styles.mainTitle}>{formattedCategoryName}</h1>
                     {renderSidebar()}
                 </div>
 
                 {isMobileFilterOpen && <div className={styles.filterOverlay} onClick={() => setIsMobileFilterOpen(false)} />}
 
                 <main className={styles.content}>
-                    {!hideCategoryGrid && (!searchParams.get('category') || subCategoriesToShow.length > 0) && <CategoryGrid subCategoriesToShow={subCategoriesToShow} t={t} tc={tc} />}
+                    {brandParam && !activeCategory && brandCategories.some((c: any) => c.type === 'main_category') && (
+                        <div className={styles.brandCatRow}>
+                            {brandCategories.filter((c: any) => c.type === 'main_category').map((cat: any, idx: number) => {
+                                const catName = isArabic && cat.name_ar ? cat.name_ar : cat.name;
+                                const slug = cat.slug || cat.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                                const imgSrc = cat.image_url ? resolveUrl(cat.image_url) : '/assets/mariot-logo2.webp';
+                                return (
+                                    <Link
+                                        key={idx}
+                                        href={`/shop?brand=${brandParam}&category=${slug}`}
+                                        className={styles.brandCatItem}
+                                    >
+                                        <div className={styles.brandCatCircle}>
+                                            <img
+                                                src={imgSrc}
+                                                alt={catName}
+                                                className={styles.brandCatImg}
+                                                onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                            />
+                                        </div>
+                                        <span className={styles.brandCatName}>{catName}</span>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    )}
+                    {!hideCategoryGrid && !brandParam && (!searchParams.get('category') || subCategoriesToShow.length > 0) && <CategoryGrid subCategoriesToShow={subCategoriesToShow} t={t} tc={tc} brandParam={brandParam} />}
+
+
 
                     <div className={styles.resultsHeader}>
                         <span className={styles.resultsCount}>
-                            {formattedCategoryName}: {totalProducts} {tc("results-found")}
-                            {fetchingProducts && <span style={{ marginInlineStart: '10px', fontSize: '12px', color: '#666' }}> ({tc('updating')})</span>}
+                            <div>{formattedCategoryName}: {totalProducts} {tc("results-found")}
+                                {fetchingProducts && <span style={{ marginInlineStart: '10px', fontSize: '12px', color: '#666' }}> ({tc('updating')})</span>}</div>
+                            {didYouMean && totalProducts === 0 && (
+                                <div style={{ marginTop: '10px', color: '#2563eb', cursor: 'pointer', fontSize: '16px' }} onClick={() => {
+                                    const params = new URLSearchParams(searchParams.toString());
+                                    params.set('search', didYouMean);
+                                    router.push(`${pathname}?${params.toString()}`);
+                                }}>
+                                    Did you mean: <strong style={{ textDecoration: 'underline' }}>{didYouMean}</strong>?
+                                </div>
+                            )}
                         </span>
                         <div className={styles.sortContainer}>
                             <button className={styles.mobileFilterToggle} onClick={() => setIsMobileFilterOpen(true)}>

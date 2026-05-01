@@ -102,7 +102,8 @@ const AccordionItem = ({ title, icon, isOpen, onToggle, children }: any) => (
 
 // ── Frequently Bought Together Widget ─────────────────────────────────────────
 const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl, addToCart, showNotification, t }: any) => {
-    const allItems = fbtProducts;
+    // Include current product first, then the FBT products
+    const allItems = [currentProduct, ...fbtProducts];
     const [checked, setChecked] = useState<Record<number, boolean>>(() =>
         Object.fromEntries(allItems.map((p: any) => [p.id, true]))
     );
@@ -150,6 +151,8 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
         for (const p of selectedItems) {
             const ok = await addToCart({
                 id: p.id,
+                variant_id: p.variantDetails?.id || null,
+                variant_label: p.variantDetails?.label || undefined,
                 name: p.name,
                 price: getPrice(p),
                 image: getImg(p),
@@ -418,10 +421,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                     // Auto-select default variant; fall back to first value of each option
                     if (data.data.has_variants === 1 && Array.isArray(data.data.options) && Array.isArray(data.data.variants)) {
                         const activeVariants = data.data.variants.filter((v: any) => v.is_active !== 0 && v.is_active !== false && v.is_active !== '0');
-                        
+
                         // Prefer a default variant that has valid options populated
                         let defaultVariant = activeVariants.find((v: any) => (v.is_default === 1 || v.is_default === true || v.is_default === '1') && Array.isArray(v.options) && v.options.length > 0);
-                        
+
                         if (!defaultVariant) {
                             defaultVariant = activeVariants.find((v: any) => (v.is_default === 1 || v.is_default === true || v.is_default === '1'));
                         }
@@ -444,7 +447,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 }
                             });
                         }
-                        
+
                         // If defaults is still empty, grab the first value of each option
                         if (Object.keys(defaults).length === 0) {
                             data.data.options.forEach((o: any) => {
@@ -1353,7 +1356,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                     <div className={styles.fbtWrapper}>
                         {product.frequently_bought_together_products && product.frequently_bought_together_products.length > 0 && (
                             <FbtSection
-                                currentProduct={product}
+                                currentProduct={{
+                                    ...product,
+                                    price: selectedVariant ? selectedVariant.price : product.price,
+                                    offer_price: selectedVariant ? selectedVariant.offer_price : product.offer_price,
+                                    primary_image: images[0] || product.primary_image,
+                                    variantDetails: variantLabel ? { label: variantLabel, id: selectedVariant?.id || null } : undefined,
+                                }}
                                 fbtProducts={product.frequently_bought_together_products}
                                 locale={locale}
                                 isArabic={isArabic}

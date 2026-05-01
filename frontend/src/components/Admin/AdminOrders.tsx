@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
 import { Search, Package, Download } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
@@ -9,12 +10,41 @@ import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 
+type StatusFilter = 'all' | 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+
+const STATUS_FILTERS: { key: StatusFilter; label: string; dotColor: string }[] = [
+    { key: 'all',        label: 'All',        dotColor: '#64748b' },
+    { key: 'pending',    label: 'Pending',    dotColor: '#ca8a04' },
+    { key: 'processing', label: 'Processing', dotColor: '#3b82f6' },
+    { key: 'shipped',    label: 'Shipped',    dotColor: '#8b5cf6' },
+    { key: 'delivered',  label: 'Delivered',  dotColor: '#10b981' },
+    { key: 'cancelled',  label: 'Cancelled',  dotColor: '#dc2626' }
+];
+
 const AdminOrders = () => {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const initialStatus = (searchParams.get('status') as StatusFilter) || 'all';
+
     const [orders, setOrders] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+        STATUS_FILTERS.some(f => f.key === initialStatus) ? initialStatus : 'all'
+    );
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     const { showNotification } = useNotification();
+
+    // Keep URL in sync so the dashboard cards' deep links work + are shareable.
+    const handleStatusFilter = (status: StatusFilter) => {
+        setStatusFilter(status);
+        const params = new URLSearchParams(searchParams.toString());
+        if (status === 'all') params.delete('status');
+        else params.set('status', status);
+        const qs = params.toString();
+        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    };
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{
@@ -179,13 +209,20 @@ const AdminOrders = () => {
         return () => window.removeEventListener('click', handleClickOutside);
     }, []);
 
+    const statusCounts = orders.reduce<Record<string, number>>((acc, o) => {
+        acc[o.status] = (acc[o.status] || 0) + 1;
+        return acc;
+    }, {});
+
     const filteredOrders = orders.filter(order => {
         const term = searchTerm.toLowerCase();
-        return (
+        const matchesSearch = (
             order.id.toString().includes(term) ||
             (order.user_name && order.user_name.toLowerCase().includes(term)) ||
             (order.user_email && order.user_email.toLowerCase().includes(term))
         );
+        const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+        return matchesSearch && matchesStatus;
     });
 
     const getStatusStyle = (status: string) => {
@@ -231,6 +268,37 @@ const AdminOrders = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                </div>
+
+                <div className={styles.statusChips}>
+                    {STATUS_FILTERS.map(f => {
+                        const isActive = statusFilter === f.key;
+                        const count = f.key === 'all' ? orders.length : (statusCounts[f.key] || 0);
+                        return (
+                            <button
+                                key={f.key}
+                                type="button"
+                                onClick={() => handleStatusFilter(f.key)}
+                                className={`${styles.filterChip} ${isActive ? styles.activeChip : ''}`}
+                                style={{
+                                    '--chip-color': f.dotColor,
+                                    '--chip-bg': isActive ? '#fff' : '#f8fafc',
+                                    '--chip-border': isActive ? f.dotColor : '#e2e8f0',
+                                    '--chip-text': isActive ? f.dotColor : '#475569',
+                                    '--chip-shadow': isActive ? `${f.dotColor}22` : 'transparent',
+                                } as React.CSSProperties}
+                            >
+                                <span className={styles.chipDot} style={{ background: f.dotColor }} />
+                                {f.label}
+                                <span className={styles.chipCount} style={{
+                                    background: isActive ? `${f.dotColor}15` : '#e2e8f0',
+                                    color: isActive ? f.dotColor : '#64748b',
+                                }}>
+                                    {count}
+                                </span>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 

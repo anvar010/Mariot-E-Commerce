@@ -7,9 +7,8 @@ const Loader = ({ fullPage = false }) => {
     return (
         <div className={`${styles.loaderWrapper} ${fullPage ? styles.fullPage : ''}`}>
             <div className={styles.spinner}>
-                <div className={styles.ring}></div>
-                <div className={styles.ring}></div>
-                <div className={styles.ring}></div>
+                <div className={styles.spinnerInner}></div>
+                <div className={styles.spinnerGlow}></div>
                 <div className={styles.logoContainer}>
                     <img
                         src="/assets/mariot-logo.webp"

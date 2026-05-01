@@ -41,26 +41,37 @@ const WeeklyDeals = ({ initialProducts = [] }: WeeklyDealsProps) => {
         if (emblaApi) emblaApi.scrollNext();
     }, [emblaApi]);
 
+    const fetchDeals = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/products?is_weekly_deal=true`, { credentials: "include" });
+            const data = await res.json();
+            if (data.success) setProducts(data.data);
+        } catch (error) {
+            console.error('Failed to fetch weekly deals', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        if (initialProducts.length > 0) return;
-
-        const fetchDeals = async () => {
-            try {
-                const res = await fetch(`${API_BASE_URL}/products?is_weekly_deal=true`, { credentials: "include" });
-                const data = await res.json();
-                if (data.success) {
-                    setProducts(data.data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch weekly deals', error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchDeals();
-    }, [initialProducts]);
+        const id = setInterval(fetchDeals, 60000);
+        return () => clearInterval(id);
+    }, []);
 
-    const isEmpty = !loading && products.length === 0;
+    const [, setTick] = useState(0);
+    useEffect(() => {
+        const id = setInterval(() => setTick(n => n + 1), 1000);
+        return () => clearInterval(id);
+    }, []);
+
+    const now = Date.now();
+    const activeProducts = products.filter(p =>
+        p.offer_end && new Date(p.offer_end).getTime() > now &&
+        (!p.offer_start || new Date(p.offer_start).getTime() <= now)
+    );
+
+    if (!loading && activeProducts.length === 0) return null;
 
     return (
         <section id="weekly-deals" className={styles.weeklySection}>
@@ -89,10 +100,8 @@ const WeeklyDeals = ({ initialProducts = [] }: WeeklyDealsProps) => {
                         <div className={styles.dealsGrid}>
                             {loading ? (
                                 <Loader />
-                            ) : isEmpty ? (
-                                <p style={{ padding: '20px', color: '#666', fontStyle: 'italic', textAlign: 'center', width: '100%' }}>{t('noDeals')}</p>
                             ) : (
-                                products.map((prod) => (
+                                activeProducts.map((prod) => (
                                     <div key={prod.id} className={styles.productWrapper}>
                                         <ProductCardPromotion
                                             product={{

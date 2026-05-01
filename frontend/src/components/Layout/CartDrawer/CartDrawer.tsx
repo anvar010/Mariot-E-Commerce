@@ -276,7 +276,7 @@ const CartDrawer = () => {
                                     <div key={`${item.id}-${item.variant_id ?? 'base'}`} className={styles.cartItem}>
                                         <div className={styles.itemImg} onClick={() => { setIsDrawerOpen(false); router.push(`/product/${item.slug}`); }}>
                                             <img
-                                                src={item.image || '/assets/placeholder-image.webp'}
+                                                src={item.image || '/assets/mariot-logo2.webp'}
                                                 alt={item.name}
                                             />
                                             <span className={styles.itemCountBadge}>{item.quantity}</span>

@@ -92,7 +92,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     let displayImage = resolveUrl(product?.primary_image || product?.image_url || product?.image || image);
 
     if (!displayImage) {
-        displayImage = 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?q=80&w=1470&auto=format&fit=crop';
+        displayImage = '/assets/mariot-logo2.webp';
     }
 
     const displayBrand = isArabic && product?.brand_name_ar ? product.brand_name_ar : (product?.brand_name || product?.brand || brand);
@@ -202,7 +202,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 <Link href={`/product/${product?.slug || displayId}`}>
                     <div className={styles.productImg} style={{ position: 'relative' }}>
                         <Image
-                            src={imageError ? 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?q=80&w=1470&auto=format&fit=crop' : displayImage}
+                            src={imageError ? '/assets/mariot-logo2.webp' : displayImage}
                             alt={displayModel}
                             layout="fill"
                             objectFit="contain"

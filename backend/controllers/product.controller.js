@@ -5,6 +5,15 @@ const db = require('../config/db'); // Fix: Import db
 const generateUniqueSlug = require('../utils/generateSlug');
 const ExcelJS = require('exceljs');
 const fs = require('fs');
+const stringSimilarity = require('string-similarity');
+
+const POPULAR_KEYWORDS = [
+    'coffee', 'coffee maker', 'juicer', 'blender', 'oven', 'refrigerator', 'chiller', 'mixer',
+    'ice', 'ice maker', 'equipment', 'dispenser', 'maker', 'grinder', 'freezer', 'warmer',
+    'display chiller', 'kitchen', 'supermarket', 'laundry', 'stainless steel', 'sink', 'popcorn',
+    'fryer', 'grill', 'toaster', 'waffle', 'kettle', 'meat', 'slicer', 'dishwasher', 'range'
+];
+
 
 exports.bulkImport = async (req, res, next) => {
     try {
@@ -223,6 +232,25 @@ exports.getProducts = async (req, res, next) => {
             category, brand, seller, minPrice, maxPrice, search, sort, limit, offset, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, status, stockStatus
         });
 
+        let didYouMean = null;
+        if (products.length === 0 && search && search.trim().length > 3) {
+            try {
+                const [cats] = await db.query('SELECT name FROM categories WHERE is_active = 1');
+                const [brs] = await db.query('SELECT name FROM brands');
+                const dict = new Set(POPULAR_KEYWORDS);
+                cats.forEach(c => c.name && c.name.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).forEach(w => w.length > 3 && dict.add(w)));
+                brs.forEach(b => b.name && b.name.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).forEach(w => w.length > 3 && dict.add(w)));
+
+                const matches = stringSimilarity.findBestMatch(search.trim().toLowerCase(), Array.from(dict));
+                if (matches.bestMatch.rating >= 0.5) {
+                    didYouMean = matches.bestMatch.target;
+                }
+            } catch (err) {
+                const matches = stringSimilarity.findBestMatch(search.trim().toLowerCase(), POPULAR_KEYWORDS);
+                if (matches.bestMatch.rating >= 0.5) didYouMean = matches.bestMatch.target;
+            }
+        }
+
         res.json({
             success: true,
             count: products.length,
@@ -232,8 +260,10 @@ exports.getProducts = async (req, res, next) => {
                 limit: parseInt(limit),
                 totalPages: Math.ceil(total / limit)
             },
-            data: products
+            data: products,
+            didYouMean: didYouMean
         });
+
     } catch (error) {
         console.error('GET PRODUCTS ERROR:', error);
         res.status(500).json({
@@ -272,9 +302,124 @@ exports.createProduct = async (req, res, next) => {
 
 exports.updateProduct = async (req, res, next) => {
     try {
+        const stockService = require('../services/stockNotifications.service');
+
+        // Snapshot product + variants BEFORE the update so we can detect
+        // 0 -> >0 stock transitions per variant (or product-level when no variants).
+        let prevProduct = null;
+        const prevVariantStockByLabel = {};
+        let prevProductOOS = false;
+        try {
+            prevProduct = await Product.findById(req.params.id);
+            if (prevProduct) {
+                const tracking = Number(prevProduct.track_inventory) === 1;
+                const prevQty = Number(prevProduct.stock_quantity || 0);
+                prevProductOOS = tracking && prevQty <= 0;
+
+                if (Number(prevProduct.has_variants) === 1 && Array.isArray(prevProduct.variants)) {
+                    for (const v of prevProduct.variants) {
+                        const label = stockService.buildVariantLabel(v, prevProduct.options);
+                        prevVariantStockByLabel[label] = Number(v.stock_quantity || 0);
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('[notify] Could not read previous product state:', e.message);
+        }
+
         await Product.update(req.params.id, req.body);
+
+        // Re-read product + variants and dispatch for any transitions.
+        // Fire-and-forget so the admin response is never blocked on email I/O.
+        (async () => {
+            try {
+                const fresh = await Product.findById(req.params.id);
+                if (!fresh) return;
+
+                // findById doesn't compute primary_image directly — derive it from
+                // the loaded images array (prefer is_primary=1, else first image).
+                const primaryImage = (() => {
+                    if (fresh.primary_image) return fresh.primary_image;
+                    if (Array.isArray(fresh.images) && fresh.images.length > 0) {
+                        const flagged = fresh.images.find(i => Number(i.is_primary) === 1);
+                        return (flagged || fresh.images[0])?.image_url || '';
+                    }
+                    return '';
+                })();
+
+                // Variant-level transitions
+                if (Number(fresh.has_variants) === 1 && Array.isArray(fresh.variants)) {
+                    for (const v of fresh.variants) {
+                        const label = stockService.buildVariantLabel(v, fresh.options);
+                        if (!label) continue;
+                        const prev = prevVariantStockByLabel[label] ?? 0;
+                        const now = Number(v.stock_quantity || 0);
+                        if (prev <= 0 && now > 0) {
+                            const sent = await stockService.dispatchForVariant({
+                                productId: fresh.id,
+                                variantLabel: label,
+                                productName: fresh.name,
+                                productSlug: fresh.slug,
+                                productImage: (!Number(v.use_primary_image) && v.image_url) ? v.image_url : primaryImage,
+                                price: v.offer_price && Number(v.offer_price) > 0 ? v.offer_price : v.price
+                            });
+                            if (sent > 0) console.log(`[notify] Sent ${sent} restock emails for product ${fresh.id} / "${label}"`);
+                        }
+                    }
+                }
+
+                // Whole-product transition (covers non-variant products and people
+                // who subscribed to the product without picking a variant).
+                if (prevProductOOS) {
+                    const newQty = Number(fresh.stock_quantity || 0);
+                    const tracking = Number(fresh.track_inventory) === 1;
+                    if (!tracking || newQty > 0) {
+                        const sent = await stockService.dispatchForVariant({
+                            productId: fresh.id,
+                            variantLabel: '',
+                            productName: fresh.name,
+                            productSlug: fresh.slug,
+                            productImage: primaryImage,
+                            price: fresh.offer_price && Number(fresh.offer_price) > 0 ? fresh.offer_price : fresh.price
+                        });
+                        if (sent > 0) console.log(`[notify] Sent ${sent} restock emails for product ${fresh.id} (whole product)`);
+                    }
+                }
+            } catch (err) {
+                console.error('[notify] Dispatch failed:', err.message);
+            }
+        })();
+
         res.json({ success: true, message: 'Product updated' });
     } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Subscribe an email to a product's back-in-stock notification
+// @route   POST /api/v1/products/:id/notify-me
+// @access  Public
+exports.subscribeStockNotification = async (req, res, next) => {
+    try {
+        const productId = parseInt(req.params.id);
+        if (!productId) {
+            return res.status(400).json({ success: false, message: 'Invalid product id' });
+        }
+        const email = (req.body?.email || '').toString();
+        const variantLabel = (req.body?.variantLabel || '').toString();
+        const userId = req.user?.id || null;
+
+        const stockService = require('../services/stockNotifications.service');
+        await stockService.subscribe({ productId, email, userId, variantLabel });
+
+        res.json({
+            success: true,
+            message: "You're on the list — we'll email you the moment it's back in stock."
+        });
+    } catch (error) {
+        if (error?.statusCode === 400) {
+            return res.status(400).json({ success: false, message: error.message });
+        }
         next(error);
     }
 };
@@ -341,10 +486,20 @@ exports.getSuggestions = async (req, res, next) => {
             type: 'product'
         }));
 
+        let searchRaw = search.trim();
+        let searchSingular = searchRaw;
+        if (searchRaw.length > 3 && searchRaw.endsWith('s')) {
+            searchSingular = searchRaw.slice(0, -1);
+            if (searchRaw.endsWith('ies')) searchSingular = searchRaw.slice(0, -3) + 'y';
+        }
+
         // Fetch matching categories
         const [categories] = await db.query(
-            'SELECT id, name, slug FROM categories WHERE name LIKE ? OR slug LIKE ? LIMIT 3',
-            [`%${search.trim()}%`, `%${search.trim()}%`]
+            'SELECT id, name, slug FROM categories WHERE (name LIKE ? OR name LIKE ? OR name LIKE ? OR name LIKE ?) OR (slug LIKE ? OR slug LIKE ? OR slug LIKE ? OR slug LIKE ?) LIMIT 3',
+            [
+                `${searchRaw}%`, `% ${searchRaw}%`, `${searchSingular}%`, `% ${searchSingular}%`,
+                `${searchRaw}%`, `% ${searchRaw}%`, `${searchSingular}%`, `% ${searchSingular}%`
+            ]
         );
 
         categories.forEach(c => {
@@ -358,8 +513,11 @@ exports.getSuggestions = async (req, res, next) => {
 
         // Fetch matching brands
         const [brands] = await db.query(
-            'SELECT id, name, slug, image_url FROM brands WHERE name LIKE ? OR slug LIKE ? LIMIT 3',
-            [`%${search.trim()}%`, `%${search.trim()}%`]
+            'SELECT id, name, slug, image_url FROM brands WHERE (name LIKE ? OR name LIKE ? OR name LIKE ? OR name LIKE ?) OR (slug LIKE ? OR slug LIKE ? OR slug LIKE ? OR slug LIKE ?) LIMIT 3',
+            [
+                `${searchRaw}%`, `% ${searchRaw}%`, `${searchSingular}%`, `% ${searchSingular}%`,
+                `${searchRaw}%`, `% ${searchRaw}%`, `${searchSingular}%`, `% ${searchSingular}%`
+            ]
         );
 
         brands.forEach(b => {
@@ -372,10 +530,31 @@ exports.getSuggestions = async (req, res, next) => {
             });
         });
 
+        let didYouMean = null;
+        if (suggestions.length === 0 && searchRaw.length > 3) {
+            try {
+                const [cats] = await db.query('SELECT name FROM categories WHERE is_active = 1');
+                const [brs] = await db.query('SELECT name FROM brands');
+                const dict = new Set(POPULAR_KEYWORDS);
+                cats.forEach(c => c.name && c.name.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).forEach(w => w.length > 3 && dict.add(w)));
+                brs.forEach(b => b.name && b.name.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).forEach(w => w.length > 3 && dict.add(w)));
+
+                const matches = stringSimilarity.findBestMatch(searchRaw.toLowerCase(), Array.from(dict));
+                if (matches.bestMatch.rating >= 0.5) {
+                    didYouMean = matches.bestMatch.target;
+                }
+            } catch (err) {
+                const matches = stringSimilarity.findBestMatch(searchRaw.toLowerCase(), POPULAR_KEYWORDS);
+                if (matches.bestMatch.rating >= 0.5) didYouMean = matches.bestMatch.target;
+            }
+        }
+
         res.json({
             success: true,
-            data: suggestions
+            data: suggestions,
+            didYouMean: didYouMean
         });
+
     } catch (error) {
         console.error('GET SUGGESTIONS ERROR:', error);
         res.status(500).json({ success: false, message: 'Error fetching suggestions' });

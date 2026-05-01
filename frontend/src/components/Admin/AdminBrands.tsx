@@ -24,6 +24,7 @@ const AdminBrands = () => {
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const [bannerMobileFile, setBannerMobileFile] = useState<File | null>(null);
     const [bannerMobilePreview, setBannerMobilePreview] = useState<string | null>(null);
+    const [priorityError, setPriorityError] = useState('');
     const { showNotification } = useNotification();
 
     const categoryOptions = [
@@ -41,7 +42,8 @@ const AdminBrands = () => {
         banner_url_mobile: '',
         website_url: '',
         is_active: true,
-        brand_type: ''
+        brand_type: '',
+        priority: ''
     });
 
     useEffect(() => {
@@ -132,7 +134,8 @@ const AdminBrands = () => {
             banner_url_mobile: brand.banner_url_mobile || '',
             website_url: brand.website_url || '',
             is_active: Boolean(brand.is_active),
-            brand_type: brand.brand_type || ''
+            brand_type: brand.brand_type || '',
+            priority: brand.priority ?? ''
         });
         setLogoPreview(brand.image_url || null);
         setLogoFile(null);
@@ -156,7 +159,8 @@ const AdminBrands = () => {
             banner_url_mobile: '',
             website_url: '',
             is_active: true,
-            brand_type: ''
+            brand_type: '',
+            priority: ''
         });
         setLogoPreview(null);
         setLogoFile(null);
@@ -164,6 +168,7 @@ const AdminBrands = () => {
         setBannerFile(null);
         setBannerMobilePreview(null);
         setBannerMobileFile(null);
+        setPriorityError('');
     };
 
     const handleCategoryToggle = (cat: string) => {
@@ -179,6 +184,14 @@ const AdminBrands = () => {
     const handleSaveBrand = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            setPriorityError('');
+            if (formData.priority !== '') {
+                const pNum = Number(formData.priority);
+                if (pNum > brands.length) {
+                    setPriorityError(`Priority cannot exceed total brands (${brands.length}). Enter a number between 1 and ${brands.length}.`);
+                    return;
+                }
+            }
             setLoading(true);
             let currentImageUrl = formData.image_url;
             let currentBannerUrl = formData.banner_url;
@@ -243,7 +256,8 @@ const AdminBrands = () => {
                     image_url: currentImageUrl,
                     banner_url: currentBannerUrl,
                     banner_url_mobile: currentBannerMobileUrl,
-                    is_active: formData.is_active ? 1 : 0
+                    is_active: formData.is_active ? 1 : 0,
+                    priority: formData.priority !== '' ? Number(formData.priority) : ''
                 })
             });
 
@@ -253,6 +267,8 @@ const AdminBrands = () => {
                 showNotification(editingId ? 'Brand updated successfully!' : 'Brand created successfully!');
                 handleCloseModal();
                 fetchBrands();
+            } else if (data.message?.toLowerCase().includes('priority')) {
+                setPriorityError(data.message);
             } else {
                 showNotification(data.message || 'Operation failed', 'error');
             }
@@ -319,12 +335,30 @@ const AdminBrands = () => {
                         body: JSON.stringify({ ids: selectedIds })
                     });
                     const data = await res.json();
-                    if (data.success) {
-                        showNotification(`Successfully deleted ${selectedIds.length} brands`);
-                        setSelectedIds([]);
-                        fetchBrands();
+                    const deleted = typeof data.deleted === 'number' ? data.deleted : (data.success ? selectedIds.length : 0);
+                    const skipped = typeof data.skipped === 'number' ? data.skipped : 0;
+
+                    if (deleted > 0 && skipped === 0) {
+                        showNotification(`Deleted ${deleted} brand${deleted === 1 ? '' : 's'}.`, 'success');
+                    } else if (deleted > 0 && skipped > 0) {
+                        const names = (data.skippedDetails || []).slice(0, 3).map((b: any) => b.name).join(', ');
+                        const more = skipped > 3 ? ` +${skipped - 3} more` : '';
+                        showNotification(
+                            `Deleted ${deleted}. Skipped ${skipped} still in use: ${names}${more}.`,
+                            'info'
+                        );
+                    } else if (skipped > 0) {
+                        showNotification(
+                            `Couldn't delete — ${skipped} brand${skipped === 1 ? '' : 's'} still have active products. Reassign or move to draft first.`,
+                            'error'
+                        );
                     } else {
                         showNotification(data.message || 'Bulk delete failed', 'error');
+                    }
+
+                    if (deleted > 0) {
+                        setSelectedIds([]);
+                        fetchBrands();
                     }
                 } catch (error) {
                     showNotification('An error occurred during bulk delete', 'error');
@@ -460,6 +494,7 @@ const AdminBrands = () => {
                             <th style={{ width: '80px' }}>Logo</th>
                             <th>Brand Name</th>
                             <th>Description</th>
+                            <th style={{ width: '80px', textAlign: 'center' }}>Priority</th>
                             <th>Website</th>
                             <th>Status</th>
                             <th style={{ textAlign: 'right' }}>Actions</th>
@@ -467,12 +502,12 @@ const AdminBrands = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Brands Catalog..." /></td></tr>
+                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Brands Catalog..." /></td></tr>
                         ) : filteredBrands.length === 0 ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>No brands found.</td></tr>
+                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>No brands found.</td></tr>
                         ) : (
                             filteredBrands.map((brand) => (
-                                <tr key={brand.id}>
+                                <tr key={brand.id} style={brand.priority != null ? { background: '#f8faff' } : undefined}>
                                     <td>
                                         <input
                                             type="checkbox"
@@ -502,6 +537,28 @@ const AdminBrands = () => {
                                     </td>
                                     <td>
                                         <p className={styles.descriptionText}>{brand.description || 'No description'}</p>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        {brand.priority != null ? (
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                minWidth: '32px',
+                                                height: '24px',
+                                                padding: '0 8px',
+                                                borderRadius: '12px',
+                                                fontSize: '12px',
+                                                fontWeight: 800,
+                                                background: '#eff6ff',
+                                                color: '#2563eb',
+                                                border: '1px solid #bfdbfe'
+                                            }}>
+                                                #{brand.priority}
+                                            </span>
+                                        ) : (
+                                            <span style={{ color: '#cbd5e1', fontSize: '13px' }}>—</span>
+                                        )}
                                     </td>
                                     <td>
                                         {brand.website_url ? (
@@ -675,6 +732,33 @@ const AdminBrands = () => {
                                         value={formData.website_url}
                                         onChange={handleInputChange}
                                     />
+                                </div>
+
+                                <div className={styles.formGroup}>
+                                    <label>Display Priority <span className={styles.uploadHint}>(1 = first, 2 = second… leave empty for no priority)</span></label>
+                                    <input
+                                        type="number"
+                                        name="priority"
+                                        min="1"
+                                        placeholder="e.g. 1"
+                                        value={formData.priority}
+                                        onChange={(e) => {
+                                            setPriorityError('');
+                                            setFormData(prev => ({ ...prev, priority: e.target.value }));
+                                        }}
+                                        onBlur={(e) => {
+                                            const val = parseInt(e.target.value, 10);
+                                            if (!isNaN(val) && val > brands.length) {
+                                                setPriorityError(`Priority cannot exceed total brands (${brands.length}). Enter a number between 1 and ${brands.length}.`);
+                                            }
+                                        }}
+                                        style={{ maxWidth: '120px', borderColor: priorityError ? '#ef4444' : undefined }}
+                                    />
+                                    {priorityError && (
+                                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#ef4444', fontWeight: 500 }}>
+                                            {priorityError}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className={styles.formGroup}>
