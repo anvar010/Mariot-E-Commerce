@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './BrandsLayout.module.css';
 import { Link } from '@/i18n/navigation';
-import { Truck, ShieldCheck, Award } from 'lucide-react';
+import { Truck, ShieldCheck, Award, Search } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -182,6 +182,7 @@ const BrandsLayout = () => {
     const locale = useLocale();
     const isArabic = locale === 'ar';
     const [activeCategory, setActiveCategory] = useState("All");
+    const [searchQuery, setSearchQuery] = useState("");
     const [brands, setBrands] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -234,35 +235,105 @@ const BrandsLayout = () => {
 
     const activeBrands = brands.filter(b => b.is_active === 1 || b.is_active === true || String(b.is_active) === '1');
 
-    const filteredBrands = activeCategory === "All"
-        ? activeBrands
-        : activeBrands.filter((brand) => {
-            if (!brand.brand_type) return false;
-            const categories = brand.brand_type.split(',').map((c: string) => c.trim());
-            return categories.includes(activeCategory);
+    // Slot-Based Sorting Logic
+    const sortedBrands = (() => {
+        const prioritized = activeBrands.filter(b => b.priority !== null && b.priority !== undefined && b.priority !== '');
+        const unprioritized = activeBrands
+            .filter(b => b.priority === null || b.priority === undefined || b.priority === '')
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        const result: any[] = [];
+        const priorityMap = new Map();
+
+        // Handle potential duplicate priorities (take the first one)
+        prioritized.forEach(b => {
+            const p = Number(b.priority);
+            if (!priorityMap.has(p)) {
+                priorityMap.set(p, b);
+            } else {
+                // If collision, treat as unprioritized and sort again later or just push to unprioritized
+                unprioritized.push(b);
+            }
         });
+
+        // Sort unprioritized again in case we added collisions
+        unprioritized.sort((a, b) => a.name.localeCompare(b.name));
+
+        let unpIndex = 0;
+        const totalCount = activeBrands.length;
+
+        for (let i = 1; i <= totalCount; i++) {
+            if (priorityMap.has(i)) {
+                result.push(priorityMap.get(i));
+            } else if (unpIndex < unprioritized.length) {
+                result.push(unprioritized[unpIndex]);
+                unpIndex++;
+            }
+        }
+
+        // Add any remaining brands (e.g. priority > totalCount)
+        while (unpIndex < unprioritized.length) {
+            result.push(unprioritized[unpIndex]);
+            unpIndex++;
+        }
+
+        return result;
+    })();
+
+    const filteredBrands = sortedBrands.filter((brand) => {
+        let categoryMatch = false;
+        if (activeCategory === "All") {
+            categoryMatch = true;
+        } else if (brand.brand_type) {
+            const categories = brand.brand_type.split(',').map((c: string) => c.trim());
+            categoryMatch = categories.includes(activeCategory);
+        }
+
+        let searchMatch = true;
+        const query = searchQuery.trim().toLowerCase();
+        if (query) {
+            const nameEn = brand.name ? brand.name.toLowerCase() : "";
+            const nameAr = brand.name_ar ? brand.name_ar.toLowerCase() : "";
+            searchMatch = nameEn.includes(query) || nameAr.includes(query);
+        }
+
+        return categoryMatch && searchMatch;
+    });
 
     return (
         <div className={styles.brandsPage}>
             <div className={styles.fullWidthContainer}>
-                <div
-                    className={styles.categoryFilters}
-                    ref={filterScrollRef}
-                    onMouseDown={handleFilterMouseDown}
-                    onMouseLeave={handleFilterMouseLeave}
-                    onMouseUp={handleFilterMouseUp}
-                    onMouseMove={handleFilterMouseMove}
-                    style={{ cursor: isDraggingFilter ? 'grabbing' : 'grab' }}
-                >
-                    {categories.map((category) => (
-                        <button
-                            key={category}
-                            className={`${styles.filterBtn} ${activeCategory === category ? styles.active : ''}`}
-                            onClick={() => setActiveCategory(category)}
-                        >
-                            {t(`categories.${category}`)}
-                        </button>
-                    ))}
+                <div className={styles.controlsWrapper}>
+                    <div className={styles.searchWrapper}>
+                        <Search size={18} className={styles.searchIcon} />
+                        <input
+                            type="text"
+                            placeholder={isArabic ? 'البحث عن الماركات...' : 'Search brands...'}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className={styles.searchInput}
+                        />
+                    </div>
+
+                    <div
+                        className={styles.categoryFilters}
+                        ref={filterScrollRef}
+                        onMouseDown={handleFilterMouseDown}
+                        onMouseLeave={handleFilterMouseLeave}
+                        onMouseUp={handleFilterMouseUp}
+                        onMouseMove={handleFilterMouseMove}
+                        style={{ cursor: isDraggingFilter ? 'grabbing' : 'grab' }}
+                    >
+                        {categories.map((category) => (
+                            <button
+                                key={category}
+                                className={`${styles.filterBtn} ${activeCategory === category ? styles.active : ''}`}
+                                onClick={() => setActiveCategory(category)}
+                            >
+                                {t(`categories.${category}`)}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <div className={styles.brandsGrid}>

@@ -42,24 +42,23 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
         if (emblaApi) emblaApi.scrollNext();
     }, [emblaApi]);
 
-    useEffect(() => {
-        if (initialProducts.length > 0) return;
+    const fetchOffers = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/products?is_limited_offer=true&limit=7`, { credentials: "include" });
+            const data = await res.json();
+            if (data.success) setProducts(data.data);
+        } catch (error) {
+            console.error('Failed to fetch limited offers', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        const fetchOffers = async () => {
-            try {
-                const res = await fetch(`${API_BASE_URL}/products?is_limited_offer=true&limit=7`, { credentials: "include" });
-                const data = await res.json();
-                if (data.success) {
-                    setProducts(data.data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch limited offers', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    useEffect(() => {
         fetchOffers();
-    }, [initialProducts]);
+        const id = setInterval(fetchOffers, 60000);
+        return () => clearInterval(id);
+    }, []);
 
     useEffect(() => {
         const offerEndDates = products
@@ -74,10 +73,15 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
         }
     }, [products]);
 
-    const countdown = useCountdownTimer(effectiveEndDate);
-    const timeLeft = countdown ?? { hours: 0, minutes: 0, seconds: 0 };
+    const timeLeft = useCountdownTimer(effectiveEndDate);
 
-    const isEmpty = !loading && products.length === 0;
+    const now = Date.now();
+    const activeProducts = products.filter(p =>
+        p.offer_end && new Date(p.offer_end).getTime() > now &&
+        (!p.offer_start || new Date(p.offer_start).getTime() <= now)
+    );
+
+    if (!loading && activeProducts.length === 0) return null;
 
     return (
         <section id="offers" className={styles.offersSection}>
@@ -85,9 +89,11 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
                 <div className={styles.headerFlex}>
                     <h2 className={styles.title}>{t('title')}</h2>
                     <div className={styles.headerActions}>
-                        <span className={styles.mainTimer}>
-                            {timeLeft.hours.toString().padStart(2, '0')}{t('h')} : {timeLeft.minutes.toString().padStart(2, '0')}{t('m')} : {timeLeft.seconds.toString().padStart(2, '0')}{t('s')}
-                        </span>
+                        {timeLeft && (
+                            <span className={styles.mainTimer}>
+                                {timeLeft.hours.toString().padStart(2, '0')}{t('h')} : {timeLeft.minutes.toString().padStart(2, '0')}{t('m')} : {timeLeft.seconds.toString().padStart(2, '0')}{t('s')}
+                            </span>
+                        )}
                         <Link href="/shop?limited=true" className={styles.viewAll}>
                             {t('viewAll')} <span>{isRtl ? '←' : '→'}</span>
                         </Link>
@@ -108,10 +114,8 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
                         <div className={styles.productGrid}>
                             {loading ? (
                                 <div style={{ padding: '40px', textAlign: 'center', width: '100%', color: '#666' }}>{t('loading')}</div>
-                            ) : isEmpty ? (
-                                <p style={{ padding: '20px', color: '#666', fontStyle: 'italic', textAlign: 'center', width: '100%' }}>{t('noOffers')}</p>
                             ) : (
-                                products.map((prod) => (
+                                activeProducts.map((prod) => (
                                     <div key={prod.id} className={styles.productWrapper}>
                                         <ProductCardPromotion
                                             product={{

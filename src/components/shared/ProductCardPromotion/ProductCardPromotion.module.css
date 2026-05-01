@@ -6,7 +6,7 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    border: 1px solid rgba(0, 0, 0, 0.04);
+    border: 1.5px solid #c0c0c0;
     font-family: 'Inter', -apple-system, sans-serif;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
@@ -445,24 +445,22 @@
 }
 
 .whatsappBtn {
-    flex: 1;
+    width: 38px;
+    height: 38px;
     background: #25d366;
     color: white;
     border: none;
     border-radius: 12px;
-    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    font-weight: 600;
-    font-size: 13px;
+    flex-shrink: 0;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .cartBtn {
-    width: 38px;
+    flex: 1;
     height: 38px;
     background: #00aeef;
     color: white;
@@ -476,6 +474,13 @@
     font-size: 13px;
     cursor: pointer;
     transition: all 0.3s ease;
+}
+
+.notifyBtn {
+    background: #f59e0b;
+}
+.notifyBtn:hover {
+    background: #d97706;
 }
 
 .cartBtn:disabled {
@@ -524,12 +529,12 @@
     }
 
     .whatsappBtn {
+        width: 34px;
         height: 34px;
         border-radius: 10px;
     }
 
     .cartBtn {
-        width: 34px;
         height: 34px;
         border-radius: 10px;
     }
@@ -579,14 +584,14 @@
     }
 
     .whatsappBtn {
+        width: 30px;
         height: 30px;
-        font-size: 11px;
-        gap: 4px;
     }
 
     .cartBtn {
-        width: 30px;
         height: 30px;
+        font-size: 11px;
+        gap: 4px;
     }
 
     .timerWrapper {

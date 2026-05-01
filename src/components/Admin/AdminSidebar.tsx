@@ -12,9 +12,6 @@ import {
     BarChart3,
     Settings,
     LogOut,
-    Menu,
-    ChevronDown,
-    PlusCircle,
     Ticket,
     FolderTree,
     Tag,
@@ -23,26 +20,52 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
+interface MenuItem {
+    name: string;
+    key: string;
+    icon: React.ReactNode;
+    path: string;
+}
+
+function getStaffPerms(user: any): string[] {
+    const raw = user?.staff_permissions;
+    if (!raw) return [];
+    try { return typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return []; }
+}
+
 const AdminSidebar = () => {
     const pathname = usePathname();
     const { user, logout } = useAuth();
 
-    const menuItems = [
-        { name: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/admin' },
-        { name: 'Products', icon: <Package size={18} />, path: '/admin/products' },
-        { name: 'Categories', icon: <FolderTree size={18} />, path: '/admin/categories' },
-        { name: 'Brands', icon: <Tag size={18} />, path: '/admin/brands' },
-        { name: 'Orders', icon: <ShoppingCart size={18} />, path: '/admin/orders' },
-        { name: 'Coupons', icon: <Ticket size={18} />, path: '/admin/coupons' },
-        { name: 'Users', icon: <Users size={18} />, path: '/admin/users' },
-        { name: 'SEO', icon: <BarChart3 size={18} />, path: '/admin/seo' },
-        { name: 'Analytics', icon: <BarChart3 size={18} />, path: '/admin/analytics' },
-        { name: 'CMS Manager', icon: <Layout size={18} />, path: '/admin/cms' },
-        { name: 'Settings', icon: <Settings size={18} />, path: '/admin/settings' },
+    const menuItems: MenuItem[] = [
+        { name: 'Dashboard', key: 'dashboard', icon: <LayoutDashboard size={18} />, path: '/admin' },
+        { name: 'Products', key: 'products', icon: <Package size={18} />, path: '/admin/products' },
+        { name: 'Categories', key: 'categories', icon: <FolderTree size={18} />, path: '/admin/categories' },
+        { name: 'Brands', key: 'brands', icon: <Tag size={18} />, path: '/admin/brands' },
+        { name: 'Orders', key: 'orders', icon: <ShoppingCart size={18} />, path: '/admin/orders' },
+        { name: 'Coupons', key: 'coupons', icon: <Ticket size={18} />, path: '/admin/coupons' },
+        { name: 'Users', key: 'users', icon: <Users size={18} />, path: '/admin/users' },
+        { name: 'SEO', key: 'seo', icon: <BarChart3 size={18} />, path: '/admin/seo' },
+        { name: 'Analytics', key: 'analytics', icon: <BarChart3 size={18} />, path: '/admin/analytics' },
+        { name: 'CMS Manager', key: 'cms', icon: <Layout size={18} />, path: '/admin/cms' },
+        { name: 'Settings', key: 'settings', icon: <Settings size={18} />, path: '/admin/settings' },
     ];
+
+    const activityItems: MenuItem[] = [
+        { name: 'Quotations', key: 'quotations', icon: <FileText size={20} />, path: '/admin/quotations' },
+        { name: 'Reviews', key: 'reviews', icon: <Layout size={20} />, path: '/admin/reviews' },
+    ];
+
+    const isStaff = user?.role === 'staff';
+    const staffPerms = isStaff ? getStaffPerms(user) : [];
+
+    const visibleMenuItems = isStaff ? menuItems.filter(i => staffPerms.includes(i.key)) : menuItems;
+    const visibleActivityItems = isStaff ? activityItems.filter(i => staffPerms.includes(i.key)) : activityItems;
 
     // Normalize path by removing locale for comparison
     const cleanPath = pathname.replace(/^\/(en|ar)/, '') || '/';
+
+    const roleLabel = user?.role === 'admin' ? 'Site Manager' : 'Staff';
 
     return (
         <aside className={styles.sidebar}>
@@ -59,54 +82,57 @@ const AdminSidebar = () => {
                     {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'AU'}
                 </div>
                 <div className={styles.userInfo}>
-                    <span className={styles.userName}>{user?.name || 'Admin Users'}</span>
-                    <span className={styles.userRole}>Site Manager</span>
+                    <span className={styles.userName}>{user?.name || 'Admin User'}</span>
+                    <span className={styles.userRole}>{roleLabel}</span>
                 </div>
             </div>
 
             <nav className={styles.nav}>
-                <div className={styles.navLabel}>Menu</div>
-                <ul className={styles.menuList}>
-                    {menuItems.map((item) => {
-                        const isActive = cleanPath === item.path || (item.path !== '/admin' && cleanPath.startsWith(item.path));
-                        return (
-                            <li key={item.path}>
-                                <Link
-                                    href={item.path}
-                                    className={`${styles.menuItem} ${isActive ? styles.active : ''}`}
-                                >
-                                    <span className={styles.icon}>{item.icon}</span>
-                                    <span className={styles.name}>{item.name}</span>
-                                    {isActive && <div className={styles.activeIndicator} />}
-                                </Link>
-                            </li>
-                        );
-                    })}
-                </ul>
+                {visibleMenuItems.length > 0 && (
+                    <>
+                        <div className={styles.navLabel}>Menu</div>
+                        <ul className={styles.menuList}>
+                            {visibleMenuItems.map((item) => {
+                                const isActive = cleanPath === item.path || (item.path !== '/admin' && cleanPath.startsWith(item.path));
+                                return (
+                                    <li key={item.path}>
+                                        <Link
+                                            href={item.path}
+                                            className={`${styles.menuItem} ${isActive ? styles.active : ''}`}
+                                        >
+                                            <span className={styles.icon}>{item.icon}</span>
+                                            <span className={styles.name}>{item.name}</span>
+                                            {isActive && <div className={styles.activeIndicator} />}
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </>
+                )}
 
-                <div className={styles.navLabel}>Activity</div>
-                <ul className={styles.activityList}>
-                    <li>
-                        <Link
-                            href="/admin/quotations"
-                            className={`${styles.menuItem} ${cleanPath.startsWith('/admin/quotations') ? styles.active : ''}`}
-                        >
-                            <span className={styles.icon}><FileText size={20} /></span>
-                            <span className={styles.name}>Quotations</span>
-                            {cleanPath.startsWith('/admin/quotations') && <div className={styles.activeIndicator} />}
-                        </Link>
-                    </li>
-                    <li>
-                        <Link
-                            href="/admin/reviews"
-                            className={`${styles.menuItem} ${cleanPath.startsWith('/admin/reviews') ? styles.active : ''}`}
-                        >
-                            <span className={styles.icon}><Layout size={20} /></span>
-                            <span className={styles.name}>Reviews</span>
-                            {cleanPath.startsWith('/admin/reviews') && <div className={styles.activeIndicator} />}
-                        </Link>
-                    </li>
-                </ul>
+                {visibleActivityItems.length > 0 && (
+                    <>
+                        <div className={styles.navLabel}>Activity</div>
+                        <ul className={styles.activityList}>
+                            {visibleActivityItems.map((item) => {
+                                const isActive = cleanPath.startsWith(item.path);
+                                return (
+                                    <li key={item.path}>
+                                        <Link
+                                            href={item.path}
+                                            className={`${styles.menuItem} ${isActive ? styles.active : ''}`}
+                                        >
+                                            <span className={styles.icon}>{item.icon}</span>
+                                            <span className={styles.name}>{item.name}</span>
+                                            {isActive && <div className={styles.activeIndicator} />}
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </>
+                )}
             </nav>
 
             <div className={styles.sidebarFooter}>

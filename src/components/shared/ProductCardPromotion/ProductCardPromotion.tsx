@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './ProductCardPromotion.module.css';
-import { Heart, ShoppingCart, Check, Clock, MessageCircle, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, ShoppingCart, Check, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, BellRing } from 'lucide-react';
+import NotifyMeModal from '@/components/shared/NotifyMeModal/NotifyMeModal';
 import { Link } from '@/i18n/navigation';
 import Image from "next/legacy/image";
 import { useCart } from '@/context/CartContext';
@@ -44,7 +45,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     const localBrandLogo = getBrandLogo(displayBrand);
 
     const displayBrandImage = resolveUrl(localBrandLogo || product.brand_image || (product as any)?.brand_logo);
-    const displayImage = resolveUrl(product.primary_image) || '/assets/placeholder-image.webp';
+    const displayImage = resolveUrl(product.primary_image) || '/assets/mariot-logo2.webp';
     const formatTime = (num: number) => num.toString().padStart(2, '0');
     const isInventoryTracked = product.track_inventory === 1 || product.track_inventory === '1' || product.track_inventory === true;
     const isInStock = !isInventoryTracked || product.stock_quantity === undefined || product.stock_quantity > 0;
@@ -52,7 +53,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     const isBestSeller = product.is_best_seller === 1 || product.is_best_seller === true;
 
     const countdown = useCountdownTimer(product?.offer_end);
-    const activeTimer = timeLeft ?? countdown ?? { hours: 0, minutes: 0, seconds: 0 };
+    const activeTimer = timeLeft ?? countdown;
 
     const rating = Number((product as any)?.average_rating || (product as any)?.rating || 0);
     const reviews = Number((product as any)?.total_reviews || (product as any)?.reviews_count || (product as any)?.review_count || 0);
@@ -80,7 +81,11 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         return stars;
     };
 
-    const hasOffer = !!(product.offer_price && Number(product.offer_price) > 0);
+    const nowTs = Date.now();
+    const isOfferActive =
+        (!product.offer_start || new Date(product.offer_start).getTime() <= nowTs) &&
+        (!product.offer_end || new Date(product.offer_end).getTime() > nowTs);
+    const hasOffer = isOfferActive && !!(product.offer_price && Number(product.offer_price) > 0);
     const displayPrice = hasOffer ? Number(product.offer_price) : Number(product.price || 0);
     const displayOldPrice = Number(product.old_price) || (hasOffer ? Number(product.price) : 0);
 
@@ -115,6 +120,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
 
     const [isHovered, setIsHovered] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const [notifyOpen, setNotifyOpen] = useState(false);
 
     // Embla Carousel setup
     const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -221,7 +227,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                             {allImages.map((img, i) => (
                                 <div key={i} className={styles.imageSlide}>
                                     <Image
-                                        src={failedImages.has(i) ? '/assets/placeholder-image.webp' : img}
+                                        src={failedImages.has(i) ? '/assets/mariot-logo2.webp' : img}
                                         alt={`${isArabic && product.name_ar ? product.name_ar : product.name} - ${i + 1}`}
                                         layout="fill"
                                         objectFit="contain"
@@ -322,8 +328,31 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
 
             {/* Action Buttons */}
             <div className={styles.actions}>
+                {isInStock ? (
+                    <button
+                        className={styles.cartBtn}
+                        onClick={handleAddToCart}
+                    >
+                        <ShoppingCart size={18} strokeWidth={2.5} />
+                        <span>{t('addToCart')}</span>
+                    </button>
+                ) : (
+                    <button
+                        className={`${styles.cartBtn} ${styles.notifyBtn}`}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setNotifyOpen(true);
+                        }}
+                    >
+                        <BellRing size={18} strokeWidth={2.5} />
+                        <span>{isArabic ? 'أعلمني عند التوفر' : 'Notify Me'}</span>
+                    </button>
+                )}
                 <button
                     className={styles.whatsappBtn}
+                    aria-label={t('whatsapp')}
+                    title={t('whatsapp')}
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -340,20 +369,16 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                     </svg>
-                    <span>{t('whatsapp')}</span>
-                </button>
-                <button
-                    className={styles.cartBtn}
-                    onClick={handleAddToCart}
-                    disabled={!isInStock}
-                    style={{
-                        opacity: !isInStock ? 0.5 : 1,
-                        cursor: !isInStock ? 'not-allowed' : 'pointer'
-                    }}
-                >
-                    <ShoppingCart size={18} strokeWidth={2.5} />
                 </button>
             </div>
+
+            <NotifyMeModal
+                open={notifyOpen}
+                onClose={() => setNotifyOpen(false)}
+                productId={product.id}
+                productName={(isArabic && product.name_ar) ? product.name_ar : product.name}
+                variantLabel={typeof product.variant_label === 'string' ? product.variant_label : ''}
+            />
         </div>
     );
 };

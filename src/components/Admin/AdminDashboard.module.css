@@ -321,6 +321,43 @@
     background-color: #fff7ed;
 }
 
+.bgYellow {
+    color: #ca8a04;
+    background-color: #fefce8;
+}
+
+.bgRed {
+    color: #dc2626;
+    background-color: #fef2f2;
+}
+
+.bgEmerald {
+    color: #059669;
+    background-color: #ecfdf5;
+}
+
+/* Tinted stat-card backgrounds for order-status tiles.
+   Combine with .statCard so existing borders/spacing still apply. */
+.statCardPending {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef9c3 100%);
+    border-color: #fde68a;
+}
+
+.statCardProcessing {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #bfdbfe;
+}
+
+.statCardDelivered {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-color: #a7f3d0;
+}
+
+.statCardCancelled {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-color: #fecaca;
+}
+
 .statBody {
     display: flex;
     flex-direction: column;

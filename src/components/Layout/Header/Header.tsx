@@ -26,9 +26,9 @@ const Header = () => {
     const tc = useTranslations('categories');
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [didYouMean, setDidYouMean] = useState<string | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const [isLangOpen, setIsLangOpen] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSticky, setIsSticky] = useState(false);
     const [isCategoriesHovered, setIsCategoriesHovered] = useState(false);
@@ -115,6 +115,7 @@ const Header = () => {
                 const data = await res.json();
                 if (data.success) {
                     setSuggestions(data.data);
+                    setDidYouMean(data.didYouMean || null);
                     setShowSuggestions(true);
                 }
             } catch (err) {
@@ -133,9 +134,6 @@ const Header = () => {
             const target = e.target as HTMLElement;
             if (!target.closest(`.${styles.searchSection}`)) {
                 setShowSuggestions(false);
-            }
-            if (!target.closest(`.${styles.langSelectorContainer}`)) {
-                setIsLangOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -183,11 +181,9 @@ const Header = () => {
         };
     }, [setIsDrawerOpen, headerHeight]);
 
-    const toggleLang = () => setIsLangOpen(!isLangOpen);
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
     const switchLocale = (newLocale: 'en' | 'ar') => {
-        setIsLangOpen(false);
         // The locale-aware router handles locale prefixing automatically
         const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, '') || '/';
         router.push(pathWithoutLocale, { locale: newLocale });
@@ -199,6 +195,7 @@ const Header = () => {
         if (trimmed) {
             router.push(`/shop?search=${encodeURIComponent(trimmed)}`);
             setIsMenuOpen(false);
+            setShowSuggestions(false);
         }
     };
 
@@ -377,8 +374,18 @@ const Header = () => {
                                             ))}
                                         </div>
                                     ) : searchQuery.trim().length >= 2 && (
-                                        <div className={styles.noSuggestions}>
-                                            {t('noResultsFound')}
+                                        <div className={styles.noSuggestions} style={{ padding: '16px', textAlign: 'center', color: '#64748b' }}>
+                                            <div>{t('noResultsFound')}</div>
+                                            {didYouMean && (
+                                                <div
+                                                    style={{ marginTop: '8px', cursor: 'pointer', color: '#2563eb' }}
+                                                    onClick={() => {
+                                                        setSearchQuery(didYouMean);
+                                                    }}
+                                                >
+                                                    Did you mean: <strong style={{ textDecoration: 'underline' }}>{didYouMean}</strong>?
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -407,59 +414,17 @@ const Header = () => {
                                 )}
                             </Link>
 
-                            <div className={`${styles.langSelectorContainer} ${styles.headerLangSelector}`}>
-                                <button className={styles.langSelector} onClick={toggleLang}>
-                                    <img
-                                        src={isArabic
-                                            ? "/Flag_of_the_United_Arab_Emirates.svg"
-                                            : "/Flag_of_the_United_States.svg"}
-                                        alt={isArabic ? 'AR' : 'EN'}
-                                        className={styles.flagImg}
-                                    />
-                                    <span className={`${styles.langCode} ${styles.desktopOnly}`}>{isArabic ? 'AR' : 'EN'}</span>
-                                    <svg
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className={isLangOpen ? styles.rotate : ''}
-                                    >
-                                        <path d="M7 10L12 15L17 10H7Z" />
-                                    </svg>
-                                </button>
-
-                                {isLangOpen && (
-                                    <div className={styles.langDropdown}>
-                                        <div className={styles.langDropdownLabel}>{t('language')}</div>
-                                        <div
-                                            className={`${styles.langOption} ${!isArabic ? styles.langOptionActive : ''}`}
-                                            onClick={() => switchLocale('en')}
-                                        >
-                                            <img src="/Flag_of_the_United_States.svg" alt="US" className={styles.langOptionFlag} />
-                                            <div className={styles.langOptionText}>
-                                                <span className={styles.langOptionName}>English</span>
-                                                <span className={styles.langOptionNative}>EN</span>
-                                            </div>
-                                            {!isArabic && (
-                                                <svg className={styles.langCheck} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                            )}
-                                        </div>
-                                        <div
-                                            className={`${styles.langOption} ${isArabic ? styles.langOptionActive : ''}`}
-                                            onClick={() => switchLocale('ar')}
-                                        >
-                                            <img src="/Flag_of_the_United_Arab_Emirates.svg" alt="UAE" className={styles.langOptionFlag} />
-                                            <div className={styles.langOptionText}>
-                                                <span className={styles.langOptionName}>العربية</span>
-                                                <span className={styles.langOptionNative}>AR</span>
-                                            </div>
-                                            {isArabic && (
-                                                <svg className={styles.langCheck} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+                            <div className={`${styles.switch} ${styles.headerLangSelector}`} dir="ltr">
+                                <input
+                                    id="languageToggle"
+                                    className={`${styles.checkToggle} ${styles.checkToggleRoundFlat}`}
+                                    type="checkbox"
+                                    checked={!isArabic}
+                                    onChange={() => switchLocale(isArabic ? 'en' : 'ar')}
+                                />
+                                <label htmlFor="languageToggle"></label>
+                                <span className={styles.switchOn}>عربي</span>
+                                <span className={styles.switchOff}>EN</span>
                             </div>
 
                             <Link href={user ? "/profile" : "/signin"} className={styles.profile}>
@@ -472,7 +437,7 @@ const Header = () => {
                                 </div>
                             </Link>
 
-                            {user?.role === 'admin' && (
+                            {(user?.role === 'admin' || user?.role === 'staff') && (
                                 <Link href="/admin" className={styles.desktopOnly}>
                                     <div className={styles.adminIconWrapper}>
                                         <Shield size={28} />
@@ -591,7 +556,7 @@ const Header = () => {
                             </li>
                             <li className={styles.mobileOnly}><Link href="/profile" onClick={() => setIsMenuOpen(false)}>{t('myAccount')}</Link></li>
                             <li className={styles.mobileOnly}><Link href="/rewards" onClick={() => setIsMenuOpen(false)}>{t('rewardPointsNav')}</Link></li>
-                            {user?.role === 'admin' && (
+                            {(user?.role === 'admin' || user?.role === 'staff') && (
                                 <li className={styles.mobileOnly}>
                                     <Link
                                         href="/admin"

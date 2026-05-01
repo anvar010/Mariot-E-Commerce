@@ -136,13 +136,29 @@
 
 .checkboxLabel {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     cursor: pointer;
     font-size: 13px;
     color: #555;
     font-weight: 500;
     transition: color 0.2s;
+    width: 100%;
+}
+
+.checkboxLabel span:not(.countBadge) {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.4;
+    min-width: 0;
+}
+
+.checkboxLabel span span:not(.countBadge) {
+    flex: 1;
+    overflow-wrap: break-word;
 }
 
 @media (hover: hover) {
@@ -275,6 +291,25 @@
     font-size: 12px;
     color: #94a3b8;
     padding: 4px 0;
+}
+
+.catTreeContent {
+    gap: 2px;
+    max-height: 420px;
+}
+
+.catTreeDivider {
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    padding: 8px 0 2px;
+    letter-spacing: 0.2px;
+}
+
+.catTreeAllLabel {
+    padding: 3px 0;
+    font-size: 12.5px;
+    color: #555;
 }
 
 .brandGrid {

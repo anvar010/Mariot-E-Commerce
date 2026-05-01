@@ -34,11 +34,13 @@ import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
+import OtpVerifyModal from '@/components/shared/OtpVerifyModal/OtpVerifyModal';
 import { useSearchParams } from 'next/navigation';
 
 const UserDashboard = () => {
     const t = useTranslations('userDashboard');
-    const { user, logout, updateUser, loading: authLoading } = useAuth();
+    const { user, logout, updateUser, refreshUser, loading: authLoading } = useAuth();
+    const [otpOpen, setOtpOpen] = useState(false);
     const { wishlistItems, removeFromWishlist } = useWishlist();
     const { addToCart, pointRate } = useCart();
     const { showNotification } = useNotification();
@@ -706,14 +708,41 @@ const UserDashboard = () => {
                                 </div>
                                 <div className={styles.formGroup}>
                                     <label className={styles.formLabel}>{t('profile.phoneNumber')}</label>
-                                    <input
-                                        type="text"
-                                        name="phone_number"
-                                        value={formData.phone_number}
-                                        onChange={handleInputChange}
-                                        className={styles.formInput}
-                                        placeholder={t('profile.phoneNumber')}
-                                    />
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            name="phone_number"
+                                            value={formData.phone_number}
+                                            onChange={handleInputChange}
+                                            className={styles.formInput}
+                                            placeholder={t('profile.phoneNumber')}
+                                            style={{ flex: 1 }}
+                                        />
+                                        {formData.phone_number && user?.phone_number === formData.phone_number && user?.phone_verified ? (
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '8px 12px', background: '#dcfce7', color: '#166534', borderRadius: 8, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                                <Check size={14} /> Verified
+                                            </span>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => setOtpOpen(true)}
+                                                disabled={!formData.phone_number || formData.phone_number.length < 7}
+                                                style={{ 
+                                                    padding: '8px 14px', 
+                                                    background: (!formData.phone_number || formData.phone_number.length < 7) ? '#ccc' : '#237073', 
+                                                    color: '#fff', 
+                                                    border: 'none', 
+                                                    borderRadius: 8, 
+                                                    fontSize: 13, 
+                                                    fontWeight: 600, 
+                                                    cursor: (!formData.phone_number || formData.phone_number.length < 7) ? 'not-allowed' : 'pointer', 
+                                                    whiteSpace: 'nowrap' 
+                                                }}
+                                            >
+                                                Verify
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -1247,6 +1276,17 @@ const UserDashboard = () => {
                 onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
                 type={confirmModal.type}
                 isLoading={isActionLoading}
+            />
+
+            <OtpVerifyModal
+                open={otpOpen}
+                onClose={() => setOtpOpen(false)}
+                onVerified={async () => {
+                    await refreshUser();
+                    setOtpOpen(false);
+                    showNotification(t('profile.verifySuccess') || 'Mobile number verified successfully!', 'success');
+                }}
+                phoneNumber={formData.phone_number}
             />
         </div>
     );

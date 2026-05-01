@@ -24,6 +24,8 @@ const FilterShopByBrand: React.FC<FilterProps> = ({
     const locale = useLocale();
     const isArabic = locale === 'ar';
 
+    const mainCategories = brandCategories.filter((c: any) => c.type === 'main_category');
+
     return (
         <aside className={styles.sidebar}>
             <div className={styles.filterHeader}>
@@ -57,15 +59,15 @@ const FilterShopByBrand: React.FC<FilterProps> = ({
             </div>
 
             {/* CATEGORIES FOR THIS BRAND */}
-            <div className={styles.filterSection}>
-                <div className={styles.sectionHeader} onClick={() => toggleSection('categories')}>
-                    <h3>{t('categories') || 'Categories'}</h3>
-                    <ChevronDown size={14} className={expandedSections.includes('categories') ? styles.rotateIcon : styles.collapsedIcon} />
-                </div>
-                {expandedSections.includes('categories') && (
-                    <div className={styles.sectionContent}>
-                        {brandCategories.length > 0 ? (
-                            brandCategories.map(cat => (
+            {mainCategories.length > 0 && (
+                <div className={styles.filterSection}>
+                    <div className={styles.sectionHeader} onClick={() => toggleSection('categories')}>
+                        <h3>{t('categories') || 'Categories'}</h3>
+                        <ChevronDown size={14} className={expandedSections.includes('categories') ? styles.rotateIcon : styles.collapsedIcon} />
+                    </div>
+                    {expandedSections.includes('categories') && (
+                        <div className={styles.sectionContent}>
+                            {mainCategories.map((cat: any) => (
                                 <label key={cat.id} className={styles.checkboxLabel}>
                                     <input
                                         type="checkbox"
@@ -73,17 +75,15 @@ const FilterShopByBrand: React.FC<FilterProps> = ({
                                         onChange={() => onCategoryChange(activeCategory === cat.slug ? '' : cat.slug)}
                                     />
                                     <span>
-                                        {isArabic && cat.name_ar ? cat.name_ar : cat.name}
+                                        <span>{isArabic && cat.name_ar ? cat.name_ar : cat.name}</span>
                                         {cat.product_count > 0 && <span className={styles.countBadge}>{cat.product_count}</span>}
                                     </span>
                                 </label>
-                            ))
-                        ) : (
-                            <p className={styles.emptyMsg}>{t('no-categories-found')}</p>
-                        )}
-                    </div>
-                )}
-            </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* PRICE */}
             <div className={styles.filterSection}>

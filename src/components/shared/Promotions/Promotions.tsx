@@ -146,7 +146,7 @@ const PromoPopup: React.FC<{ promo: Promotion; isArabic: boolean }> = ({ promo, 
 
         const trigger = promo.popup_trigger || 'delay_seconds';
         const value = promo.popup_trigger_value || 5;
-        let cleanup = () => {};
+        let cleanup = () => { };
 
         const show = () => {
             setOpen(true);
@@ -196,7 +196,7 @@ const PromoPopup: React.FC<{ promo: Promotion; isArabic: boolean }> = ({ promo, 
             await navigator.clipboard.writeText(promo.coupon_code);
             setCopied(true);
             setTimeout(() => setCopied(false), 1800);
-        } catch {}
+        } catch { }
     };
 
     return (
@@ -223,34 +223,36 @@ const PromoPopup: React.FC<{ promo: Promotion; isArabic: boolean }> = ({ promo, 
                 <div className={styles.popupBody} style={{ textAlign: isArabic ? 'right' : 'left', direction: isArabic ? 'rtl' : 'ltr' }}>
                     {title && <h2 className={styles.popupTitle}>{title}</h2>}
                     {description && <p className={styles.popupDesc}>{description}</p>}
+
                     {promo.coupon_code && (
-                        <button
+                        <div
                             onClick={copyCoupon}
-                            type="button"
                             title={isArabic ? 'انقر للنسخ' : 'Click to copy'}
                             className={styles.popupCoupon}
                             style={{
-                                background: copied ? '#dcfce7' : '#f3f4f6',
-                                border: `2px dashed ${copied ? '#16a34a' : '#9ca3af'}`
+                                background: copied ? '#f0fdf4' : '#f8fafc',
+                                border: `2px dashed ${copied ? '#22c55e' : '#cbd5e1'}`,
+                                color: copied ? '#15803d' : '#1e293b'
                             }}
                         >
-                            <div className={styles.popupCouponLabel} style={{ color: copied ? '#166534' : '#6b7280' }}>
+                            <div className={styles.popupCouponLabel} style={{ color: copied ? '#16a34a' : '#64748b' }}>
                                 {copied
-                                    ? (isArabic ? 'تم النسخ!' : 'COPIED!')
+                                    ? (isArabic ? 'تم النسخ!' : 'COPIED TO CLIPBOARD')
                                     : (isArabic ? 'كود الخصم — انقر للنسخ' : 'COUPON CODE — CLICK TO COPY')}
                             </div>
-                            <div className={styles.popupCouponCode} style={{ color: copied ? '#15803d' : '#111' }}>
+                            <div className={styles.popupCouponCode}>
                                 {promo.coupon_code}
                             </div>
-                        </button>
+                        </div>
                     )}
+
                     {cta && (
                         promo.cta_link ? (
                             <a
                                 href={promo.cta_link}
                                 className={styles.popupCta}
                                 style={{
-                                    background: promo.bg_color || '#ff3b30',
+                                    background: promo.bg_color || '#337c7f',
                                     color: promo.text_color || '#fff'
                                 }}
                             >

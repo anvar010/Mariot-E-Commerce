@@ -242,7 +242,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                             <X size={18} style={{ cursor: 'pointer', color: '#9ca3af' }} onClick={() => removeNotification(n.id)} />
                                         </div>
                                         <div className="cart-body">
-                                            <img src={n.image} alt="product" className="cart-img" />
+                                            <img 
+                                                src={n.image || '/assets/mariot-logo2.webp'} 
+                                                alt="product" 
+                                                className="cart-img" 
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp';
+                                                }}
+                                            />
                                             <div className="cart-info">
                                                 <h4>{n.title}</h4>
                                                 <div className="cart-price-line">

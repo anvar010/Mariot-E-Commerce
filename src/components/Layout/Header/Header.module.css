@@ -640,76 +640,123 @@
 
 
 /* Language Selector */
-.langSelectorContainer {
-    position: relative;
-}
-
 .headerLangSelector {
     display: block;
+    flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
     .headerLangSelector {
         margin-top: 0 !important;
         width: auto !important;
-    }
-
-    .headerLangSelector button {
-        padding: 6px 10px !important;
-        gap: 6px !important;
-        border: 1px solid #000 !important;
-        border-radius: 8px !important;
+        flex-shrink: 0 !important;
     }
 }
 
-.langSelector {
+.switch {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
-    border: 1px solid #000;
-    padding: 6px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.switch>span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    font-family: 'Helvetica', Arial, sans-serif;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .06);
+    width: 47px;
+    z-index: 3;
+    line-height: normal;
+    /* helps with certain fonts */
+}
+
+.checkToggleRoundFlat:checked~.switchOff {
+    color: #fff;
+}
+
+.checkToggleRoundFlat:checked~.switchOn {
+    color: var(--accent-orange);
+}
+
+.switch>span.switchOn {
+    left: 3px;
+    padding-left: 0;
+    color: #fff;
+    /* Visual nudging for Arabic text bounding box */
+    transform: translate(-2px, -1px);
+}
+
+.switch>span.switchOff {
+    right: 3px;
+    padding-right: 0;
+    color: var(--accent-orange);
+}
+
+.checkToggle {
+    position: absolute;
+    margin-left: -9999px;
+    visibility: hidden;
+}
+
+.checkToggle+label {
+    display: block;
+    position: relative;
     cursor: pointer;
-    background-color: white;
-    transition: background-color 0.2s;
-    color: #000;
-    line-height: 1;
-    white-space: nowrap;
+    outline: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
-@media (hover: hover) {
-
-    .langSelector:hover {
-        background-color: #f8f9fa;
-    }
+.checkToggleRoundFlat+label {
+    padding: 2px;
+    width: 97px;
+    height: 35px;
+    background-color: transparent;
+    border-radius: 60px;
 }
 
-.flagImg {
-    width: 24px;
-    height: 16px;
-    object-fit: cover;
-    border-radius: 2px;
-    display: flex;
-    align-items: center;
+.checkToggleRoundFlat+label:before,
+.checkToggleRoundFlat+label:after {
+    display: block;
+    position: absolute;
+    content: "";
 }
 
-.langFlag {
-    font-size: 24px;
-    display: flex;
-    align-items: center;
+.checkToggleRoundFlat+label:before {
+    top: 0px;
+    left: 0px;
+    bottom: 0px;
+    right: 0px;
+    border: 2px solid var(--accent-orange);
+    background-color: transparent;
+    border-radius: 60px;
 }
 
-.langCode {
-    font-family: sans-serif;
-    letter-spacing: 0.5px;
-    font-weight: 400;
+.checkToggleRoundFlat+label:after {
+    top: 3px;
+    left: 3px;
+    bottom: 3px;
+    width: 47px;
+    background-color: var(--accent-orange);
+    border-radius: 52px;
+    transition: margin 0.2s;
+    z-index: 2;
 }
 
-.rotate {
-    transform: rotate(180deg);
-    transition: transform 0.2s;
+.checkToggleRoundFlat:checked+label:after {
+    margin-left: 44px;
 }
 
 .langDropdown {
@@ -1073,20 +1120,20 @@
     .navBar {
         position: fixed;
         top: 0;
-        inset-inline-start: -100%;
+        right: -100%;
         width: 80%;
         max-width: 300px;
         height: 100vh;
         z-index: 2000;
         background-color: white;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-        transition: left 0.3s ease;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        transition: right 0.3s ease;
         padding: 20px;
         overflow-y: auto;
     }
 
     .navBar.navOpen {
-        inset-inline-start: 0;
+        right: 0;
     }
 
     .navBar .container {

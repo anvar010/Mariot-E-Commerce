@@ -63,6 +63,13 @@
     margin-bottom: 12px;
 }
 
+@media (max-width: 768px) {
+    .topSection {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
 @media (max-width: 1024px) {
     .topSection {
         margin-bottom: 10px;
@@ -88,6 +95,46 @@
     justify-content: center;
     padding: 20px;
     margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .gallerySection {
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+        width: 100vw;
+        overflow: visible;
+    }
+
+    .mainImageWrapper {
+        margin-bottom: 25px;
+        border: none;
+        padding: 0;
+        background: transparent;
+        height: auto;
+        aspect-ratio: 1;
+        border-radius: 0;
+    }
+
+    .stockBadge {
+        top: 20px;
+        inset-inline-start: 20px;
+        z-index: 10;
+    }
+
+    .wishlistBtn {
+        top: 20px;
+        inset-inline-end: 20px;
+        z-index: 10;
+    }
+
+    .expandBtn {
+        bottom: 20px;
+        inset-inline-end: 20px;
+        z-index: 10;
+    }
 }
 
 .expandBtn {
@@ -168,6 +215,12 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .thumbnailsWrapper {
+        display: none;
+    }
 }
 
 .thumbnails {
@@ -1233,9 +1286,16 @@
 
 /* Accordion styles moved up or handled by shared class */
 
+.accordions {
+    border: 1px solid #1a1a1a;
+    border-radius: 12px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
 .accordionItem {
     border: none;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #475569;
     margin-bottom: 0;
     transition: all 0.2s ease;
 }
@@ -3019,6 +3079,12 @@
     z-index: 10;
 }
 
+@media (max-width: 768px) {
+    .swiperPagination {
+        bottom: 5px;
+    }
+}
+
 .fbtSectionRoot {
     padding: 0 40px 32px 40px;
     margin-top: 0;
@@ -3160,8 +3226,9 @@
 .fbtImage {
     width: 100%;
     aspect-ratio: 1;
-    background: #f8fafc;
-    object-fit: cover;
+    background: #ffffff;
+    object-fit: contain;
+    padding: 15px;
     user-drag: none;
     -webkit-user-drag: none;
 }

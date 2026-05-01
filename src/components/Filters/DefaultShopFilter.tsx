@@ -75,7 +75,7 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
                                                 }
                                             }}
                                         />
-                                        <span>{isArabic && cat.name_ar ? cat.name_ar : cat.name}</span>
+                                        <span><span>{isArabic && cat.name_ar ? cat.name_ar : cat.name}</span></span>
                                     </label>
                                 ))
                             ) : (

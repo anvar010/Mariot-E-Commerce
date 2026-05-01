@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './AdminProducts.module.css';
-import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
@@ -343,7 +343,9 @@ const AdminProducts = () => {
         status: 'active',
         offer_start: '',
         offer_end: '',
-        track_inventory: false
+        track_inventory: false,
+        warranty: '',
+        warranty_ar: ''
     });
 
     const searchParams = useSearchParams();
@@ -374,7 +376,9 @@ const AdminProducts = () => {
                 is_featured: false, is_daily_offer: false, is_best_seller: false,
                 resources: [{ name: '', url: '' }],
                 status: 'active', offer_start: '', offer_end: '',
-                track_inventory: false
+                track_inventory: false,
+                warranty: '',
+                warranty_ar: ''
             });
             setIsModalOpen(true);
             setActiveTab('basic');
@@ -428,6 +432,33 @@ const AdminProducts = () => {
         fetchCategories();
         fetchBrands();
     }, []);
+
+    // Re-render product list every 30s so offer tags (checked against offer_end) stay current
+    const [, setAdminTick] = useState(0);
+    useEffect(() => {
+        const id = setInterval(() => setAdminTick(n => n + 1), 30000);
+        return () => clearInterval(id);
+    }, []);
+
+    // Auto-uncheck offer flags in edit modal when offer_end expires in real-time
+    const offerExpiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+        if (offerExpiryTimerRef.current) clearTimeout(offerExpiryTimerRef.current);
+        if (!formData.offer_end) return;
+        const ms = new Date(formData.offer_end).getTime() - Date.now();
+        if (ms <= 0) return;
+        offerExpiryTimerRef.current = setTimeout(() => {
+            setFormData(prev => ({
+                ...prev,
+                is_weekly_deal: false,
+                is_limited_offer: false,
+                is_daily_offer: false,
+            }));
+        }, ms);
+        return () => {
+            if (offerExpiryTimerRef.current) clearTimeout(offerExpiryTimerRef.current);
+        };
+    }, [formData.offer_end]);
 
     useEffect(() => {
         if (categories.length > 0) {
@@ -769,15 +800,22 @@ const AdminProducts = () => {
             sub_category: product.sub_category || '',
             image_url: primaryImg,
             additional_images: paddedImages,
-            is_weekly_deal: isTrue(product.is_weekly_deal),
-            is_limited_offer: isTrue(product.is_limited_offer),
             is_featured: isTrue(product.is_featured),
-            is_daily_offer: isTrue(product.is_daily_offer),
             is_best_seller: isTrue(product.is_best_seller),
+            ...(() => {
+                const offerExpired = product.offer_end && new Date(product.offer_end).getTime() <= Date.now();
+                return {
+                    is_weekly_deal: offerExpired ? false : isTrue(product.is_weekly_deal),
+                    is_limited_offer: offerExpired ? false : isTrue(product.is_limited_offer),
+                    is_daily_offer: offerExpired ? false : isTrue(product.is_daily_offer),
+                };
+            })(),
             status: product.status || 'active',
             offer_start: product.offer_start ? new Date(product.offer_start).toISOString().slice(0, 16) : '',
             offer_end: product.offer_end ? new Date(product.offer_end).toISOString().slice(0, 16) : '',
-            track_inventory: isTrue(product.track_inventory)
+            track_inventory: isTrue(product.track_inventory),
+            warranty: product.warranty !== null && product.warranty !== undefined ? String(product.warranty) : '',
+            warranty_ar: product.warranty_ar !== null && product.warranty_ar !== undefined ? String(product.warranty_ar) : ''
         });
 
         let fbtItems: { id: number; name: string }[] = [];
@@ -874,7 +912,9 @@ const AdminProducts = () => {
             status: 'active',
             offer_start: '',
             offer_end: '',
-            track_inventory: false
+            track_inventory: false,
+            warranty: '',
+            warranty_ar: ''
         });
         setFbtSelectedItems([]);
         setFbtSearch('');
@@ -1414,9 +1454,9 @@ const AdminProducts = () => {
                                     <td>
                                         <div className={styles.tagsCell}>
                                             {(product.is_featured === 1 || product.is_featured === '1' || product.is_featured === true) && <span className={`${styles.tag} ${styles.tagFeatured}`}>Featured</span>}
-                                            {(product.is_weekly_deal === 1 || product.is_weekly_deal === '1' || product.is_weekly_deal === true) && <span className={`${styles.tag} ${styles.tagWeekly}`}>Weekly</span>}
-                                            {(product.is_limited_offer === 1 || product.is_limited_offer === '1' || product.is_limited_offer === true) && <span className={`${styles.tag} ${styles.tagLimited}`}>Limited</span>}
-                                            {(product.is_daily_offer === 1 || product.is_daily_offer === '1' || product.is_daily_offer === true) && <span className={`${styles.tag} ${styles.tagDaily}`}>Daily</span>}
+                                            {(product.is_weekly_deal === 1 || product.is_weekly_deal === '1' || product.is_weekly_deal === true) && (!product.offer_end || new Date(product.offer_end).getTime() > Date.now()) && <span className={`${styles.tag} ${styles.tagWeekly}`}>Weekly</span>}
+                                            {(product.is_limited_offer === 1 || product.is_limited_offer === '1' || product.is_limited_offer === true) && (!product.offer_end || new Date(product.offer_end).getTime() > Date.now()) && <span className={`${styles.tag} ${styles.tagLimited}`}>Limited</span>}
+                                            {(product.is_daily_offer === 1 || product.is_daily_offer === '1' || product.is_daily_offer === true) && (!product.offer_end || new Date(product.offer_end).getTime() > Date.now()) && <span className={`${styles.tag} ${styles.tagDaily}`}>Daily</span>}
                                         </div>
                                     </td>
                                     <td>
@@ -1737,6 +1777,16 @@ const AdminProducts = () => {
                                                 <label>{t('modal.fields.specs')}</label>
                                                 <textarea name="specifications" rows={4} placeholder="HTML or Plain text bullet points..." value={formData.specifications} onChange={handleInputChange} />
                                             </div>
+                                            <div className={styles.formGrid}>
+                                                <div className={styles.formGroup}>
+                                                    <label>Warranty (Years)</label>
+                                                    <input type="number" name="warranty" min="0" value={formData.warranty} onChange={handleInputChange} />
+                                                </div>
+                                                <div className={styles.formGroup}>
+                                                    <label>Warranty Arabic (Years)</label>
+                                                    <input type="number" name="warranty_ar" min="0" value={formData.warranty_ar} dir="rtl" onChange={handleInputChange} />
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
 
@@ -1746,65 +1796,99 @@ const AdminProducts = () => {
                                                 <h3>{t('modal.tabs.logic')}</h3>
                                                 <p>{t('modal.fields.logicSubtitle')}</p>
                                             </div>
-                                            <div className={styles.formGridFour}>
-                                                <div className={styles.formGroup}>
-                                                    <label>{t('modal.fields.price')}</label>
-                                                    <input type="number" name="price" required step="0.01" value={formData.price} onChange={handleInputChange} />
-                                                </div>
-                                                <div className={styles.formGroup}>
-                                                    <label>{t('modal.fields.discount')}</label>
-                                                    <input type="number" name="discount_percentage" step="0.01" value={formData.discount_percentage} onChange={handleInputChange} />
-                                                </div>
-                                                <div className={styles.formGroup}>
-                                                    <label>{t('modal.fields.offerPrice')}</label>
-                                                    <input type="number" name="offer_price" step="0.01" value={formData.offer_price} onChange={handleInputChange} />
-                                                </div>
-                                                <div className={styles.formGroup}>
-                                                    <label>{t('modal.fields.trackStock')}</label>
-                                                    <div className={styles.toggleWrapper}>
-                                                        <label className={styles.switch}>
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={formData.track_inventory}
-                                                                onChange={(e) => setFormData(prev => ({ ...prev, track_inventory: e.target.checked }))}
-                                                            />
-                                                            <span className={styles.slider}></span>
-                                                        </label>
-                                                        <span className={styles.toggleLabel}>
-                                                            {formData.track_inventory ? 'Strict Stock Control' : 'Always in Stock'}
-                                                        </span>
+                                            {variantsEnabled && (
+                                                <div style={{
+                                                    background: '#fffbeb',
+                                                    border: '1px solid #fde68a',
+                                                    borderRadius: '10px',
+                                                    padding: '12px 16px',
+                                                    margin: '0 0 16px 0',
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    gap: '10px',
+                                                    color: '#92400e',
+                                                    fontSize: '13px',
+                                                    lineHeight: 1.5
+                                                }}>
+                                                    <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '1px', color: '#d97706' }} />
+                                                    <div>
+                                                        <strong style={{ display: 'block', marginBottom: '2px', color: '#78350f' }}>
+                                                            Pricing &amp; Logic disabled
+                                                        </strong>
+                                                        Variants are turned on, so price, offer price, stock, and the primary image come from your default variant on the <strong>Variants</strong> tab. The fields below are ignored everywhere — product detail page, listings, and promotion cards.
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div className={styles.formGrid}>
-                                                {formData.track_inventory && (
+                                            )}
+                                            <fieldset
+                                                disabled={variantsEnabled}
+                                                style={{
+                                                    border: 'none',
+                                                    padding: 0,
+                                                    margin: 0,
+                                                    opacity: variantsEnabled ? 0.5 : 1,
+                                                    pointerEvents: variantsEnabled ? 'none' : 'auto'
+                                                }}
+                                            >
+                                                <div className={styles.formGridFour}>
                                                     <div className={styles.formGroup}>
-                                                        <label>{t('modal.fields.stock')}</label>
-                                                        <input type="number" name="stock_quantity" required={formData.track_inventory} value={formData.stock_quantity} onChange={handleInputChange} />
+                                                        <label>{t('modal.fields.price')}</label>
+                                                        <input type="number" name="price" required={!variantsEnabled} step="0.01" value={formData.price} onChange={handleInputChange} />
                                                     </div>
-                                                )}
-                                                <div className={styles.formGroup}>
-                                                    <label>{t('modal.fields.status')}</label>
-                                                    <div className={styles.statusSelector}>
-                                                        <button
-                                                            type="button"
-                                                            className={`${styles.statusOption} ${formData.status === 'active' ? styles.activeStatusActive : ''}`}
-                                                            onClick={() => setFormData(prev => ({ ...prev, status: 'active' }))}
-                                                        >
-                                                            <Eye size={18} />
-                                                            <span>Active</span>
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className={`${styles.statusOption} ${formData.status === 'draft' ? styles.activeStatusDraft : ''}`}
-                                                            onClick={() => setFormData(prev => ({ ...prev, status: 'draft' }))}
-                                                        >
-                                                            <EyeOff size={18} />
-                                                            <span>Draft</span>
-                                                        </button>
+                                                    <div className={styles.formGroup}>
+                                                        <label>{t('modal.fields.discount')}</label>
+                                                        <input type="number" name="discount_percentage" step="0.01" value={formData.discount_percentage} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className={styles.formGroup}>
+                                                        <label>{t('modal.fields.offerPrice')}</label>
+                                                        <input type="number" name="offer_price" step="0.01" value={formData.offer_price} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className={styles.formGroup}>
+                                                        <label>{t('modal.fields.trackStock')}</label>
+                                                        <div className={styles.toggleWrapper}>
+                                                            <label className={styles.switch}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={formData.track_inventory}
+                                                                    onChange={(e) => setFormData(prev => ({ ...prev, track_inventory: e.target.checked }))}
+                                                                />
+                                                                <span className={styles.slider}></span>
+                                                            </label>
+                                                            <span className={styles.toggleLabel}>
+                                                                {formData.track_inventory ? 'Strict Stock Control' : 'Always in Stock'}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                                <div className={styles.formGrid}>
+                                                    {formData.track_inventory && (
+                                                        <div className={styles.formGroup}>
+                                                            <label>{t('modal.fields.stock')}</label>
+                                                            <input type="number" name="stock_quantity" required={formData.track_inventory && !variantsEnabled} value={formData.stock_quantity} onChange={handleInputChange} />
+                                                        </div>
+                                                    )}
+                                                    <div className={styles.formGroup}>
+                                                        <label>{t('modal.fields.status')}</label>
+                                                        <div className={styles.statusSelector}>
+                                                            <button
+                                                                type="button"
+                                                                className={`${styles.statusOption} ${formData.status === 'active' ? styles.activeStatusActive : ''}`}
+                                                                onClick={() => setFormData(prev => ({ ...prev, status: 'active' }))}
+                                                            >
+                                                                <Eye size={18} />
+                                                                <span>Active</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className={`${styles.statusOption} ${formData.status === 'draft' ? styles.activeStatusDraft : ''}`}
+                                                                onClick={() => setFormData(prev => ({ ...prev, status: 'draft' }))}
+                                                            >
+                                                                <EyeOff size={18} />
+                                                                <span>Draft</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
                                         </div>
                                     )}
 

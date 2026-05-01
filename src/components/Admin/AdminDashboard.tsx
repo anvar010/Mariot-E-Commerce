@@ -25,7 +25,10 @@ import {
     LayoutDashboard,
     Clock,
     Check,
-    RefreshCw
+    RefreshCw,
+    PackageCheck,
+    XCircle,
+    PackageOpen
 } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { useRouter } from 'next/navigation';
@@ -37,7 +40,11 @@ const AdminDashboard = () => {
     const { user, token } = useAuth();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [timeRange, setTimeRange] = useState('7d');
+    const [timeRange, setTimeRange] = useState('today');
+    const today = new Date().toISOString().slice(0, 10);
+    const [customFrom, setCustomFrom] = useState<string>(today);
+    const [customTo, setCustomTo] = useState<string>(today);
+    const [showCustomPicker, setShowCustomPicker] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const { showNotification } = useNotification();
     const router = useRouter();
@@ -71,10 +78,15 @@ const AdminDashboard = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isDropdownOpen]);
 
-    const fetchStats = async (range = timeRange) => {
+    const fetchStats = async (range = timeRange, fromOverride?: string, toOverride?: string) => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/admin/stats?timeRange=${range}&_t=${new Date().getTime()}`, {
+            const params = new URLSearchParams({ timeRange: range, _t: new Date().getTime().toString() });
+            if (range === 'custom') {
+                params.set('from', fromOverride ?? customFrom);
+                params.set('to', toOverride ?? customTo);
+            }
+            const res = await fetch(`${API_BASE_URL}/admin/stats?${params.toString()}`, {
                 credentials: "include",
                 headers: getAuthHeaders(),
                 cache: 'no-store'
@@ -92,7 +104,11 @@ const AdminDashboard = () => {
     };
 
     useEffect(() => {
+        // Custom range fetches are triggered explicitly by the Apply button —
+        // skip the auto-fetch on change to avoid hitting the API mid-edit.
+        if (timeRange === 'custom') return;
         fetchStats();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [timeRange]);
 
     const handleDeleteReview = (reviewId: number) => {
@@ -132,6 +148,7 @@ const AdminDashboard = () => {
     };
 
     const timeOptions = [
+        { label: 'Today', value: 'today' },
         { label: t('dashboard.timeRanges.7d'), value: '7d' },
         { label: t('dashboard.timeRanges.14d'), value: '14d' },
         { label: t('dashboard.timeRanges.30d'), value: '30d' },
@@ -139,7 +156,22 @@ const AdminDashboard = () => {
         { label: t('dashboard.timeRanges.6m'), value: '6m' },
         { label: t('dashboard.timeRanges.1y'), value: '1y' },
         { label: t('dashboard.timeRanges.all'), value: 'all' },
+        { label: 'Custom Range', value: 'custom' },
     ];
+
+    const currentRangeLabel = timeRange === 'custom'
+        ? `${customFrom} → ${customTo}`
+        : (timeOptions.find(opt => opt.value === timeRange)?.label || '');
+
+    const applyCustomRange = () => {
+        if (!customFrom || !customTo || customFrom > customTo) {
+            showNotification('Pick a valid date range (From must be before or equal to To).', 'error');
+            return;
+        }
+        setShowCustomPicker(false);
+        setIsDropdownOpen(false);
+        fetchStats('custom', customFrom, customTo);
+    };
 
     if (loading && !stats) {
         return <div className={styles.dashboard}><div style={{ padding: '80px', textAlign: 'center' }}><AdminLoader message={t('dashboard.loader')} /></div></div>;
@@ -159,9 +191,7 @@ const AdminDashboard = () => {
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         >
                             <Clock size={16} className={styles.icon} />
-                            <span className={styles.currentRangeLabel}>
-                                {timeOptions.find(opt => opt.value === timeRange)?.label}
-                            </span>
+                            <span className={styles.currentRangeLabel}>{currentRangeLabel}</span>
                             <ChevronDown size={14} className={`${styles.chevron} ${isDropdownOpen ? styles.rotate : ''}`} />
                         </div>
 
@@ -179,6 +209,12 @@ const AdminDashboard = () => {
                                             key={opt.value}
                                             className={`${styles.dropdownItem} ${timeRange === opt.value ? styles.selected : ''}`}
                                             onClick={() => {
+                                                if (opt.value === 'custom') {
+                                                    setTimeRange('custom');
+                                                    setShowCustomPicker(true);
+                                                    return;
+                                                }
+                                                setShowCustomPicker(false);
                                                 setTimeRange(opt.value);
                                                 setIsDropdownOpen(false);
                                             }}
@@ -189,6 +225,56 @@ const AdminDashboard = () => {
                                             )}
                                         </div>
                                     ))}
+
+                                    {showCustomPicker && (
+                                        <div style={{
+                                            padding: '12px',
+                                            borderTop: '1px solid #e5e7eb',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '8px',
+                                            background: '#f9fafb'
+                                        }}>
+                                            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', color: '#475569', fontWeight: 700 }}>
+                                                FROM
+                                                <input
+                                                    type="date"
+                                                    value={customFrom}
+                                                    max={customTo || undefined}
+                                                    onChange={(e) => setCustomFrom(e.target.value)}
+                                                    style={{ padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', fontWeight: 500 }}
+                                                />
+                                            </label>
+                                            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', color: '#475569', fontWeight: 700 }}>
+                                                TO
+                                                <input
+                                                    type="date"
+                                                    value={customTo}
+                                                    min={customFrom || undefined}
+                                                    max={today}
+                                                    onChange={(e) => setCustomTo(e.target.value)}
+                                                    style={{ padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', fontWeight: 500 }}
+                                                />
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={applyCustomRange}
+                                                style={{
+                                                    marginTop: '4px',
+                                                    padding: '8px',
+                                                    background: '#3b82f6',
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    fontWeight: 700,
+                                                    fontSize: '13px',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                Apply
+                                            </button>
+                                        </div>
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -311,6 +397,102 @@ const AdminDashboard = () => {
                         <h3 className={styles.statValue}>{stats?.totalProducts || 0}</h3>
                         <div className={styles.statFooter}>
                             <span className={styles.trendNeutral}>{stats?.activeProducts || 0} {t('dashboard.stats.active')}</span>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Pending Orders */}
+                <motion.div
+                    className={`${styles.statCard} ${styles.statCardPending}`}
+                    whileHover={{ y: -4 }}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    onClick={() => router.push('/admin/orders?status=pending')}
+                    style={{ cursor: 'pointer' }}
+                >
+                    <div className={styles.statHeader}>
+                        <span className={styles.statTitle}>Pending Orders</span>
+                        <div className={`${styles.iconWrapper} ${styles.bgYellow}`}>
+                            <Clock size={18} />
+                        </div>
+                    </div>
+                    <div className={styles.statBody}>
+                        <h3 className={styles.statValue}>{stats?.pendingOrders || 0}</h3>
+                        <div className={styles.statFooter}>
+                            <span className={styles.trendNeutral}>awaiting fulfillment</span>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Processing Orders */}
+                <motion.div
+                    className={`${styles.statCard} ${styles.statCardProcessing}`}
+                    whileHover={{ y: -4 }}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    onClick={() => router.push('/admin/orders?status=processing')}
+                    style={{ cursor: 'pointer' }}
+                >
+                    <div className={styles.statHeader}>
+                        <span className={styles.statTitle}>Processing Orders</span>
+                        <div className={`${styles.iconWrapper} ${styles.bgBlue}`}>
+                            <PackageOpen size={18} />
+                        </div>
+                    </div>
+                    <div className={styles.statBody}>
+                        <h3 className={styles.statValue}>{stats?.processingOrders || 0}</h3>
+                        <div className={styles.statFooter}>
+                            <span className={styles.trendNeutral}>being prepared</span>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Successful (Delivered) Orders */}
+                <motion.div
+                    className={`${styles.statCard} ${styles.statCardDelivered}`}
+                    whileHover={{ y: -4 }}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    onClick={() => router.push('/admin/orders?status=delivered')}
+                    style={{ cursor: 'pointer' }}
+                >
+                    <div className={styles.statHeader}>
+                        <span className={styles.statTitle}>Completed Orders</span>
+                        <div className={`${styles.iconWrapper} ${styles.bgEmerald}`}>
+                            <PackageCheck size={18} />
+                        </div>
+                    </div>
+                    <div className={styles.statBody}>
+                        <h3 className={styles.statValue}>{stats?.deliveredOrders || 0}</h3>
+                        <div className={styles.statFooter}>
+                            <span className={styles.trendNeutral}>delivered</span>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Cancelled Orders */}
+                <motion.div
+                    className={`${styles.statCard} ${styles.statCardCancelled}`}
+                    whileHover={{ y: -4 }}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 }}
+                    onClick={() => router.push('/admin/orders?status=cancelled')}
+                    style={{ cursor: 'pointer' }}
+                >
+                    <div className={styles.statHeader}>
+                        <span className={styles.statTitle}>Cancelled Orders</span>
+                        <div className={`${styles.iconWrapper} ${styles.bgRed}`}>
+                            <XCircle size={18} />
+                        </div>
+                    </div>
+                    <div className={styles.statBody}>
+                        <h3 className={styles.statValue}>{stats?.cancelledOrders || 0}</h3>
+                        <div className={styles.statFooter}>
+                            <span className={styles.trendNeutral}>refunded or voided</span>
                         </div>
                     </div>
                 </motion.div>

@@ -14,6 +14,7 @@ interface AuthContextType {
     register: (userData: any, redirectTo?: string) => Promise<void>;
     logout: () => void;
     updateUser: (userData: any) => Promise<void>;
+    refreshUser: () => Promise<void>;
     error: string | null;
     // Keep `token` as a derived boolean for backward compatibility
     // Components that check `if (token)` will still work
@@ -80,7 +81,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsAuthenticated(true);
             // Store user info in localStorage for UI persistence (NOT the token)
             localStorage.setItem('user', JSON.stringify(data.user));
-            router.push(redirectTo || '/');
+            // Admin and staff go to the admin panel; everyone else follows redirectTo
+            const role = data.user?.role;
+            if (role === 'admin' || role === 'staff') {
+                router.push('/admin');
+            } else {
+                router.push(redirectTo || '/');
+            }
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -98,7 +105,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(data.user);
             setIsAuthenticated(true);
             localStorage.setItem('user', JSON.stringify(data.user));
-            router.push(redirectTo || '/');
+            const role = data.user?.role;
+            if (role === 'admin' || role === 'staff') {
+                router.push('/admin');
+            } else {
+                router.push(redirectTo || '/');
+            }
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -136,6 +148,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const refreshUser = async () => {
+        try {
+            const data = await authApi.getMe();
+            setUser(data.data);
+            localStorage.setItem('user', JSON.stringify(data.data));
+        } catch (err) {
+            console.error('Failed to refresh user', err);
+        }
+    };
+
     const logout = async () => {
         try {
             await fetch(`${API_BASE_URL}/auth/logout`, { credentials: "include" });
@@ -151,7 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = isAuthenticated ? 'cookie-auth' : null;
 
     return (
-        <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, googleLogin, register, logout, updateUser, error }}>
+        <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, googleLogin, register, logout, updateUser, refreshUser, error }}>
             {children}
         </AuthContext.Provider>
     );

@@ -8,11 +8,12 @@ import styles from './ShopLayout.module.css';
 
 interface CategoryGridProps {
     subCategoriesToShow: any[];
-    t: any; // Translation function
-    tc: any; // Translation function
+    t: any;
+    tc: any;
+    brandParam?: string | null;
 }
 
-const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc }) => {
+const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc, brandParam }) => {
     const locale = useLocale();
     const isArabic = locale === 'ar';
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -73,17 +74,17 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc 
                     
                     return (
                         <Link
-                            href={`/shop?category=${slug}`}
+                            href={brandParam ? `/shop?brand=${brandParam}&category=${slug}` : `/shop?category=${slug}`}
                             key={idx}
                             className={styles.categoryCard}
                         >
                             <div className={styles.categoryImage}>
                                 <img
-                                    src={catImage || '/assets/placeholder-image.webp'}
+                                    src={catImage || '/assets/mariot-logo2.webp'}
                                     alt={catName}
                                     className={styles.demoImg}
                                     onError={(e) => {
-                                        (e.target as HTMLImageElement).src = '/assets/placeholder-image.webp';
+                                        (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp';
                                     }}
                                 />
                             </div>

@@ -492,124 +492,224 @@
     }
 }
 
-/* Refined Card Form */
-.cardFormContent {
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.fieldGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.fieldLabel {
-    font-size: 13px;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 4px;
-}
-
-.cardNumberContainer,
-.expiryWrapper,
-.cvcWrapper {
-    position: relative;
-    padding: 0 12px;
-    background: #fff;
-    border: 1.5px solid #f1f5f9;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+/* Card Form — Secure Header Strip */
+.cardSecureHeader {
     display: flex;
     align-items: center;
-    min-height: 48px;
-    width: 100%;
-    box-sizing: border-box;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 20px;
+    background: linear-gradient(90deg, rgba(35, 112, 115, 0.06) 0%, rgba(35, 112, 115, 0.02) 100%);
+    border-bottom: 1px solid rgba(35, 112, 115, 0.12);
 }
 
-.cardNumberContainer>div,
-.expiryWrapper>div,
-.cvcWrapper>div {
-    flex: 1;
-    height: 100%;
-}
-
-.cardNumberContainer:focus-within,
-.expiryWrapper:focus-within,
-.cvcWrapper:focus-within {
-    border-color: #237073;
-    border-width: 1.5px;
-    box-shadow: 0 0 0 3px rgba(35, 112, 115, 0.05);
-}
-
-.stripeElementWrapper {
+.secureHeaderLeft {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex: 1;
-    height: 100%;
-    padding: 0;
-    padding-right: 65px;
-    /* Space for the absolute logos */
-}
-
-.stripeElementWrapper>div:last-child {
-    flex: 1;
-    height: 100%;
-    display: flex;
-    align-items: center;
-}
-
-.internalCardIcon {
-    color: #94a3b8;
-    flex-shrink: 0;
-}
-
-.cardLogos {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
     gap: 6px;
-    align-items: center;
-    pointer-events: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: #237073;
+    letter-spacing: 0.01em;
 }
 
-.cardLogos img {
+.secureHeaderLogos {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.92;
+}
+
+.secureHeaderLogos img {
     height: 18px;
     width: auto;
     object-fit: contain;
 }
 
+/* Card Form Body */
+.cardFormContent {
+    padding: 22px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: #fff;
+}
+
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.fieldLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+}
+
+.requiredMark {
+    color: #dc2626;
+    font-weight: 700;
+    margin-inline-start: 2px;
+}
+
+.fieldHelp {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 2px;
+    line-height: 1.4;
+}
+
+/* Shared input frame */
+.cardNumberContainer,
+.expiryWrapper,
+.cvcWrapper,
+.cardInputWrapper {
+    position: relative;
+    padding: 0 14px;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 50px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.cardNumberContainer:hover,
+.expiryWrapper:hover,
+.cvcWrapper:hover,
+.cardInputWrapper:hover {
+    border-color: #cbd5e1;
+    background: #fff;
+}
+
+.cardNumberContainer:focus-within,
+.expiryWrapper:focus-within,
+.cvcWrapper:focus-within,
+.cardInputWrapper:focus-within {
+    border-color: #237073;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(35, 112, 115, 0.12);
+}
+
+.cardNumberContainer>.stripeElementWrapper,
+.expiryWrapper>.stripeElementWrapper,
+.cvcWrapper>.stripeElementWrapper {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Leading icon inside input frame */
+.fieldLeadingIcon {
+    color: #94a3b8;
+    flex-shrink: 0;
+    transition: color 0.18s ease;
+}
+
+.cardNumberContainer:focus-within .fieldLeadingIcon,
+.cardInputWrapper:focus-within .fieldLeadingIcon {
+    color: #237073;
+}
+
+/* Plain text input (Name on Card) */
+.cardTextInput {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 500;
+    color: #0f172a;
+    font-family: 'Inter', sans-serif;
+    padding: 0;
+    height: 100%;
+    min-width: 0;
+}
+
+.cardTextInput::placeholder {
+    color: #cbd5e1;
+    font-weight: 400;
+}
+
+/* Stripe element fills remaining space — keep block-level so the iframe sizes itself */
+.stripeElementWrapper {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+}
+
+.stripeElementWrapper>div {
+    width: 100%;
+}
+
+/* Layout */
 .splitRow {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 14px;
 }
 
-.cvcWrapper {
-    /* Use first-child logic inherited from container */
-}
-
-.cvcWrapper>div:first-child {
-    flex: 1;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    padding-right: 25px;
-    /* Space for CVC icon */
+.cvcWrapper>.stripeElementWrapper {
+    padding-inline-end: 22px;
 }
 
 .cvcIcon {
     position: absolute;
-    right: 12px;
+    inset-inline-end: 12px;
     top: 50%;
     transform: translateY(-50%);
     color: #cbd5e1;
     pointer-events: none;
+    display: flex;
+    align-items: center;
+}
+
+/* Secure footer */
+.cardSecureFooter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    margin-top: 4px;
+    background: rgba(35, 112, 115, 0.04);
+    border: 1px dashed rgba(35, 112, 115, 0.2);
+    border-radius: 8px;
+    font-size: 11.5px;
+    color: #237073;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+    .cardSecureHeader {
+        padding: 9px 16px;
+    }
+
+    .cardFormContent {
+        padding: 18px 16px 20px;
+        gap: 16px;
+    }
+
+    .splitRow {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .cardNumberContainer,
+    .expiryWrapper,
+    .cvcWrapper,
+    .cardInputWrapper {
+        min-height: 48px;
+        padding: 0 12px;
+    }
 }
 
 

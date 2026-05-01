@@ -57,6 +57,11 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [isMobileSortOpen, setIsMobileSortOpen] = useState(false);
     const mobileSortRef = useRef<HTMLDivElement>(null);
+    const [refreshTick, setRefreshTick] = useState(0);
+    useEffect(() => {
+        const id = setInterval(() => setRefreshTick(n => n + 1), 60000);
+        return () => clearInterval(id);
+    }, []);
 
     useEffect(() => {
         if (!isMobileSortOpen) return;
@@ -168,6 +173,9 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
     useEffect(() => {
         const params = new URLSearchParams({ is_daily_offer: '1' });
         if (activeFilters.category) params.set('category', activeFilters.category);
+        if (activeFilters.minPrice > 0) params.set('minPrice', activeFilters.minPrice.toString());
+        if (activeFilters.maxPrice < 99999) params.set('maxPrice', activeFilters.maxPrice.toString());
+
         fetch(`${API_BASE_URL}/brands?${params.toString()}`, { credentials: 'include' })
             .then(r => r.json())
             .then(json => {
@@ -178,7 +186,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                 setBrands(activeBrands);
             })
             .catch(err => console.error('Error fetching brands:', err));
-    }, [activeFilters.category]);
+    }, [activeFilters.category, activeFilters.minPrice, activeFilters.maxPrice]);
 
     const [hasInitialMount, setHasInitialMount] = useState(false);
 
@@ -215,7 +223,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
             }
         };
         fetchOfferProducts();
-    }, [activeFilters, initialProducts, hasInitialMount]);
+    }, [activeFilters, initialProducts, hasInitialMount, refreshTick]);
 
     const [visibleCount, setVisibleCount] = useState(6); // Default 6 products initially
 
@@ -223,7 +231,13 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
         setVisibleCount(prev => prev + 8);
     };
 
-    const displayedProducts = products.slice(0, visibleCount);
+    const now = Date.now();
+    const displayedProducts = products
+        .filter(p =>
+            p.offer_end && new Date(p.offer_end).getTime() > now &&
+            (!p.offer_start || new Date(p.offer_start).getTime() <= now)
+        )
+        .slice(0, visibleCount);
 
     const handleFilterChange = (type: 'category' | 'brand', value: string) => {
         setActiveFilters(prev => {
