@@ -245,15 +245,6 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                         </motion.div>
                     </motion.div>
                 </AnimatePresence>
-
-                {/* Right side brand badge */}
-                <div className={styles.brandBadge}>
-                    <img
-                        src={resolveUrl('/uploads/brands/rational.jpg.webp')}
-                        alt="Brand Partner"
-                        className={styles.brandLogo}
-                    />
-                </div>
             </div>
 
             {/* Slider Controls */}
