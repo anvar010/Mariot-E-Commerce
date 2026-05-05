@@ -77,8 +77,7 @@ export default async function LocaleLayout({
     return (
         <html lang={locale} dir={isRTL ? 'rtl' : 'ltr'} className={`${inter.variable} ${alexandria.variable}`}>
             <head>
-                {/* Preconnect to font/external origins — skip localhost (no DNS needed) */}
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                {/* Preconnect to API origin — skip localhost (no DNS needed) */}
                 {process.env.NEXT_PUBLIC_API_BASE_URL && !process.env.NEXT_PUBLIC_API_BASE_URL.includes('localhost') && (
                     <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/api\/v1\/?$/, '')} />
                 )}

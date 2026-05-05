@@ -19,13 +19,14 @@ const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://loca
 async function getHomeData(locale: string) {
     const isRtl = locale === 'ar';
     try {
-        const [cmsRes, limitedRes, weeklyRes, iceRes, coffeeRes, cookingRes] = await Promise.all([
+        const [cmsRes, limitedRes, weeklyRes, iceRes, coffeeRes, cookingRes, categoriesRes] = await Promise.all([
             fetch(`${API_BASE_URL_SERVER}/cms/homepage`, { next: { revalidate: 30 } }),
             fetch(`${API_BASE_URL_SERVER}/products?is_limited_offer=true&limit=8`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?is_weekly_deal=true`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?search=ice%20makers`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?search=coffee%20makers`, { next: { revalidate: 60 } }),
-            fetch(`${API_BASE_URL_SERVER}/products?search=cooking%20equipment`, { next: { revalidate: 60 } })
+            fetch(`${API_BASE_URL_SERVER}/products?search=cooking%20equipment`, { next: { revalidate: 60 } }),
+            fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 3600 } })
         ]);
 
         const cmsData = await cmsRes.json();
@@ -34,6 +35,7 @@ async function getHomeData(locale: string) {
         const iceData = await iceRes.json();
         const coffeeData = await coffeeRes.json();
         const cookingData = await cookingRes.json();
+        const categoriesData = await categoriesRes.json();
 
         let heroSlides = [];
         let heroPosters = [];
@@ -58,6 +60,12 @@ async function getHomeData(locale: string) {
             }
         }
 
+        const mainCategories = categoriesData?.success
+            ? categoriesData.data
+                .filter((c: any) => c.type === 'main_category' && c.is_active)
+                .sort((a: any, b: any) => a.id - b.id)
+            : [];
+
         return {
             heroSlides,
             heroPosters,
@@ -65,11 +73,12 @@ async function getHomeData(locale: string) {
             weeklyProducts: weeklyData.success ? weeklyData.data : [],
             iceProducts: iceData.success ? iceData.data : [],
             coffeeProducts: coffeeData.success ? coffeeData.data : [],
-            cookingProducts: cookingData.success ? cookingData.data : []
+            cookingProducts: cookingData.success ? cookingData.data : [],
+            categories: mainCategories
         };
     } catch (e) {
         console.error("Home server fetch failed", e);
-        return { heroSlides: [], heroPosters: [], limitedProducts: [], weeklyProducts: [], iceProducts: [], coffeeProducts: [], cookingProducts: [] };
+        return { heroSlides: [], heroPosters: [], limitedProducts: [], weeklyProducts: [], iceProducts: [], coffeeProducts: [], cookingProducts: [], categories: [] };
     }
 }
 
@@ -120,7 +129,7 @@ export default async function Home({ params: { locale } }: { params: { locale: s
             <Header />
             <Hero initialSlides={data.heroSlides} />
             <Reveal key="reveal-hero-posters"><HeroPosters initialPosters={data.heroPosters} /></Reveal>
-            <Reveal key="reveal-categories"><CategoryBrowse /></Reveal>
+            <Reveal key="reveal-categories"><CategoryBrowse initialCategories={data.categories} /></Reveal>
             <Reveal key="reveal-limited"><LimitedOffers initialProducts={data.limitedProducts} /></Reveal>
             <Reveal key="reveal-weekly"><WeeklyDeals initialProducts={data.weeklyProducts} /></Reveal>
             <Reveal key="reveal-ice"><IceMakers initialProducts={data.iceProducts} /></Reveal>
