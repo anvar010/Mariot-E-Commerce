@@ -34,7 +34,9 @@
     "resend": "^6.9.4",
     "sharp": "^0.34.5",
     "slugify": "^1.6.6",
+    "string-similarity": "^4.0.4",
     "stripe": "^20.4.1",
+    "twilio": "^6.0.0",
     "xss-clean": "^0.1.4"
   },
   "description": "",
