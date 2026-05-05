@@ -171,101 +171,102 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
     };
 
     return (
-        <div className={`${styles.extraSection} ${styles.fbtSectionRoot}`}>
-            <div className={styles.sectionTitle}>
-                <h2>{t('fbt.title')}</h2>
+        <>
+            <div className={`${styles.sectionTitle} ${styles.fbtSectionTitle}`}>
+                <h2>{t('fbt.title') || "Frequently bought together"}</h2>
             </div>
+            <div className={styles.fbtSectionRoot}>
+                <div className={styles.sliderWrapper}>
+                    <button
+                        className={`${styles.sliderArrow} ${styles.prevArrow} ${(!canScrollPrev || allItems.length <= 8) ? styles.arrowHidden : ''}`}
+                        onClick={() => fbtEmblaApi?.scrollPrev()}
+                    >
+                        <ChevronLeft size={24} />
+                    </button>
 
-            <div className={styles.sliderWrapper}>
-                <button
-                    className={`${styles.sliderArrow} ${styles.prevArrow} ${(!canScrollPrev || allItems.length <= 8) ? styles.arrowHidden : ''}`}
-                    onClick={() => fbtEmblaApi?.scrollPrev()}
-                >
-                    <ChevronLeft size={24} />
-                </button>
-
-                <div className={styles.fbtViewport} ref={fbtEmblaRef}>
-                    <div className={styles.fbtGrid}>
-                        {allItems.map((p: any, idx: number) => {
-                            const isChecked = !!checked[p.id];
-                            const price = getPrice(p);
-                            return (
-                                <div key={p.id} className={styles.fbtSlide}>
-                                    {idx > 0 && (
-                                        <div className={styles.fbtSeparator}>
-                                            +
-                                        </div>
-                                    )}
-
-                                    <div
-                                        className={`${styles.fbtCard} ${isChecked ? styles.fbtCardActive : ''}`}
-                                    >
-                                        <div
-                                            className={`${styles.fbtBadge} ${isChecked ? styles.fbtBadgeActive : ''}`}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                toggle(p.id);
-                                            }}
-                                        >
-                                            {isChecked && (
-                                                <svg width="12" height="12" viewBox="0 0 13 13" fill="none">
-                                                    <path d="M2.5 6.5L5.5 9.5L10.5 4" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
-                                            )}
-                                        </div>
-
-                                        <Link href={`/${locale}/product/${p.slug}`} className={styles.fbtCardLink}>
-                                            <img
-                                                src={getImg(p)}
-                                                alt={getName(p)}
-                                                className={styles.fbtImage}
-                                            />
-
-                                            <div className={styles.fbtInfo}>
-                                                <div className={styles.fbtName}>{getName(p)}</div>
-                                                <div className={styles.fbtPrice}>
-                                                    AED {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </div>
+                    <div className={styles.fbtViewport} ref={fbtEmblaRef}>
+                        <div className={styles.fbtGrid}>
+                            {allItems.map((p: any, idx: number) => {
+                                const isChecked = !!checked[p.id];
+                                const price = getPrice(p);
+                                return (
+                                    <div key={p.id} className={styles.fbtSlide}>
+                                        {idx > 0 && (
+                                            <div className={styles.fbtSeparator}>
+                                                +
                                             </div>
-                                        </Link>
+                                        )}
+
+                                        <div
+                                            className={`${styles.fbtCard} ${isChecked ? styles.fbtCardActive : ''}`}
+                                        >
+                                            <div
+                                                className={`${styles.fbtBadge} ${isChecked ? styles.fbtBadgeActive : ''}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggle(p.id);
+                                                }}
+                                            >
+                                                {isChecked && (
+                                                    <svg width="12" height="12" viewBox="0 0 13 13" fill="none">
+                                                        <path d="M2.5 6.5L5.5 9.5L10.5 4" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                )}
+                                            </div>
+
+                                            <Link href={`/${locale}/product/${p.slug}`} className={styles.fbtCardLink}>
+                                                <img
+                                                    src={getImg(p)}
+                                                    alt={getName(p)}
+                                                    className={styles.fbtImage}
+                                                />
+
+                                                <div className={styles.fbtInfo}>
+                                                    <div className={styles.fbtName}>{getName(p)}</div>
+                                                    <div className={styles.fbtPrice}>
+                                                        AED {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
                     </div>
+
+                    <button
+                        className={`${styles.sliderArrow} ${styles.nextArrow} ${(!canScrollNext || allItems.length <= 8) ? styles.arrowHidden : ''}`}
+                        onClick={() => fbtEmblaApi?.scrollNext()}
+                    >
+                        <ChevronRight size={24} />
+                    </button>
                 </div>
 
-                <button
-                    className={`${styles.sliderArrow} ${styles.nextArrow} ${(!canScrollNext || allItems.length <= 8) ? styles.arrowHidden : ''}`}
-                    onClick={() => fbtEmblaApi?.scrollNext()}
-                >
-                    <ChevronRight size={24} />
-                </button>
-            </div>
+                <div className={styles.fbtSummary}>
+                    <div className={styles.fbtSelectedInfo}>
+                        <div className={styles.fbtTotalLabel}>
+                            {selectedItems.length === 1
+                                ? t('fbt.itemSelected')
+                                : t('fbt.itemsSelected', { count: selectedItems.length })}
+                        </div>
+                        <div className={styles.fbtTotalPrice}>
+                            <span className={styles.fbtTotalCurrency}>AED</span>
+                            {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </div>
 
-            <div className={styles.fbtSummary}>
-                <div className={styles.fbtSelectedInfo}>
-                    <div className={styles.fbtTotalLabel}>
-                        {selectedItems.length === 1
-                            ? t('fbt.itemSelected')
-                            : t('fbt.itemsSelected', { count: selectedItems.length })}
-                    </div>
-                    <div className={styles.fbtTotalPrice}>
-                        <span className={styles.fbtTotalCurrency}>AED</span>
-                        {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
+                    <button
+                        className={styles.fbtAddBtn}
+                        onClick={handleAddAll}
+                        disabled={selectedItems.length === 0 || adding}
+                    >
+                        <ShoppingCart size={20} />
+                        {adding ? t('fbt.adding') : t('fbt.addAll')}
+                    </button>
                 </div>
-
-                <button
-                    className={styles.fbtAddBtn}
-                    onClick={handleAddAll}
-                    disabled={selectedItems.length === 0 || adding}
-                >
-                    <ShoppingCart size={20} />
-                    {adding ? t('fbt.adding') : t('fbt.addAll')}
-                </button>
             </div>
-        </div>
+        </>
     );
 };
 
@@ -282,6 +283,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         description: true
     });
     const [isShortDescExpanded, setIsShortDescExpanded] = useState(false);
+    const [canShowReadMore, setCanShowReadMore] = useState(false);
+    const shortDescRef = useRef<HTMLDivElement>(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [isQtyOpen, setIsQtyOpen] = useState(false);
     const qtyRef = useRef<HTMLDivElement>(null);
@@ -391,10 +394,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         let cleaned = content.replace(/\[\/?vc_[^\]]*\]/g, '');
 
         // Handle escaped newlines if they exist
-        cleaned = cleaned.replace(/\\n/g, '<br/>');
+        cleaned = cleaned.replace(/\\n/g, '<br />');
 
         // Clean up multiple line breaks
-        cleaned = cleaned.replace(/(<br\/>\s*){3,}/g, '<br/><br/>');
+        cleaned = cleaned.replace(/(<br\/>\s*){3,}/g, '<br /><br />');
 
         return cleaned.trim();
     };
@@ -516,9 +519,28 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 console.error("Error fetching reviews:", err);
             }
         };
-
         fetchProduct();
-    }, [id]);
+    }, [id, locale]);
+
+    useEffect(() => {
+        const checkHeight = () => {
+            if (shortDescRef.current) {
+                const element = shortDescRef.current;
+                // Check if scrollHeight is greater than offsetHeight (clamped height)
+                const hasOverflow = element.scrollHeight > element.offsetHeight;
+                setCanShowReadMore(hasOverflow);
+            }
+        };
+
+        // Run after a small delay to ensure rendering and styles are applied
+        const timer = setTimeout(checkHeight, 150);
+
+        window.addEventListener('resize', checkHeight);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', checkHeight);
+        };
+    }, [product, locale]);
 
     useEffect(() => {
         if (loading) return;
@@ -1230,10 +1252,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 {getLocalizedField('short_description', 'short_description_ar') && (
                                     <div className={styles.shortDescriptionWrapper}>
                                         <div
+                                            ref={shortDescRef}
                                             className={`${styles.shortDescription} ${isShortDescExpanded ? styles.expanded : ''}`}
                                             dangerouslySetInnerHTML={{ __html: cleanShortcodes(getLocalizedField('short_description', 'short_description_ar')) }}
                                         />
-                                        {getLocalizedField('short_description', 'short_description_ar').length > 150 && (
+                                        {canShowReadMore && (
                                             <button
                                                 className={styles.readMoreBtn}
                                                 onClick={() => setIsShortDescExpanded(!isShortDescExpanded)}
@@ -1291,7 +1314,30 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             style={{ opacity: effectiveStock === 0 ? 0.6 : 1, pointerEvents: effectiveStock === 0 ? 'none' : 'auto' }}
                                         >
                                             <span className={styles.qtyCustomSelectText}>
-                                                {effectiveStock > 0 ? `${t('qty')} ${qty}` : '0'}
+                                                {effectiveStock > 0 ? (
+                                                    <div className={styles.manualInputWrapper} onClick={(e) => e.stopPropagation()}>
+                                                        <span className={styles.qtyPrefix}>{t('qty')}</span>
+                                                        <input
+                                                            type="number"
+                                                            value={qty}
+                                                            onChange={(e) => {
+                                                                const val = parseInt(e.target.value);
+                                                                if (!isNaN(val)) {
+                                                                    if (val > effectiveStock) {
+                                                                        setQty(effectiveStock);
+                                                                        showNotification(t('maxStockReached', { count: effectiveStock }) || `Maximum stock available is ${effectiveStock}`, 'info');
+                                                                    } else {
+                                                                        setQty(Math.max(1, val));
+                                                                    }
+                                                                } else if (e.target.value === '') {
+                                                                    setQty('');
+                                                                }
+                                                            }}
+                                                            onBlur={() => { if (qty === '') setQty(1); }}
+                                                            className={styles.manualQtyInput}
+                                                        />
+                                                    </div>
+                                                ) : '0'}
                                             </span>
                                             {isQtyOpen ? (
                                                 <ChevronUp size={18} className={styles.qtyArrow} />
