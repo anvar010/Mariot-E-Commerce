@@ -98,6 +98,7 @@
     "freeShipping": "Free Shipping",
     "freeShippingText": "Free shipping on all orders from UAE",
     "gulfShipping": "Gulf Shipping",
+    "maxStockReached": "Only {count} units available in stock",
     "securePayment": "Secure Payment",
     "securePaymentText": "We offer a safe shopping guarantee",
     "satisfaction": "100% Satisfaction",

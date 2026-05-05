@@ -98,6 +98,7 @@
         "freeShipping": "شحن مجاني",
         "freeShippingText": "شحن مجاني لجميع الطلبات من الإمارات",
         "gulfShipping": "شحن خليجي",
+        "maxStockReached": "متوفر فقط {count} وحدات في المخزون",
         "securePayment": "دفع آمن",
         "securePaymentText": "نوفر ضمان تسوق آمن",
         "satisfaction": "رضا 100%",
