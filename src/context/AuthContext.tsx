@@ -81,13 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsAuthenticated(true);
             // Store user info in localStorage for UI persistence (NOT the token)
             localStorage.setItem('user', JSON.stringify(data.user));
-            // Admin and staff go to the admin panel; everyone else follows redirectTo
-            const role = data.user?.role;
-            if (role === 'admin' || role === 'staff') {
-                router.push('/admin');
-            } else {
-                router.push(redirectTo || '/');
-            }
+            router.push(redirectTo || '/');
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -105,12 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(data.user);
             setIsAuthenticated(true);
             localStorage.setItem('user', JSON.stringify(data.user));
-            const role = data.user?.role;
-            if (role === 'admin' || role === 'staff') {
-                router.push('/admin');
-            } else {
-                router.push(redirectTo || '/');
-            }
+            router.push(redirectTo || '/');
         } catch (err: any) {
             setError(err.message);
             throw err;

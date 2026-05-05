@@ -813,28 +813,28 @@ const AdminCategories = () => {
                             </div>
 
                             {(formData.type === 'main_category' || formData.type === 'sub_category') && (
-                                <div className={styles.formGroup}>
-                                    <label>Category Description</label>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <textarea
-                                            name="description"
-                                            placeholder="English description..."
-                                            value={formData.description}
-                                            onChange={handleInputChange}
-                                            rows={3}
-                                            style={{ flex: 1, resize: 'vertical', padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none', fontFamily: 'inherit' }}
-                                        />
-                                        <textarea
-                                            name="description_ar"
-                                            placeholder="الوصف بالعربية..."
-                                            value={formData.description_ar}
-                                            onChange={handleInputChange}
-                                            rows={3}
-                                            dir="rtl"
-                                            style={{ flex: 1, resize: 'vertical', padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none', fontFamily: 'inherit' }}
-                                        />
-                                    </div>
+                            <div className={styles.formGroup}>
+                                <label>Category Description</label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <textarea
+                                        name="description"
+                                        placeholder="English description..."
+                                        value={formData.description}
+                                        onChange={handleInputChange}
+                                        rows={3}
+                                        style={{ flex: 1, resize: 'vertical', padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none', fontFamily: 'inherit' }}
+                                    />
+                                    <textarea
+                                        name="description_ar"
+                                        placeholder="الوصف بالعربية..."
+                                        value={formData.description_ar}
+                                        onChange={handleInputChange}
+                                        rows={3}
+                                        dir="rtl"
+                                        style={{ flex: 1, resize: 'vertical', padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none', fontFamily: 'inherit' }}
+                                    />
                                 </div>
+                            </div>
                             )}
 
                             <div className={styles.formGroup}>

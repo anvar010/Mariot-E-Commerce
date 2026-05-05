@@ -10,7 +10,7 @@ import { generateQuotationPDF } from '@/utils/pdfGenerator';
 import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
-import { useTranslations } from 'next-intl';
+// Removed next-intl import
 
 const AdminQuotations = () => {
     const [quotations, setQuotations] = useState<any[]>([]);
@@ -20,7 +20,47 @@ const AdminQuotations = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPrinting, setIsPrinting] = useState(false);
     const { showNotification } = useNotification();
-    const t = useTranslations('admin.quotations');
+    // Hardcoded English translations for Quotations module
+    const t = (key: string, options?: any) => {
+        const translations: { [key: string]: string } = {
+            'title': 'Quotation Management',
+            'subtitle': 'Manage and review customer requests for professional quotes.',
+            'totalBadge': `${options?.count || 0} total requests`,
+            'searchPlaceholder': 'Search by reference, name or email...',
+            'empty': 'No quotations found matching your search.',
+            'loader': 'Synchronizing Quotations Data...',
+            'table.ref': 'REFERENCE',
+            'table.customer': 'CUSTOMER',
+            'table.date': 'DATE',
+            'table.value': 'TOTAL VALUE',
+            'table.vat': 'VAT/TRN',
+            'table.actions': 'ACTIONS',
+            'modal.title': `Quotation Details: ${options?.ref || ''}`,
+            'modal.customerInfo': 'Customer Information',
+            'modal.name': 'Full Name',
+            'modal.email': 'Email Address',
+            'modal.phone': 'Phone Number',
+            'modal.vat': 'VAT/TRN Number',
+            'modal.summary': 'Quotation Summary',
+            'modal.dateGenerated': 'Date Generated',
+            'modal.subtotal': 'Subtotal',
+            'modal.tax': 'Tax (5%)',
+            'modal.total': 'Total Amount',
+            'modal.quotedItems': 'Quoted Items',
+            'modal.print': 'Print PDF',
+            'modal.generating': 'Generating...',
+            'modal.close': 'Close',
+            'deleteModal.title': 'Delete Quotation',
+            'deleteModal.message': 'Are you sure you want to permanently delete this quotation record? This action cannot be undone.',
+            'deleteModal.confirm': 'Delete Record',
+            'notifications.deleteSuccess': 'Quotation deleted successfully',
+            'notifications.deleteError': 'Failed to delete quotation',
+            'notifications.pdfSuccess': 'PDF generated successfully',
+            'notifications.pdfError': 'Failed to generate PDF'
+        };
+
+        return translations[key] || key;
+    };
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{

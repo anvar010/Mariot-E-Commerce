@@ -7,39 +7,130 @@
 .header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.titleSection {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .titleSection h1 {
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 24px;
+    font-weight: 800;
     color: #0f172a;
-    letter-spacing: -0.6px;
-    margin-bottom: 2px;
+    letter-spacing: -0.02em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .titleSection p {
     color: #64748b;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 400;
+    margin: 4px 0 0;
 }
 
 .totalBadge {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: #f1f5f9;
-    color: #475569;
-    padding: 3px 10px;
+    gap: 6px;
+    background: #eff6ff;
+    color: #3b82f6;
+    padding: 4px 14px;
     border-radius: 99px;
-    font-size: 11px;
-    font-weight: 500;
-    border: 1px solid #e2e8f0;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #dbeafe;
 }
 
-.totalBadge strong {
+/* Stats Section */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 1200px) {
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.statCard {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.statIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.statInfo {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.statLabel {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.statValue {
+    font-size: 20px;
     font-weight: 700;
-    color: #0f172a;
+    color: #1e293b;
+    margin: 2px 0;
+}
+
+.statSubLabel {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+
+.totalUsersIcon {
+    background: #f5f3ff;
+    color: #7c3aed;
+}
+
+.activeUsersIcon {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.adminsIcon {
+    background: #fff7ed;
+    color: #ea580c;
+}
+
+.pointsIcon {
+    background: #eff6ff;
+    color: #2563eb;
 }
 
 .filtersWrapper {
@@ -81,6 +172,55 @@
     outline: none;
     font-size: 14px;
     color: #0f172a;
+}
+
+.filterGroup {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.filterSelectWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0 12px;
+    min-width: 160px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.filterSelectWrapper:hover {
+    border-color: #94a3b8;
+    background-color: #f8fafc;
+}
+
+.filterIcon {
+    color: #64748b;
+    margin-inline-end: 8px;
+}
+
+.filterSelect {
+    appearance: none;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 10px 24px 10px 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+    width: 100%;
+    cursor: pointer;
+}
+
+.chevronIcon {
+    position: absolute;
+    inset-inline-end: 12px;
+    color: #94a3b8;
+    pointer-events: none;
 }
 
 .tableWrapper {
@@ -185,23 +325,23 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 18px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
     color: #fff;
-    background: #0f172a;
+    background: #4f46e5;
     border: none;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     transition: all 0.2s;
     white-space: nowrap;
 }
 
 @media (hover: hover) {
     .createBtn:hover {
+        background: #4338ca;
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18);
     }
 }
 

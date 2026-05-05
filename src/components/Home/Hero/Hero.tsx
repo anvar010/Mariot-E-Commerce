@@ -158,7 +158,7 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
         >
             {/* Background Image Slider with Swipe Support */}
             <div className={styles.imageLayer}>
-                <AnimatePresence initial={false} custom={direction} mode="popLayout">
+                <AnimatePresence initial={false} custom={direction} mode="wait">
                     <motion.div
                         key={currentSlide}
                         className={styles.slideBg}

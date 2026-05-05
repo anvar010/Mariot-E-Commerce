@@ -1,7 +1,7 @@
 .card {
     background: #ffffff;
     border-radius: 20px;
-    padding: 12px;
+    padding: 6px 12px 12px 12px;
     width: 100%;
     margin: 0;
     display: flex;
@@ -30,23 +30,31 @@
 }
 
 /* Badges */
+.cardHeader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    position: relative;
+    margin-bottom: 0px;
+}
+
 .tagsWrapperStart {
     position: absolute;
-    top: 15px;
-    inset-inline-start: 15px;
-    z-index: 10;
+    top: 80px;
+    left: 4px;
+    z-index: 25;
     display: flex;
     flex-direction: column;
     gap: 6px;
     align-items: flex-start;
-    max-width: 60%;
 }
 
 .discountTagWrapper {
     position: absolute;
-    top: 15px;
-    inset-inline-end: 15px;
-    z-index: 10;
+    top: 80px;
+    right: 4px;
+    z-index: 25;
 }
 
 .bestSellerTag {
@@ -65,11 +73,11 @@
 .discountTag {
     background-color: #ff3b30;
     color: white;
-    padding: 4px 10px;
-    font-size: 10px;
-    font-weight: 700;
+    padding: 3px 12px;
+    font-size: 9px;
+    font-weight: 800;
     border-radius: 20px;
-    box-shadow: 0 4px 10px rgba(255, 59, 48, 0.3);
+    box-shadow: 0 4px 10px rgba(255, 59, 48, 0.2);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     white-space: nowrap;
@@ -77,13 +85,13 @@
 }
 
 .dealTag {
-    padding: 6px 14px;
+    padding: 3px 12px;
     color: white;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 9px;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-radius: 12px;
+    border-radius: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     white-space: nowrap;
     width: fit-content;
@@ -109,7 +117,7 @@
     width: 100%;
     aspect-ratio: 1;
     height: auto;
-    margin-bottom: 32px;
+    margin-bottom: 12px;
     overflow: visible;
     position: relative;
     transition: all 0.5s ease;
@@ -230,14 +238,14 @@
 /* Timer - Glassmorphism Floating Style */
 .timerWrapper {
     position: absolute;
-    bottom: -16px;
+    bottom: -8px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 6px 16px;
+    padding: 4px 12px;
     border-radius: 100px;
     display: flex;
     align-items: center;
@@ -246,6 +254,11 @@
     white-space: nowrap;
     z-index: 5;
     transition: all 0.3s ease;
+}
+
+.timerWrapper svg {
+    width: 14px !important;
+    height: 14px !important;
 }
 
 @media (hover: hover) {
@@ -258,7 +271,7 @@
 }
 
 .timer {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     color: #ff3b30;
     font-variant-numeric: tabular-nums;
@@ -396,6 +409,50 @@
     letter-spacing: 1px;
 }
 
+.brandLogoOverlay {
+    position: relative;
+    margin: 2px auto 8px auto;
+    z-index: 5;
+    max-width: 220px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    background: transparent;
+}
+
+.brandLogoOverlay:hover {
+    transform: translateY(-2px) scale(1.05);
+}
+
+.logoOverlayInner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.brandLogoImgOverlay {
+    max-height: 60px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    opacity: 1;
+}
+
+.brandLogoOverlay:hover .brandLogoImgOverlay {
+    opacity: 1;
+}
+
+.brandTextOverlay {
+    color: #1d1d1f;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
 /* Pricing Section */
 .pricing {
     margin-top: auto;
@@ -479,6 +536,7 @@
 .notifyBtn {
     background: #f59e0b;
 }
+
 .notifyBtn:hover {
     background: #d97706;
 }
@@ -595,8 +653,18 @@
     }
 
     .timerWrapper {
-        padding: 2px 10px;
+        padding: 2px 8px;
         bottom: -12px;
+        gap: 4px;
+    }
+
+    .timerWrapper svg {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    .timer {
+        font-size: 11px !important;
     }
 
     .dealTag,
@@ -608,14 +676,30 @@
         letter-spacing: 0.2px !important;
     }
 
+    .cardHeader {
+        margin-bottom: 0px;
+    }
+
+    .brandLogoOverlay {
+        margin: 4px auto 4px auto;
+        max-width: 120px;
+    }
+
+    .brandLogoImgOverlay {
+        max-height: 35px;
+    }
+
     .tagsWrapperStart {
-        top: 6px !important;
-        inset-inline-start: 6px !important;
-        max-width: 65% !important;
+        top: 60px !important;
+        left: 2px !important;
     }
 
     .discountTagWrapper {
-        top: 6px !important;
-        inset-inline-end: 6px !important;
+        top: 60px !important;
+        right: 2px !important;
+    }
+
+    .description {
+        font-size: 11px !important;
     }
 }

@@ -176,7 +176,7 @@ const CategoryBrowse = () => {
                                                                 src={getCategoryImage(category)}
                                                                 alt={displayName}
                                                                 fill
-                                                                sizes="(max-width: 768px) 150px, 120px"
+                                                                sizes="(max-width: 640px) 80px, 110px"
                                                                 style={{ objectFit: 'contain', zIndex: 10 }}
                                                                 className={styles.categoryImg}
                                                                 onError={(e) => {

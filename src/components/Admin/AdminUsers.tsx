@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminUsers.module.css';
-import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar, Ban, CheckCircle, Coins, UserPlus, Wrench } from 'lucide-react';
+import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar, Ban, CheckCircle, Coins, UserPlus, Wrench, Filter, ChevronDown } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
-import { useTranslations } from 'next-intl';
+// No next-intl import needed
 import { useAuth } from '@/context/AuthContext';
 
 // All admin menu items with their permission keys
@@ -44,9 +44,92 @@ const AdminUsers = () => {
     const [roles, setRoles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [roleFilter, setRoleFilter] = useState('all');
     const { showNotification } = useNotification();
-    const { user: currentUser } = useAuth();
-    const t = useTranslations('admin.users');
+    const currentUser = useAuth().user;
+
+    // Hardcoded English translations for Admin Users module
+    const t = (key: string, options?: any) => {
+        const translations: { [key: string]: string } = {
+            'title': 'Users Management',
+            'subtitle': 'Manage access levels and account details for your team and customers.',
+            'createBtn': 'Create User',
+            'searchPlaceholder': 'Search users by name or email...',
+            'dashboard.totalUsers': 'Total Users',
+            'dashboard.allUsers': 'All Users',
+            'dashboard.activeUsers': 'Active Users',
+            'dashboard.currentlyActive': 'Currently Active',
+            'dashboard.admins': 'Admins',
+            'dashboard.fullAccess': 'Full Access',
+            'dashboard.rewardPoints': 'Reward Points',
+            'dashboard.acrossUsers': 'Across Users',
+            'filters.allRoles': 'All Roles',
+            'filters.admins': 'Admins',
+            'filters.staff': 'Staff',
+            'filters.users': 'Users',
+            'table.details': 'User Details',
+            'table.role': 'Role',
+            'table.status': 'Status',
+            'table.points': 'Reward Points',
+            'table.joined': 'Joined Date',
+            'table.actions': 'Actions',
+            'loader': 'Loading Users...',
+            'empty': 'No users found.',
+            'roles.admin': 'ADMIN',
+            'roles.staff': 'STAFF',
+            'roles.user': 'USER',
+            'status.active': 'ACTIVE',
+            'status.suspended': 'SUSPENDED',
+            'tooltips.edit': 'Edit User',
+            'tooltips.delete': 'Delete User',
+            'tooltips.adminNoDelete': 'Admin cannot be deleted',
+            'tooltips.adminNoSuspend': 'Admin cannot be suspended',
+            'tooltips.suspend': 'Suspend Account',
+            'tooltips.activate': 'Activate Account',
+            'modals.createTitle': 'Create New User',
+            'modals.editTitle': 'Edit User Details',
+            'modals.nameLabel': 'Full Name',
+            'modals.namePlaceholder': 'Enter full name',
+            'modals.emailLabel': 'Email Address',
+            'modals.emailPlaceholder': 'Enter email address',
+            'modals.passwordLabel': 'Password',
+            'modals.passwordPlaceholder': 'Enter password',
+            'modals.roleLabel': 'User Role',
+            'modals.selectRole': 'Select a role',
+            'modals.staffPermsLabel': 'Staff Permissions (Module Access)',
+            'modals.cancel': 'Cancel',
+            'modals.createConfirm': 'Create User',
+            'modals.save': 'Save Changes',
+            'modals.pointsTitle': 'Reward Points Management',
+            'modals.pointsCurrent': 'Current Balance',
+            'modals.pointsActionAdd': 'Add Points',
+            'modals.pointsActionRemove': 'Remove Points',
+            'modals.pointsAmountPlaceholder': 'Amount...',
+            'modals.pointsApply': 'Apply Points',
+            'modals.suspendConfirm': 'Suspend Account',
+            'modals.activateConfirm': 'Activate Account',
+            'modals.deleteTitle': 'Delete User',
+            'modals.deleteMessage': 'Are you sure you want to permanently delete this user? This action cannot be undone.',
+            'modals.deleteConfirm': 'Delete Permanently',
+            'notifications.createSuccess': 'User created successfully',
+            'notifications.createError': 'Failed to create user',
+            'notifications.updateSuccess': 'User updated successfully',
+            'notifications.updateError': 'Failed to update user',
+            'notifications.statusUpdateError': 'Failed to update status',
+            'notifications.pointsUpdateSuccess': 'Points updated successfully',
+            'notifications.pointsUpdateError': 'Failed to update points',
+            'notifications.deleteSuccess': 'User deleted successfully',
+            'notifications.deleteError': 'Failed to delete user',
+            'notifications.genericError': 'Something went wrong',
+        };
+
+        if (key.includes('roles.')) {
+            const role = key.split('.')[1];
+            return translations[key] || role.toUpperCase();
+        }
+
+        return translations[key] || key;
+    };
 
     // --- Edit modal ---
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -237,8 +320,13 @@ const AdminUsers = () => {
 
     const filteredUsers = users.filter(u => {
         if (currentUser?.role === 'staff' && (u.role || '').toLowerCase() === 'admin') return false;
-        return u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+
+        const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             u.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesRole = roleFilter === 'all' || (u.role || '').toLowerCase() === roleFilter.toLowerCase();
+
+        return matchesSearch && matchesRole;
     });
 
     // Shared staff-permissions checkbox UI
@@ -270,19 +358,62 @@ const AdminUsers = () => {
         <div className={styles.adminUsers}>
             <div className={styles.header}>
                 <div className={styles.titleSection}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <h1>{t('title')}</h1>
+                    <h1>
+                        {t('title')}
                         <div className={styles.totalBadge}>
                             <Users size={14} />
-                            <span>{t('totalBadge', { count: users.length })}</span>
+                            <span>{users.length} Members</span>
                         </div>
-                    </div>
+                    </h1>
                     <p>{t('subtitle')}</p>
                 </div>
                 <button className={styles.createBtn} onClick={openCreateModal}>
                     <UserPlus size={16} />
                     {t('createBtn')}
                 </button>
+            </div>
+
+            <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                    <div className={`${styles.statIcon} ${styles.totalUsersIcon}`}>
+                        <Users size={24} />
+                    </div>
+                    <div className={styles.statInfo}>
+                        <span className={styles.statValue}>{users.length}</span>
+                        <span className={styles.statLabel}>{t('dashboard.totalUsers')}</span>
+                        <span className={styles.statSubLabel}>{t('dashboard.allUsers')}</span>
+                    </div>
+                </div>
+                <div className={styles.statCard}>
+                    <div className={`${styles.statIcon} ${styles.activeUsersIcon}`}>
+                        <CheckCircle size={24} />
+                    </div>
+                    <div className={styles.statInfo}>
+                        <span className={styles.statValue}>{users.filter(u => (u.status || 'active') === 'active').length}</span>
+                        <span className={styles.statLabel}>{t('dashboard.activeUsers')}</span>
+                        <span className={styles.statSubLabel}>{t('dashboard.currentlyActive')}</span>
+                    </div>
+                </div>
+                <div className={styles.statCard}>
+                    <div className={`${styles.statIcon} ${styles.adminsIcon}`}>
+                        <Shield size={24} />
+                    </div>
+                    <div className={styles.statInfo}>
+                        <span className={styles.statValue}>{users.filter(u => (u.role || 'user').toLowerCase() === 'admin').length}</span>
+                        <span className={styles.statLabel}>{t('dashboard.admins')}</span>
+                        <span className={styles.statSubLabel}>{t('dashboard.fullAccess')}</span>
+                    </div>
+                </div>
+                <div className={styles.statCard}>
+                    <div className={`${styles.statIcon} ${styles.pointsIcon}`}>
+                        <Coins size={24} />
+                    </div>
+                    <div className={styles.statInfo}>
+                        <span className={styles.statValue}>{users.reduce((sum, u) => sum + (Number(u.reward_points) || 0), 0).toLocaleString()}</span>
+                        <span className={styles.statLabel}>{t('dashboard.rewardPoints')}</span>
+                        <span className={styles.statSubLabel}>{t('dashboard.acrossUsers')}</span>
+                    </div>
+                </div>
             </div>
 
             <div className={styles.filtersWrapper}>
@@ -294,6 +425,23 @@ const AdminUsers = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                </div>
+
+                <div className={styles.filterGroup}>
+                    <div className={styles.filterSelectWrapper}>
+                        <Filter size={16} className={styles.filterIcon} />
+                        <select
+                            className={styles.filterSelect}
+                            value={roleFilter}
+                            onChange={(e) => setRoleFilter(e.target.value)}
+                        >
+                            <option value="all">{t('filters.allRoles')}</option>
+                            <option value="admin">{t('filters.admins')}</option>
+                            <option value="staff">{t('filters.staff')}</option>
+                            <option value="user">{t('filters.users')}</option>
+                        </select>
+                        <ChevronDown size={16} className={styles.chevronIcon} />
+                    </div>
                 </div>
             </div>
 

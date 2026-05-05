@@ -703,7 +703,7 @@ function CheckoutContent() {
                                                                     fontFamily: 'Inter, sans-serif',
                                                                     fontWeight: '500',
                                                                     '::placeholder': { color: '#cbd5e1' },
-                                                                    iconColor: '#237073',
+                                                                    iconColor: '#16a1db',
                                                                 },
                                                                 invalid: { color: '#dc2626', iconColor: '#dc2626' },
                                                             },

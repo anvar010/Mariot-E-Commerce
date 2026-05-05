@@ -34,7 +34,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { useRouter } from 'next/navigation';
 import { stripHtml } from '@/utils/formatters';
 import { getAuthHeaders } from '@/utils/authHeaders';
-import { useTranslations } from 'next-intl';
+// No next-intl import needed
 
 const AdminDashboard = () => {
     const { user, token } = useAuth();
@@ -48,7 +48,70 @@ const AdminDashboard = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const { showNotification } = useNotification();
     const router = useRouter();
-    const t = useTranslations('admin');
+    // Hardcoded English translations for Admin Dashboard module
+    const t = (key: string, options?: any) => {
+        const translations: { [key: string]: string } = {
+            'dashboard.title': 'Dashboard Overview',
+            'dashboard.subtitle': 'Real-time business performance and shop monitoring.',
+            'dashboard.loader': 'Synchronizing Dashboard Data...',
+            'dashboard.refresh': 'Refresh Data',
+            'dashboard.refreshing': 'Refreshing...',
+            'dashboard.welcome': `Welcome back, ${options?.name || 'Admin'}!`,
+            'dashboard.revenueNote': `Your shop has generated <strong>AED ${options?.amount}</strong> in revenue for this period.`,
+            'dashboard.actions.addProduct': 'Add New Product',
+            'dashboard.actions.advancedAnalytics': 'View Detailed Analytics',
+            'dashboard.stats.revenue': 'Total Revenue',
+            'dashboard.stats.orders': 'Total Orders',
+            'dashboard.stats.customers': 'Total Customers',
+            'dashboard.stats.catalog': 'Total Products',
+            'dashboard.stats.vsPrev': 'vs previous period',
+            'dashboard.stats.active': 'Live',
+            'dashboard.charts.salesTrend': `Sales Trend (${options?.range || ''})`,
+            'dashboard.charts.noData': 'No sales data for this period.',
+            'dashboard.charts.revenueByCategory': 'Revenue by Category',
+            'dashboard.charts.shareOfTotal': `${options?.percent}% of total`,
+            'dashboard.charts.noCategoryData': 'No category distribution available.',
+            'dashboard.charts.topProducts': 'Most Popular Products',
+            'dashboard.charts.unitsSold': `${options?.count} units sold`,
+            'dashboard.alerts.inventory': 'Inventory Alerts',
+            'dashboard.alerts.remaining': `${options?.count} remaining`,
+            'dashboard.alerts.allClear': 'Stock levels are stable across the catalog.',
+            'dashboard.actions.manage': 'Manage All',
+            'dashboard.reviews.recent': 'Recent Reviews',
+            'dashboard.reviews.all': 'View All Reviews',
+            'dashboard.reviews.reviewed': 'reviewed',
+            'dashboard.reviews.delete': 'Delete Review',
+            'dashboard.reviews.empty': 'No recent reviews found.',
+            'dashboard.orders.recent': 'Recent Orders',
+            'dashboard.orders.all': 'Manage Orders',
+            'dashboard.orders.empty': 'No recent orders found.',
+            'dashboard.orders.table.id': 'Order ID',
+            'dashboard.orders.table.date': 'Date',
+            'dashboard.orders.table.customer': 'Customer',
+            'dashboard.orders.table.total': 'Total',
+            'dashboard.orders.table.status': 'Status',
+            'dashboard.orders.table.payment': 'Payment',
+            'dashboard.timeRanges.7d': 'Last 7 Days',
+            'dashboard.timeRanges.14d': 'Last 14 Days',
+            'dashboard.timeRanges.30d': 'Last 30 Days',
+            'dashboard.timeRanges.3m': 'Last 3 Months',
+            'dashboard.timeRanges.6m': 'Last 6 Months',
+            'dashboard.timeRanges.1y': 'Last 1 Year',
+            'dashboard.timeRanges.all': 'All Time',
+            'dashboard.notifications.fetchStatsError': 'Failed to load dashboard statistics',
+            'dashboard.notifications.deleteReviewSuccess': 'Review removed successfully',
+            'dashboard.notifications.deleteReviewError': 'Failed to delete review',
+            'dashboard.notifications.genericError': 'Something went wrong',
+            'dashboard.modals.deleteReview.title': 'Delete Review',
+            'dashboard.modals.deleteReview.message': 'Are you sure you want to permanently delete this customer review?',
+            'dashboard.modals.deleteReview.confirm': 'Delete Review'
+        };
+
+        let result = translations[key] || (key.startsWith('dashboard.') ? key.replace('dashboard.', '') : key);
+
+        // Handle simple interpolations manually if needed, but the current mapping covers the ones used.
+        return result;
+    };
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{

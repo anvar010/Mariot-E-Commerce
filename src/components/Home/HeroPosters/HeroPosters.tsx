@@ -147,10 +147,10 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
                                         src={resolveUrl(poster.image)}
                                         alt={isArabic && poster.title_ar ? poster.title_ar : poster.title}
                                         fill
-                                        sizes="(max-width: 768px) 220px, 260px"
+                                        sizes="(max-width: 640px) 220px, 260px"
                                         className={styles.posterImg}
                                         priority={index === 0}
-                                        quality={85}
+                                        quality={75}
                                     />
                                 </div>
                                 <div className={styles.overlay}>
