@@ -274,7 +274,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [product, setProduct] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [qty, setQty] = useState(1);
+    const [qty, setQty] = useState<number | string>(1);
     const [selectedValues, setSelectedValues] = useState<Record<number, string>>({});
     const [showTabbyModal, setShowTabbyModal] = useState(false);
     const [showPriceMatchModal, setShowPriceMatchModal] = useState(false);
@@ -307,6 +307,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         }
     }, [currentImageIndex]);
 
+    useEffect(() => {
+        if (!showPriceMatchModal) {
+            setPmError(null);
+        }
+    }, [showPriceMatchModal]);
+
     // Price Match Form State
     const [pmForm, setPmForm] = useState({
         shopName: '',
@@ -316,16 +322,18 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         agreed: false
     });
     const [isPmSubmitting, setIsPmSubmitting] = useState(false);
+    const [pmError, setPmError] = useState<string | null>(null);
     const pmFileRef = useRef<HTMLInputElement>(null);
 
     const handlePriceMatchSubmit = async () => {
+        setPmError(null);
         if (!pmForm.agreed) {
-            showNotification(t('agreeToTerms'), 'error');
+            setPmError(t('agreeToTerms'));
             return;
         }
 
         if (!pmForm.shopName || !pmForm.email || !pmForm.phone) {
-            showNotification(t('fillRequiredFields'), 'error');
+            setPmError(t('fillRequiredFields'));
             return;
         }
 
@@ -846,7 +854,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             slug: product.slug,
             stock_quantity: effectiveStock,
             track_inventory: hasVariants ? 1 : product.track_inventory,
-            quantity: qty,
+            quantity: Number(qty) || 1,
             oldPrice: oldPrice
         });
 
@@ -2031,7 +2039,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         </div>
                                     </div>
 
-                                    <div className={styles.pmCheckboxGroup} onClick={() => setPmForm({ ...pmForm, agreed: !pmForm.agreed })}>
+                                    {pmError && (
+                                        <div className={styles.pmErrorMessage}>
+                                            <Info size={16} />
+                                            <span>{pmError}</span>
+                                        </div>
+                                    )}
+
+                                    <div className={styles.pmCheckboxGroup} onClick={() => {
+                                        setPmForm({ ...pmForm, agreed: !pmForm.agreed });
+                                        if (pmError) setPmError(null);
+                                    }}>
                                         <input
                                             type="checkbox"
                                             id="terms"
@@ -2040,7 +2058,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             onChange={() => { }} // Handled by group click
                                         />
                                         <label htmlFor="terms" className={styles.pmCheckboxLabel}>
-                                            {t('agreeTermsPrev') || 'I have read the'} <Link href="/price-match-policy" onClick={(e) => e.stopPropagation()}>{t('priceMatchPolicy') || 'Price Match Policy'}</Link> {t('agreeTermsMid') || 'and I agree to the'} <Link href="/terms" onClick={(e) => e.stopPropagation()}>{t('termsAndConditions') || 'Terms and Conditions'}</Link>
+                                            {t('agreeTermsPrev') || 'I have read the'} <Link href={`/${locale}/price-match-policy`} onClick={(e) => e.stopPropagation()}>{t('priceMatchPolicy') || 'Price Match Policy'}</Link> {t('agreeTermsMid') || 'and I agree to the'} <Link href={`/${locale}/terms-and-conditions`} onClick={(e) => e.stopPropagation()}>{t('termsAndConditions') || 'Terms and Conditions'}</Link>
                                         </label>
                                     </div>
 
