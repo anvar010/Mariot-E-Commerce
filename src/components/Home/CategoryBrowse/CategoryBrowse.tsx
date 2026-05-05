@@ -36,15 +36,19 @@ const CATEGORY_IMAGE_MAP: { [key: string]: string } = {
     'food-beverage-ingredients': '/assets/product_images/food-beverage-ingredients.webp'
 };
 
-const CategoryBrowse = () => {
+interface CategoryBrowseProps {
+    initialCategories?: any[];
+}
+
+const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
     const t = useTranslations('categories');
     const tc = useTranslations('categoryContent');
     const locale = useLocale();
     const isRtl = locale === 'ar';
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
-    const [apiCategories, setApiCategories] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [apiCategories, setApiCategories] = useState<any[]>(initialCategories);
+    const [loading, setLoading] = useState(initialCategories.length === 0);
 
     const [emblaRef, emblaApi] = useEmblaCarousel({
         loop: false,
@@ -58,6 +62,7 @@ const CategoryBrowse = () => {
 
     // Fetch categories dynamically to keep in sync with the Mega Menu and Shop
     useEffect(() => {
+        if (initialCategories.length > 0) return;
         const fetchCategories = async () => {
             try {
                 const res = await fetch(`${API_BASE_URL}/categories`, { credentials: "include" });
@@ -137,6 +142,7 @@ const CategoryBrowse = () => {
                                 className={`${styles.navBtn} ${!canScrollLeft ? styles.navBtnDisabled : ''}`}
                                 onClick={scrollPrev}
                                 disabled={!canScrollLeft}
+                                aria-label="Scroll categories left"
                             >
                                 <ChevronLeft size={20} />
                             </motion.button>
@@ -144,6 +150,7 @@ const CategoryBrowse = () => {
                                 className={`${styles.navBtn} ${!canScrollRight ? styles.navBtnDisabled : ''}`}
                                 onClick={scrollNext}
                                 disabled={!canScrollRight}
+                                aria-label="Scroll categories right"
                             >
                                 <ChevronRight size={20} />
                             </motion.button>
@@ -174,7 +181,7 @@ const CategoryBrowse = () => {
                                                         <div className={styles.imageBox}>
                                                             <Image
                                                                 src={getCategoryImage(category)}
-                                                                alt={displayName}
+                                                                alt=""
                                                                 fill
                                                                 sizes="(max-width: 640px) 80px, 110px"
                                                                 style={{ objectFit: 'contain', zIndex: 10 }}

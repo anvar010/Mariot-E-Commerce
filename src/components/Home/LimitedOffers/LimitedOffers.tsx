@@ -57,8 +57,30 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
     useEffect(() => {
         // Skip initial fetch if server already provided data; only poll for updates
         if (initialProducts.length === 0) fetchOffers();
-        const id = setInterval(fetchOffers, 30000);
-        return () => clearInterval(id);
+
+        let id: ReturnType<typeof setInterval> | null = null;
+        const start = () => {
+            if (id !== null) return;
+            id = setInterval(fetchOffers, 30000);
+        };
+        const stop = () => {
+            if (id !== null) { clearInterval(id); id = null; }
+        };
+        const onVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                fetchOffers();
+                start();
+            } else {
+                stop();
+            }
+        };
+
+        if (document.visibilityState === 'visible') start();
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisibility);
+            stop();
+        };
     }, []);
 
     useEffect(() => {
