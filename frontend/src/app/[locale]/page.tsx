@@ -1,16 +1,18 @@
+import dynamic from 'next/dynamic';
 import Header from '@/components/Layout/Header/Header';
 import Hero from '@/components/Home/Hero/Hero';
 import HeroPosters from '@/components/Home/HeroPosters/HeroPosters';
 import CategoryBrowse from '@/components/Home/CategoryBrowse/CategoryBrowse';
-import LimitedOffers from '@/components/Home/LimitedOffers/LimitedOffers';
-import WeeklyDeals from '@/components/Home/WeeklyDeals/WeeklyDeals';
-import IceMakers from '@/components/Home/IceMakers/IceMakers';
-import CoffeeMakers from '@/components/Home/CoffeeMakers/CoffeeMakers';
-import CookingEquipment from '@/components/Home/CookingEquipment/CookingEquipment';
-import AboutSection from '@/components/Home/AboutSection/AboutSection';
-import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
-import Footer from '@/components/Layout/Footer/Footer';
 import Reveal from '@/components/shared/Reveal/Reveal';
+
+// Below-fold sections — deferred to keep initial CSS bundle small
+const LimitedOffers = dynamic(() => import('@/components/Home/LimitedOffers/LimitedOffers'));
+const WeeklyDeals = dynamic(() => import('@/components/Home/WeeklyDeals/WeeklyDeals'));
+const IceMakers = dynamic(() => import('@/components/Home/IceMakers/IceMakers'));
+const CoffeeMakers = dynamic(() => import('@/components/Home/CoffeeMakers/CoffeeMakers'));
+const CookingEquipment = dynamic(() => import('@/components/Home/CookingEquipment/CookingEquipment'));
+const AboutSection = dynamic(() => import('@/components/Home/AboutSection/AboutSection'));
+const Footer = dynamic(() => import('@/components/Layout/Footer/Footer'));
 
 const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
@@ -18,7 +20,7 @@ async function getHomeData(locale: string) {
     const isRtl = locale === 'ar';
     try {
         const [cmsRes, limitedRes, weeklyRes, iceRes, coffeeRes, cookingRes] = await Promise.all([
-            fetch(`${API_BASE_URL_SERVER}/cms/homepage`, { next: { revalidate: 0 } }),
+            fetch(`${API_BASE_URL_SERVER}/cms/homepage`, { next: { revalidate: 30 } }),
             fetch(`${API_BASE_URL_SERVER}/products?is_limited_offer=true&limit=8`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?is_weekly_deal=true`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?search=ice%20makers`, { next: { revalidate: 60 } }),
@@ -126,7 +128,6 @@ export default async function Home({ params: { locale } }: { params: { locale: s
             <Reveal key="reveal-cooking"><CookingEquipment initialProducts={data.cookingProducts} /></Reveal>
             <Reveal key="reveal-about"><AboutSection /></Reveal>
             <Footer />
-            <FloatingActions />
         </main>
     );
 }

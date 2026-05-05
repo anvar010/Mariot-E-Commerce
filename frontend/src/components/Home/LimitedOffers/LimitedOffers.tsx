@@ -55,8 +55,9 @@ const LimitedOffers = ({ initialProducts = [] }: LimitedOffersProps) => {
     };
 
     useEffect(() => {
-        fetchOffers();
-        const id = setInterval(fetchOffers, 60000);
+        // Skip initial fetch if server already provided data; only poll for updates
+        if (initialProducts.length === 0) fetchOffers();
+        const id = setInterval(fetchOffers, 30000);
         return () => clearInterval(id);
     }, []);
 

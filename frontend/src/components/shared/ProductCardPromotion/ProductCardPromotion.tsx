@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './ProductCardPromotion.module.css';
-import { Heart, ShoppingCart, Check, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, BellRing } from 'lucide-react';
+import { ShoppingCart, Star, ChevronLeft, ChevronRight, BellRing, Clock } from 'lucide-react';
 import NotifyMeModal from '@/components/shared/NotifyMeModal/NotifyMeModal';
 import { Link } from '@/i18n/navigation';
 import Image from "next/legacy/image";
+import NextImage from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { getBrandLogo } from '@/utils/brandLogos';
-import { BASE_URL } from '@/config';
 import { useLocale, useTranslations } from 'next-intl';
 import { resolveUrl } from '@/utils/resolveUrl';
 import { useCountdownTimer } from '@/hooks/useCountdownTimer';
@@ -44,7 +44,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     const displayBrand = product.brand_name || (product as any)?.brand || 'RATIONAL';
     const localBrandLogo = getBrandLogo(displayBrand);
 
-    const displayBrandImage = resolveUrl(localBrandLogo || product.brand_image || (product as any)?.brand_logo);
+    const displayBrandImage = resolveUrl(localBrandLogo ?? product.brand_image ?? (product as any)?.brand_logo);
     const displayImage = resolveUrl(product.primary_image) || '/assets/mariot-logo2.webp';
     const formatTime = (num: number) => num.toString().padStart(2, '0');
     const isInventoryTracked = product.track_inventory === 1 || product.track_inventory === '1' || product.track_inventory === true;
@@ -192,26 +192,56 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
 
     return (
         <div className={`${styles.card} ${disableHover ? styles.noHover : ''}`}>
-            <div className={styles.tagsWrapperStart}>
-                {!!product.is_weekly_deal && (
-                    <div className={`${styles.dealTag} ${styles.weeklyTag}`}>{t('weeklyDeal')}</div>
-                )}
-                {!!product.is_limited_offer && (
-                    <div className={`${styles.dealTag} ${styles.limitedTag}`}>{t('limitedOffer')}</div>
-                )}
-                {!!product.is_daily_offer && (
-                    <div className={`${styles.dealTag} ${styles.dailyTag}`}>{t('dailyOffer')}</div>
-                )}
-                {/* {(!!product.is_best_seller || Number(product.sold_count) >= 2) && (
-                    <div className={styles.bestSellerTag}>{t('topSellingProduct')}</div>
-                )} */}
-            </div>
+            {/* Absolute Tags at Card level */}
+            {(!!product.is_weekly_deal || !!product.is_limited_offer || !!product.is_daily_offer) && (
+                <div className={styles.tagsWrapperStart}>
+                    {!!product.is_weekly_deal && (
+                        <div className={`${styles.dealTag} ${styles.weeklyTag}`}>{t('weeklyDeal')}</div>
+                    )}
+                    {!!product.is_limited_offer && (
+                        <div className={`${styles.dealTag} ${styles.limitedTag}`}>{t('limitedOffer')}</div>
+                    )}
+                    {!!product.is_daily_offer && (
+                        <div className={`${styles.dealTag} ${styles.dailyTag}`}>{t('dailyOffer')}</div>
+                    )}
+                </div>
+            )}
 
             {Number(product.discount_percentage) > 0 && (
                 <div className={styles.discountTagWrapper}>
                     <div className={styles.discountTag}>{Number(product.discount_percentage).toFixed(0)}% {t('off')}</div>
                 </div>
             )}
+
+            {/* Header Area with Logo */}
+            <div className={styles.cardHeader}>
+                <Link
+                    href={`/shop?brand=${encodeURIComponent((displayBrand || '').toLowerCase().replaceAll(' ', '-'))}`}
+                    className={styles.brandLogoOverlay}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        globalThis.window.location.href = `/shop?brand=${encodeURIComponent((displayBrand || '').toLowerCase().replaceAll(' ', '-'))}`;
+                    }}
+                >
+                    <div className={styles.logoOverlayInner}>
+                        {displayBrandImage && !logoError ? (
+                            <NextImage
+                                src={displayBrandImage}
+                                alt={displayBrand || 'Brand'}
+                                width={220}
+                                height={60}
+                                className={styles.brandLogoImgOverlay}
+                                onError={() => setLogoError(true)}
+                                style={{ objectFit: 'contain' }}
+                            />
+                        ) : (
+                            <span className={styles.brandTextOverlay}>{displayBrand || 'RATIONAL'}</span>
+                        )}
+                    </div>
+                </Link>
+
+            </div>
 
             <Link href={`/product/${product.slug || product.id}`} className={styles.imageLink}>
                 <div
@@ -289,24 +319,6 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                 <h3 className={styles.productName}>{(isArabic && product.name_ar) ? product.name_ar : product.name}</h3>
                 <p className={styles.description}>{t('modelLabel')} {product?.model || product?.slug?.toUpperCase() || product.id}</p>
 
-                <Link
-                    href={`/shop?brand=${encodeURIComponent((displayBrand || '').toLowerCase().replace(/ /g, '-'))}`}
-                    className={styles.brandLogoBox}
-                    style={{ textDecoration: 'none' }}
-                >
-                    <div className={styles.logoBorder}>
-                        {displayBrandImage && !logoError ? (
-                            <img
-                                src={displayBrandImage}
-                                alt={displayBrand || 'Brand'}
-                                className={styles.brandLogoImg}
-                                onError={() => setLogoError(true)}
-                            />
-                        ) : (
-                            <span className={styles.brandText}>{displayBrand || 'RATIONAL'}</span>
-                        )}
-                    </div>
-                </Link>
 
                 {/* Pricing */}
                 <div className={styles.pricing}>
@@ -356,7 +368,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const productUrl = typeof window !== 'undefined' ? `${window.location.origin}/product/${product?.slug || product?.id}` : '';
+                        const productUrl = typeof globalThis.window !== 'undefined' ? `${globalThis.window.location.origin}/product/${product?.slug || product?.id}` : '';
                         const msg = encodeURIComponent(t('whatsappMessage', {
                             url: productUrl,
                             name: (isArabic && product.name_ar) ? product.name_ar : product.name,

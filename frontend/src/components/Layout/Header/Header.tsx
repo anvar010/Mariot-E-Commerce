@@ -8,7 +8,8 @@ import { Search, ShoppingCart, User, Coins, Menu, Globe, Phone, MessageCircle, H
 import styles from './Header.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import CategoriesLayout from '@/components/Categories/CategoriesLayout';
+import dynamic from 'next/dynamic';
+const CategoriesLayout = dynamic(() => import('@/components/Categories/CategoriesLayout'), { ssr: false });
 
 import { API_BASE_URL } from '@/config';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -44,11 +45,15 @@ const Header = () => {
     const scrollTopRef = React.useRef(0);
     const hasDraggedRef = React.useRef(false);
 
+    const cachedOffsetTopRef = React.useRef(0);
+
     const handleSearchMouseDown = (e: React.MouseEvent) => {
         if (!searchDropdownRef.current) return;
         isDraggingRef.current = true;
         hasDraggedRef.current = false;
-        startYRef.current = e.pageY - searchDropdownRef.current.offsetTop;
+        // Read offsetTop once here; reuse in mousemove to avoid per-move reflows
+        cachedOffsetTopRef.current = searchDropdownRef.current.offsetTop;
+        startYRef.current = e.pageY - cachedOffsetTopRef.current;
         scrollTopRef.current = searchDropdownRef.current.scrollTop;
         searchDropdownRef.current.classList.add(styles.isDragging);
     };
@@ -68,7 +73,7 @@ const Header = () => {
 
     const handleSearchMouseMove = (e: React.MouseEvent) => {
         if (!isDraggingRef.current || !searchDropdownRef.current) return;
-        const y = e.pageY - searchDropdownRef.current.offsetTop;
+        const y = e.pageY - cachedOffsetTopRef.current;
         const walk = (y - startYRef.current) * 1.5; // Scroll speed
         if (Math.abs(y - startYRef.current) > 5) {
             hasDraggedRef.current = true;
@@ -88,8 +93,17 @@ const Header = () => {
                 console.error("Header CMS fetch failed", err);
             }
         };
-        const timeoutId = setTimeout(fetchCMS, 1000);
-        return () => clearTimeout(timeoutId);
+        // Announcement is not critical — defer until browser is idle
+        let handle: number;
+        if ('requestIdleCallback' in window) {
+            handle = (window as any).requestIdleCallback(fetchCMS, { timeout: 5000 });
+        } else {
+            handle = setTimeout(fetchCMS, 3000) as unknown as number;
+        }
+        return () => {
+            if ('requestIdleCallback' in window) (window as any).cancelIdleCallback(handle);
+            else clearTimeout(handle);
+        };
     }, []);
 
     useEffect(() => {
@@ -139,19 +153,17 @@ const Header = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-    // {updated height}
+    // ResizeObserver fires after layout — no forced reflow
     useEffect(() => {
-        const updateHeight = () => {
-            if (!isSticky && headerRef.current) {
-                const h = headerRef.current.offsetHeight;
-                if (h > 0) setHeaderHeight(h);
-            }
-        };
-
-        updateHeight();
-        window.addEventListener('resize', updateHeight);
-        return () => window.removeEventListener('resize', updateHeight);
-    }, [isSticky, announcement, user]);
+        if (!headerRef.current) return;
+        const ro = new ResizeObserver((entries) => {
+            if (isSticky) return;
+            const h = entries[0]?.contentRect.height;
+            if (h && h > 0) setHeaderHeight(h);
+        });
+        ro.observe(headerRef.current);
+        return () => ro.disconnect();
+    }, [isSticky]);
 
     useEffect(() => {
         let ticking = false;
@@ -183,10 +195,23 @@ const Header = () => {
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
+    const [optimisticIsArabic, setOptimisticIsArabic] = useState(isArabic);
+    
+    // Sync optimistic state if locale changes externally
+    useEffect(() => {
+        setOptimisticIsArabic(isArabic);
+    }, [isArabic]);
+
     const switchLocale = (newLocale: 'en' | 'ar') => {
-        // The locale-aware router handles locale prefixing automatically
-        const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, '') || '/';
-        router.push(pathWithoutLocale, { locale: newLocale });
+        const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+        
+        // Update visual state instantly
+        setOptimisticIsArabic(newLocale === 'ar');
+        
+        // Wait for the CSS animation (200ms) to finish before reloading the page
+        setTimeout(() => {
+            router.replace(pathname + currentSearch, { locale: newLocale });
+        }, 200);
     };
 
     const handleSearch = (e?: React.FormEvent) => {
@@ -419,8 +444,8 @@ const Header = () => {
                                     id="languageToggle"
                                     className={`${styles.checkToggle} ${styles.checkToggleRoundFlat}`}
                                     type="checkbox"
-                                    checked={!isArabic}
-                                    onChange={() => switchLocale(isArabic ? 'en' : 'ar')}
+                                    checked={!optimisticIsArabic}
+                                    onChange={() => switchLocale(optimisticIsArabic ? 'en' : 'ar')}
                                 />
                                 <label htmlFor="languageToggle"></label>
                                 <span className={styles.switchOn}>عربي</span>

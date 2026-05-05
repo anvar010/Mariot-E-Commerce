@@ -54,8 +54,9 @@ const WeeklyDeals = ({ initialProducts = [] }: WeeklyDealsProps) => {
     };
 
     useEffect(() => {
-        fetchDeals();
-        const id = setInterval(fetchDeals, 60000);
+        // Skip initial fetch if server already provided data; only poll for updates
+        if (initialProducts.length === 0) fetchDeals();
+        const id = setInterval(fetchDeals, 30000);
         return () => clearInterval(id);
     }, []);
 

@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { X, ChevronUp, Bot } from 'lucide-react';
 import styles from './FloatingActions.module.css';
 import { useCart } from '@/context/CartContext';
-import Chatbot from '../Chatbot/Chatbot';
+import dynamic from 'next/dynamic';
+const Chatbot = dynamic(() => import('../Chatbot/Chatbot'), { ssr: false });
 
 const FloatingActions = () => {
     const [isVisible, setIsVisible] = useState(false);

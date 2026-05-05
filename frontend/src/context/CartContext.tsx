@@ -138,8 +138,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             prevToken.current = token;
         };
 
-        const timeoutId = setTimeout(handleCartSync, token ? 1500 : 0);
-        return () => clearTimeout(timeoutId);
+        // Defer until browser is idle so cart sync doesn't compete with LCP
+        let handle: number;
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            handle = (window as any).requestIdleCallback(handleCartSync, { timeout: 3000 });
+        } else {
+            handle = setTimeout(handleCartSync, 2000) as unknown as number;
+        }
+        return () => {
+            if ('requestIdleCallback' in window) (window as any).cancelIdleCallback(handle);
+            else clearTimeout(handle);
+        };
     }, [token]);
 
     // 2. Persistence loop for guests

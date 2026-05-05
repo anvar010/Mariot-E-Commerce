@@ -1,12 +1,15 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
+import dynamicImport from 'next/dynamic';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import Providers from './providers';
-import CartDrawer from '@/components/Layout/CartDrawer/CartDrawer';
-import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
-import Promotions from '@/components/shared/Promotions/Promotions';
 import { Inter, Alexandria } from 'next/font/google';
+
+// Deferred — not needed for initial render, load after page is interactive
+const CartDrawer = dynamicImport(() => import('@/components/Layout/CartDrawer/CartDrawer'), { ssr: false });
+const FloatingActions = dynamicImport(() => import('@/components/shared/FloatingActions/FloatingActions'), { ssr: false });
+const Promotions = dynamicImport(() => import('@/components/shared/Promotions/Promotions'), { ssr: false });
 
 const inter = Inter({
     subsets: ['latin'],
@@ -74,6 +77,13 @@ export default async function LocaleLayout({
     return (
         <html lang={locale} dir={isRTL ? 'rtl' : 'ltr'} className={`${inter.variable} ${alexandria.variable}`}>
             <head>
+                {/* Preconnect to font/external origins — skip localhost (no DNS needed) */}
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                {process.env.NEXT_PUBLIC_API_BASE_URL && !process.env.NEXT_PUBLIC_API_BASE_URL.includes('localhost') && (
+                    <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/api\/v1\/?$/, '')} />
+                )}
+                <link rel="dns-prefetch" href="https://checkout.tabby.ai" />
+                <link rel="dns-prefetch" href="https://accounts.google.com" />
             </head>
             <body>
                 <NextIntlClientProvider locale={locale} messages={messages}>

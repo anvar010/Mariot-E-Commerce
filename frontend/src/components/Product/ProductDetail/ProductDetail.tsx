@@ -460,15 +460,18 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         }
                         setSelectedValues(defaults);
                     }
-                    // Try categories from most specific to least specific
-                    const categoriesToTry = [
-                        data.data.sub_sub_category_id,
-                        data.data.sub_category_id,
-                        data.data.category_id,
-                        data.data.category_slug
-                    ].filter(Boolean);
-
-                    fetchRelated(categoriesToTry, data.data.id);
+                    // Use manually curated "You May Also Need" products if set, otherwise fall back to category
+                    if (Array.isArray(data.data.you_may_also_need_products) && data.data.you_may_also_need_products.length > 0) {
+                        setRelatedProducts(data.data.you_may_also_need_products);
+                    } else {
+                        const categoriesToTry = [
+                            data.data.sub_sub_category_id,
+                            data.data.sub_category_id,
+                            data.data.category_id,
+                            data.data.category_slug
+                        ].filter(Boolean);
+                        fetchRelated(categoriesToTry, data.data.id);
+                    }
                     fetchReviews(data.data.id);
                 }
             } catch (err) {
@@ -1204,21 +1207,24 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 )}
 
                                 <div className={styles.priceSection}>
-                                    <div className={styles.currentPrice}>
-                                        AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    <div className={styles.priceRowMain}>
+                                        <div className={styles.currentPrice}>
+                                            AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </div>
+                                        {oldPrice && (
+                                            <>
+                                                <div className={styles.oldPrice}>
+                                                    AED {oldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                                {oldPrice > displayPrice && (
+                                                    <span className={styles.saveText}>
+                                                        {Math.round((oldPrice - displayPrice) / oldPrice * 100)}% {t('off')}
+                                                    </span>
+                                                )}
+                                            </>
+                                        )}
                                         <span className={styles.vatLabel}>{t('vatIncluded')}</span>
                                     </div>
-                                    {oldPrice && (
-                                        <div className={styles.priceRow}>
-                                            <div className={styles.oldPrice}>AED {oldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                                            {oldPrice > displayPrice && (
-                                                <span className={styles.saveBadge}>
-                                                    {t('save')} AED {(oldPrice - displayPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                    {' '}({Math.round((oldPrice - displayPrice) / oldPrice * 100)}% {t('off')})
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
 
                                 {getLocalizedField('short_description', 'short_description_ar') && (
@@ -1382,7 +1388,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('securePayment')} text={t('securePaymentText')} />
                             <TrustItem icon={<RotateCcw size={32} color="#4caf50" strokeWidth={1.5} />} title={t('satisfaction')} text={t('satisfactionText')} />
                             <TrustItem icon={<Headset size={32} color="#4caf50" strokeWidth={1.5} />} title={t('onlineSupport')} text={t('onlineSupportText')} />
-                            <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('warranty')} text={t('warrantyText')} />
+                            <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('warranty')} text={t('warrantyText', { count: product?.warranty_years || 1 })} />
                         </div>
 
                         <div className={styles.paymentMethods}>
@@ -1401,10 +1407,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
 
                 <div className={`${styles.detailsLayoutGrid} ${!hasVideo ? styles.noVideo : ''}`}>
-                    {/* Main Content Area (Accordions Column) */}
+                    {/*     Main Content Area (Accordions Column) */}
                     <div className={styles.accordionsColumn}>
                         <div className={styles.accordions}>
-                            {/* Description Accordion */}
+                            {/*     Description Accordion */}
                             <AccordionItem
                                 title={t('description')}
                                 icon={<FileText size={20} />}

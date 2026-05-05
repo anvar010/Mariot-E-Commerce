@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 import { Phone, Mail, Headset, Facebook, Instagram, Youtube, Linkedin, Music2, Twitter } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -57,10 +58,13 @@ const Footer = () => {
                         {/* Logo and About Section */}
                         <div className={styles.aboutCol}>
                             <Link href="/" className={styles.footerLogoWrapper}>
-                                <img
+                                <Image
                                     src="/assets/mariot-logo.webp"
                                     alt={t('logoAlt')}
+                                    width={200}
+                                    height={64}
                                     className={styles.footerLogoImg}
+                                    style={{ objectFit: 'contain' }}
                                 />
                             </Link>
                             <address className={styles.address}>

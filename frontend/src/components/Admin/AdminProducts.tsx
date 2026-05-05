@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './AdminProducts.module.css';
-import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
@@ -12,12 +12,116 @@ import { getAuthHeaders } from '@/utils/authHeaders';
 import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
-import { useTranslations } from 'next-intl';
 import VariantsEditor, { VariantOption, VariantRow } from './VariantsEditor';
 
+const t = (key: string, params?: Record<string, any>): string => {
+    const map: Record<string, string> = {
+        'title': 'Product Management',
+        'subtitle': 'Organize, update, and manage your product catalog with high precision.',
+        'searchPlaceholder': 'Search products...',
+        'empty': 'No products found',
+        'loader': 'Loading products...',
+        'totalBadge': `${params?.count ?? 0} total`,
+        'filters.search': 'Search products...',
+        'filters.categories': 'All Categories',
+        'filters.category': 'Category',
+        'filters.status': 'All Status',
+        'filters.stock': 'All Stock',
+        'filters.offers': 'All Offers',
+        'filters.featured': 'Featured',
+        'filters.weekly': 'Weekly Deal',
+        'filters.limited': 'Limited Offer',
+        'filters.daily': 'Daily Offer',
+        'filters.bestseller': 'Best Seller',
+        'table.product': 'Product',
+        'table.category': 'Category',
+        'table.brand': 'Brand',
+        'table.pricing': 'Pricing',
+        'table.stock': 'Stock',
+        'table.tags': 'Tags',
+        'table.status': 'Status',
+        'table.actions': 'Actions',
+        'actions.add': 'Product',
+        'actions.template': 'Template',
+        'actions.import': 'Import',
+        'actions.export': 'Export',
+        'actions.downloading': 'Exporting...',
+        'actions.processing': 'Processing...',
+        'actions.saving': 'Saving...',
+        'actions.updating': 'Updating...',
+        'actions.update': 'Update',
+        'actions.bulkUpdate': 'Bulk Update',
+        'actions.bulkUpdateSubtitle': `Update ${params?.count ?? 0} selected products`,
+        'actions.note': 'Note:',
+        'actions.bulkUpdateNote': 'Only filled fields will be updated.',
+        'modal.editTitle': 'Edit Product',
+        'modal.addTitle': 'Add Product',
+        'modal.tabs.basic': 'Basic Info',
+        'modal.tabs.content': 'Content',
+        'modal.tabs.logic': 'Logic',
+        'modal.tabs.deals': 'Deals',
+        'modal.tabs.visual': 'Visual',
+        'modal.fields.name': 'Product Name',
+        'modal.fields.namePlaceholder': 'Enter product name',
+        'modal.fields.nameAr': 'Product Name (Arabic)',
+        'modal.fields.nameArPlaceholder': 'Enter product name in Arabic',
+        'modal.fields.model': 'Model / SKU',
+        'modal.fields.videos': 'YouTube Video Links',
+        'modal.fields.addVideo': 'Add Video',
+        'modal.fields.resources': 'Resources / Downloads',
+        'modal.fields.addResource': 'Add Resource',
+        'modal.fields.description': 'Description',
+        'modal.fields.descriptionAr': 'Description (Arabic)',
+        'modal.fields.shortDesc': 'Short Description',
+        'modal.fields.shortDescAr': 'Short Description (Arabic)',
+        'modal.fields.specs': 'Specifications',
+        'modal.fields.logicSubtitle': 'Set pricing, category, and inventory details',
+        'modal.fields.price': 'Price (AED)',
+        'modal.fields.discount': 'Discount %',
+        'modal.fields.offerPrice': 'Offer Price',
+        'modal.fields.trackStock': 'Track Stock',
+        'modal.fields.stock': 'Stock Quantity',
+        'modal.fields.status': 'Status',
+        'modal.fields.subGroup': 'Product Group',
+        'modal.fields.finalSub': 'Sub-category Label',
+        'modal.fields.startDate': 'Start Date',
+        'modal.fields.endDate': 'End Date',
+        'modal.fields.mediaSubtitle': 'Upload product images',
+        'modal.fields.uploadImage': 'Upload Image',
+        'import.title': 'Import Products',
+        'import.subtitle': 'Bulk import products from an Excel file',
+        'import.gettingStarted': 'Getting Started',
+        'import.step1': 'Download the Excel template below',
+        'import.step2': 'Fill in your product data following the column headers',
+        'import.step3': 'Make sure required fields (Name, Category, Price) are filled',
+        'import.step4': 'Upload the completed file using the area below',
+        'import.step5': 'Review the import results and fix any errors',
+        'import.downloadTemplate': 'Download Template',
+        'import.processing': `Uploading... ${params?.percent ?? 0}%`,
+        'import.keepOpen': 'Please keep this window open during upload',
+        'import.selectFile': 'Select File to Import',
+        'import.formats': 'Supported formats: .xlsx, .xls',
+        'import.imported': 'Imported',
+        'import.failed': 'Failed',
+        'import.errorLog': 'Error Log',
+        'import.done': 'Done',
+        'import.importAnother': 'Import Another File',
+        'notifications.templateSuccess': 'Template downloaded successfully',
+        'notifications.importSuccess': `${params?.count ?? 0} products imported successfully`,
+        'notifications.importError': 'Import failed. Please check your file and try again.',
+        'notifications.exportSuccess': 'Products exported successfully',
+        'notifications.exportError': 'Export failed. Please try again.',
+        'notifications.uploadSuccess': 'Image uploaded successfully',
+        'notifications.uploadError': 'Image upload failed. Please try again.',
+        'notifications.dateError': 'End date must be after start date',
+        'footer.cancel': 'Cancel',
+        'footer.save': 'Save Product',
+    };
+    return map[key] ?? key;
+};
+
 // Searchable Select Component
-const SearchableSelect = ({ label, name, options, value, onChange, placeholder = "Search..." }: any) => {
-    const t = useTranslations('admin.products');
+const SearchableSelect = ({ label, name, options, value, onChange, placeholder = "Search...", alignRight = false, searchPlaceholder = "Search...", customTriggerStyle = {} }: any) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const containerRef = React.useRef<HTMLDivElement>(null);
@@ -45,18 +149,19 @@ const SearchableSelect = ({ label, name, options, value, onChange, placeholder =
                 <div
                     className={styles.customSelectTrigger}
                     onClick={() => setIsOpen(!isOpen)}
+                    style={customTriggerStyle}
                 >
                     {selectedOption ? (selectedOption.name || selectedOption) : placeholder}
                     <ChevronDown size={18} className={isOpen ? styles.rotate : ''} />
                 </div>
 
                 {isOpen && (
-                    <div className={styles.customSelectDropdown}>
+                    <div className={`${styles.customSelectDropdown} ${alignRight ? styles.alignRight : ''}`}>
                         <div className={styles.selectSearchBox}>
                             <Search size={14} />
                             <input
                                 type="text"
-                                placeholder={t('filters.search')}
+                                placeholder={searchPlaceholder}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 autoFocus
@@ -95,7 +200,6 @@ const AdminProducts = () => {
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<number | null>(null);
     const { showNotification } = useNotification();
-    const t = useTranslations('admin.products');
 
     const [categories, setCategories] = useState<any[]>([]);
     const [hierarchicalCategories, setHierarchicalCategories] = useState<any[]>([]);
@@ -105,6 +209,12 @@ const AdminProducts = () => {
     const [fbtResults, setFbtResults] = useState<any[]>([]);
     const [fbtLoading, setFbtLoading] = useState(false);
     const [fbtSelectedItems, setFbtSelectedItems] = useState<{ id: number; name: string }[]>([]);
+
+    // You May Also Need picker
+    const [ymanSearch, setYmanSearch] = useState('');
+    const [ymanResults, setYmanResults] = useState<any[]>([]);
+    const [ymanLoading, setYmanLoading] = useState(false);
+    const [ymanSelectedItems, setYmanSelectedItems] = useState<{ id: number; name: string }[]>([]);
 
     // Variants state
     const [variantsEnabled, setVariantsEnabled] = useState(false);
@@ -244,6 +354,7 @@ const AdminProducts = () => {
                 setImportResult(data.data);
                 showNotification(t('notifications.importSuccess', { count: data.data.success }));
                 fetchProducts();
+                fetchStats();
             } else {
                 showNotification(data.message || t('notifications.importError'), 'error');
             }
@@ -339,6 +450,7 @@ const AdminProducts = () => {
         is_featured: false,
         is_daily_offer: false,
         is_best_seller: false,
+        notify_users_on_save: false,
         resources: [{ name: '', url: '' }],
         status: 'active',
         offer_start: '',
@@ -378,7 +490,8 @@ const AdminProducts = () => {
                 status: 'active', offer_start: '', offer_end: '',
                 track_inventory: false,
                 warranty: '',
-                warranty_ar: ''
+                warranty_ar: '',
+                notify_users_on_save: false
             });
             setIsModalOpen(true);
             setActiveTab('basic');
@@ -425,12 +538,46 @@ const AdminProducts = () => {
     }, [fbtSearch, editingId]);
 
     useEffect(() => {
+        if (!ymanSearch.trim()) { setYmanResults([]); return; }
+        const timer = setTimeout(async () => {
+            setYmanLoading(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/products?search=${encodeURIComponent(ymanSearch)}&limit=8&page=1&status=all`, {
+                    credentials: 'include',
+                    headers: getAuthHeaders()
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setYmanResults(data.data.filter((p: any) => p.id !== editingId));
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setYmanLoading(false);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [ymanSearch, editingId]);
+
+    useEffect(() => {
         fetchProducts();
     }, [filters, currentPage]);
+
+    // Dashboard stats
+    const [dashboardStats, setDashboardStats] = useState({ total: 0, active: 0, outOfStock: 0, categories: 0 });
+
+    const fetchStats = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/products/stats`, { credentials: 'include', headers: getAuthHeaders() });
+            const data = await res.json();
+            if (data.success) setDashboardStats(data.data);
+        } catch (e) { console.error('Failed to fetch stats', e); }
+    };
 
     useEffect(() => {
         fetchCategories();
         fetchBrands();
+        fetchStats();
     }, []);
 
     // Re-render product list every 30s so offer tags (checked against offer_end) stay current
@@ -475,9 +622,9 @@ const AdminProducts = () => {
                 type: cat.type
             })).sort((a, b) => a.name.localeCompare(b.name));
 
-            setHierarchicalCategories([{ id: '', name: t('filters.categories') }, ...transformed]);
+            setHierarchicalCategories([{ id: '', name: t('filters.categories') }, { id: 'uncategorised', name: 'Uncategorised' }, ...transformed]);
         } else {
-            setHierarchicalCategories([{ id: '', name: t('filters.categories') }]);
+            setHierarchicalCategories([{ id: '', name: t('filters.categories') }, { id: 'uncategorised', name: 'Uncategorised' }]);
         }
     }, [categories]);
 
@@ -815,7 +962,8 @@ const AdminProducts = () => {
             offer_end: product.offer_end ? new Date(product.offer_end).toISOString().slice(0, 16) : '',
             track_inventory: isTrue(product.track_inventory),
             warranty: product.warranty !== null && product.warranty !== undefined ? String(product.warranty) : '',
-            warranty_ar: product.warranty_ar !== null && product.warranty_ar !== undefined ? String(product.warranty_ar) : ''
+            warranty_ar: product.warranty_ar !== null && product.warranty_ar !== undefined ? String(product.warranty_ar) : '',
+            notify_users_on_save: false
         });
 
         let fbtItems: { id: number; name: string }[] = [];
@@ -831,6 +979,23 @@ const AdminProducts = () => {
         setFbtSelectedItems(fbtItems);
         setFbtSearch('');
         setFbtResults([]);
+
+        let ymanItems: { id: number; name: string }[] = [];
+        if (Array.isArray(product.you_may_also_need_products) && product.you_may_also_need_products.length > 0) {
+            // Prefer the enriched array returned by findById (has names already)
+            ymanItems = product.you_may_also_need_products.map((p: any) => ({ id: p.id, name: p.name }));
+        } else if (product.you_may_also_need) {
+            try {
+                const ids: number[] = JSON.parse(product.you_may_also_need);
+                ymanItems = ids.map(id => ({
+                    id,
+                    name: products.find((p: any) => p.id === id)?.name || `Product #${id}`
+                }));
+            } catch (e) { }
+        }
+        setYmanSelectedItems(ymanItems);
+        setYmanSearch('');
+        setYmanResults([]);
 
         // Variants
         const hasVariants = Number(product.has_variants) === 1 && Array.isArray(product.options) && product.options.length > 0;
@@ -914,11 +1079,15 @@ const AdminProducts = () => {
             offer_end: '',
             track_inventory: false,
             warranty: '',
-            warranty_ar: ''
+            warranty_ar: '',
+            notify_users_on_save: false
         });
         setFbtSelectedItems([]);
         setFbtSearch('');
         setFbtResults([]);
+        setYmanSelectedItems([]);
+        setYmanSearch('');
+        setYmanResults([]);
         setVariantsEnabled(false);
         setVariantOptions([]);
         setVariantRows([]);
@@ -947,8 +1116,10 @@ const AdminProducts = () => {
             // Combine main image and additional images into a single array for the backend
             const images = [formData.image_url, ...formData.additional_images].filter(img => img && img.trim() !== '');
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { notify_users_on_save: _notifyFlag, ...formDataClean } = formData;
             const payload = {
-                ...formData,
+                ...formDataClean,
                 images,
                 youtube_video_link: JSON.stringify({
                     links: formData.youtube_video_links,
@@ -968,6 +1139,9 @@ const AdminProducts = () => {
                 is_best_seller: Boolean(formData.is_best_seller),
                 frequently_bought_together: fbtSelectedItems.length > 0
                     ? JSON.stringify(fbtSelectedItems.map(p => p.id))
+                    : null,
+                you_may_also_need: ymanSelectedItems.length > 0
+                    ? JSON.stringify(ymanSelectedItems.map(p => p.id))
                     : null,
                 // Variants payload — only send when enabled; an empty array clears them server-side
                 options: variantsEnabled
@@ -1016,9 +1190,35 @@ const AdminProducts = () => {
                 });
                 const data = await res.json();
                 if (data.success) {
+                    // Capture notify intent before modal resets state
+                    const shouldNotify = Boolean(formData.notify_users_on_save) && (formData.is_featured || formData.is_weekly_deal || formData.is_limited_offer || formData.is_daily_offer || formData.is_best_seller);
+                    const notifyProductId = editingId || data.data?.id || data.id;
+
                     showNotification(`Product ${editingId ? 'updated' : 'added'} successfully!`);
                     handleCloseModal();
                     fetchProducts();
+
+                    if (shouldNotify && notifyProductId) {
+                        fetch(`${API_BASE_URL}/admin/products/${notifyProductId}/notify-offer`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: getAuthHeaders()
+                        }).then(r => r.json()).then(nd => {
+                            if (nd.success && nd.sent > 0) {
+                                showNotification(`Email notification sent to ${nd.sent} user${nd.sent !== 1 ? 's' : ''}!`);
+                            } else if (nd.success && nd.failed > 0) {
+                                showNotification(`Notification failed — ${nd.failed} email${nd.failed !== 1 ? 's' : ''} could not be sent. Check server logs.`, 'error');
+                            } else if (nd.success) {
+                                showNotification('No registered users found to notify.');
+                            } else {
+                                showNotification(nd.message || 'Failed to send notification emails.', 'error');
+                            }
+                        }).catch((err) => {
+                            showNotification('Notification email request failed — check server logs.', 'error');
+                            console.error('[notify-offer] fetch error:', err);
+                        });
+                    }
+                    fetchStats();
                 } else {
                     showNotification(data.message || 'Operation failed', 'error');
                 }
@@ -1177,6 +1377,7 @@ const AdminProducts = () => {
                     if (data.success) {
                         showNotification('Product deleted');
                         fetchProducts();
+                        fetchStats();
                     }
                 } catch (error) {
                     showNotification('Failed to delete product', 'error');
@@ -1228,6 +1429,7 @@ const AdminProducts = () => {
                         showNotification(`Successfully deleted ${selectedIds.length} products`);
                         setSelectedIds([]);
                         fetchProducts();
+                        fetchStats();
                     } else {
                         showNotification(data.message || 'Bulk delete failed', 'error');
                     }
@@ -1260,6 +1462,7 @@ const AdminProducts = () => {
                 setIsBulkModalOpen(false);
                 setSelectedIds([]);
                 fetchProducts();
+                fetchStats();
             } else {
                 showNotification(data.message || 'Bulk update failed', 'error');
             }
@@ -1274,20 +1477,65 @@ const AdminProducts = () => {
         <div className={styles.adminProducts}>
             <div className={styles.header}>
                 <div className={styles.titleSection}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <h1>{t('title')}</h1>
-                        <div className={styles.totalBadge}>
-                            <Package size={14} />
-                            <span>{t('totalBadge', { count: products.length })}</span>
-                        </div>
-                    </div>
-                    <p>{t('subtitle')}</p>
+                    <h1>{t('title')}</h1>
+                    <p className={styles.subtitle}>{t('subtitle')}</p>
                 </div>
-                <div className={styles.actions}>
-                    <button className={styles.addBtn} onClick={() => { setEditingId(null); setIsModalOpen(true); }}>
-                        <Plus size={20} />
-                        <span>{t('actions.add')}</span>
+                <div className={styles.actionGroup}>
+                    <button className={styles.utilBtn} onClick={() => setIsImportModalOpen(true)}>
+                        <FileUp size={16} />
+                        Import
                     </button>
+                    <button className={styles.utilBtn} onClick={handleExport} disabled={exporting}>
+                        <FileText size={16} />
+                        {exporting ? 'Exporting…' : 'Export'}
+                    </button>
+                    <button className={styles.addBtn} onClick={() => { setEditingId(null); setIsModalOpen(true); }}>
+                        <Plus size={18} />
+                        <span>Add Product</span>
+                    </button>
+                </div>
+            </div>
+
+            <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                    <div className={`${styles.statIcon} ${styles.totalIcon}`}>
+                        <Package size={24} />
+                    </div>
+                    <div className={styles.statInfo}>
+                        <span className={styles.statLabel}>Total Products</span>
+                        <span className={styles.statValue}>{dashboardStats.total.toLocaleString()}</span>
+                        <span className={styles.statSubLabel}>All products in catalog</span>
+                    </div>
+                </div>
+                <div className={styles.statCard}>
+                    <div className={`${styles.statIcon} ${styles.activeIcon}`}>
+                        <Tag size={24} />
+                    </div>
+                    <div className={styles.statInfo}>
+                        <span className={styles.statLabel}>Active Products</span>
+                        <span className={styles.statValue}>{dashboardStats.active.toLocaleString()}</span>
+                        <span className={styles.statSubLabel}>Currently active</span>
+                    </div>
+                </div>
+                <div className={styles.statCard}>
+                    <div className={`${styles.statIcon} ${styles.oosIcon}`}>
+                        <AlertCircle size={24} />
+                    </div>
+                    <div className={styles.statInfo}>
+                        <span className={styles.statLabel}>Out of Stock</span>
+                        <span className={styles.statValue}>{dashboardStats.outOfStock.toLocaleString()}</span>
+                        <span className={styles.statSubLabel}>Currently unavailable</span>
+                    </div>
+                </div>
+                <div className={styles.statCard}>
+                    <div className={`${styles.statIcon} ${styles.categoryIcon}`}>
+                        <Layers size={24} />
+                    </div>
+                    <div className={styles.statInfo}>
+                        <span className={styles.statLabel}>Total Categories</span>
+                        <span className={styles.statValue}>{dashboardStats.categories}</span>
+                        <span className={styles.statSubLabel}>Main categories</span>
+                    </div>
                 </div>
             </div>
 
@@ -1316,51 +1564,56 @@ const AdminProducts = () => {
                             placeholder="All Categories"
                         />
                     </div>
-                    <select
-                        className={styles.filterSelect}
+                    <SearchableSelect
+                        label=""
                         name="brand"
+                        options={[{ id: '', name: 'All Brands' }, ...brands]}
                         value={filters.brand}
                         onChange={handleFilterChange}
-                    >
-                        <option value="">All Brands</option>
-                        {brands.map(brand => (
-                            <option key={brand.id} value={brand.id}>{brand.name}</option>
-                        ))}
-                    </select>
-                    <select
-                        className={styles.filterSelect}
+                        placeholder="All Brands"
+                    />
+                    <SearchableSelect
+                        label=""
                         name="status"
+                        options={[
+                            { id: 'all', name: t('filters.status') },
+                            { id: 'active', name: 'Active' },
+                            { id: 'draft', name: 'Draft' }
+                        ]}
                         value={filters.status}
                         onChange={handleFilterChange}
-                    >
-                        <option value="all">{t('filters.status')}</option>
-                        <option value="active">Active</option>
-                        <option value="draft">Draft</option>
-                    </select>
-                    <select
-                        className={styles.filterSelect}
+                        placeholder={t('filters.status')}
+                    />
+                    <SearchableSelect
+                        label=""
                         name="stockStatus"
+                        options={[
+                            { id: 'all', name: t('filters.stock') },
+                            { id: 'in_stock', name: 'In Stock' },
+                            { id: 'out_of_stock', name: 'Out of Stock' }
+                        ]}
                         value={filters.stockStatus}
                         onChange={handleFilterChange}
-                    >
-                        <option value="all">{t('filters.stock')}</option>
-                        <option value="in_stock">In Stock</option>
-                        <option value="out_of_stock">Out of Stock</option>
-                    </select>
-                    <select
-                        className={styles.filterSelect}
+                        placeholder={t('filters.stock')}
+                    />
+                    <SearchableSelect
+                        label=""
                         name="offerType"
+                        options={[
+                            { id: 'all', name: t('filters.offers') },
+                            { id: 'weekly', name: 'Weekly Deals' },
+                            { id: 'limited', name: 'Limited Offers' },
+                            { id: 'daily', name: 'Daily Offers' },
+                            { id: 'featured', name: 'Featured Items' },
+                            { id: 'best_seller', name: 'Best Sellers' }
+                        ]}
                         value={filters.offerType}
                         onChange={handleFilterChange}
-                        style={{ borderInlineStart: '4px solid #4c6ef5' }}
-                    >
-                        <option value="all">{t('filters.offers')}</option>
-                        <option value="weekly">Weekly Deals</option>
-                        <option value="limited">Limited Offers</option>
-                        <option value="daily">Daily Offers</option>
-                        <option value="featured">Featured Items</option>
-                        <option value="best_seller">Best Sellers</option>
-                    </select>
+                        placeholder={t('filters.offers')}
+                        alignRight={true}
+                        searchPlaceholder="Search offers..."
+                        customTriggerStyle={{ borderInlineStart: '4px solid #3b82f6' }}
+                    />
                 </div>
             </div>
 
@@ -1413,17 +1666,7 @@ const AdminProducts = () => {
                                     <td>{product.brand_name || 'RATIONAL'}</td>
                                     <td>
                                         <div className={styles.categoryGroup}>
-                                            <span className={styles.categoryPath}>{product.category_name || 'Equipment'}</span>
-                                            {product.product_group && (
-                                                <span className={styles.headingPath}>
-                                                    › {product.product_group}
-                                                </span>
-                                            )}
-                                            {product.sub_category && (
-                                                <span className={styles.subCategoryPath}>
-                                                    » {product.sub_category}
-                                                </span>
-                                            )}
+                                            <span className={styles.categoryPath}>{product.category_name || 'Uncategorised'}</span>
                                         </div>
                                     </td>
                                     <td className={styles.price}>
@@ -1480,25 +1723,48 @@ const AdminProducts = () => {
                     </tbody>
                 </table>
 
-                {/* Bulk Actions Sticky Bar */}
+                {/* Bulk Actions Floating Bar */}
                 {selectedIds.length > 0 && (
                     <div className={styles.bulkActionsBar}>
-                        <div className={styles.bulkInfo}>
-                            <div className={styles.selectionCount}>
-                                <strong>{selectedIds.length}</strong> products selected
+                        <div className={styles.bulkContent}>
+                            <div className={styles.bulkMainInfo}>
+                                <div className={styles.selectionGroup}>
+                                    <div className={styles.selectionBadge}>{selectedIds.length}</div>
+                                    <div className={styles.selectionStats}>
+                                        <span className={styles.selectionLabel}>Products Selected</span>
+                                        <button className={styles.clearSelection} onClick={() => setSelectedIds([])}>
+                                            CLEAR SELECTION
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div className={styles.actionButtons}>
-                                <button className={styles.templateBtn} onClick={handleDownloadTemplate}>
+
+                            <div className={styles.bulkDivider} />
+
+                            <div className={styles.bulkActionButtons}>
+                                <button className={styles.bulkEditBtn} onClick={() => setIsBulkModalOpen(true)}>
+                                    <Edit2 size={18} />
+                                    <span>Bulk Edit</span>
+                                </button>
+                                <button className={styles.bulkDeleteAction} onClick={handleBulkDelete}>
+                                    <div className={styles.deleteIconWrapper}>
+                                        <Trash2 size={18} />
+                                    </div>
+                                    <span>Delete</span>
+                                </button>
+                            </div>
+
+                            <div className={styles.bulkDivider} />
+
+                            <div className={styles.bulkUtilButtons}>
+                                <button className={styles.bulkUtilIconBtn} onClick={handleDownloadTemplate} title="Template">
                                     <FileDown size={18} />
-                                    {t('actions.template')}
                                 </button>
-                                <button className={styles.importBtn} onClick={() => setIsImportModalOpen(true)}>
+                                <button className={styles.bulkUtilIconBtn} onClick={() => setIsImportModalOpen(true)} title="Import">
                                     <FileUp size={18} />
-                                    {t('actions.import')}
                                 </button>
-                                <button className={styles.exportBtn} onClick={handleExport} disabled={exporting}>
-                                    <FileText size={18} />
-                                    {exporting ? t('actions.downloading') : t('actions.export')}
+                                <button className={styles.bulkUtilIconBtn} onClick={handleExport} disabled={exporting} title="Export">
+                                    {exporting ? <Loader2 size={18} className={styles.spinner} /> : <FileText size={18} />}
                                 </button>
                             </div>
                         </div>
@@ -1953,6 +2219,12 @@ const AdminProducts = () => {
                                                 <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_daily_offer} onChange={(e) => setFormData(prev => ({ ...prev, is_daily_offer: e.target.checked }))} /> {t('filters.daily')}</label>
                                                 <label className={styles.checkLabel}><input type="checkbox" checked={formData.is_best_seller} onChange={(e) => setFormData(prev => ({ ...prev, is_best_seller: e.target.checked }))} /> {t('filters.bestseller')}</label>
                                             </div>
+                                            {(formData.is_featured || formData.is_weekly_deal || formData.is_limited_offer || formData.is_daily_offer || formData.is_best_seller) && (
+                                                <label className={styles.checkLabel} style={{ marginTop: '12px', color: '#0ea5e9' }}>
+                                                    <input type="checkbox" checked={formData.notify_users_on_save} onChange={(e) => setFormData(prev => ({ ...prev, notify_users_on_save: e.target.checked }))} />
+                                                    Send email notification to all users when saving
+                                                </label>
+                                            )}
                                             {(formData.is_weekly_deal || formData.is_daily_offer || formData.is_limited_offer) && (
                                                 <div className={styles.formGrid} style={{ marginTop: '15px' }}>
                                                     <div className={styles.formGroup}><label>{t('modal.fields.startDate')}</label><input type="datetime-local" name="offer_start" value={formData.offer_start} onChange={handleInputChange} /></div>
@@ -2008,28 +2280,28 @@ const AdminProducts = () => {
                                                                     return (
                                                                         <div
                                                                             key={p.id}
-                                                                            style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px', background: alreadyAdded ? '#f0fdf4' : 'white' }}
+                                                                            style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px', background: alreadyAdded ? '#f0fdf4' : 'white', cursor: 'pointer' }}
+                                                                            onMouseDown={(e) => {
+                                                                                e.preventDefault();
+                                                                                if (alreadyAdded) {
+                                                                                    setFbtSelectedItems(prev => prev.filter(s => s.id !== p.id));
+                                                                                } else {
+                                                                                    setFbtSelectedItems(prev => [...prev, { id: p.id, name: p.name }]);
+                                                                                }
+                                                                            }}
                                                                         >
                                                                             {p.primary_image && <img src={p.primary_image} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
                                                                             <span style={{ flex: 1, color: alreadyAdded ? '#16a34a' : 'inherit' }}>{p.name}</span>
-                                                                            <button
-                                                                                type="button"
-                                                                                disabled={alreadyAdded}
-                                                                                onMouseDown={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    if (!alreadyAdded) {
-                                                                                        setFbtSelectedItems(prev => [...prev, { id: p.id, name: p.name }]);
-                                                                                    }
-                                                                                }}
+                                                                            <div
                                                                                 style={{
                                                                                     flexShrink: 0, width: 28, height: 28,
                                                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                                    borderRadius: '50%', border: 'none', cursor: alreadyAdded ? 'default' : 'pointer',
+                                                                                    borderRadius: '50%',
                                                                                     background: alreadyAdded ? '#16a34a' : '#3b82f6', color: 'white'
                                                                                 }}
                                                                             >
                                                                                 {alreadyAdded ? <Check size={14} /> : <Plus size={14} />}
-                                                                            </button>
+                                                                            </div>
                                                                         </div>
                                                                     );
                                                                 })
@@ -2065,6 +2337,128 @@ const AdminProducts = () => {
                                                     ))}
                                                 </div>
                                             )}
+
+                                            {/* You May Also Need */}
+                                            <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #e2e8f0' }}>
+                                                <div className={styles.paneHeader} style={{ marginBottom: '16px' }}>
+                                                    <h3>You May Also Need</h3>
+                                                    <p>
+                                                        Select specific products to show in the "You may also need" section.{' '}
+                                                        <strong>Default:</strong> shows products from the same category. Selecting products here overrides the default.
+                                                    </p>
+                                                </div>
+                                                {ymanSelectedItems.length > 0 && (
+                                                    <div style={{
+                                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                                        padding: '8px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0',
+                                                        borderRadius: '8px', marginBottom: '12px', fontSize: '12px', color: '#16a34a'
+                                                    }}>
+                                                        <Check size={14} />
+                                                        <span>{ymanSelectedItems.length} product{ymanSelectedItems.length !== 1 ? 's' : ''} selected — overrides default category display</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setYmanSelectedItems([])}
+                                                            style={{ marginInlineStart: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#16a34a', fontSize: '12px', textDecoration: 'underline', padding: 0 }}
+                                                        >
+                                                            Reset to default
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                <div className={styles.formGroup} style={{ maxWidth: '100%' }}>
+                                                    <label>Search & Add Products</label>
+                                                    <div style={{ position: 'relative', width: '100%' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={ymanSearch}
+                                                            onChange={(e) => setYmanSearch(e.target.value)}
+                                                            placeholder="Type a product name..."
+                                                            autoComplete="off"
+                                                            style={{ width: '100%', paddingInlineEnd: '36px' }}
+                                                        />
+                                                        {ymanSearch && (
+                                                            <button
+                                                                type="button"
+                                                                onMouseDown={(e) => { e.preventDefault(); setYmanSearch(''); setYmanResults([]); }}
+                                                                style={{
+                                                                    position: 'absolute', insetInlineEnd: '10px', top: '50%',
+                                                                    transform: 'translateY(-50%)', background: 'none', border: 'none',
+                                                                    cursor: 'pointer', color: '#ef4444', display: 'flex', padding: 2
+                                                                }}
+                                                            >
+                                                                <X size={16} />
+                                                            </button>
+                                                        )}
+                                                        {ymanSearch.trim() && (ymanResults.length > 0 || ymanLoading) && (
+                                                            <div style={{
+                                                                position: 'absolute', top: '100%', left: 0, right: 0,
+                                                                background: 'white', border: '1px solid #e5e7eb',
+                                                                borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                                zIndex: 200, maxHeight: '280px', overflowY: 'auto', marginTop: '4px'
+                                                            }}>
+                                                                {ymanLoading ? (
+                                                                    <div style={{ padding: '10px 14px', fontSize: '13px', color: '#64748b' }}>Searching...</div>
+                                                                ) : (
+                                                                    ymanResults.map(p => {
+                                                                        const alreadyAdded = ymanSelectedItems.some(s => s.id === p.id);
+                                                                        return (
+                                                                            <div
+                                                                                key={p.id}
+                                                                                style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px', background: alreadyAdded ? '#f0fdf4' : 'white', cursor: 'pointer' }}
+                                                                                onMouseDown={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (alreadyAdded) {
+                                                                                        setYmanSelectedItems(prev => prev.filter(s => s.id !== p.id));
+                                                                                    } else {
+                                                                                        setYmanSelectedItems(prev => [...prev, { id: p.id, name: p.name }]);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                {p.primary_image && <img src={p.primary_image} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
+                                                                                <span style={{ flex: 1, color: alreadyAdded ? '#16a34a' : 'inherit' }}>{p.name}</span>
+                                                                                <div
+                                                                                    style={{
+                                                                                        flexShrink: 0, width: 28, height: 28,
+                                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                                        borderRadius: '50%',
+                                                                                        background: alreadyAdded ? '#16a34a' : '#3b82f6', color: 'white'
+                                                                                    }}
+                                                                                >
+                                                                                    {alreadyAdded ? <Check size={14} /> : <Plus size={14} />}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {ymanSelectedItems.length === 0 ? (
+                                                    <div style={{ textAlign: 'center', padding: '24px 20px', color: '#94a3b8', fontSize: '13px', background: '#fafafa', borderRadius: '8px', border: '1px dashed #e2e8f0' }}>
+                                                        <p style={{ margin: 0 }}>No products selected — showing same-category products by default.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                                                        {ymanSelectedItems.map((item, idx) => (
+                                                            <div key={item.id} style={{
+                                                                display: 'flex', alignItems: 'center', gap: '10px',
+                                                                padding: '10px 14px', background: '#f8fafc',
+                                                                border: '1px solid #e2e8f0', borderRadius: '10px'
+                                                            }}>
+                                                                <span style={{ fontSize: '12px', color: '#94a3b8', width: 20, textAlign: 'center' }}>{idx + 1}</span>
+                                                                <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{item.name}</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setYmanSelectedItems(prev => prev.filter(p => p.id !== item.id))}
+                                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 4 }}
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
 

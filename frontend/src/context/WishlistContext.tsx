@@ -77,8 +77,17 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             }
         };
 
-        const timeoutId = setTimeout(handleWishlistSync, 2000);
-        return () => clearTimeout(timeoutId);
+        // Defer until browser is idle so wishlist sync doesn't compete with LCP
+        let handle: number;
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            handle = (window as any).requestIdleCallback(handleWishlistSync, { timeout: 4000 });
+        } else {
+            handle = setTimeout(handleWishlistSync, 3000) as unknown as number;
+        }
+        return () => {
+            if ('requestIdleCallback' in window) (window as any).cancelIdleCallback(handle);
+            else clearTimeout(handle);
+        };
     }, [token]);
 
     // 2. Persistence loop for guests

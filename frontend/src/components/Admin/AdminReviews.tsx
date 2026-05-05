@@ -10,14 +10,39 @@ import { stripHtml } from '@/utils/formatters';
 import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
-import { useTranslations } from 'next-intl';
+// Removed next-intl import
 
 const AdminReviews = () => {
     const [reviews, setReviews] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const { showNotification } = useNotification();
-    const t = useTranslations('admin.reviews');
+    // Hardcoded English translations for Reviews module
+    const t = (key: string, options?: any) => {
+        const translations: { [key: string]: string } = {
+            'title': 'Customer Reviews',
+            'subtitle': 'Monitor and manage product feedback from your customers.',
+            'totalBadge': `${options?.count || 0} total reviews`,
+            'searchPlaceholder': 'Search by product, user or comment...',
+            'empty': 'No customer reviews found.',
+            'loader': 'Synchronizing Reviews...',
+            'table.product': 'PRODUCT',
+            'table.user': 'CUSTOMER',
+            'table.rating': 'RATING',
+            'table.comment': 'COMMENT',
+            'table.date': 'DATE',
+            'table.actions': 'ACTIONS',
+            'modal.deleteTitle': 'Delete Review',
+            'modal.deleteMessage': 'Are you sure you want to permanently delete this customer review? This will remove it from the product page.',
+            'modal.deleteConfirm': 'Delete Review',
+            'notifications.deleteSuccess': 'Review deleted successfully',
+            'notifications.deleteError': 'Failed to delete review',
+            'notifications.fetchError': 'Failed to load reviews',
+            'notifications.networkError': 'Network error connection failed'
+        };
+
+        return translations[key] || key;
+    };
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{
