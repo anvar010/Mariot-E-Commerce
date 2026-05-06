@@ -59,6 +59,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const t = useTranslations('notifications');
 
     const prevToken = React.useRef(token);
+    const hasHydrated = React.useRef(false);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -113,6 +114,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 // 2. Fetch the final consolidated cart from server
                 fetchUserCart();
+                hasHydrated.current = true;
             } else if (prevToken.current) {
                 // User just logged out
                 setCartItems([]);
@@ -121,6 +123,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setPointsToUse(0);
                 setPointsDiscountAmount(0);
                 localStorage.removeItem('cart');
+                hasHydrated.current = true;
             } else {
                 // Initial guest load
                 const savedCart = localStorage.getItem('cart');
@@ -134,6 +137,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 } else {
                     setCartItems([]);
                 }
+                hasHydrated.current = true;
             }
             prevToken.current = token;
         };
@@ -151,8 +155,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, [token]);
 
-    // 2. Persistence loop for guests
+    // 2. Persistence loop for guests — skip until initial cart has been loaded from storage
     useEffect(() => {
+        if (!hasHydrated.current) return;
         if (!token && !prevToken.current) {
             localStorage.setItem('cart', JSON.stringify(cartItems));
         }
