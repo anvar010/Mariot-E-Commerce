@@ -30,9 +30,11 @@ const AboutSection = () => {
 
                     <div className={styles.imageContent}>
                         <div className={styles.iconBox}>
-                            <img
+                            <Image
                                 src="/assets/mariot-logo.webp"
                                 alt={t('logoAlt')}
+                                width={258}
+                                height={83}
                                 className={styles.iconBoxLogo}
                             />
                         </div>

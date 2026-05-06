@@ -1768,74 +1768,85 @@
 .pmModal {
     background: #ffffff;
     width: 100%;
-    max-width: 650px;
-    border-radius: 12px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    max-width: 600px;
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     position: relative;
     max-height: 90vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .pmHeader {
-    background: #eef2f6;
-    padding: 20px 24px;
+    background: #ffffff;
+    padding: 24px 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #f1f5f9;
+    flex-shrink: 0;
 }
 
 .pmHeaderTitle {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 19px;
+    font-size: 20px;
     font-weight: 700;
-    color: #334155;
+    color: #0f172a;
 }
 
 .pmHeaderTitle em {
-    font-style: italic;
-    font-weight: 500;
+    font-style: normal;
+    color: #3fbabf;
     margin-inline-start: 4px;
 }
 
 .pmCloseBtn {
-    background: none;
+    background: #f1f5f9;
     border: none;
     cursor: pointer;
-    color: #1e293b;
-    padding: 4px;
+    color: #64748b;
+    padding: 8px;
+    border-radius: 50%;
     display: flex;
+    transition: all 0.2s;
+}
+
+.pmCloseBtn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    transform: rotate(90deg);
 }
 
 .pmContent {
-    padding: 32px 32px 40px 32px;
+    padding: 32px;
+    overflow-y: auto;
 }
 
 .pmFormGroup {
-    margin-bottom: 32px;
+    margin-bottom: 24px;
 }
 
 .pmLabel {
     display: block;
-    font-size: 16px;
-    font-weight: 700;
-    color: #334155;
-    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 10px;
 }
 
 .pmInputUnderline {
     width: 100%;
-    background: none;
-    border: none;
-    border-bottom: 1px solid #cbd5e1;
-    padding: 12px 0;
-    font-size: 18px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 15px;
     color: #1e293b;
     outline: none;
-    transition: border-color 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .pmInputUnderline::placeholder {
@@ -1843,20 +1854,22 @@
 }
 
 .pmInputUnderline:focus {
-    border-bottom-color: #3fbabf;
+    background: #ffffff;
+    border-color: #3fbabf;
+    box-shadow: 0 0 0 4px rgba(63, 186, 191, 0.1);
 }
 
 .pmSubLabel {
-    font-size: 15px;
+    font-size: 14px;
     color: #64748b;
     line-height: 1.5;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .pmUploadZone {
-    border: 1.5px dashed #94a3b8;
-    border-radius: 8px;
-    padding: 32px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    padding: 40px 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1864,102 +1877,162 @@
     gap: 12px;
     cursor: pointer;
     background: #f8fafc;
-    transition: all 0.2s;
+    transition: all 0.3s;
 }
 
 @media (hover: hover) {
-
     .pmUploadZone:hover {
         border-color: #3fbabf;
-        background: #f1f5f9;
+        background: #f0fdfa;
+        transform: translateY(-2px);
     }
 }
 
 .pmUploadIcon {
-    color: #94a3b8;
+    color: #3fbabf;
+    background: #f0fdfa;
+    padding: 12px;
+    border-radius: 12px;
 }
 
 .pmUploadText {
-    font-size: 15px;
-    color: #64748b;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
 }
 
 .pmSkipText {
     margin-top: 12px;
-    font-size: 14px;
+    font-size: 13px;
     color: #94a3b8;
+    text-align: center;
 }
 
 .pmContactGrid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 20px;
 }
 
 .pmPhonePrefix {
     position: absolute;
-    bottom: 12px;
-    left: 0;
-    font-size: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 16px;
+    font-size: 15px;
+    font-weight: 600;
     color: #64748b;
+    pointer-events: none;
 }
 
 .pmPhoneInput {
-    padding-left: 55px !important;
+    padding-left: 58px !important;
 }
 
 .pmCheckboxGroup {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    margin-top: 40px;
+    margin-top: 32px;
     cursor: pointer;
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+
+.pmCheckboxGroup:hover {
+    background: #f1f5f9;
 }
 
 .pmCheckbox {
     width: 20px;
     height: 20px;
-    border-radius: 4px;
-    border: 2px solid #cbd5e1;
-    margin-top: 2px;
+    accent-color: #3fbabf;
+    cursor: pointer;
 }
 
 .pmCheckboxLabel {
-    font-size: 16px;
-    color: #334155;
-    line-height: 1.4;
-    font-weight: 500;
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.5;
+    user-select: none;
 }
 
 .pmCheckboxLabel a {
     color: #3fbabf;
-    text-decoration: none;
+    text-decoration: underline;
+    text-underline-offset: 4px;
     font-weight: 600;
 }
 
+.pmErrorMessage {
+    background: #fff1f2;
+    border: 1px solid #fecaca;
+    color: #e11d48;
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 10px;
+    margin-bottom: -10px;
+    animation: pmShake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@keyframes pmShake {
+
+    10%,
+    90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
+
 .pmActions {
-    margin-top: 40px;
+    margin-top: 32px;
     display: flex;
     justify-content: flex-end;
 }
 
 .pmSubmitBtn {
-    background: #4ab1b5;
+    background: linear-gradient(135deg, #4ab1b5 0%, #358d91 100%);
     color: white;
     border: none;
-    border-radius: 6px;
-    padding: 14px 48px;
-    font-size: 18px;
+    border-radius: 10px;
+    padding: 16px 40px;
+    font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(74, 177, 181, 0.3);
 }
 
-@media (hover: hover) {
+.pmSubmitBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74, 177, 181, 0.4);
+    filter: brightness(1.1);
+}
 
-    .pmSubmitBtn:hover {
-        background: #3fbabf;
-    }
+.pmSubmitBtn:active {
+    transform: translateY(0);
 }
 
 @media (max-width: 640px) {

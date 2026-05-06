@@ -135,7 +135,7 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
         <section className={styles.postersSection} id="hero-posters">
             <div className={styles.container}>
                 <div className={styles.scrollWrapper}>
-                    <button className={`${styles.navBtn} ${styles.prev}`} onClick={scrollPrev}>
+                    <button className={`${styles.navBtn} ${styles.prev}`} onClick={scrollPrev} aria-label="Previous poster">
                         <ChevronLeft size={24} />
                     </button>
                     <div className={styles.emblaViewport} ref={emblaRef}>
@@ -150,7 +150,7 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
                                         sizes="(max-width: 640px) 220px, 260px"
                                         className={styles.posterImg}
                                         priority={index === 0}
-                                        quality={75}
+                                        quality={60}
                                     />
                                 </div>
                                 <div className={styles.overlay}>
@@ -176,7 +176,7 @@ const HeroPosters = ({ initialPosters = [] }: HeroPostersProps) => {
                         ))}
                         </div>
                     </div>
-                    <button className={`${styles.navBtn} ${styles.next}`} onClick={scrollNext}>
+                    <button className={`${styles.navBtn} ${styles.next}`} onClick={scrollNext} aria-label="Next poster">
                         <ChevronRight size={24} />
                     </button>
                 </div>
