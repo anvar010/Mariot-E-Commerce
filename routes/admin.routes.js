@@ -2,6 +2,7 @@ const express = require('express');
 const {
     getDashboardStats,
     getAllUsers,
+    createUser,
     updateUser,
     deleteUser,
     toggleUserStatus,
@@ -22,63 +23,75 @@ const {
     deletePromotion,
     exportProducts,
     exportOrders,
-    getRoles
+    getRoles,
+    notifyOfferByEmail
 } = require('../controllers/admin.controller');
 const { getAllReviews } = require('../controllers/review.controller');
-const { protect, authorize } = require('../middlewares/auth.middleware');
+const { protect, authorize, authorizeAdminOrStaff } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
-// All routes here need protection
 router.use(protect);
 
-router.get('/stats', authorize('admin'), getDashboardStats);
-router.get('/roles', authorize('admin'), getRoles);
+// Dashboard / SEO / Analytics all draw from the same stats endpoint
+router.get('/stats', authorizeAdminOrStaff('dashboard', 'seo', 'analytics'), getDashboardStats);
 
+// Roles — any admin or staff with users permission (needed for user create/edit dropdowns)
+router.get('/roles', authorizeAdminOrStaff('users'), getRoles);
+
+// Users CRUD — delete is admin-only (destructive)
 router.route('/users')
-    .get(authorize('admin'), getAllUsers);
+    .get(authorizeAdminOrStaff('users'), getAllUsers)
+    .post(authorizeAdminOrStaff('users'), createUser);
 
 router.route('/users/:id')
-    .put(authorize('admin'), updateUser)
+    .put(authorizeAdminOrStaff('users'), updateUser)
     .delete(authorize('admin'), deleteUser);
 
-router.patch('/users/:id/status', authorize('admin'), toggleUserStatus);
-router.post('/users/:id/points', authorize('admin'), adjustUserPoints);
+router.patch('/users/:id/status', authorizeAdminOrStaff('users'), toggleUserStatus);
+router.post('/users/:id/points', authorizeAdminOrStaff('users'), adjustUserPoints);
 
+// Orders
 router.route('/orders')
-    .get(authorize('admin'), getAllOrders);
+    .get(authorizeAdminOrStaff('orders'), getAllOrders);
 
+// CMS
 router.route('/cms/homepage')
-    .put(authorize('admin'), updateHomepageCMS);
+    .put(authorizeAdminOrStaff('cms'), updateHomepageCMS);
 
 router.route('/cms/hero-slides')
-    .get(authorize('admin'), getHeroSlides)
-    .post(authorize('admin'), addHeroSlide);
+    .get(authorizeAdminOrStaff('cms'), getHeroSlides)
+    .post(authorizeAdminOrStaff('cms'), addHeroSlide);
 
 router.route('/cms/hero-slides/:id')
-    .put(authorize('admin'), updateHeroSlide)
-    .delete(authorize('admin'), deleteHeroSlide);
+    .put(authorizeAdminOrStaff('cms'), updateHeroSlide)
+    .delete(authorizeAdminOrStaff('cms'), deleteHeroSlide);
 
 router.route('/cms/hero-posters')
-    .get(authorize('admin'), getHeroPosters)
-    .post(authorize('admin'), addHeroPoster);
+    .get(authorizeAdminOrStaff('cms'), getHeroPosters)
+    .post(authorizeAdminOrStaff('cms'), addHeroPoster);
 
 router.route('/cms/hero-posters/:id')
-    .put(authorize('admin'), updateHeroPoster)
-    .delete(authorize('admin'), deleteHeroPoster);
+    .put(authorizeAdminOrStaff('cms'), updateHeroPoster)
+    .delete(authorizeAdminOrStaff('cms'), deleteHeroPoster);
 
 router.route('/cms/promotions')
-    .get(authorize('admin'), getPromotions)
-    .post(authorize('admin'), addPromotion);
+    .get(authorizeAdminOrStaff('cms'), getPromotions)
+    .post(authorizeAdminOrStaff('cms'), addPromotion);
 
 router.route('/cms/promotions/:id')
-    .put(authorize('admin'), updatePromotion)
-    .delete(authorize('admin'), deletePromotion);
+    .put(authorizeAdminOrStaff('cms'), updatePromotion)
+    .delete(authorizeAdminOrStaff('cms'), deletePromotion);
 
+// Offer email notification
+router.post('/products/:id/notify-offer', authorizeAdminOrStaff('products'), notifyOfferByEmail);
+
+// Exports — admin only
 router.get('/export/products', authorize('admin'), exportProducts);
 router.get('/export/orders', authorize('admin'), exportOrders);
 
+// Reviews
 router.route('/reviews')
-    .get(authorize('admin'), getAllReviews);
+    .get(authorizeAdminOrStaff('reviews'), getAllReviews);
 
 module.exports = router;

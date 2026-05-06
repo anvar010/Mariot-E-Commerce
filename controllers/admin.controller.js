@@ -5,12 +5,30 @@ const db = require('../config/db');
 // @access  Private/Admin
 exports.getDashboardStats = async (req, res, next) => {
     try {
-        const { timeRange } = req.query;
+        const { timeRange, from, to } = req.query;
         let dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"; // default
         let oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
         let prevDateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
 
         switch (timeRange) {
+            case 'today':
+                dateCondition = "DATE(created_at) = CURDATE()";
+                oDateCondition = "DATE(o.created_at) = CURDATE()";
+                prevDateCondition = "DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+                break;
+            case 'custom': {
+                // Validate strict YYYY-MM-DD to keep the SQL safe (parameterized queries
+                // aren't used for these condition strings — see existing pattern above).
+                const isDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+                if (isDate(from) && isDate(to) && from <= to) {
+                    dateCondition = `DATE(created_at) BETWEEN '${from}' AND '${to}'`;
+                    oDateCondition = `DATE(o.created_at) BETWEEN '${from}' AND '${to}'`;
+                    // Prev period = equal-length window immediately before `from`.
+                    prevDateCondition = `DATE(created_at) BETWEEN DATE_SUB('${from}', INTERVAL DATEDIFF('${to}', '${from}') + 1 DAY) AND DATE_SUB('${from}', INTERVAL 1 DAY)`;
+                }
+                // Invalid custom range falls through to the 7d default — no break needed for safety.
+                break;
+            }
             case '14d':
                 dateCondition = "created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)";
                 oDateCondition = "o.created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)";
@@ -48,6 +66,12 @@ exports.getDashboardStats = async (req, res, next) => {
         const [[{ count: activeProducts }]] = await db.query("SELECT COUNT(*) as count FROM products WHERE status = 'active' AND is_active = 1");
         const [[{ count: totalOrders, total_sales: totalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != 'cancelled' AND ${dateCondition}`);
         const [[{ count: prevTotalOrders, total_sales: prevTotalSales }]] = await db.query(`SELECT COUNT(*) as count, SUM(total_amount) as total_sales FROM orders WHERE status != 'cancelled' AND ${prevDateCondition}`);
+
+        // Status breakdown for the active period — used by dashboard stat cards.
+        const [[{ count: pendingOrders }]] = await db.query(`SELECT COUNT(*) as count FROM orders WHERE status = 'pending' AND ${dateCondition}`);
+        const [[{ count: processingOrders }]] = await db.query(`SELECT COUNT(*) as count FROM orders WHERE status = 'processing' AND ${dateCondition}`);
+        const [[{ count: deliveredOrders }]] = await db.query(`SELECT COUNT(*) as count FROM orders WHERE status = 'delivered' AND ${dateCondition}`);
+        const [[{ count: cancelledOrders }]] = await db.query(`SELECT COUNT(*) as count FROM orders WHERE status = 'cancelled' AND ${dateCondition}`);
 
         const currentSales = totalSales || 0;
         const previousSales = prevTotalSales || 0;
@@ -165,6 +189,10 @@ exports.getDashboardStats = async (req, res, next) => {
                 totalProducts: totalProductsCount,
                 activeProducts: activeProducts || 0,
                 totalOrders: totalOrders || 0,
+                pendingOrders: pendingOrders || 0,
+                processingOrders: processingOrders || 0,
+                deliveredOrders: deliveredOrders || 0,
+                cancelledOrders: cancelledOrders || 0,
                 totalSales: currentSales,
                 salesGrowth,
                 ordersGrowth,
@@ -195,12 +223,12 @@ exports.getDashboardStats = async (req, res, next) => {
 
 // @desc    Get all users
 // @route   GET /api/v1/admin/users
-// @access  Private/Admin
+// @access  Private/Admin|Staff(users)
 exports.getAllUsers = async (req, res, next) => {
     try {
         const [users] = await db.query(`
-            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, u.role_id, COALESCE(u.status, 'active') as status, COALESCE(r.name, 'user') as role 
-            FROM users u 
+            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, u.role_id, u.staff_permissions, COALESCE(u.status, 'active') as status, COALESCE(r.name, 'user') as role
+            FROM users u
             LEFT JOIN roles r ON u.role_id = r.id
         `);
         res.json({ success: true, data: users });
@@ -209,28 +237,54 @@ exports.getAllUsers = async (req, res, next) => {
     }
 };
 
-// @desc    Update user details (name, email, role)
+// @desc    Create a new user
+// @route   POST /api/v1/admin/users
+// @access  Private/Admin|Staff(users)
+exports.createUser = async (req, res, next) => {
+    try {
+        const { name, email, password, role_id, staff_permissions } = req.body;
+
+        if (!name || !email || !password || !role_id) {
+            return res.status(400).json({ success: false, message: 'Name, email, password, and role are required' });
+        }
+
+        const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, message: 'Email already in use' });
+        }
+
+        const User = require('../models/user.model');
+        const userId = await User.createByAdmin({ name, email, password, role_id });
+
+        if (staff_permissions !== undefined) {
+            await db.query('UPDATE users SET staff_permissions = ? WHERE id = ?', [
+                JSON.stringify(staff_permissions),
+                userId
+            ]);
+        }
+
+        res.status(201).json({ success: true, message: 'User created successfully', data: { id: userId } });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Update user details (name, email, role, staff_permissions)
 // @route   PUT /api/v1/admin/users/:id
-// @access  Private/Admin
+// @access  Private/Admin|Staff(users)
 exports.updateUser = async (req, res, next) => {
     try {
-        const { name, email, role_id } = req.body;
+        const { name, email, role_id, staff_permissions } = req.body;
 
-        // Build update query dynamically based on provided fields
         const fields = [];
         const values = [];
 
-        if (name) {
-            fields.push('name = ?');
-            values.push(name);
-        }
-        if (email) {
-            fields.push('email = ?');
-            values.push(email);
-        }
-        if (role_id) {
-            fields.push('role_id = ?');
-            values.push(role_id);
+        if (name) { fields.push('name = ?'); values.push(name); }
+        if (email) { fields.push('email = ?'); values.push(email); }
+        if (role_id) { fields.push('role_id = ?'); values.push(role_id); }
+        if (staff_permissions !== undefined) {
+            fields.push('staff_permissions = ?');
+            values.push(staff_permissions ? JSON.stringify(staff_permissions) : null);
         }
 
         if (fields.length === 0) {
@@ -238,9 +292,7 @@ exports.updateUser = async (req, res, next) => {
         }
 
         values.push(req.params.id);
-
         await db.query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
-
         res.json({ success: true, message: 'User updated successfully' });
     } catch (error) {
         next(error);
@@ -617,11 +669,11 @@ const ensurePromotionsTable = async () => {
 };
 
 const PROMO_FIELDS = [
-    'display_type','title','title_ar','description','description_ar','image_url',
-    'coupon_code','cta_text','cta_text_ar','cta_link','bg_color','text_color',
-    'target_mode','target_pages','popup_trigger','popup_trigger_value',
-    'popup_frequency','popup_frequency_value','start_date','end_date',
-    'priority','is_active'
+    'display_type', 'title', 'title_ar', 'description', 'description_ar', 'image_url',
+    'coupon_code', 'cta_text', 'cta_text_ar', 'cta_link', 'bg_color', 'text_color',
+    'target_mode', 'target_pages', 'popup_trigger', 'popup_trigger_value',
+    'popup_frequency', 'popup_frequency_value', 'start_date', 'end_date',
+    'priority', 'is_active'
 ];
 
 const sanitizePromoBody = (body) => {
@@ -721,5 +773,78 @@ exports.getActivePromotions = async (req, res, next) => {
         const popup = matches.find(p => p.display_type === 'popup_modal') || null;
 
         res.json({ success: true, data: { banner, popup } });
+    } catch (e) { next(e); }
+};
+
+// @desc    Send offer notification email to all users for a product
+// @route   POST /api/v1/admin/products/:id/notify-offer
+// @access  Private/Admin
+exports.notifyOfferByEmail = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        // Fetch product
+        const [productRows] = await db.execute(
+            `SELECT p.*, (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
+             FROM products p WHERE p.id = ?`,
+            [id]
+        );
+        if (!productRows.length) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+        const product = productRows[0];
+
+        // Determine offer label
+        let offerLabel = 'Special Offer';
+        if (product.is_limited_offer) offerLabel = 'Limited Offer';
+        else if (product.is_daily_offer) offerLabel = 'Daily Offer';
+        else if (product.is_weekly_deal) offerLabel = 'Weekly Deal';
+        else if (product.is_featured) offerLabel = 'Featured';
+        else if (product.is_best_seller) offerLabel = 'Best Seller';
+
+        // Fetch all users with email — deduplicate by email to avoid sending twice
+        const [allUsers] = await db.execute('SELECT id, name, email FROM users WHERE email IS NOT NULL AND email != ""');
+        const seenEmails = new Set();
+        const users = allUsers.filter(u => {
+            const key = u.email.toLowerCase().trim();
+            if (seenEmails.has(key)) return false;
+            seenEmails.add(key);
+            return true;
+        });
+
+        if (!users.length) {
+            return res.json({ success: true, sent: 0, message: 'No users to notify' });
+        }
+
+        const { sendOfferNotificationEmail } = require('../utils/sendEmail');
+
+        const productData = {
+            name: product.name,
+            slug: product.slug,
+            price: product.price,
+            offer_price: product.offer_price,
+            primaryImage: product.primary_image
+        };
+
+        let sent = 0;
+        let failed = 0;
+        for (const user of users) {
+            try {
+                await sendOfferNotificationEmail(user.email, user.name || 'Valued Customer', productData, offerLabel);
+                sent++;
+            } catch (err) {
+                failed++;
+                console.error(`[NOTIFY] Failed to send to ${user.email}:`, err.message);
+            }
+        }
+
+        console.log(`[NOTIFY] Offer email blast: ${sent} sent, ${failed} failed — product #${id} (${offerLabel})`);
+        res.json({
+            success: true,
+            sent,
+            failed,
+            total: users.length,
+            message: sent > 0 ? `Sent to ${sent} users` : (failed > 0 ? `All ${failed} emails failed` : 'No users to notify')
+        });
     } catch (e) { next(e); }
 };

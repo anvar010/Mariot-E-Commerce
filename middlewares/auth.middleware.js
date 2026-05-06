@@ -47,6 +47,33 @@ const authorize = (...roles) => {
     };
 };
 
+// Allows admin unconditionally; allows staff if they hold any of the given permission keys.
+// Fetches staff_permissions from DB lazily — only for staff users.
+const authorizeAdminOrStaff = (...permKeys) => {
+    return async (req, res, next) => {
+        if (req.user.role === 'admin') return next();
+
+        if (req.user.role === 'staff') {
+            try {
+                const [rows] = await db.execute(
+                    'SELECT staff_permissions FROM users WHERE id = ?',
+                    [req.user.id]
+                );
+                let perms = [];
+                if (rows.length > 0) {
+                    const raw = rows[0].staff_permissions;
+                    perms = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
+                }
+                if (permKeys.some(k => perms.includes(k))) return next();
+            } catch (e) {
+                console.error('[authorizeAdminOrStaff] Error fetching staff permissions:', e.message);
+            }
+        }
+
+        return res.status(403).json({ success: false, message: 'Not authorized to access this section' });
+    };
+};
+
 // Like protect, but doesn't block if no token — just sets req.user if possible
 const optionalProtect = async (req, res, next) => {
     let token;
@@ -78,4 +105,4 @@ const optionalProtect = async (req, res, next) => {
     next();
 };
 
-module.exports = { protect, authorize, optionalProtect };
+module.exports = { protect, authorize, authorizeAdminOrStaff, optionalProtect };

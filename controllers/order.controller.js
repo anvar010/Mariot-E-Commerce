@@ -1,6 +1,7 @@
 const Order = require('../models/order.model');
 const Cart = require('../models/cart.model');
 const Coupon = require('../models/coupon.model');
+const User = require('../models/user.model');
 const db = require('../config/db');
 const axios = require('axios');
 const { sendOrderConfirmationEmail, sendEmail } = require('../utils/sendEmail');
@@ -12,6 +13,15 @@ const stripe = process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.i
 
 exports.createOrder = async (req, res, next) => {
     try {
+        const buyer = await User.findById(req.user.id);
+        if (!buyer || !buyer.phone_verified) {
+            return res.status(403).json({
+                success: false,
+                type: 'PHONE_NOT_VERIFIED',
+                message: 'Your mobile number is not verified. Please verify to continue.'
+            });
+        }
+
         const items = await Cart.getCartItems(req.user.id);
         if (items.length === 0) {
             return res.status(400).json({ success: false, message: 'Cart is empty' });
@@ -154,6 +164,36 @@ exports.createOrder = async (req, res, next) => {
         };
 
         const orderId = await Order.create(req.user.id, orderData);
+
+        // --- ASYNC ORDER NOTIFICATIONS (Immediate "Order Placed" notification) ---
+        // We send this immediately so both User and Admin are notified of the new order
+        // regardless of payment status.
+        (async () => {
+            try {
+                // 1. Email to Customer (Order Confirmation / Pending)
+                await sendOrderConfirmationEmail(
+                    billing_details?.email || req.user.email,
+                    billing_details?.name || req.user.name,
+                    orderId,
+                    finalAmount,
+                    items,
+                    orderData
+                );
+
+                // 2. Email to Admin (New Order Alert)
+                const adminEmail = process.env.RECEIVER_EMAIL || 'anvarshaknavas588@gmail.com';
+                await sendOrderConfirmationEmail(
+                    adminEmail,
+                    billing_details?.name || req.user.name,
+                    orderId,
+                    finalAmount,
+                    items,
+                    { ...orderData, is_admin_copy: true }
+                );
+            } catch (err) {
+                console.error('[Email Service Error] Initial order notifications failed:', err.message);
+            }
+        })();
 
         // --- STRIPE CARD INTEGRATION ---
         if (payment_method === 'card') {
@@ -322,32 +362,7 @@ exports.createOrder = async (req, res, next) => {
         }
         // --- END TABBY ---
 
-        // For bank transfer orders, complete immediately (manual verification by admin later)
-        if (payment_method === 'bank') {
-            // Bank transfers stay pending until admin manually confirms
-        }
-
-        // --- ASYNC ORDER CONFIRMATION EMAIL ---
-        (async () => {
-            try {
-                // Email to customer (using the robust template in utils/sendEmail.js)
-                await sendOrderConfirmationEmail(
-                    billing_details?.email || req.user.email,
-                    billing_details?.name || req.user.name,
-                    orderId,
-                    finalAmount,
-                    items,
-                    orderData
-                );
-
-                // Notification to admin
-                const adminEmail = process.env.RECEIVER_EMAIL || 'anvarshaknavas588@gmail.com';
-                const adminMailHtml = `<h2>New Order Alert #${orderId}</h2><p>Customer: ${billing_details?.name || req.user.name}</p><p>Total: AED ${finalAmount}</p>`;
-                await sendEmail(adminEmail, `NEW ORDER #${orderId}`, adminMailHtml);
-            } catch (err) {
-                console.error('[Email Service Error] Failed to send order confirmation:', err.message);
-            }
-        })();
+        // Bank transfers stay pending until admin manually confirms
 
         res.status(201).json({
             success: true,
@@ -387,6 +402,23 @@ exports.stripeWebhook = async (req, res) => {
                 if (orderId) {
                     console.log(`[Stripe Webhook] Payment succeeded for Order #${orderId}`);
                     await Order.updatePaymentStatus(parseInt(orderId), 'paid');
+
+                    // Trigger "Payment Confirmed" email to user
+                    try {
+                        const order = await Order.findById(orderId);
+                        if (order) {
+                            await sendOrderConfirmationEmail(
+                                order.billing_email || order.user_email,
+                                order.billing_name || order.user_name,
+                                orderId,
+                                order.final_amount,
+                                order.items,
+                                { ...order, payment_status: 'paid' }
+                            );
+                        }
+                    } catch (emailErr) {
+                        console.error('[Stripe Webhook] Failed to send payment confirmation email:', emailErr.message);
+                    }
                 }
                 break;
             }
@@ -441,6 +473,23 @@ exports.tabbyWebhook = async (req, res) => {
         if (status === 'AUTHORIZED' || status === 'CLOSED') {
             await Order.updatePaymentStatus(orderId, 'paid');
             console.log(`[Tabby Webhook] Order #${orderId} marked as PAID`);
+
+            // Trigger "Payment Confirmed" email to user
+            try {
+                const order = await Order.findById(orderId);
+                if (order) {
+                    await sendOrderConfirmationEmail(
+                        order.billing_email || order.user_email,
+                        order.billing_name || order.user_name,
+                        orderId,
+                        order.final_amount,
+                        order.items,
+                        { ...order, payment_status: 'paid' }
+                    );
+                }
+            } catch (emailErr) {
+                console.error('[Tabby Webhook] Failed to send payment confirmation email:', emailErr.message);
+            }
 
             // Auto-capture if AUTHORIZED (Tabby expects merchants to capture)
             if (status === 'AUTHORIZED') {
@@ -500,10 +549,47 @@ exports.updateOrderStatus = async (req, res, next) => {
 
         if (status) {
             await Order.updateStatus(req.params.id, status);
+            
+            // Trigger status update email
+            try {
+                const order = await Order.findById(req.params.id);
+                if (order) {
+                    const { sendOrderStatusUpdateEmail } = require('../utils/sendEmail');
+                    await sendOrderStatusUpdateEmail(
+                        order.billing_email || order.user_email || order.email,
+                        order.billing_name || order.user_name || order.name,
+                        req.params.id,
+                        status,
+                        order
+                    );
+                }
+            } catch (emailErr) {
+                console.error('[Admin Update] Failed to send status update email:', emailErr.message);
+            }
         }
 
         if (payment_status) {
             await Order.updatePaymentStatus(req.params.id, payment_status);
+
+            // If manual update to 'paid', send confirmation email
+            if (payment_status === 'paid') {
+                try {
+                    const order = await Order.findById(req.params.id);
+                    if (order) {
+                        const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
+                        await sendOrderConfirmationEmail(
+                            order.billing_email || order.user_email || order.email,
+                            order.billing_name || order.user_name || order.name,
+                            req.params.id,
+                            order.final_amount,
+                            order.items,
+                            { ...order, payment_status: 'paid' }
+                        );
+                    }
+                } catch (emailErr) {
+                    console.error('[Admin Update] Failed to send payment confirmation email:', emailErr.message);
+                }
+            }
         }
 
         res.json({ success: true, message: `Order updated successfully` });

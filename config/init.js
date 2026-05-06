@@ -47,6 +47,14 @@ const initDb = async () => {
         `);
         console.log('[DB] reward_points_history table verified');
 
+        // 1.7 Seed 'staff' role (INSERT IGNORE is safe — no error if it already exists)
+        try {
+            await db.query("INSERT IGNORE INTO roles (name) VALUES ('staff')");
+            console.log('[DB] staff role verified');
+        } catch (err) {
+            console.error('[DB] Error seeding staff role:', err.message);
+        }
+
         // 2. User Status Migration & Missing Columns
         try {
             const [columns] = await db.query("SHOW COLUMNS FROM users");
@@ -57,7 +65,8 @@ const initDb = async () => {
                 { name: 'company_name', definition: "VARCHAR(255)" },
                 { name: 'vat_number', definition: "VARCHAR(100)" },
                 { name: 'reset_password_token', definition: "VARCHAR(255)" },
-                { name: 'reset_password_expires', definition: "DATETIME" }
+                { name: 'reset_password_expires', definition: "DATETIME" },
+                { name: 'staff_permissions', definition: "JSON NULL" }
             ];
             for (const col of userColumns) {
                 if (!columnNames.includes(col.name)) {
@@ -276,6 +285,17 @@ const initDb = async () => {
             }
         } catch (err) {
             console.error('[DB] Error migrating product variant tables:', err.message);
+        }
+
+        // Migration: Add you_may_also_need column to products
+        try {
+            const [prodCols] = await db.query("SHOW COLUMNS FROM products");
+            if (!prodCols.map(c => c.Field).includes('you_may_also_need')) {
+                await db.query("ALTER TABLE products ADD COLUMN you_may_also_need TEXT NULL");
+                console.log('[DB] Migration: Added you_may_also_need column to products table');
+            }
+        } catch (err) {
+            console.error('[DB] Error adding you_may_also_need column:', err.message);
         }
 
         // 7. Settings Table (Ensure it exists)

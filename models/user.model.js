@@ -12,10 +12,39 @@ class User {
 
     static async findById(id) {
         const [rows] = await db.execute(
-            'SELECT u.id, u.name, u.email, u.phone_number, u.company_name, u.vat_number, u.reward_points, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
+            'SELECT u.id, u.name, u.email, u.phone_number, u.phone_verified, u.company_name, u.vat_number, u.reward_points, u.staff_permissions, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
             [id]
         );
         return rows[0];
+    }
+
+    static async setPhoneVerified(id, phone) {
+        await db.execute(
+            'UPDATE users SET phone_verified = 1, phone_number = ?, otp_code = NULL, otp_expires_at = NULL WHERE id = ?',
+            [phone, id]
+        );
+    }
+
+    static async saveOtp(userId, code, expiresAt) {
+        await db.execute(
+            'UPDATE users SET otp_code = ?, otp_expires_at = ? WHERE id = ?',
+            [code, expiresAt, userId]
+        );
+    }
+
+    static async getOtp(userId) {
+        const [rows] = await db.execute(
+            'SELECT otp_code, otp_expires_at FROM users WHERE id = ?',
+            [userId]
+        );
+        return rows[0];
+    }
+
+    static async clearOtp(userId) {
+        await db.execute(
+            'UPDATE users SET otp_code = NULL, otp_expires_at = NULL WHERE id = ?',
+            [userId]
+        );
     }
 
     static async update(id, data) {
@@ -27,8 +56,9 @@ class User {
             values.push(data.name);
         }
         if (data.phone_number !== undefined) {
+            fields.push('phone_verified = CASE WHEN phone_number = ? THEN phone_verified ELSE 0 END');
             fields.push('phone_number = ?');
-            values.push(data.phone_number);
+            values.push(data.phone_number, data.phone_number);
         }
         if (data.company_name !== undefined) {
             fields.push('company_name = ?');
@@ -59,6 +89,15 @@ class User {
         const [result] = await db.execute(
             "INSERT INTO users (name, email, password, role_id, reward_points) VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = 'user'), 1000)",
             [name, email, hashedPassword]
+        );
+        return result.insertId;
+    }
+
+    static async createByAdmin({ name, email, password, role_id }) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const [result] = await db.execute(
+            'INSERT INTO users (name, email, password, role_id, reward_points) VALUES (?, ?, ?, ?, 0)',
+            [name, email, hashedPassword, role_id]
         );
         return result.insertId;
     }
