@@ -366,6 +366,22 @@
     }
 }
 
+.searchSpinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: var(--white);
+    border-radius: 50%;
+    display: inline-block;
+    animation: searchSpin 0.7s linear infinite;
+}
+
+@keyframes searchSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* User Actions */
 .userActions {
     display: flex;
@@ -1230,7 +1246,7 @@
 
     .searchBar input {
         padding: 8px 12px;
-        font-size: 13px;
+        font-size: 16px;
     }
 
     .searchButton {

@@ -303,9 +303,14 @@ const Header = () => {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onFocus={() => searchQuery.trim().length >= 2 && setShowSuggestions(true)}
                                     className={styles.searchInput}
+                                    aria-label={t('searchPlaceholder')}
                                 />
-                                <button type="submit" className={styles.searchButton}>
-                                    <Search size={20} />
+                                <button type="submit" className={styles.searchButton} disabled={isSearching}>
+                                    {isSearching ? (
+                                        <span className={styles.searchSpinner} aria-label="loading" />
+                                    ) : (
+                                        <Search size={20} />
+                                    )}
                                     <span>{t('search')}</span>
                                 </button>
                             </form>
