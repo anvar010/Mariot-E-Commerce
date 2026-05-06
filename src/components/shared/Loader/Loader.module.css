@@ -1,144 +1,134 @@
-.loaderWrapper {
+.loaderContainer {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
-    min-height: 200px;
+    padding: 3rem;
     width: 100%;
+    min-height: 250px;
 }
 
 .fullPage {
     position: fixed;
     top: 0;
-    inset-inline-start: 0;
+    left: 0;
     width: 100vw;
     height: 100vh;
     background: #ffffff;
     z-index: 10000;
+}
+
+.loaderContent {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    transition: opacity 0.3s ease;
+    gap: 2rem;
 }
 
-.spinner {
+.geometryWrapper {
     position: relative;
-    width: 110px;
-    height: 110px;
+    width: 80px;
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* The modern "Comet" sweep */
-.spinnerInner {
+.outerRing {
     position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 1.5px solid rgba(51, 124, 127, 0.1);
-    /* Very faint track */
-}
-
-.spinnerInner::after {
-    content: '';
-    position: absolute;
-    inset: -1.5px;
-    border-radius: 50%;
-    border: 2px solid transparent;
+    width: 100%;
+    height: 100%;
+    border: 2px solid #e2e8f0;
     border-top-color: #337c7f;
-    animation: sweep 1.2s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+    border-radius: 50%;
+    animation: spin 2s linear infinite;
 }
 
-.spinnerGlow {
+.innerRing {
     position: absolute;
-    inset: 0;
+    width: 70%;
+    height: 70%;
+    border: 2px solid #e2e8f0;
+    border-bottom-color: #f58220;
     border-radius: 50%;
-    background: radial-gradient(circle at 50% 0%, rgba(51, 124, 127, 0.15) 0%, transparent 70%);
-    animation: sweep 1.2s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
-    filter: blur(8px);
+    animation: spin-reverse 1.5s linear infinite;
 }
 
-.logoContainer {
-    width: 70px;
-    height: 70px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: white;
-    z-index: 2;
-    transition: transform 0.3s ease;
-    animation: logoPulse 2.4s ease-in-out infinite;
+.logoGhost {
+    width: 35px;
+    height: 35px;
+    opacity: 0.15;
+    animation: pulse 2s ease-in-out infinite;
 }
 
-.logoImg {
-    width: 75%;
-    height: 75%;
+.logoGhost img {
+    width: 100%;
+    height: 100%;
     object-fit: contain;
 }
 
-.loadingText {
-    margin-top: 2.5rem;
-    font-size: 13px;
-    font-weight: 700;
-    color: #111;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    opacity: 0.9;
-    animation: textFade 1.5s ease-in-out infinite alternate;
+.textStack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
 }
 
-@keyframes sweep {
-    0% {
-        transform: rotate(0deg);
-    }
+.loadingText {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
 
-    100% {
+.progressBar {
+    width: 160px;
+    height: 3px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progressFill {
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, #337c7f, #8ecfcc);
+    border-radius: 10px;
+    animation: scan 1.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
         transform: rotate(360deg);
     }
 }
 
-@keyframes logoPulse {
+@keyframes spin-reverse {
+    to {
+        transform: rotate(-360deg);
+    }
+}
+
+@keyframes pulse {
 
     0%,
     100% {
-        transform: scale(1);
-        opacity: 1;
+        transform: scale(0.95);
+        opacity: 0.1;
     }
 
     50% {
         transform: scale(1.05);
-        opacity: 0.95;
+        opacity: 0.25;
     }
 }
 
-@keyframes textFade {
+@keyframes scan {
     0% {
-        opacity: 0.4;
-        transform: translateY(0);
+        transform: translateX(-100%);
     }
 
     100% {
-        opacity: 1;
-        transform: translateY(-2px);
-    }
-}
-
-@media (max-width: 640px) {
-    .spinner {
-        width: 90px;
-        height: 90px;
-    }
-
-    .logoContainer {
-        width: 60px;
-        height: 60px;
-    }
-
-    .loadingText {
-        font-size: 11px;
-        letter-spacing: 2px;
+        transform: translateX(250%);
     }
 }
