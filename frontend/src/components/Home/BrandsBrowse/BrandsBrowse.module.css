@@ -1,0 +1,321 @@
+.brandsSection {
+    padding: 20px 0 15px 0;
+    background: radial-gradient(circle at top right, #f8fafc, #ffffff, #f1f5f9);
+    overflow: hidden;
+    position: relative;
+}
+
+.container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 40px;
+}
+
+/* ===== Section Header ===== */
+.sectionHeader {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    gap: 30px;
+}
+
+.sectionHeaderLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sectionTag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #3b82f6;
+    text-transform: uppercase;
+    letter-spacing: 2.2px;
+    padding: 4px 12px;
+    background: rgba(59, 130, 246, 0.08);
+    border-radius: 100px;
+    width: fit-content;
+}
+
+.sectionTitle {
+    font-size: 34px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -1.8px;
+    line-height: 1.1;
+    margin: 0;
+}
+
+.sectionSubtitle {
+    font-size: 15px;
+    color: #64748b;
+    font-weight: 400;
+    margin: 0;
+    max-width: 500px;
+}
+
+.sectionHeaderRight {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+}
+
+.viewAllLink {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #10b981;
+    text-decoration: none;
+    transition: none;
+    white-space: nowrap;
+    position: relative;
+}
+
+.navBtns {
+    display: flex;
+    gap: 8px;
+}
+
+.navBtn {
+    width: 40px;
+    height: 40px;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #334155;
+    cursor: pointer;
+    transition: none;
+}
+
+.navBtnDisabled {
+    opacity: 0.15;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: #f1f5f9;
+}
+
+/* ===== Slider (Embla) ===== */
+.sliderWrapper {
+    position: relative;
+    margin: 0 -40px;
+}
+
+.emblaViewport {
+    overflow: hidden;
+    width: 100%;
+    padding: 0 40px;
+    cursor: grab;
+}
+
+.emblaViewport:active {
+    cursor: grabbing;
+}
+
+.brandsGrid {
+    display: flex;
+    gap: 0;
+    padding: 10px 2px 0 2px;
+    width: 100%;
+}
+
+/* ===== Brand Card ===== */
+.brandSlide {
+    flex: 0 0 200px;
+    width: 200px;
+    min-width: 200px;
+    display: flex;
+    scroll-snap-align: start;
+}
+
+.brandCard {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
+
+
+.logoBox {
+    width: 190px;
+    height: 110px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.logoImg {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transform: scale(1.05);
+}
+
+.brandName {
+    display: none;
+}
+
+.brandNameFallback {
+    font-size: 15px;
+    font-weight: 700;
+    color: #64748b;
+    text-align: center;
+}
+
+/* ===== Skeleton ===== */
+.skeletonCard {
+    flex: 0 0 180px;
+    width: 180px;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.skeletonCard::before {
+    content: '';
+    width: 170px;
+    height: 90px;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    border-radius: 18px;
+    animation: shimmer 1.5s infinite;
+}
+
+.skeletonCard::after {
+    content: '';
+    width: 80px;
+    height: 14px;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ===== Responsiveness ===== */
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 24px;
+    }
+
+    .sliderWrapper {
+        margin: 0 -24px;
+    }
+
+    .emblaViewport {
+        padding: 0 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .brandsSection {
+        padding: 20px 0 30px 0;
+    }
+
+    .container {
+        padding: 0 20px;
+    }
+
+    .sliderWrapper {
+        margin: 0 -20px;
+    }
+
+    .emblaViewport {
+        padding: 0 20px;
+    }
+
+    .sectionHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 0 16px;
+    }
+
+    .sliderWrapper {
+        margin: 0 -16px;
+    }
+
+    .emblaViewport {
+        padding: 0 16px;
+    }
+
+    .brandsSection {
+        padding: 10px 0 20px 0;
+    }
+
+    .sectionHeader {
+        margin-bottom: 10px;
+        gap: 8px;
+    }
+
+    .navBtns {
+        display: none;
+    }
+
+    /* Mobile: 2 rows, 2 per row = 4 items visible, or stick to 3 if requested, but 2 looks BIGGER */
+    .brandsGrid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto auto;
+        gap: 0;
+        overflow: hidden;
+        padding: 10px 0;
+    }
+
+    .brandSlide {
+        flex: none;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .logoBox {
+        width: 100%;
+        height: 85px;
+        border-radius: 12px;
+        padding: 4px;
+        margin: 0 auto;
+    }
+
+    .brandName {
+        font-size: 11px;
+        margin-top: 6px;
+    }
+
+    .hiddenOnMobile {
+        display: none;
+    }
+}

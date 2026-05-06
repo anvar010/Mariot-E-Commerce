@@ -69,11 +69,10 @@ const TrustItem = ({ icon, title, text }: any) => (
     </div>
 );
 
-const AccordionItem = ({ title, icon, isOpen, onToggle, children }: any) => (
+const AccordionItem = ({ title, isOpen, onToggle, children }: any) => (
     <div className={`${styles.accordionItem} ${isOpen ? styles.accordionOpen : ''}`}>
         <button className={styles.accordionHeader} onClick={onToggle}>
             <div className={styles.accordionHeaderLeft}>
-                {icon && <span className={styles.accordionHeaderIcon}>{icon}</span>}
                 <span className={styles.accordionHeaderText}>{title}</span>
             </div>
             <div className={styles.accordionHeaderRight}>
@@ -172,10 +171,10 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
 
     return (
         <>
-            <div className={`${styles.sectionTitle} ${styles.fbtSectionTitle}`}>
-                <h2>{t('fbt.title') || "Frequently bought together"}</h2>
-            </div>
             <div className={styles.fbtSectionRoot}>
+                <div className={`${styles.sectionTitle} ${styles.fbtSectionTitle}`}>
+                    <h2>{t('fbt.title') || "Frequently bought together"}</h2>
+                </div>
                 <div className={styles.sliderWrapper}>
                     <button
                         className={`${styles.sliderArrow} ${styles.prevArrow} ${(!canScrollPrev || allItems.length <= 8) ? styles.arrowHidden : ''}`}
@@ -408,6 +407,31 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         cleaned = cleaned.replace(/(<br\/>\s*){3,}/g, '<br /><br />');
 
         return cleaned.trim();
+    };
+
+    // Helper to intelligently format raw text into paragraphs and lists
+    const renderFormattedContent = (rawContent: string) => {
+        if (!rawContent) return null;
+
+        const cleaned = cleanShortcodes(rawContent);
+
+        // If the content already contains structural HTML tags, render directly
+        if (cleaned.includes('<p>') || cleaned.includes('<ul>') || cleaned.includes('<li>') || cleaned.includes('<h3>')) {
+            return <div dangerouslySetInnerHTML={{ __html: cleaned }} />;
+        }
+
+        // Otherwise, split by <br /> or newlines and treat every sentence/line as a bullet point
+        const segments = cleaned.split(/(?:<br\s*\/?>|\n)+/).map(s => s.replace(/^[•\-\*✳️✅]\s*/, '').trim()).filter(Boolean);
+
+        if (segments.length === 0) return null;
+
+        return (
+            <ul>
+                {segments.map((seg, index) => (
+                    <li key={index}>{seg}</li>
+                ))}
+            </ul>
+        );
     };
 
     // Related & Reviews states
@@ -1413,28 +1437,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                     </div>
 
-                    <div className={styles.fbtWrapper}>
-                        {product.frequently_bought_together_products && product.frequently_bought_together_products.length > 0 && (
-                            <FbtSection
-                                currentProduct={{
-                                    ...product,
-                                    price: selectedVariant ? selectedVariant.price : product.price,
-                                    offer_price: selectedVariant ? selectedVariant.offer_price : product.offer_price,
-                                    primary_image: images[0] || product.primary_image,
-                                    variantDetails: variantLabel ? { label: variantLabel, id: selectedVariant?.id || null } : undefined,
-                                }}
-                                fbtProducts={product.frequently_bought_together_products}
-                                locale={locale}
-                                isArabic={isArabic}
-                                resolveUrl={resolveUrl}
-                                addToCart={addToCart}
-                                showNotification={showNotification}
-                                t={t}
-                            />
-                        )}
-                    </div>
-
-                    {/* Sidebar (Right) */}
                     <div className={styles.sidebar}>
                         <div className={styles.trustList}>
                             <TrustItem icon={<Truck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('freeShipping')} text={t('freeShippingText')} />
@@ -1457,27 +1459,38 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         </div>
                     </div>
 
+                    <div className={styles.fbtWrapper}>
+                        {product.frequently_bought_together_products && product.frequently_bought_together_products.length > 0 && (
+                            <FbtSection
+                                currentProduct={{
+                                    ...product,
+                                    price: selectedVariant ? selectedVariant.price : product.price,
+                                    offer_price: selectedVariant ? selectedVariant.offer_price : product.offer_price,
+                                    primary_image: images[0] || product.primary_image,
+                                    variantDetails: variantLabel ? { label: variantLabel, id: selectedVariant?.id || null } : undefined,
+                                }}
+                                fbtProducts={product.frequently_bought_together_products}
+                                locale={locale}
+                                isArabic={isArabic}
+                                resolveUrl={resolveUrl}
+                                addToCart={addToCart}
+                                showNotification={showNotification}
+                                t={t}
+                            />
+                        )}
+                    </div>
+
                 </div>
 
 
                 <div className={`${styles.detailsLayoutGrid} ${!hasVideo ? styles.noVideo : ''}`}>
                     {/*     Main Content Area (Accordions Column) */}
                     <div className={styles.accordionsColumn}>
-                        <div className={styles.accordions}>
-                            {/*     Description Accordion */}
-                            <AccordionItem
-                                title={t('description')}
-                                icon={<FileText size={20} />}
-                                isOpen={!!expandedAccordions['description']}
-                                onToggle={() => toggleAccordion('description')}
-                            >
-                                <div
-                                    className={styles.descriptionText}
-                                    dangerouslySetInnerHTML={{
-                                        __html: cleanShortcodes(getLocalizedField('description', 'description_ar')) || `<p>${t('noDescription')}</p>`
-                                    }}
-                                />
-                            </AccordionItem>
+                        <div className={styles.plainDescriptionSection}>
+                            <h3 className={styles.plainDescriptionTitle}>{t('description')}</h3>
+                            <div className={styles.descriptionText}>
+                                {renderFormattedContent(getLocalizedField('description', 'description_ar')) || <p>{t('noDescription')}</p>}
+                            </div>
                         </div>
 
                         <div className={styles.accordions} style={{ marginTop: '24px' }}>

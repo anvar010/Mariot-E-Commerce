@@ -40,7 +40,7 @@
     line-height: 1.7;
     color: #444;
     margin-bottom: 25px;
-    text-align: justify;
+    text-align: left;
 }
 
 .imageContent {
@@ -66,9 +66,9 @@
 
 @media (hover: hover) {
 
-.iconBox:hover {
-    transform: scale(1.02);
-}
+    .iconBox:hover {
+        transform: scale(1.02);
+    }
 }
 
 .iconBoxLogo {
@@ -101,10 +101,10 @@
 
 @media (hover: hover) {
 
-.badge:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(89, 206, 219, 0.3);
-}
+    .badge:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(89, 206, 219, 0.3);
+    }
 }
 
 .badgeText {

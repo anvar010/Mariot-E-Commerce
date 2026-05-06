@@ -1,5 +1,5 @@
 .categorySection {
-    padding: 20px 0 40px 0;
+    padding: 15px 0 40px 0;
     /* Reduced from 40px/60px */
     background: radial-gradient(circle at top right, #f8fafc, #ffffff, #f1f5f9);
     overflow: hidden;

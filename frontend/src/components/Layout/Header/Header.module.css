@@ -567,7 +567,7 @@
 @media (hover: hover) {
 
     .categories:hover {
-        color: #5bb377;
+        color: #16a1db;
     }
 }
 
@@ -576,7 +576,7 @@
 }
 
 .categoriesActive {
-    background-color: #5bb377 !important;
+    background-color: #16a1db !important;
     color: white !important;
 }
 
@@ -643,13 +643,13 @@
 
     .navLinks a:hover,
     .navLinks .linkActive {
-        color: #5bb377;
+        color: #16a1db;
     }
 }
 
 .navLinks .linkActive {
-    color: #5bb377 !important;
-    border-bottom: 3px solid #5bb377;
+    color: #16a1db !important;
+    border-bottom: 3px solid #16a1db;
     padding-bottom: 4px;
 }
 
@@ -891,7 +891,7 @@
 }
 
 .langCheck {
-    color: #5bb377;
+    color: #16a1db;
     flex-shrink: 0;
     margin-inline-start: auto;
 }
@@ -1187,7 +1187,7 @@
 
     .navLinks .linkActive {
         border-bottom: none;
-        color: #5bb377;
+        color: #16a1db;
     }
 
     .categoriesWrapper {
@@ -1491,7 +1491,7 @@
 .suggestionPrice {
     font-size: 13px;
     font-weight: 700;
-    color: #5bb377;
+    color: #16a1db;
 }
 
 .suggestionCategory {
@@ -1513,7 +1513,7 @@
 .searchingSpinner {
     padding: 15px;
     text-align: center;
-    color: #5bb377;
+    color: #16a1db;
     font-size: 13px;
     display: flex;
     align-items: center;

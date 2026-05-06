@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic';
 import Header from '@/components/Layout/Header/Header';
 import Hero from '@/components/Home/Hero/Hero';
-import HeroPosters from '@/components/Home/HeroPosters/HeroPosters';
+import BrandsBrowse from '@/components/Home/BrandsBrowse/BrandsBrowse';
 import CategoryBrowse from '@/components/Home/CategoryBrowse/CategoryBrowse';
 import Reveal from '@/components/shared/Reveal/Reveal';
 
@@ -19,14 +19,15 @@ const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://loca
 async function getHomeData(locale: string) {
     const isRtl = locale === 'ar';
     try {
-        const [cmsRes, limitedRes, weeklyRes, iceRes, coffeeRes, cookingRes, categoriesRes] = await Promise.all([
+        const [cmsRes, limitedRes, weeklyRes, iceRes, coffeeRes, cookingRes, categoriesRes, brandsRes] = await Promise.all([
             fetch(`${API_BASE_URL_SERVER}/cms/homepage`, { next: { revalidate: 30 } }),
             fetch(`${API_BASE_URL_SERVER}/products?is_limited_offer=true&limit=8`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?is_weekly_deal=true`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?search=ice%20makers`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?search=coffee%20makers`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?search=cooking%20equipment`, { next: { revalidate: 60 } }),
-            fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 3600 } })
+            fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 3600 } }),
+            fetch(`${API_BASE_URL_SERVER}/brands`, { next: { revalidate: 3600 } })
         ]);
 
         const cmsData = await cmsRes.json();
@@ -36,6 +37,7 @@ async function getHomeData(locale: string) {
         const coffeeData = await coffeeRes.json();
         const cookingData = await cookingRes.json();
         const categoriesData = await categoriesRes.json();
+        const brandsData = await brandsRes.json();
 
         let heroSlides = [];
         let heroPosters = [];
@@ -66,6 +68,8 @@ async function getHomeData(locale: string) {
                 .sort((a: any, b: any) => a.id - b.id)
             : [];
 
+        const allBrands = brandsData?.success ? brandsData.data : [];
+
         return {
             heroSlides,
             heroPosters,
@@ -74,11 +78,12 @@ async function getHomeData(locale: string) {
             iceProducts: iceData.success ? iceData.data : [],
             coffeeProducts: coffeeData.success ? coffeeData.data : [],
             cookingProducts: cookingData.success ? cookingData.data : [],
-            categories: mainCategories
+            categories: mainCategories,
+            brands: allBrands
         };
     } catch (e) {
         console.error("Home server fetch failed", e);
-        return { heroSlides: [], heroPosters: [], limitedProducts: [], weeklyProducts: [], iceProducts: [], coffeeProducts: [], cookingProducts: [], categories: [] };
+        return { heroSlides: [], heroPosters: [], limitedProducts: [], weeklyProducts: [], iceProducts: [], coffeeProducts: [], cookingProducts: [], categories: [], brands: [] };
     }
 }
 
@@ -128,7 +133,7 @@ export default async function Home({ params: { locale } }: { params: { locale: s
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }} />
             <Header />
             <Hero initialSlides={data.heroSlides} />
-            <Reveal key="reveal-hero-posters"><HeroPosters initialPosters={data.heroPosters} /></Reveal>
+            <Reveal key="reveal-brands"><BrandsBrowse initialBrands={data.brands} /></Reveal>
             <Reveal key="reveal-categories"><CategoryBrowse initialCategories={data.categories} /></Reveal>
             <Reveal key="reveal-limited"><LimitedOffers initialProducts={data.limitedProducts} /></Reveal>
             <Reveal key="reveal-weekly"><WeeklyDeals initialProducts={data.weeklyProducts} /></Reveal>
