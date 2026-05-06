@@ -309,9 +309,11 @@ const Header = () => {
                                     {isSearching ? (
                                         <span className={styles.searchSpinner} aria-label="loading" />
                                     ) : (
-                                        <Search size={20} />
+                                        <>
+                                            <Search size={20} />
+                                            <span>{t('search')}</span>
+                                        </>
                                     )}
-                                    <span>{t('search')}</span>
                                 </button>
                             </form>
 

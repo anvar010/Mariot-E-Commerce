@@ -366,7 +366,8 @@
     }
 }
 
-.searchSpinner {
+.searchSpinner,
+.searchButton span.searchSpinner {
     width: 20px;
     height: 20px;
     border: 2px solid rgba(255, 255, 255, 0.4);
@@ -374,6 +375,7 @@
     border-radius: 50%;
     display: inline-block;
     animation: searchSpin 0.7s linear infinite;
+    flex-shrink: 0;
 }
 
 @keyframes searchSpin {
