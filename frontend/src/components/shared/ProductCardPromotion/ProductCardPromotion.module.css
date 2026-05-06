@@ -531,6 +531,7 @@
     font-size: 13px;
     cursor: pointer;
     transition: all 0.3s ease;
+    white-space: nowrap;
 }
 
 .notifyBtn {
@@ -587,13 +588,13 @@
     }
 
     .whatsappBtn {
-        width: 34px;
-        height: 34px;
+        width: 40px;
+        height: 40px;
         border-radius: 10px;
     }
 
     .cartBtn {
-        height: 34px;
+        height: 40px;
         border-radius: 10px;
     }
 }
@@ -642,12 +643,12 @@
     }
 
     .whatsappBtn {
-        width: 30px;
-        height: 30px;
+        width: 38px;
+        height: 38px;
     }
 
     .cartBtn {
-        height: 30px;
+        height: 38px;
         font-size: 11px;
         gap: 4px;
     }
@@ -682,11 +683,11 @@
 
     .brandLogoOverlay {
         margin: 4px auto 4px auto;
-        max-width: 120px;
+        max-width: 150px;
     }
 
     .brandLogoImgOverlay {
-        max-height: 35px;
+        max-height: 45px;
     }
 
     .tagsWrapperStart {

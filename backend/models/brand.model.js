@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 class Brand {
     static async findAll() {
-        const [rows] = await db.execute('SELECT * FROM brands ORDER BY name ASC');
+        const [rows] = await db.execute('SELECT * FROM brands ORDER BY priority IS NULL ASC, priority ASC, name ASC');
         return rows;
     }
 
@@ -28,37 +28,45 @@ class Brand {
             WHERE (p.category_id IN (${placeholders}) OR p.sub_category_id IN (${placeholders}) OR p.sub_sub_category_id IN (${placeholders}))
               AND p.status = 'active' AND b.is_active = 1
             GROUP BY b.id
-            ORDER BY b.name ASC
+            ORDER BY b.priority ASC, b.name ASC
         `;
         const [rows] = await db.execute(query, [...catIds, ...catIds, ...catIds]);
         return rows;
     }
 
     static async findWithDailyOffers(category) {
-        // Brands that have at least one product with is_daily_offer = 1.
-        // If a category is provided, also restricts to that category subtree.
+        return this.findActiveBrands({ category, is_daily_offer: true });
+    }
+
+    /**
+     * Find brands that have active products matching the given filters.
+     * Useful for dynamic filter sidebars.
+     */
+    static async findActiveBrands(filters = {}) {
+        const { category, search, is_featured, is_limited_offer, is_daily_offer, seller, minPrice, maxPrice } = filters;
+        
         let catIds = null;
         if (category) {
             const [catRows] = await db.execute(
                 'SELECT id FROM categories WHERE slug = ? OR id = ? LIMIT 1',
                 [category, category]
             );
-            if (catRows.length === 0) return [];
-            const rootId = catRows[0].id;
-            const [allCatRows] = await db.execute(
-                'SELECT id FROM categories WHERE id = ? OR parent_id = ? OR parent_id IN (SELECT id FROM categories WHERE parent_id = ?)',
-                [rootId, rootId, rootId]
-            );
-            catIds = allCatRows.map(r => r.id);
+            if (catRows.length > 0) {
+                const rootId = catRows[0].id;
+                const [allCatRows] = await db.execute(
+                    'SELECT id FROM categories WHERE id = ? OR parent_id = ? OR parent_id IN (SELECT id FROM categories WHERE parent_id = ?)',
+                    [rootId, rootId, rootId]
+                );
+                catIds = allCatRows.map(r => r.id);
+            }
         }
 
         let query = `
-            SELECT b.*, COUNT(p.id) as product_count
+            SELECT b.*, COUNT(DISTINCT p.id) as product_count
             FROM brands b
             JOIN products p ON b.id = p.brand_id
-            WHERE p.is_daily_offer = 1
-              AND p.status = 'active'
-              AND b.is_active = 1
+            LEFT JOIN categories c ON p.category_id = c.id
+            WHERE (p.status = 'active' OR p.status IS NULL) AND p.is_active = 1 AND b.is_active = 1
         `;
         const params = [];
 
@@ -68,7 +76,36 @@ class Brand {
             params.push(...catIds, ...catIds, ...catIds);
         }
 
-        query += ' GROUP BY b.id ORDER BY b.name ASC';
+        if (search) {
+            const searchWords = search.trim().split(/\s+/).filter(word => word.length > 0);
+            if (searchWords.length > 0) {
+                const wordConditions = searchWords.map(word => {
+                    params.push(`%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`);
+                    return '(p.name LIKE ? OR p.name_ar LIKE ? OR p.description LIKE ? OR p.description_ar LIKE ? OR p.short_description LIKE ? OR p.short_description_ar LIKE ? OR c.name LIKE ? OR p.product_group LIKE ? OR p.sub_category LIKE ? OR b.name LIKE ? OR b.name_ar LIKE ?)';
+                });
+                query += ' AND (' + wordConditions.join(' AND ') + ')';
+            }
+        }
+
+        if (is_featured) query += ' AND p.is_featured = 1';
+        if (is_limited_offer) query += ' AND p.is_limited_offer = 1';
+        if (is_daily_offer) query += ' AND p.is_daily_offer = 1';
+        
+        if (seller) {
+            query += ' AND (p.seller_id = ? OR p.seller_name = ?)';
+            params.push(seller, seller);
+        }
+
+        if (minPrice !== undefined && minPrice !== null) {
+            query += ' AND (CASE WHEN p.offer_price > 0 THEN p.offer_price ELSE p.price END) >= ?';
+            params.push(minPrice);
+        }
+        if (maxPrice !== undefined && maxPrice !== null) {
+            query += ' AND (CASE WHEN p.offer_price > 0 THEN p.offer_price ELSE p.price END) <= ?';
+            params.push(maxPrice);
+        }
+
+        query += ' GROUP BY b.id ORDER BY b.priority ASC, b.name ASC';
         const [rows] = await db.execute(query, params);
         return rows;
     }
@@ -78,10 +115,10 @@ class Brand {
         return rows[0];
     }
 
-    static async create({ name, name_ar = null, slug, image_url = null }) {
+    static async create({ name, name_ar = null, slug, image_url = null, priority = 0 }) {
         const [result] = await db.execute(
-            'INSERT INTO brands (name, name_ar, slug, image_url) VALUES (?, ?, ?, ?)',
-            [name, name_ar, slug, image_url]
+            'INSERT INTO brands (name, name_ar, slug, image_url, priority) VALUES (?, ?, ?, ?, ?)',
+            [name, name_ar, slug, image_url, priority]
         );
         return result.insertId;
     }

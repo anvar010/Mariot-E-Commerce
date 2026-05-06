@@ -50,27 +50,33 @@ class Product {
         if (is_weekly_deal !== undefined && isTrue(is_weekly_deal)) {
             whereClauses.push('p.is_weekly_deal = 1');
             whereClauses.push('p.is_limited_offer = 0');
+            whereClauses.push('p.offer_end IS NOT NULL AND p.offer_end > NOW()');
         }
         if (is_limited_offer !== undefined && isTrue(is_limited_offer)) {
             whereClauses.push('p.is_limited_offer = 1');
             whereClauses.push('p.is_weekly_deal = 0');
+            whereClauses.push('p.offer_end IS NOT NULL AND p.offer_end > NOW()');
         }
         if (is_featured !== undefined && isTrue(is_featured)) {
             whereClauses.push('p.is_featured = 1');
         }
         if (is_daily_offer !== undefined && isTrue(is_daily_offer)) {
             whereClauses.push('p.is_daily_offer = 1');
+            whereClauses.push('p.offer_end IS NOT NULL AND p.offer_end > NOW()');
         }
         if (is_best_seller !== undefined && isTrue(is_best_seller)) {
             whereClauses.push('p.is_best_seller = 1');
         }
 
         if (category) {
-            // Collect the matched category ID and all its descendants
-            const [catRows] = await db.execute(
-                'SELECT id FROM categories WHERE slug = ? OR id = ? LIMIT 1',
-                [category, category]
-            );
+            if (category === 'uncategorised') {
+                whereClauses.push('(p.category_id IS NULL OR p.category_id = 0)');
+            } else {
+                // Collect the matched category ID and all its descendants
+                const [catRows] = await db.execute(
+                    'SELECT id FROM categories WHERE slug = ? OR id = ? LIMIT 1',
+                    [category, category]
+                );
             if (catRows.length > 0) {
                 const rootId = catRows[0].id;
                 const [allCatRows] = await db.execute(
@@ -85,6 +91,7 @@ class Product {
                 const categoryPattern = category.replace(/-/g, '%');
                 whereClauses.push('(c.slug = ? OR sc.slug = ? OR ssc.slug = ? OR p.product_group LIKE ? OR p.sub_category LIKE ?)');
                 params.push(category, category, category, categoryPattern, categoryPattern);
+            }
             }
         }
         if (brand) {
@@ -114,9 +121,37 @@ class Product {
         if (search) {
             const searchWords = search.trim().split(/\s+/).filter(word => word.length > 0);
             if (searchWords.length > 0) {
-                const wordConditions = searchWords.map(word => {
-                    params.push(`%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`);
-                    return '(p.name LIKE ? OR p.name_ar LIKE ? OR p.description LIKE ? OR p.description_ar LIKE ? OR p.short_description LIKE ? OR p.short_description_ar LIKE ? OR c.name LIKE ? OR p.product_group LIKE ? OR p.sub_category LIKE ? OR b.name LIKE ? OR b.name_ar LIKE ? OR p.model LIKE ?)';
+                const wordConditions = searchWords.map(originalWord => {
+                    // Match at start of string OR after a space
+                    const wordsToMatch = [originalWord];
+
+                    if (originalWord.length > 3 && originalWord.endsWith('s')) {
+                        let singular = originalWord.slice(0, -1);
+                        if (originalWord.endsWith('ies')) singular = originalWord.slice(0, -3) + 'y';
+                        wordsToMatch.push(singular);
+                    } else if (originalWord.length > 3 && !originalWord.endsWith('s')) {
+                        wordsToMatch.push(originalWord + 's');
+                    }
+
+                    const subConditions = [];
+                    for (const word of wordsToMatch) {
+                        const wordParams = [];
+                        for (let i = 0; i < 8; i++) {
+                            wordParams.push(`${word}%`, `% ${word}%`);
+                        }
+                        params.push(...wordParams);
+                        subConditions.push('(' +
+                            'p.name LIKE ? OR p.name LIKE ? OR ' +
+                            'p.name_ar LIKE ? OR p.name_ar LIKE ? OR ' +
+                            'c.name LIKE ? OR c.name LIKE ? OR ' +
+                            'p.product_group LIKE ? OR p.product_group LIKE ? OR ' +
+                            'p.sub_category LIKE ? OR p.sub_category LIKE ? OR ' +
+                            'b.name LIKE ? OR b.name LIKE ? OR ' +
+                            'b.name_ar LIKE ? OR b.name_ar LIKE ? OR ' +
+                            'p.model LIKE ? OR p.model LIKE ?' +
+                            ')');
+                    }
+                    return '(' + subConditions.join(' OR ') + ')';
                 });
                 whereClauses.push('(' + wordConditions.join(' AND ') + ')');
             }
@@ -160,6 +195,71 @@ class Product {
                 rows.forEach(p => {
                     p.images = images.filter(img => img.product_id === p.id);
                 });
+
+                // For products with variants enabled, override the displayed price /
+                // offer_price / image / stock with the default variant's values
+                // (or first variant if no default flagged). This makes promotion cards
+                // and listings reflect what the customer actually sees on the detail
+                // page, instead of the now-disabled top-level pricing.
+                const variantProductIds = rows.filter(p => Number(p.has_variants) === 1).map(p => p.id);
+                if (variantProductIds.length > 0) {
+                    const [variantRows] = await db.query(
+                        `SELECT product_id, price, offer_price, stock_quantity, image_url, use_primary_image, is_default, id
+                         FROM product_variants
+                         WHERE product_id IN (${variantProductIds.join(',')})
+                         ORDER BY is_default DESC, id ASC`
+                    );
+                    // First row per product wins (default first, then lowest id).
+                    const chosenByProduct = {};
+                    for (const v of variantRows) {
+                        if (!chosenByProduct[v.product_id]) chosenByProduct[v.product_id] = v;
+                    }
+
+                    // Build a label like "Red / Large" for each chosen variant by
+                    // fetching its option-value rows in one batch. Used by the
+                    // notify-me flow on listings so the card can subscribe the
+                    // user to the specific variant they're seeing.
+                    const chosenVariantIds = Object.values(chosenByProduct).map(v => v.id);
+                    const labelByVariantId = {};
+                    if (chosenVariantIds.length > 0) {
+                        const [valRows] = await db.query(
+                            `SELECT pvo.variant_id, pvo.value, po.position
+                             FROM product_variant_options pvo
+                             JOIN product_options po ON po.id = pvo.option_id
+                             WHERE pvo.variant_id IN (${chosenVariantIds.join(',')})
+                             ORDER BY po.position ASC, po.id ASC`
+                        );
+                        for (const vr of valRows) {
+                            if (!labelByVariantId[vr.variant_id]) labelByVariantId[vr.variant_id] = [];
+                            labelByVariantId[vr.variant_id].push(String(vr.value || '').trim());
+                        }
+                    }
+
+                    rows.forEach(p => {
+                        const v = chosenByProduct[p.id];
+                        if (!v) return;
+                        const parts = (labelByVariantId[v.id] || []).filter(Boolean);
+                        if (parts.length > 0) p.variant_label = parts.join(' / ').slice(0, 255);
+                        if (v.price !== null && v.price !== undefined) p.price = v.price;
+                        if (v.offer_price !== null && v.offer_price !== undefined) p.offer_price = v.offer_price;
+                        if (v.stock_quantity !== null && v.stock_quantity !== undefined) p.stock_quantity = v.stock_quantity;
+                        // Recalculate discount_percentage from the variant. If the variant has a
+                        // valid offer_price below its price, derive a fresh %; otherwise zero it
+                        // out so the stale top-level discount badge doesn't leak through.
+                        const vPrice = Number(v.price) || 0;
+                        const vOffer = Number(v.offer_price) || 0;
+                        if (vPrice > 0 && vOffer > 0 && vOffer < vPrice) {
+                            p.discount_percentage = Math.round(((vPrice - vOffer) / vPrice) * 100);
+                        } else {
+                            p.discount_percentage = 0;
+                        }
+                        // Image: prefer the variant's own image; fall back to the product's primary image
+                        // when the variant is flagged use_primary_image or has no image.
+                        if (!Number(v.use_primary_image) && v.image_url) {
+                            p.primary_image = v.image_url;
+                        }
+                    });
+                }
             }
 
             // Count query
@@ -228,6 +328,26 @@ class Product {
                 product.frequently_bought_together_products = fbtRows;
             } else {
                 product.frequently_bought_together_products = [];
+            }
+
+            // Enrich you_may_also_need IDs with product data
+            let ymanIds = [];
+            if (product.you_may_also_need) {
+                try {
+                    ymanIds = JSON.parse(product.you_may_also_need);
+                } catch (e) { ymanIds = []; }
+            }
+            if (Array.isArray(ymanIds) && ymanIds.length > 0) {
+                const placeholders = ymanIds.map(() => '?').join(',');
+                const [ymanRows] = await db.query(
+                    `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+                     (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
+                     FROM products p WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
+                    ymanIds
+                );
+                product.you_may_also_need_products = ymanRows;
+            } else {
+                product.you_may_also_need_products = [];
             }
 
             // Attach options + variants if any
@@ -308,42 +428,20 @@ class Product {
             const offer_end = data.offer_end || null;
 
             const params = [
-                name,
-                name_ar,
-                slug,
-                description,
-                description_ar,
-                short_description,
-                short_description_ar,
-                specifications,
-                price,
-                discount_percentage,
-                offer_price,
-                stock_quantity,
-                track_inventory,
-                category_id,
-                sub_category_id,
-                sub_sub_category_id,
-                brand_id,
-                seller_id,
-                is_featured,
-                is_weekly_deal,
-                is_limited_offer,
-                is_daily_offer,
-                is_best_seller,
-                status,
-                product_group,
-                sub_category,
-                model,
-                youtube_video_link,
-                resources,
-                offer_start,
-                offer_end,
-                data.frequently_bought_together ? String(data.frequently_bought_together) : null
+                name, name_ar, slug, description, description_ar, short_description, short_description_ar,
+                specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory,
+                category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id,
+                is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller,
+                status, product_group, sub_category, model, youtube_video_link, resources,
+                offer_start, offer_end,
+                data.frequently_bought_together ? String(data.frequently_bought_together) : null,
+                data.you_may_also_need ? String(data.you_may_also_need) : null,
+                (data.warranty !== undefined && data.warranty !== '' && data.warranty !== null) ? parseInt(data.warranty) : null,
+                (data.warranty_ar !== undefined && data.warranty_ar !== '' && data.warranty_ar !== null) ? parseInt(data.warranty_ar) : null
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, warranty, warranty_ar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -393,11 +491,13 @@ class Product {
 
     static async update(id, data) {
         const allowedColumns = [
-            'name', 'name_ar', 'slug', 'description', 'description_ar', 'short_description', 'short_description_ar', 'specifications', 'price', 'discount_percentage', 'offer_price',
-            'stock_quantity', 'track_inventory', 'category_id', 'sub_category_id', 'sub_sub_category_id', 'brand_id', 'seller_id',
-            'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'status',
-            'product_group', 'sub_category', 'model', 'youtube_video_link', 'resources', 'offer_start', 'offer_end',
-            'frequently_bought_together'
+            'name', 'name_ar', 'description', 'description_ar', 'short_description', 'short_description_ar',
+            'specifications', 'price', 'discount_percentage', 'offer_price', 'stock_quantity',
+            'track_inventory', 'category_id', 'sub_category_id', 'sub_sub_category_id', 'brand_id',
+            'seller_id', 'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer',
+            'is_best_seller', 'status', 'product_group', 'sub_category', 'model',
+            'youtube_video_link', 'resources', 'offer_start', 'offer_end',
+            'frequently_bought_together', 'you_may_also_need', 'warranty', 'warranty_ar'
         ];
 
         const productId = parseInt(id);
@@ -435,7 +535,7 @@ class Product {
                 } else if (['offer_start', 'offer_end'].includes(key)) {
                     // Handle datetime columns: empty string -> null (strict MySQL rejects '')
                     cleanData[key] = (data[key] && data[key] !== '') ? data[key] : null;
-                } else if (['offer_price', 'price', 'discount_percentage', 'stock_quantity'].includes(key)) {
+                } else if (['offer_price', 'price', 'discount_percentage', 'stock_quantity', 'warranty', 'warranty_ar'].includes(key)) {
                     // Handle numeric columns: empty string -> null
                     const val = data[key];
                     if (val === '' || val === null || val === undefined) {

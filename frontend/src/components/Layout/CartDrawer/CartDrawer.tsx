@@ -526,7 +526,7 @@ const CartDrawer = () => {
             <div className={`${qStyles.quotationPopup} ${showQuotationPopup ? qStyles.quotationPopupOpen : ''}`}>
                 <div className={qStyles.quotationHeader}>
                     <h3>{t('downloadQuotationTitle')}</h3>
-                    <button className={qStyles.closeQuotationBtn} onClick={() => setShowQuotationPopup(false)}>
+                    <button className={qStyles.closeQuotationBtn} onClick={() => setShowQuotationPopup(false)} aria-label="Close quotation">
                         <X size={18} />
                     </button>
                 </div>

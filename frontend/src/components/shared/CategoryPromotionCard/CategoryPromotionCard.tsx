@@ -17,12 +17,11 @@ const CategoryPromotionCard = ({ title, image, link }: CategoryPromotionCardProp
             <div className={styles.imageWrapper}>
                 <Image
                     src={image}
-                    alt={title}
+                    alt=""
                     fill
-                    sizes="(max-width: 1024px) 100vw, 300px"
+                    sizes="(max-width: 768px) 0px, (max-width: 1024px) 240px, 280px"
                     className={styles.promoImage}
                     priority
-                    unoptimized={image.startsWith('/assets/')}
                 />
             </div>
             <div className={styles.textOverlay}>

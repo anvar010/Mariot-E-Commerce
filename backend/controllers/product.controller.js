@@ -222,6 +222,19 @@ exports.bulkImport = async (req, res, next) => {
     }
 };
 
+exports.getProductStats = async (req, res) => {
+    try {
+        const [[{ total }]] = await db.query('SELECT COUNT(*) as total FROM products');
+        const [[{ active }]] = await db.query("SELECT COUNT(*) as active FROM products WHERE (status = 'active' OR status IS NULL) AND is_active = 1");
+        const [[{ oos }]] = await db.query("SELECT COUNT(*) as oos FROM products WHERE stock_quantity <= 0 AND track_inventory = 1");
+        const [[{ categories }]] = await db.query("SELECT COUNT(*) as categories FROM categories WHERE (type = 'main_category' OR parent_id IS NULL)");
+        res.json({ success: true, data: { total, active, outOfStock: oos, categories } });
+    } catch (error) {
+        console.error('GET PRODUCT STATS ERROR:', error);
+        res.status(500).json({ success: false, message: 'Failed to get stats' });
+    }
+};
+
 exports.getProducts = async (req, res, next) => {
     try {
         console.log('GET PRODUCTS QUERY:', JSON.stringify(req.query));

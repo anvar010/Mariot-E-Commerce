@@ -1,10 +1,11 @@
-const app = require('./app');
 const dotenv = require('dotenv');
+// Load env vars FIRST (override shell env so .env wins)
+dotenv.config({ override: true });
+
+const app = require('./app');
 
 const startServer = async () => {
     try {
-        // Load env vars
-        dotenv.config();
 
         // Initialize database and migrations FIRST
         const { initDb } = require('./config/init');
@@ -18,6 +19,14 @@ const startServer = async () => {
         // Verify SMTP email connection on startup
         const { verifySmtpConnection } = require('./utils/sendEmail');
         verifySmtpConnection();
+
+        // Clear expired offer flags on startup and every hour
+        const { startOfferCleanupJob } = require('./utils/offerCleanup');
+        startOfferCleanupJob();
+
+        // Start abandoned cart reminder cron (every 30 min)
+        const { startAbandonedCartJob } = require('./services/abandonedCart.service');
+        startAbandonedCartJob();
 
         // Handle unhandled promise rejections
         process.on('unhandledRejection', (err) => {

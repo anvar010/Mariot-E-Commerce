@@ -74,6 +74,7 @@ exports.login = async (req, res, next) => {
             email: user.email,
             role: user.role,
             phone_number: user.phone_number,
+            phone_verified: user.phone_verified ? 1 : 0,
             company_name: user.company_name,
             vat_number: user.vat_number,
             reward_points: user.reward_points
@@ -123,6 +124,7 @@ exports.googleLogin = async (req, res, next) => {
             email: user.email,
             role: user.role,
             phone_number: user.phone_number,
+            phone_verified: user.phone_verified ? 1 : 0,
             company_name: user.company_name,
             vat_number: user.vat_number,
             reward_points: user.reward_points

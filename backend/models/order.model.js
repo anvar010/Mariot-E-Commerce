@@ -142,55 +142,6 @@ class Order {
             'UPDATE orders SET is_processed = 1 WHERE id = ?',
             [orderId]
         );
-
-        // 5. Send Order Confirmation Email
-        try {
-            // Fetch User info
-            const [userRows] = await connection.execute('SELECT name, email FROM users WHERE id = ?', [userId]);
-
-            // Fetch Order info
-            const [orderRows] = await connection.execute('SELECT * FROM orders WHERE id = ?', [orderId]);
-
-            if (userRows[0] && orderRows[0]) {
-                const { name, email } = userRows[0];
-                const orderDataFromDb = orderRows[0];
-
-                // Fetch full item details for the email table (names, prices, images)
-                const [fullItems] = await connection.execute(`
-                    SELECT oi.quantity, oi.price_at_purchase as price, p.name,
-                    (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1) as image
-                    FROM order_items oi
-                    JOIN products p ON oi.product_id = p.id
-                    WHERE oi.order_id = ?
-                `, [orderId]);
-
-                // Fetch the actual address record used
-                let billingDetails = {};
-                if (orderDataFromDb.shipping_address_id) {
-                    const [addrRows] = await connection.execute('SELECT * FROM addresses WHERE id = ?', [orderDataFromDb.shipping_address_id]);
-                    if (addrRows[0]) {
-                        const a = addrRows[0];
-                        billingDetails = {
-                            firstName: name.split(' ')[0],
-                            lastName: name.split(' ').slice(1).join(' '),
-                            streetAddress: a.address_line1 + (a.address_line2 ? ', ' + a.address_line2 : ''),
-                            city: a.city,
-                            country: a.state || 'UAE', // Using state field for country as per our address model earlier
-                            phone: a.phone
-                        };
-                    }
-                }
-
-                // Attach billing details for the email helper
-                orderDataFromDb.billing_details = billingDetails;
-
-                sendOrderConfirmationEmail(email, name, orderId, orderDataFromDb.final_amount, fullItems, orderDataFromDb).catch(err =>
-                    console.error(`Failed to send order confirmation email for order #${orderId}:`, err)
-                );
-            }
-        } catch (emailError) {
-            console.error(`Error attempting to send order confirmation for order #${orderId}:`, emailError);
-        }
     }
 
     static async findByUserId(userId) {
@@ -244,30 +195,7 @@ class Order {
                     order[0].points_used,
                     order[0].final_amount
                 );
-            } else if (payment_status === 'paid' && is_processed && currentStatus !== 'paid') {
-                // Already processed (e.g. Bank/COD), but now admin confirmed payment
-                // Trigger JUST the email part of completion
-                try {
-                    const [userRows] = await connection.execute('SELECT name, email FROM users WHERE id = ?', [order[0].user_id]);
-                    const [orderRows] = await connection.execute('SELECT * FROM orders WHERE id = ?', [id]);
-
-                    if (userRows[0] && orderRows[0]) {
-                        const { name, email } = userRows[0];
-                        const orderData = orderRows[0];
-
-                        // Fetch items for email
-                        const [fullItems] = await connection.execute(`
-                            SELECT oi.quantity, oi.price_at_purchase as price, p.name,
-                            (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1) as image
-                            FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?
-                        `, [id]);
-
-                        const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
-                        sendOrderConfirmationEmail(email, name, id, orderData.final_amount, fullItems, orderData).catch(e => console.error(e));
-                    }
-                } catch (e) { console.error("Email update failed:", e); }
             }
-
             await connection.commit();
         } catch (error) {
             await connection.rollback();

@@ -28,6 +28,7 @@ const quotationRoutes = require('./routes/quotation.routes');
 const contactRoutes = require('./routes/contact.routes');
 const cmsRoutes = require('./routes/cms.routes');
 const settingsRoutes = require('./routes/settings.routes');
+const verifyRoutes = require('./routes/verify.routes');
 const path = require('path');
 
 const cookieParser = require('cookie-parser');
@@ -172,6 +173,7 @@ app.use('/api/v1/quotations', quotationRoutes);
 // app.use('/api/v1/contact', contactRoutes); // Moved up with limiter
 app.use('/api/v1/cms', cmsRoutes);
 app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/v1/verify', verifyRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {

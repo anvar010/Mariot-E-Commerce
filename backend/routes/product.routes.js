@@ -1,5 +1,5 @@
 const express = require('express');
-const { getProducts, getProduct, createProduct, updateProduct, deleteProduct, bulkImport, bulkUpdateProducts, deleteProducts, getSuggestions } = require('../controllers/product.controller');
+const { getProducts, getProduct, createProduct, updateProduct, deleteProduct, bulkImport, bulkUpdateProducts, deleteProducts, getSuggestions, subscribeStockNotification, getProductStats } = require('../controllers/product.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 const multer = require('multer');
 const path = require('path');
@@ -17,7 +17,11 @@ router.route('/')
     .get(getProducts)
     .post(protect, authorize('admin'), createProduct);
 
+router.get('/stats', protect, authorize('admin'), getProductStats);
 router.get('/suggestions', getSuggestions);
+
+// Public: subscribe an email to a product's back-in-stock alert
+router.post('/:id/notify-me', subscribeStockNotification);
 
 router.post('/bulk-import', protect, authorize('admin'), upload.single('file'), bulkImport);
 router.patch('/bulk-update', protect, authorize('admin'), bulkUpdateProducts);

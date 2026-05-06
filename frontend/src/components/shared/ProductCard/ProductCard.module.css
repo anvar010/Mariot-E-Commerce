@@ -5,16 +5,20 @@
     box-shadow: 0 0 0 1px #e0e0e0, 0 4px 15px rgba(0, 0, 0, 0.08);
     padding: 8px;
     position: relative;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Smoother transition */
     display: flex;
     flex-direction: column;
     height: 100%;
     width: 100%;
     flex: 1;
     overflow: hidden;
-    user-select: none; /* Prevents text selection while swiping */
-    -webkit-user-select: none; /* iOS Safari */
-    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
+    /* Prevents text selection while swiping */
+    -webkit-user-select: none;
+    /* iOS Safari */
+    -ms-user-select: none;
+    /* Internet Explorer/Edge */
     font-family: sans-serif;
     min-height: 480px;
     justify-content: space-between;
@@ -23,7 +27,8 @@
 @media (hover: hover) {
     .productCard:hover {
         box-shadow: 0 15px 35px rgba(255, 59, 48, 0.15), 0 0 0 1px rgba(0, 113, 227, 0.15);
-        border-color: rgba(0, 113, 227, 0.05); /* Slight blue tint for the border area */
+        border-color: rgba(0, 113, 227, 0.05);
+        /* Slight blue tint for the border area */
     }
 }
 
@@ -300,6 +305,7 @@
     font-size: 13px;
     letter-spacing: 0.5px;
     border-radius: 4px;
+    white-space: nowrap;
 }
 
 .whatsappBtn span {
@@ -365,7 +371,7 @@
     .whatsappBtn,
     .cartBtn {
         font-size: 12px;
-        height: 30px;
+        height: 40px;
         padding: 0 8px;
         gap: 6px;
     }
@@ -389,7 +395,9 @@
         padding: 4px;
     }
 
-    .badge, .dealTag, .bestSellerTag {
+    .badge,
+    .dealTag,
+    .bestSellerTag {
         font-size: 9px !important;
         padding: 2px 8px !important;
         border-radius: 4px !important;
@@ -482,7 +490,7 @@
 
     .whatsappBtn,
     .cartBtn {
-        height: 30px;
+        height: 38px;
         padding: 0 6px;
         font-size: 10px;
         font-weight: 900;
