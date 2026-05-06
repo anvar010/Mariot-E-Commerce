@@ -822,7 +822,7 @@
 
 .qtyWrapper {
     position: relative;
-    width: 140px;
+    width: 185px;
     flex-shrink: 0;
     height: 56px;
     z-index: 1001;
@@ -833,7 +833,7 @@
     height: 100%;
     display: flex;
     align-items: center;
-    padding: 0 40px 0 24px;
+    padding-inline: 24px 40px;
     font-size: 16px;
     font-weight: 700;
     color: #0f172a;
@@ -874,8 +874,9 @@
 }
 
 .qtyPrefix {
-    margin-inline-end: 4px;
+    margin-inline-end: 8px;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .manualQtyInput {
@@ -884,14 +885,13 @@
     font-size: 16px;
     font-weight: 700;
     color: #0f172a;
-    width: 45px;
+    width: 35px;
     padding: 0;
     margin: 0;
     outline: none;
     cursor: text;
     line-height: 1;
-    display: flex;
-    align-items: center;
+    flex-shrink: 0;
 }
 
 /* Hide arrows/spinners */
@@ -1977,8 +1977,8 @@
     gap: 10px;
     font-size: 14px;
     font-weight: 600;
-    margin-top: 10px;
-    margin-bottom: -10px;
+    margin-top: 16px;
+    margin-bottom: -16px;
     animation: pmShake 0.4s cubic-bezier(.36, .07, .19, .97) both;
 }
 

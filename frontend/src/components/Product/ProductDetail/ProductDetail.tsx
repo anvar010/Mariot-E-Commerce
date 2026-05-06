@@ -1478,7 +1478,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     }}
                                 />
                             </AccordionItem>
+                        </div>
 
+                        <div className={styles.accordions} style={{ marginTop: '24px' }}>
                             {/* Product Specs */}
                             <AccordionItem
                                 title={t('productSpecs')}
