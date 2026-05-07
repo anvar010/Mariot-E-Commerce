@@ -716,7 +716,7 @@
 .priceMatchCard {
     display: flex;
     align-items: center;
-    padding: 10px 16px;
+    padding: 6px 16px;
     background: #f8fafc;
     /* Very light slate tint */
     border: 1px solid #e2e8f0;
@@ -761,8 +761,8 @@
 .priceMatchIcon {
     color: #334155;
     background: #ffffff;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1233,6 +1233,7 @@
     display: flex;
     flex-direction: column;
     gap: 0;
+    background: transparent;
 }
 
 .detailsLayoutGrid {
@@ -1454,12 +1455,6 @@
 }
 
 /* Accordion styles moved up or handled by shared class */
-
-.accordions {
-    display: flex;
-    flex-direction: column;
-    background: transparent;
-}
 
 .accordionItem {
     border: none;
@@ -3433,16 +3428,22 @@
     border-bottom: none !important;
     padding-bottom: 0 !important;
     margin-bottom: 24px;
+    text-align: left;
+    justify-content: flex-start !important;
 }
 
 .fbtSectionRoot {
-    padding: 32px 40px;
+    padding: 32px 0;
     margin-top: 0;
 }
 
 @media (max-width: 1024px) {
     .fbtSectionRoot {
-        padding: 24px 20px;
+        padding: 24px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
     }
 }
 
@@ -3476,7 +3477,7 @@
     width: 100%;
     display: flex;
     align-items: center;
-    margin: 24px 0;
+    margin: 12px 0;
 }
 
 .fbtViewport {
@@ -3568,6 +3569,7 @@
     background: transparent;
     object-fit: contain;
     padding: 10px;
+    -webkit-user-drag: none;
     user-drag: none;
     -webkit-user-drag: none;
     border: 1px solid #e2e8f0;
@@ -3711,12 +3713,23 @@
     .fbtSectionRoot {
         display: flex;
         flex-direction: row;
-        gap: 32px;
+        flex-wrap: wrap;
+        gap: 24px;
         align-items: center;
     }
 
     .fbtSectionRoot .sectionTitle {
-        display: none;
+        display: block;
+        width: 100%;
+        margin-bottom: 8px;
+        text-align: left;
+    }
+
+    .fbtSectionRoot .sectionTitle h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1e293b;
+        text-align: left;
     }
 
     .sliderWrapper {
@@ -3736,12 +3749,16 @@
     .fbtSectionRoot {
         display: flex;
         flex-direction: column;
+        align-items: flex-start;
     }
 }
 
 @media (max-width: 768px) {
     .fbtSectionRoot {
-        padding: 16px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 8px 0;
         background: #fff;
         border-top: 8px solid #f2f2f2;
         margin: 16px -20px 0 -20px;
@@ -3749,15 +3766,24 @@
     }
 
     .fbtSectionRoot .sectionTitle {
+        width: 100%;
         padding: 0 16px 12px 16px;
         border-bottom: none;
         margin-bottom: 0;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        display: flex !important;
     }
 
     .fbtSectionRoot .sectionTitle h2 {
-        font-size: 16px;
-        font-weight: 700;
-        color: #404553;
+        font-size: 20px;
+        font-weight: 600;
+        color: #1e293b;
+        text-align: left !important;
+        margin: 0 !important;
+        text-transform: none !important;
     }
 
     .fbtSummary {
@@ -3768,7 +3794,7 @@
         border: none;
         border-top: 1px solid #f1f5f9;
         background: #fff;
-        margin: 20px 0 0 0;
+        margin: 8px 0 0 0;
     }
 
     .fbtAddBtn {

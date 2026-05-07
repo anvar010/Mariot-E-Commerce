@@ -217,18 +217,19 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                             {mainCategories.map((item: any, idx: number) => {
                                 const SideIcon = ICON_MAP[item.slug] || ICON_MAP['default'];
                                 return (
-                                    <li
+                                    <Link
                                         key={item.id}
+                                        href={`/category/${item.slug}`}
                                         className={`${styles.sidebarItem} ${activeIndex === idx ? styles.activeItem : ''}`}
                                         onMouseEnter={() => setActiveIndex(idx)}
-                                        onClick={() => handleCategoryClick(idx)}
+                                        onClick={onClose}
                                     >
                                         <div className={styles.labelWrapper}>
                                             <SideIcon size={18} className={styles.sidebarIcon} />
                                             <span className={styles.sidebarLabel}>{(isArabic && item.name_ar) ? item.name_ar : item.name}</span>
                                         </div>
                                         <ChevronRight className={styles.chevronIcon} size={16} />
-                                    </li>
+                                    </Link>
                                 );
                             })}
                         </ul>
@@ -239,14 +240,20 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                                 {activeCategory && (
                                     <>
                                         <div className={styles.categoryHeader}>
-                                            <h2 className={styles.columnTitle}>
-                                                {(isArabic && activeCategory.name_ar) ? activeCategory.name_ar : activeCategory.name}
-                                            </h2>
+                                            <Link
+                                                href={`/category/${activeCategory.slug}`}
+                                                className={styles.titleLink}
+                                                onClick={onClose}
+                                            >
+                                                <h2 className={styles.columnTitle}>
+                                                    {(isArabic && activeCategory.name_ar) ? activeCategory.name_ar : activeCategory.name}
+                                                </h2>
+                                            </Link>
                                             {activeCategory.image_url && (
                                                 <div className={styles.featuredImageArea}>
-                                                    <img 
-                                                        src={activeCategory.image_url.startsWith('http') ? activeCategory.image_url : `${API_BASE_URL.replace('/api/v1', '')}${activeCategory.image_url}`} 
-                                                        alt={activeCategory.name} 
+                                                    <img
+                                                        src={activeCategory.image_url.startsWith('http') ? activeCategory.image_url : `${API_BASE_URL.replace('/api/v1', '')}${activeCategory.image_url}`}
+                                                        alt={activeCategory.name}
                                                         className={styles.featuredImage}
                                                     />
                                                 </div>
