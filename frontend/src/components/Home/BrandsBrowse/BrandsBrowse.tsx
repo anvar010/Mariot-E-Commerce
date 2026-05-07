@@ -168,37 +168,42 @@ const BrandsBrowse = ({ initialBrands = [] }: BrandsBrowseProps) => {
                                 Array.from({ length: 12 }).map((_, i) => (
                                     <div key={i} className={styles.skeletonCard} />
                                 ))
-                            ) : sortedBrands.map((brand, index) => {
-                                const logoUrl = getLogo(brand);
-                                const displayName = (isRtl && brand.name_ar) ? brand.name_ar : brand.name;
-
-                                return (
-                                    <div
-                                        key={brand.id || index}
-                                        className={`${styles.brandSlide} ${index >= MOBILE_VISIBLE_COUNT ? styles.hiddenOnMobile : ''}`}
-                                    >
-                                        <Link
-                                            href={`/shop?brand=${encodeURIComponent(brand.slug || brand.name.toLowerCase().replace(/ /g, '-'))}`}
-                                            className={styles.brandCard}
-                                        >
-                                            <div className={styles.logoBox}>
-                                                {logoUrl ? (
-                                                    <img
-                                                        src={logoUrl}
-                                                        alt={displayName}
-                                                        className={styles.logoImg}
-                                                    />
-                                                ) : (
-                                                    <span className={styles.brandNameFallback}>
-                                                        {displayName}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <span className={styles.brandName}>{displayName}</span>
-                                        </Link>
+                            ) : (() => {
+                                const pairs = [];
+                                for (let i = 0; i < sortedBrands.length; i += 2) {
+                                    pairs.push(sortedBrands.slice(i, i + 2));
+                                }
+                                return pairs.map((pair, pairIndex) => (
+                                    <div key={pairIndex} className={styles.brandSlide}>
+                                        {pair.map((brand, brandIndex) => {
+                                            const logoUrl = getLogo(brand);
+                                            const displayName = (isRtl && brand.name_ar) ? brand.name_ar : brand.name;
+                                            return (
+                                                <Link
+                                                    key={brand.id || `${pairIndex}-${brandIndex}`}
+                                                    href={`/shop?brand=${encodeURIComponent(brand.slug || brand.name.toLowerCase().replace(/ /g, '-'))}`}
+                                                    className={styles.brandCard}
+                                                >
+                                                    <div className={styles.logoBox}>
+                                                        {logoUrl ? (
+                                                            <img
+                                                                src={logoUrl}
+                                                                alt={displayName}
+                                                                className={styles.logoImg}
+                                                            />
+                                                        ) : (
+                                                            <span className={styles.brandNameFallback}>
+                                                                {displayName}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className={styles.brandName}>{displayName}</span>
+                                                </Link>
+                                            );
+                                        })}
                                     </div>
-                                );
-                            })}
+                                ));
+                            })()}
                         </div>
                     </div>
                 </div>
