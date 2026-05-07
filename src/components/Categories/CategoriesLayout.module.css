@@ -215,6 +215,16 @@
   margin: 0;
   letter-spacing: -1px;
   text-transform: uppercase;
+  transition: color 0.2s ease;
+}
+
+.titleLink {
+  text-decoration: none;
+  display: block;
+}
+
+.titleLink:hover .columnTitle {
+  color: #15803d;
 }
 
 /* Nested Grid View */

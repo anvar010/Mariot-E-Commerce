@@ -175,7 +175,7 @@ const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
                                             return (
                                                 <div key={category.id} className={styles.categoryCardWrapper}>
                                                     <Link
-                                                        href={`/shop?category=${slug}`}
+                                                        href={`/category/${slug}`}
                                                         className={styles.categoryCard}
                                                     >
                                                         <div className={styles.imageBox}>
