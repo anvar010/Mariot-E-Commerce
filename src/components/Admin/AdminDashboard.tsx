@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
+import { formatDirham } from 'dirham';
 import styles from './AdminDashboard.module.css';
 import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/context/AuthContext';
@@ -57,7 +59,7 @@ const AdminDashboard = () => {
             'dashboard.refresh': 'Refresh Data',
             'dashboard.refreshing': 'Refreshing...',
             'dashboard.welcome': `Welcome back, ${options?.name || 'Admin'}!`,
-            'dashboard.revenueNote': `Your shop has generated <strong>AED ${options?.amount}</strong> in revenue for this period.`,
+            'dashboard.revenueNote': `Your shop has generated <strong>${formatDirham(Number(options?.amount) || 0)}</strong> in revenue for this period.`,
             'dashboard.actions.addProduct': 'Add New Product',
             'dashboard.actions.advancedAnalytics': 'View Detailed Analytics',
             'dashboard.stats.revenue': 'Total Revenue',
@@ -385,7 +387,7 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                     <div className={styles.statBody}>
-                        <h3 className={styles.statValue}>AED {Number(stats?.totalSales || 0).toLocaleString()}</h3>
+                        <h3 className={styles.statValue}><CurrencyPrice amount={Number(stats?.totalSales || 0)} /></h3>
                         <div className={styles.statFooter}>
                             <span className={(stats?.salesGrowth ?? 0) >= 0 ? styles.trendUp : styles.trendDown}>
                                 {(stats?.salesGrowth ?? 0) >= 0 ? '+' : ''}{stats?.salesGrowth ?? 0}%
@@ -622,7 +624,7 @@ const AdminDashboard = () => {
                                         >
                                             {day.amount > 0 && (
                                                 <div className={styles.barTooltip}>
-                                                    AED {Number(day.amount).toLocaleString()}
+                                                    <CurrencyPrice amount={Number(day.amount)} />
                                                 </div>
                                             )}
                                         </motion.div>
@@ -709,7 +711,7 @@ const AdminDashboard = () => {
                                             />
                                         </div>
                                     </div>
-                                    <span className={styles.revenueBadgeV2}>AED {Number(cat.revenue).toLocaleString()}</span>
+                                    <span className={styles.revenueBadgeV2}><CurrencyPrice amount={Number(cat.revenue)} /></span>
                                 </div>
                             );
                         })}
@@ -819,7 +821,7 @@ const AdminDashboard = () => {
                                             <div className={styles.avatarPlaceholder}>{order.user_name?.charAt(0) || 'U'}</div>
                                             {order.user_name || 'Unknown'}
                                         </td>
-                                        <td>AED {Number(order.total_amount).toFixed(2)}</td>
+                                        <td><CurrencyPrice amount={Number(order.total_amount)} /></td>
                                         <td>
                                             <span className={`${styles.statusBadge} ${styles[order.status] || styles.pending}`}>
                                                 {order.status.toUpperCase()}

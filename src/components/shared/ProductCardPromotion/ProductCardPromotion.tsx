@@ -1,3 +1,4 @@
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import React, { useState, useEffect } from 'react';
 import styles from './ProductCardPromotion.module.css';
 import { ShoppingCart, Star, ChevronLeft, ChevronRight, BellRing, Clock } from 'lucide-react';
@@ -325,7 +326,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                     <div className={styles.savingsRow}>
                         {displayOldPrice > 0 && displayOldPrice > displayPrice && (
                             <span className={styles.oldPrice}>
-                                AED {displayOldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                <CurrencyPrice amount={displayOldPrice} />
                             </span>
                         )}
                         {Number(product.discount_percentage) > 0 && (
@@ -333,7 +334,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                         )}
                     </div>
                     <div className={styles.currentPrice}>
-                        AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <CurrencyPrice amount={displayPrice} />
                     </div>
                 </div>
             </div>

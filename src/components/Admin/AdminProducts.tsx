@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminProducts.module.css';
 import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag } from 'lucide-react';
 import ExcelJS from 'exceljs';
@@ -1673,14 +1674,14 @@ const AdminProducts = () => {
                                         {product.discount_percentage > 0 ? (
                                             <div>
                                                 <div className={styles.offerPrice}>
-                                                    AED {Number(Number(product.offer_price) > 0 ? product.offer_price : product.price).toLocaleString()}
+                                                    <CurrencyPrice amount={Number(Number(product.offer_price) > 0 ? product.offer_price : product.price)} />
                                                 </div>
                                                 <div className={styles.discountText}>
                                                     {product.discount_percentage}% OFF
                                                 </div>
                                             </div>
                                         ) : (
-                                            `AED ${Number(product.price).toLocaleString()}`
+                                            <CurrencyPrice amount={Number(product.price)} />
                                         )}
                                     </td>
                                     <td>

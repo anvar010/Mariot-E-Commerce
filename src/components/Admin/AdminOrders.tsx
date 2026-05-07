@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
 import { Search, Package, Download } from 'lucide-react';
@@ -332,11 +333,11 @@ const AdminOrders = () => {
                                         </div>
                                     </td>
                                     <td>
-                                        <div className={styles.amount}>AED {Number(order.final_amount).toFixed(2)}</div>
+                                        <div className={styles.amount}><CurrencyPrice amount={Number(order.final_amount)} /></div>
                                         {(Number(order.points_used) > 0 || Number(order.discount_amount) > 0) && (
                                             <div style={{ fontSize: '11px', color: '#16a34a', marginTop: '4px' }}>
                                                 {Number(order.points_used) > 0 && <div>• {order.points_used} Pts Redeemed</div>}
-                                                {Number(order.discount_amount) > 0 && <div>• Coupon: -AED {Number(order.discount_amount).toFixed(2)}</div>}
+                                                {Number(order.discount_amount) > 0 && <div>• Coupon: -<CurrencyPrice amount={Number(order.discount_amount)} /></div>}
                                             </div>
                                         )}
                                     </td>

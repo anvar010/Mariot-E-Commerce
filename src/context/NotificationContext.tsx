@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { CheckCircle, X, AlertCircle, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -253,14 +254,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                             <div className="cart-info">
                                                 <h4>{n.title}</h4>
                                                 <div className="cart-price-line">
-                                                    {tCart('qtyLabel')}: {n.quantity || 1} &nbsp; <b>AED {n.price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b>
-                                                    {n.oldPrice && <span style={{ textDecoration: 'line-through', color: '#9ca3af', marginInlineStart: '12px', fontSize: '13px' }}>AED {n.oldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>}
+                                                    {tCart('qtyLabel')}: {n.quantity || 1} &nbsp; <b><CurrencyPrice amount={Number(n.price)} /></b>
+                                                    {n.oldPrice && <span style={{ textDecoration: 'line-through', color: '#9ca3af', marginInlineStart: '12px', fontSize: '13px' }}><CurrencyPrice amount={Number(n.oldPrice)} /></span>}
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="cart-total-row">
                                             <span className="cart-total-label">{tCart('cartTotal', { count: n.cartCount || 0 })}</span>
-                                            <span className="cart-total-value">AED {n.cartTotal?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            <span className="cart-total-value"><CurrencyPrice amount={Number(n.cartTotal)} /></span>
                                         </div>
                                         <div className="cart-buttons">
                                             <button className="btn-view-cart" onClick={() => {

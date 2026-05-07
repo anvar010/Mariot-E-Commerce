@@ -1,5 +1,6 @@
 'use client';
 
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import React from 'react';
 import { Heart, ShoppingCart } from 'lucide-react';
 import styles from '../WeeklyDeals.module.css';
@@ -44,9 +45,9 @@ const DealCard: React.FC<DealCardProps> = ({ product }) => {
                 </div>
 
                 <div className={styles.priceArea}>
-                    <span className={styles.currentPrice}>AED {product.price}</span>
+                    <span className={styles.currentPrice}><CurrencyPrice amount={Number(product.price)} /></span>
                     <div className={styles.priceFooter}>
-                        <span className={styles.oldPrice}>AED {product.oldPrice}</span>
+                        <span className={styles.oldPrice}><CurrencyPrice amount={Number(product.oldPrice)} /></span>
                         <span className={styles.savePercent}>{product.discount}</span>
                     </div>
                 </div>

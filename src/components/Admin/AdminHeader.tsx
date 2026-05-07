@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminHeader.module.css';
 import {
     Search,
@@ -99,7 +100,7 @@ const AdminHeader = () => {
                 <div className={styles.stats}>
                     <div className={styles.statItem} title="Total Revenue">
                         <Wallet size={16} color="#20c997" />
-                        <span className={styles.statValue}>AED {Number(stats.totalSales).toLocaleString()}</span>
+                        <span className={styles.statValue}><CurrencyPrice amount={Number(stats.totalSales)} /></span>
                     </div>
                     <div className={styles.statItem} title="Total Orders">
                         <Calendar size={16} color="#4c6ef5" />

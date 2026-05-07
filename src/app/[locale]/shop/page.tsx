@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import ShopLayout from '@/components/Shop/ShopLayout';
@@ -74,6 +75,11 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
 
 export default async function ShopPage({ params: { locale }, searchParams }: { params: { locale: string }, searchParams: { [key: string]: string | string[] | undefined } }) {
     const data = await getShopData(locale, searchParams);
+
+    const search = searchParams.search as string | undefined;
+    if (search && data.total === 1 && data.products.length === 1 && data.products[0].slug) {
+        redirect(`/${locale}/product/${data.products[0].slug}`);
+    }
 
     return (
         <main>

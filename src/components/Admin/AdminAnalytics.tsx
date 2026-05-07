@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminAnalytics.module.css';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -145,7 +146,7 @@ const AdminAnalytics = () => {
                         </span>
                     </div>
                     <div className={styles.metricBody}>
-                        <h3>AED {Number(stats?.totalSales || 0).toLocaleString()}</h3>
+                        <h3><CurrencyPrice amount={Number(stats?.totalSales || 0)} /></h3>
                         <p>Total Revenue Generated</p>
                     </div>
                 </div>
@@ -202,7 +203,7 @@ const AdminAnalytics = () => {
                                     return (
                                         <div key={i} className={styles.barContainer}>
                                             <div className={styles.bar} style={{ height: `${height}%` }}>
-                                                <div className={styles.barTooltip}>AED {Number(day.amount).toLocaleString()}</div>
+                                                <div className={styles.barTooltip}><CurrencyPrice amount={Number(day.amount)} /></div>
                                             </div>
                                             <span className={styles.barLabel}>
                                                 {timeRange === '7d' || timeRange === '14d'

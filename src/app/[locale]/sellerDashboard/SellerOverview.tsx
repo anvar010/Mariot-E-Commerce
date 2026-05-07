@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { Package, ShoppingBag, DollarSign, TrendingUp, AlertTriangle, Clock, CheckCircle, ChevronRight } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
 import Loader from '@/components/shared/Loader/Loader';
@@ -59,7 +60,7 @@ const SellerOverview = () => {
                     <div>
                         <p style={{ margin: 0, fontSize: '13px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Revenue</p>
                         <h3 style={{ margin: '4px 0 0 0', fontSize: '24px', fontWeight: 800, color: '#0f172a' }}>
-                            AED {Number(stats.totalRevenue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <CurrencyPrice amount={Number(stats.totalRevenue)} />
                         </h3>
                     </div>
                 </div>
@@ -208,7 +209,7 @@ const SellerOverview = () => {
                                                 <div style={{ fontSize: '13px', color: '#64748b' }}>{order.customer_name} • {new Date(order.created_at).toLocaleDateString()}</div>
                                             </div>
                                             <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#22c55e', marginBottom: '4px' }}>+ AED {Number(order.seller_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#22c55e', marginBottom: '4px' }}>+ <CurrencyPrice amount={Number(order.seller_amount)} /></div>
                                                 <div style={{ fontSize: '12px', fontWeight: 600, color: order.status === 'delivered' ? '#16a34a' : order.status === 'cancelled' ? '#dc2626' : '#ea580c', textTransform: 'uppercase' }}>
                                                     {order.status}
                                                 </div>

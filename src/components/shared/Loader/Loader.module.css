@@ -38,7 +38,7 @@
     width: 100%;
     height: 100%;
     border: 2px solid #e2e8f0;
-    border-top-color: #337c7f;
+    border-top-color: #16a1db;
     border-radius: 50%;
     animation: spin 2s linear infinite;
 }
@@ -48,14 +48,14 @@
     width: 70%;
     height: 70%;
     border: 2px solid #e2e8f0;
-    border-bottom-color: #f58220;
+    border-bottom-color: #EE2225;
     border-radius: 50%;
     animation: spin-reverse 1.5s linear infinite;
 }
 
 .logoGhost {
-    width: 35px;
-    height: 35px;
+    width: 50px;
+    height: 50px;
     opacity: 0.15;
     animation: pulse 2s ease-in-out infinite;
 }
@@ -114,7 +114,7 @@
     0%,
     100% {
         transform: scale(0.95);
-        opacity: 0.1;
+        opacity: 1;
     }
 
     50% {

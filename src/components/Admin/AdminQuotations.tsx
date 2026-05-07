@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminQuotations.module.css';
 import { FileText, Search, Printer, Trash2, Eye, X, Calendar, User, Phone, Mail, Hash, Loader2 } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
@@ -289,15 +290,15 @@ const AdminQuotations = () => {
                                     <div className={styles.summaryBox}>
                                         <div className={styles.summaryLine}>
                                             <span>{t('modal.subtotal')}</span>
-                                            <span>AED {Number(selectedQuotation.subtotal).toFixed(2)}</span>
+                                            <span><CurrencyPrice amount={Number(selectedQuotation.subtotal)} /></span>
                                         </div>
                                         <div className={styles.summaryLine}>
                                             <span>{t('modal.tax')}</span>
-                                            <span>AED {Number(selectedQuotation.tax_amount).toFixed(2)}</span>
+                                            <span><CurrencyPrice amount={Number(selectedQuotation.tax_amount)} /></span>
                                         </div>
                                         <div className={`${styles.summaryLine} ${styles.totalLine}`}>
                                             <span>{t('modal.total')}</span>
-                                            <span>AED {Number(selectedQuotation.total_amount).toFixed(2)}</span>
+                                            <span><CurrencyPrice amount={Number(selectedQuotation.total_amount)} /></span>
                                         </div>
                                     </div>
                                 </div>
@@ -316,9 +317,9 @@ const AdminQuotations = () => {
                                             />
                                             <div className={styles.itemDetails}>
                                                 <span className={styles.itemName}>{item.name}</span>
-                                                <span className={styles.itemMeta}>Qty: {item.quantity} x AED {item.price}</span>
+                                                <span className={styles.itemMeta}>Qty: {item.quantity} x <CurrencyPrice amount={Number(item.price)} /></span>
                                             </div>
-                                            <span className={styles.itemTotal}>AED {(item.quantity * item.price).toFixed(2)}</span>
+                                            <span className={styles.itemTotal}><CurrencyPrice amount={item.quantity * item.price} /></span>
                                         </div>
                                     ))}
                                 </div>

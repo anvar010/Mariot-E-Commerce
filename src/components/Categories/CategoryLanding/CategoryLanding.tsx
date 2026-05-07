@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { ChevronRight, Headphones } from 'lucide-react';
@@ -311,7 +312,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                       </div>
                       <div className={styles.miniDetails}>
                         <span className={styles.miniName}>{prod.name}</span>
-                        <span className={styles.miniPrice}>AED {prod.offer_price || prod.price}</span>
+                        <span className={styles.miniPrice}><CurrencyPrice amount={Number(prod.offer_price || prod.price)} /></span>
                       </div>
                     </Link>
                   ))}

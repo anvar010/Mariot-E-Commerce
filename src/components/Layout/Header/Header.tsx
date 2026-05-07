@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import Image from 'next/image';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -224,7 +225,12 @@ const Header = () => {
         if (e) e.preventDefault();
         const trimmed = searchQuery.trim();
         if (trimmed) {
-            router.push(`/shop?search=${encodeURIComponent(trimmed)}`);
+            const productSuggestions = suggestions.filter(s => s.type === 'product');
+            if (productSuggestions.length === 1 && suggestions.length === 1) {
+                router.push(`/product/${productSuggestions[0].slug}`);
+            } else {
+                router.push(`/shop?search=${encodeURIComponent(trimmed)}`);
+            }
             setIsMenuOpen(false);
             setShowSuggestions(false);
         }
@@ -392,7 +398,7 @@ const Header = () => {
                                                         <div className={styles.suggestionMeta}>
                                                             {item.type === 'product' && (
                                                                 <span className={styles.suggestionPrice}>
-                                                                    AED {Number(item.offer_price || item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                    <CurrencyPrice amount={Number(item.offer_price || item.price)} />
                                                                 </span>
                                                             )}
                                                             {item.category_name && (

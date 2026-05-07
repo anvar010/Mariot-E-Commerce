@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import {
     X,
     ShoppingCart,
@@ -295,7 +296,7 @@ const CartDrawer = () => {
                                             </div>
                                             {item.brand && <p className={styles.itemBrand}>{item.brand}</p>}
                                             <div className={styles.itemPrice}>
-                                                <span>AED {item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                <span><CurrencyPrice amount={Number(item.price)} /></span>
                                             </div>
                                             <div className={styles.qtySelectRow}>
                                                 <span className={styles.qtyLabel}>{t('qty')}</span>
@@ -392,30 +393,30 @@ const CartDrawer = () => {
                                 <h3 className={styles.totalTitle}>{t('cartTotal')}</h3>
                                 <div className={styles.totalRow}>
                                     <span>{t('subtotal')}</span>
-                                    <span>AED {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span><CurrencyPrice amount={subtotal} /></span>
                                 </div>
                                 {discountAmount > 0 && (
                                     <div className={styles.discountRow}>
                                         <span>{t('couponDiscount')}</span>
-                                        <span>- AED {discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span>- <CurrencyPrice amount={discountAmount} /></span>
                                     </div>
                                 )}
                                 {pointsDiscountAmount > 0 && (
                                     <div className={styles.discountRow}>
                                         <span>{t('pointsDiscount')}</span>
-                                        <span>- AED {pointsDiscountAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span>- <CurrencyPrice amount={pointsDiscountAmount} /></span>
                                     </div>
                                 )}
                                 <div className={styles.totalRow}>
                                     <span>{t('taxableAmount')} (Excl. VAT)</span>
-                                    <span>AED {(cartTotal / 1.05).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span><CurrencyPrice amount={cartTotal / 1.05} /></span>
                                 </div>
                                 <div className={styles.totalRow}>
                                     <span>{t('vatAmount')} (5%)</span>
-                                    <span>AED {(cartTotal - (cartTotal / 1.05)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span><CurrencyPrice amount={cartTotal - (cartTotal / 1.05)} /></span>
                                 </div>
                                 <div className={styles.finalTotal}>
-                                    AED {cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    <CurrencyPrice amount={cartTotal} />
                                 </div>
 
                                 {/* Tabby Promo in Cart

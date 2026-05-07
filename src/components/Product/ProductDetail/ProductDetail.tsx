@@ -1,5 +1,6 @@
 'use client';
 
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Heart,
@@ -223,7 +224,7 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
                                                 <div className={styles.fbtInfo}>
                                                     <div className={styles.fbtName}>{getName(p)}</div>
                                                     <div className={styles.fbtPrice}>
-                                                        AED {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        <CurrencyPrice amount={price} />
                                                     </div>
                                                 </div>
                                             </Link>
@@ -250,8 +251,7 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
                                 : t('fbt.itemsSelected', { count: selectedItems.length })}
                         </div>
                         <div className={styles.fbtTotalPrice}>
-                            <span className={styles.fbtTotalCurrency}>AED</span>
-                            {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <CurrencyPrice amount={total} />
                         </div>
                     </div>
 
@@ -1263,12 +1263,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 <div className={styles.priceSection}>
                                     <div className={styles.priceRowMain}>
                                         <div className={styles.currentPrice}>
-                                            AED {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            <CurrencyPrice amount={displayPrice} />
                                         </div>
                                         {oldPrice && (
                                             <>
                                                 <div className={styles.oldPrice}>
-                                                    AED {oldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    <CurrencyPrice amount={oldPrice} />
                                                 </div>
                                                 {oldPrice > displayPrice && (
                                                     <span className={styles.saveText}>
@@ -1948,7 +1948,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             <h4>{t('payments4')}</h4>
                                             <div className={`${styles.installmentSub} ${styles.green}`}>{t('noInterest')}</div>
                                         </div>
-                                        <div className={styles.installmentPrice}>AED {monthlyPayment}/mo</div>
+                                        <div className={styles.installmentPrice}><CurrencyPrice amount={Number(monthlyPayment)} />/mo</div>
                                     </div>
 
                                     <div className={styles.installmentRow}>
@@ -1956,7 +1956,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             <h4>{t('payments6')}</h4>
                                             <div className={styles.installmentSub}>{t('includesFee')}</div>
                                         </div>
-                                        <div className={styles.installmentPrice}>AED {(Number(displayPrice) / 6 * 1.025).toFixed(2)}/mo</div>
+                                        <div className={styles.installmentPrice}><CurrencyPrice amount={Number(displayPrice) / 6 * 1.025} />/mo</div>
                                     </div>
 
                                     <div className={styles.installmentRow}>
@@ -1964,7 +1964,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             <h4>{t('payments12')}</h4>
                                             <div className={styles.installmentSub}>{t('includesFee')}</div>
                                         </div>
-                                        <div className={styles.installmentPrice}>AED {(Number(displayPrice) / 12 * 1.025).toFixed(2)}/mo</div>
+                                        <div className={styles.installmentPrice}><CurrencyPrice amount={Number(displayPrice) / 12 * 1.025} />/mo</div>
                                     </div>
 
                                     <div className={styles.continueShoppingWrapper} style={{ marginTop: '20px', paddingBottom: '0' }}>

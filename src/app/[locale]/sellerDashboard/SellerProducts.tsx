@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
+import { formatDirham } from 'dirham';
 import styles from '@/components/Admin/AdminProducts.module.css';
 import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -663,17 +665,17 @@ const SellerProducts = () => {
                                         {product.discount_percentage > 0 ? (
                                             <div>
                                                 <div style={{ textDecoration: 'line-through', color: '#868e96', fontSize: '12px' }}>
-                                                    AED {Number(product.price).toLocaleString()}
+                                                    <CurrencyPrice amount={Number(product.price)} />
                                                 </div>
                                                 <div style={{ color: '#fa5252', fontWeight: 'bold' }}>
-                                                    AED {Number(Number(product.offer_price) > 0 ? product.offer_price : product.price).toLocaleString()}
+                                                    <CurrencyPrice amount={Number(Number(product.offer_price) > 0 ? product.offer_price : product.price)} />
                                                 </div>
                                                 <div style={{ fontSize: '11px', color: '#20c997' }}>
                                                     {product.discount_percentage}% OFF
                                                 </div>
                                             </div>
                                         ) : (
-                                            `AED ${Number(product.price).toLocaleString()}`
+                                            `${formatDirham(Number(product.price))}`
                                         )}
                                     </td>
                                     <td>
@@ -877,7 +879,7 @@ const SellerProducts = () => {
                                         />
                                         {!formData.offer_price && formData.price && (
                                             <small style={{ color: '#51cf66', fontSize: '12px' }}>
-                                                Auto: AED {(parseFloat(formData.price) * (1 - parseFloat(formData.discount_percentage) / 100)).toFixed(2)}
+                                                Auto: {formatDirham(parseFloat(formData.price) * (1 - parseFloat(formData.discount_percentage) / 100))}
                                             </small>
                                         )}
                                     </div>

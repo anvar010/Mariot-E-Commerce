@@ -1,5 +1,6 @@
 'use client';
 
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import React from 'react';
 import { ShoppingCart, CheckCircle2 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
@@ -61,9 +62,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 </div>
 
                 <div className={styles.priceBox}>
-                    <div className={styles.currentPrice}>AED {product.price}</div>
+                    <div className={styles.currentPrice}><CurrencyPrice amount={Number(product.price)} /></div>
                     <div className={styles.priceFooter}>
-                        {product.originalPrice && <span className={styles.oldPrice}>AED {product.originalPrice}</span>}
+                        {product.originalPrice && <span className={styles.oldPrice}><CurrencyPrice amount={Number(product.originalPrice)} /></span>}
                         {product.discountPercent && <span className={styles.discountText}>{product.discountPercent}</span>}
                     </div>
                 </div>

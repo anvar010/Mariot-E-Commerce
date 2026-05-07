@@ -77,7 +77,7 @@
 }
 
 .chatbotTrigger {
-    background: linear-gradient(135deg, #337c7f 0%, #2a6668 100%);
+    background: linear-gradient(135deg, #16a1db 0%, #16a1db 100%);
     overflow: visible;
 }
 
@@ -392,7 +392,7 @@
 
 @media (max-width: 768px) {
     .floatingContainer {
-        bottom: 15px;
+        bottom: 75px;
         inset-inline-end: 15px;
         gap: 10px;
     }
@@ -409,7 +409,7 @@
         }
 
         .floatingContainer {
-            bottom: 20px !important;
+            bottom: 75px !important;
             inset-inline-end: 15px !important;
             gap: 12px !important;
         }

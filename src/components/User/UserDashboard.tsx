@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
+import { DirhamSymbol } from 'dirham/react';
 import styles from './UserDashboard.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { useWishlist } from '@/context/WishlistContext';
@@ -437,7 +439,7 @@ const UserDashboard = () => {
                                             </span>
                                         </Link>
                                         <p className={styles.itemBrand}>{item.brand}</p>
-                                        <div className={styles.itemPrice}>AED {item.price.toLocaleString()}</div>
+                                        <div className={styles.itemPrice}><CurrencyPrice amount={Number(item.price)} /></div>
                                         <div className={styles.itemActions}>
                                             <button
                                                 className={styles.addToCartBtn}
@@ -508,7 +510,7 @@ const UserDashboard = () => {
                             </div>
                             <div>
                                 <strong style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>{t('orders.totalAmount')}</strong>
-                                <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#0f172a' }}>AED {parseFloat(selectedOrder.final_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#0f172a' }}><CurrencyPrice amount={parseFloat(selectedOrder.final_amount)} /></span>
                             </div>
                         </div>
 
@@ -525,10 +527,10 @@ const UserDashboard = () => {
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <h4 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '5px' }}>{locale === 'ar' && item.name_ar ? item.name_ar : item.name}</h4>
-                                        <div style={{ color: '#64748b', fontSize: '13px' }}>{t('orders.qty')} {item.quantity}  ×  AED {parseFloat(item.price_at_purchase).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                        <div style={{ color: '#64748b', fontSize: '13px' }}>{t('orders.qty')} {item.quantity}  ×  <CurrencyPrice amount={parseFloat(item.price_at_purchase)} /></div>
                                     </div>
                                     <div style={{ fontWeight: 'bold', fontSize: '15px' }}>
-                                        AED {(item.quantity * parseFloat(item.price_at_purchase)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        <CurrencyPrice amount={item.quantity * parseFloat(item.price_at_purchase)} />
                                     </div>
                                 </div>
                             ))}
@@ -537,21 +539,21 @@ const UserDashboard = () => {
                         <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', color: '#475569' }}>
                                 <span>{t('orders.subtotal')} <small>{t('orders.isTaxIncl')}</small></span>
-                                <span>AED {parseFloat(selectedOrder.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span><CurrencyPrice amount={parseFloat(selectedOrder.total_amount)} /></span>
                             </div>
                             {(parseFloat(selectedOrder.discount_amount) > 0 || parseFloat(selectedOrder.points_discount) > 0) && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', color: '#ef4444' }}>
                                     <span>{t('orders.discountApplied')}</span>
-                                    <span>- AED {(parseFloat(selectedOrder.discount_amount || 0) + parseFloat(selectedOrder.points_discount || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span>- <CurrencyPrice amount={parseFloat(selectedOrder.discount_amount || 0) + parseFloat(selectedOrder.points_discount || 0)} /></span>
                                 </div>
                             )}
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '14px', color: '#475569' }}>
                                 <span>{t('orders.vat')}</span>
-                                <span>AED {parseFloat(selectedOrder.vat_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span><CurrencyPrice amount={parseFloat(selectedOrder.vat_amount)} /></span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 'bold', borderTop: '1px solid #e2e8f0', paddingTop: '15px' }}>
                                 <span>{t('orders.totalPaid')}</span>
-                                <span>AED {parseFloat(selectedOrder.final_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span><CurrencyPrice amount={parseFloat(selectedOrder.final_amount)} /></span>
                             </div>
                         </div>
                     </div>
@@ -622,7 +624,7 @@ const UserDashboard = () => {
                                                 <div className={styles.orderMetaItem}>
                                                     <span>{t('orders.total')}</span>
                                                     <span className={styles.orderPrice}>
-                                                        AED {parseFloat(order.final_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        <CurrencyPrice amount={parseFloat(order.final_amount)} />
                                                     </span>
                                                 </div>
                                             </div>
@@ -852,7 +854,7 @@ const UserDashboard = () => {
 
                                                 {q.total_amount && (
                                                     <div className={styles.amountPillPremium}>
-                                                        <span className={styles.currencyLabel}>AED</span>
+                                                        <DirhamSymbol size="1em" />
                                                         <span className={styles.amountValueText}>{parseFloat(q.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                     </div>
                                                 )}
@@ -1180,7 +1182,7 @@ const UserDashboard = () => {
                                     </div>
                                     <div className={styles.paymentAmountSide}>
                                         <div className={styles.paymentValue}>
-                                            AED {parseFloat(order.final_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            <CurrencyPrice amount={parseFloat(order.final_amount)} />
                                         </div>
                                         <div className={`${styles.paymentStatusBadge} ${order.payment_status === 'paid' ? styles.paySuccess :
                                             order.payment_status === 'failed' ? styles.payFailed :
