@@ -180,9 +180,13 @@ const Header = () => {
         };
 
         const handleOpenCart = () => setIsDrawerOpen(true);
+        const handleToggleMenu = () => setIsMenuOpen(prev => !prev);
+        const handleOpenMenu = () => setIsMenuOpen(true);
 
         window.addEventListener('scroll', handleScroll, { passive: true });
         window.addEventListener('OPEN_CART_DRAWER', handleOpenCart);
+        window.addEventListener('TOGGLE_MOBILE_MENU', handleToggleMenu);
+        window.addEventListener('OPEN_MOBILE_MENU', handleOpenMenu);
 
         // Initial check
         setIsSticky(window.scrollY > (headerHeight > 0 ? headerHeight + 10 : 200));
@@ -190,13 +194,15 @@ const Header = () => {
         return () => {
             window.removeEventListener('scroll', handleScroll);
             window.removeEventListener('OPEN_CART_DRAWER', handleOpenCart);
+            window.removeEventListener('TOGGLE_MOBILE_MENU', handleToggleMenu);
+            window.removeEventListener('OPEN_MOBILE_MENU', handleOpenMenu);
         };
     }, [setIsDrawerOpen, headerHeight]);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
     const [optimisticIsArabic, setOptimisticIsArabic] = useState(isArabic);
-    
+
     // Sync optimistic state if locale changes externally
     useEffect(() => {
         setOptimisticIsArabic(isArabic);
@@ -204,10 +210,10 @@ const Header = () => {
 
     const switchLocale = (newLocale: 'en' | 'ar') => {
         const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
-        
+
         // Update visual state instantly
         setOptimisticIsArabic(newLocale === 'ar');
-        
+
         // Wait for the CSS animation (200ms) to finish before reloading the page
         setTimeout(() => {
             router.replace(pathname + currentSearch, { locale: newLocale });
@@ -265,7 +271,7 @@ const Header = () => {
                                     />
                                     <div className={styles.logoText}>
                                         <img
-                                            src="/assets/mariot-logo.webp"
+                                            src={isArabic ? "/MARIOT-A.webp" : "/assets/mariot-logo.webp"}
                                             alt="Mariot Logo"
                                             className={styles.logoImage}
                                         />

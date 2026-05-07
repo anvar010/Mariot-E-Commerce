@@ -79,7 +79,8 @@
 .promoColumn {
     flex-shrink: 0;
     display: flex;
-    align-items: stretch; /* Force child (CategoryPromotionCard) to stretch to container height */
+    align-items: stretch;
+    /* Force child (CategoryPromotionCard) to stretch to container height */
 }
 
 
@@ -137,14 +138,16 @@
 
 .dealsGrid {
     display: flex;
-    align-items: stretch; /* Force same height for all products */
+    align-items: stretch;
+    /* Force same height for all products */
 }
 
 .productWrapper {
     flex: 0 0 220px;
     min-width: 0;
     padding-right: 2px;
-    display: flex; /* Space for the card to stretch */
+    display: flex;
+    /* Space for the card to stretch */
 }
 
 @media (max-width: 576px) {

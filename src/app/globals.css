@@ -22,9 +22,17 @@ html,
 body {
   width: 100%;
   max-width: 100%;
-  overflow-x: clip; /* clip allows sticky elements to work, hidden breaks them */
+  overflow-x: clip;
+  /* clip allows sticky elements to work, hidden breaks them */
   position: relative;
   font-family: var(--font-inter), -apple-system, sans-serif;
+  padding-bottom: 65px;
+}
+
+@media (min-width: 769px) {
+  body {
+    padding-bottom: 0;
+  }
 }
 
 html[dir="rtl"],

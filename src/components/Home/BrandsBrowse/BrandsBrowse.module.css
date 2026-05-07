@@ -123,18 +123,18 @@
 
 .brandsGrid {
     display: flex;
-    gap: 0;
+    gap: 5px;
     padding: 10px 2px 0 2px;
     width: 100%;
 }
 
 /* ===== Brand Card ===== */
 .brandSlide {
-    flex: 0 0 calc((100% - 40px) / 5);
-    /* Desktop default approx 5 items */
+    flex: 0 0 calc((100% - 40px) / 9);
+    /* Desktop default approx 9 items */
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 5px;
     scroll-snap-align: start;
 }
 
