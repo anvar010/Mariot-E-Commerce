@@ -490,25 +490,6 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 </main>
             </div>
 
-            {/* Mobile Bottom Action Pill */}
-            <div className={styles.mobileBottomActionPill}>
-                <button className={styles.actionPillBtn} onClick={() => setIsMobileFilterOpen(true)}>
-                    <Filter size={18} /><span>{tc("filters")}</span>
-                </button>
-                <div className={styles.actionPillDivider}></div>
-                <div className={styles.actionPillBtn} ref={mobileSortRef} onClick={() => setIsMobileSortOpen(!isMobileSortOpen)}>
-                    <ListFilter size={18} />
-                    <span>{tc("sort")}</span>
-                    {isMobileSortOpen && (
-                        <div className={styles.mobileSortDropdown}>
-                            <div onClick={(e) => { e.stopPropagation(); setSortBy('relevance'); setIsMobileSortOpen(false); }}>{tc("relevance")}</div>
-                            <div onClick={(e) => { e.stopPropagation(); setSortBy('best_offer'); setIsMobileSortOpen(false); }}>{tc("best-offer")}</div>
-                            <div onClick={(e) => { e.stopPropagation(); setSortBy('price_asc'); setIsMobileSortOpen(false); }}>{tc("price-low-to-high")}</div>
-                            <div onClick={(e) => { e.stopPropagation(); setSortBy('price_desc'); setIsMobileSortOpen(false); }}>{tc("price-high-to-low")}</div>
-                        </div>
-                    )}
-                </div>
-            </div>
         </div>
     );
 };
