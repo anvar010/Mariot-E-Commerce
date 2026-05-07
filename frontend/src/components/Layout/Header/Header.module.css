@@ -778,6 +778,34 @@
     margin-left: 44px;
 }
 
+@media (max-width: 768px) {
+    .checkToggleRoundFlat+label {
+        width: 75px;
+        height: 28px;
+    }
+
+    .checkToggleRoundFlat+label:after {
+        width: 36px;
+    }
+
+    .checkToggleRoundFlat:checked+label:after {
+        margin-left: 33px;
+    }
+
+    .switch>span {
+        width: 36px;
+        font-size: 10px;
+    }
+
+    .switch>span.switchOn {
+        left: 2px;
+    }
+
+    .switch>span.switchOff {
+        right: 2px;
+    }
+}
+
 .langDropdown {
     position: absolute;
     top: calc(100% + 12px);
@@ -1090,6 +1118,11 @@
 
     .mobileOnly {
         display: block;
+    }
+
+    .profile,
+    .cart {
+        display: none !important;
     }
 
     .mobileMenuBtn {

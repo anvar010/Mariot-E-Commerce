@@ -316,6 +316,15 @@
         gap: 10px;
         -webkit-overflow-scrolling: touch;
         /* Smooth scrolling on iOS */
+        scrollbar-width: none;
+        /* Firefox */
+        -ms-overflow-style: none;
+        /* IE and Edge */
+    }
+
+    .nav::-webkit-scrollbar {
+        display: none;
+        /* Chrome, Safari, Opera */
     }
 
     .navLink {
@@ -374,6 +383,12 @@
         margin-bottom: 30px;
         padding-bottom: 10px;
         justify-content: flex-start;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
     }
 
     .tab {

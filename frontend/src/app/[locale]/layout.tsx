@@ -8,6 +8,7 @@ import { Inter, Alexandria } from 'next/font/google';
 
 // Deferred — not needed for initial render, load after page is interactive
 const CartDrawer = dynamicImport(() => import('@/components/Layout/CartDrawer/CartDrawer'), { ssr: false });
+const MobileBottomNav = dynamicImport(() => import('@/components/Layout/MobileBottomNav/MobileBottomNav'), { ssr: false });
 const FloatingActions = dynamicImport(() => import('@/components/shared/FloatingActions/FloatingActions'), { ssr: false });
 const Promotions = dynamicImport(() => import('@/components/shared/Promotions/Promotions'), { ssr: false });
 
@@ -89,6 +90,7 @@ export default async function LocaleLayout({
                     <Providers>
                         <Promotions />
                         <CartDrawer />
+                        <MobileBottomNav />
                         <FloatingActions />
                         {children}
                     </Providers>
