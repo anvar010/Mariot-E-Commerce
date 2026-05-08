@@ -8,7 +8,7 @@ interface CategoryMenuSkeletonProps {
 const CategoryMenuSkeleton: React.FC<CategoryMenuSkeletonProps> = ({ isPopup }) => {
     return (
         <div className={`${styles.skeletonContainer} ${isPopup ? styles.popupMode : ''}`}>
-            <div className={styles.wrapper}>
+            <div className={`${styles.wrapper} ${styles.desktopTabletView}`}>
                 <div className={styles.sidebar}>
                     {Array(12).fill(0).map((_, i) => (
                         <div key={i} className={`${styles.sidebarItem} ${i === 0 ? styles.activeItem : ''}`}>
@@ -51,6 +51,21 @@ const CategoryMenuSkeleton: React.FC<CategoryMenuSkeletonProps> = ({ isPopup }) 
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className={styles.mobileGridWrapper}>
+                <div className={styles.mobileMainTitle}></div>
+                <div className={styles.mobileGrid}>
+                    {Array(10).fill(0).map((_, i) => (
+                        <div key={i} className={styles.mobileCard}>
+                            <div className={styles.mobileCardImgWrapper}>
+                                <div className={styles.skeletonImage}></div>
+                            </div>
+                            <div className={styles.mobileCardTitle}></div>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>

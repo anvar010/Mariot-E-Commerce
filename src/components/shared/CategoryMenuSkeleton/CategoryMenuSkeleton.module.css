@@ -196,6 +196,97 @@
     }
 }
 
+/* Mobile Grid View (Hidden on Desktop) */
+.mobileGridWrapper {
+    display: none;
+    padding: 30px 16px 20px 16px;
+    background-color: #f1f5f9;
+    min-height: calc(100vh - 120px);
+}
+
+.mobileMainTitle {
+    width: 150px;
+    height: 24px;
+    background: #1e3a5f;
+    opacity: 0.1;
+    border-radius: 4px;
+    margin-bottom: 50px;
+    position: relative;
+    overflow: hidden;
+}
+
+.mobileGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 50px 15px;
+}
+
+.mobileCard {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 55px 10px 15px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.mobileCardImgWrapper {
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.15));
+}
+
+.skeletonImage {
+    width: 100%;
+    height: 100%;
+    background: #e2e8f0;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.mobileCardTitle {
+    width: 80%;
+    height: 14px;
+    background: #1e3a5f;
+    opacity: 0.1;
+    border-radius: 4px;
+    margin-top: 5px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shimmer for Mobile View */
+.mobileMainTitle::after,
+.mobileCard::after,
+.skeletonImage::after,
+.mobileCardTitle::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg,
+            rgba(255, 255, 255, 0) 0,
+            rgba(255, 255, 255, 0.4) 20%,
+            rgba(255, 255, 255, 0.7) 60%,
+            rgba(255, 255, 255, 0));
+    animation: shimmer 2.5s infinite;
+}
+
 @media (max-width: 1100px) {
     .contentGrid {
         flex-direction: column;
@@ -215,6 +306,19 @@
 }
 
 @media (max-width: 768px) {
+    .desktopTabletView {
+        display: none !important;
+    }
+
+    .mobileGridWrapper {
+        display: block;
+    }
+
+    .skeletonContainer {
+        min-height: auto;
+        background-color: #f1f5f9;
+    }
+
     .wrapper {
         flex-direction: column;
     }
