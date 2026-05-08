@@ -538,3 +538,79 @@
     margin-bottom: 8px;
   }
 }
+
+/* Mobile Grid View (Hidden on Desktop) */
+.mobileGridWrapper {
+  display: none;
+  padding: 30px 16px 20px 16px;
+  background-color: #f1f5f9;
+  min-height: calc(100vh - 120px);
+}
+
+.mobileMainTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 50px;
+}
+
+.mobileGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 50px 15px;
+}
+
+.mobileCard {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 55px 10px 15px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.mobileCardImgWrapper {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.15));
+}
+
+.mobileCardImg {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.mobileCardTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e3a5f;
+  text-align: center;
+  line-height: 1.3;
+  margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+  .desktopTabletView {
+    display: none !important;
+  }
+
+  .mobileGridWrapper {
+    display: block;
+  }
+
+  .categoriesPage {
+    background-color: #f1f5f9;
+  }
+}

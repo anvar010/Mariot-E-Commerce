@@ -211,7 +211,8 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
     return (
         <section className={`${styles.categoriesPage} ${isPopup ? styles.popupMode : ''}`}>
             <div className={styles.container}>
-                <div className={`${styles.wrapper} ${isPopup ? styles.popupWrapper : ''}`}>
+                {/* Desktop and Tablet View */}
+                <div className={`${styles.wrapper} ${styles.desktopTabletView} ${isPopup ? styles.popupWrapper : ''}`}>
                     <div className={styles.sidebar}>
                         <ul className={styles.sidebarList}>
                             {mainCategories.map((item: any, idx: number) => {
@@ -293,6 +294,37 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Mobile View */}
+                <div className={styles.mobileGridWrapper}>
+                    <h2 className={styles.mobileMainTitle}>{isArabic ? 'جميع الفئات' : 'All Categories'}</h2>
+                    <div className={styles.mobileGrid}>
+                        {mainCategories.map((item: any, idx: number) => {
+                            const catName = (isArabic && item.name_ar) ? item.name_ar : item.name;
+                            const imgSrc = item.image_url ?
+                                (item.image_url.startsWith('http') ? item.image_url : `${API_BASE_URL.replace('/api/v1', '')}${item.image_url}`)
+                                : '/assets/mariot-logo2.webp';
+                            return (
+                                <Link
+                                    key={item.id}
+                                    href={`/category/${item.slug}`}
+                                    className={styles.mobileCard}
+                                    onClick={onClose}
+                                >
+                                    <div className={styles.mobileCardImgWrapper}>
+                                        <img
+                                            src={imgSrc}
+                                            alt={catName}
+                                            className={styles.mobileCardImg}
+                                            onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                        />
+                                    </div>
+                                    <span className={styles.mobileCardTitle}>{catName}</span>
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
