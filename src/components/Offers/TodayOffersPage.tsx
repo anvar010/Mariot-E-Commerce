@@ -52,7 +52,6 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
     });
     const [priceRange, setPriceRange] = useState({ min: 0, max: 99999 });
     const [openFilters, setOpenFilters] = useState<string[]>(['brand', 'price']);
-    const [isAboutExpanded, setIsAboutExpanded] = useState(false);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [isMobileSortOpen, setIsMobileSortOpen] = useState(false);
@@ -433,59 +432,9 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                         </button>
                     )}
 
-                    {/* About the Brand */}
-                    <section className={styles.aboutBrand}>
-                        <div className={styles.aboutHeader}>
-                            <div className={styles.aboutText}>
-                                <h4>{t('aboutTheBrand')}</h4>
-                                <h3>{t('rationalTitle')}</h3>
-                            </div>
-                            <div className={styles.brandLogo}>
-                                <Image
-                                    src="/assets/brands/rational.jpg.webp"
-                                    alt="RATIONAL"
-                                    width={120}
-                                    height={40}
-                                    style={{ objectFit: 'contain' }}
-                                    unoptimized
-                                />
-                            </div>
-                        </div>
-                        <div className={styles.aboutDescription}>
-                            <p className={isAboutExpanded ? styles.expanded : styles.collapsed}>
-                                {t('rationalDesc')}
-                            </p>
-                            <button
-                                className={styles.readMoreBtn}
-                                onClick={() => setIsAboutExpanded(!isAboutExpanded)}
-                            >
-                                {isAboutExpanded ? t('readLess') : t('readMore')}
-                            </button>
-                        </div>
-                    </section>
                 </main>
             </div>
-
-            {/* Mobile Bottom Action Pill */}
-            <div className={styles.mobileBottomActionPill}>
-                <button className={styles.actionPillBtn} onClick={() => setIsMobileFilterOpen(true)}>
-                    <Filter size={18} /><span>{tc('filters')}</span>
-                </button>
-                <div className={styles.actionPillDivider}></div>
-                <div className={styles.actionPillBtn} ref={mobileSortRef} onClick={() => setIsMobileSortOpen(!isMobileSortOpen)}>
-                    <ListFilter size={18} />
-                    <span>{tc('sort')}</span>
-                    {isMobileSortOpen && (
-                        <div className={styles.mobileSortDropdown}>
-                            <div onClick={(e) => { e.stopPropagation(); setActiveFilters(prev => ({ ...prev, sort: 'relevance' })); setIsMobileSortOpen(false); }}>{tc('relevance')}</div>
-                            <div onClick={(e) => { e.stopPropagation(); setActiveFilters(prev => ({ ...prev, sort: 'best_offer' })); setIsMobileSortOpen(false); }}>{tc('best-offer')}</div>
-                            <div onClick={(e) => { e.stopPropagation(); setActiveFilters(prev => ({ ...prev, sort: 'price_asc' })); setIsMobileSortOpen(false); }}>{tc('price-low-to-high')}</div>
-                            <div onClick={(e) => { e.stopPropagation(); setActiveFilters(prev => ({ ...prev, sort: 'price_desc' })); setIsMobileSortOpen(false); }}>{tc('price-high-to-low')}</div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div >
+        </div>
     );
 };
 
