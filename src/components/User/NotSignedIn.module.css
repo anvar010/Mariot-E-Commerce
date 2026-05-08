@@ -1,0 +1,77 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    text-align: center;
+    background: #ffffff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    box-shadow: none;
+}
+
+.title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e3a5f;
+    margin: 0 0 8px 0;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: #64748b;
+    margin: 0 0 32px 0;
+}
+
+.buttonGroup {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+}
+
+.signInBtn,
+.createAccountBtn {
+    flex: 1;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.signInBtn {
+    background-color: var(--primary-teal);
+    color: #ffffff;
+    border: none;
+}
+
+.signInBtn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.createAccountBtn {
+    background-color: transparent;
+    color: var(--primary-teal);
+    border: 1.5px solid var(--primary-teal);
+}
+
+.createAccountBtn:hover {
+    background-color: rgba(22, 161, 219, 0.05);
+    /* rgba version of --primary-teal */
+    transform: translateY(-1px);
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 40px 16px;
+    }
+}
