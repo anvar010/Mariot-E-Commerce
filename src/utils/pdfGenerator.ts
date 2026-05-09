@@ -595,7 +595,7 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
         await new Promise(r => setTimeout(r, 200));
 
         // Note: For chunked rendering, each page container should map exactly or slightly above 1123 unless text really spans heavily.
-        const renderedHeight = container.firstElementChild ? (container.firstElementChild).offsetHeight + 40 : 1250;
+        const renderedHeight = container.firstElementChild ? (container.firstElementChild as HTMLElement).offsetHeight + 40 : 1250;
 
         const canvas = await html2canvas(container, {
             scale: 2, useCORS: false, allowTaint: true, logging: false, backgroundColor: '#ffffff',

@@ -593,7 +593,7 @@ const AdminOrders = () => {
 
             {/* Invoice Modal */}
             {invoiceModal.isOpen && (
-                <div className={styles.invoiceOverlay} onClick={() => !isSubmittingInvoice && setInvoiceModal({ isOpen: false, orderId: null })}>
+                <div className={styles.invoiceOverlay} onClick={() => !isSubmittingInvoice && setInvoiceModal({ isOpen: false, orderId: null, order: null })}>
                     <div className={styles.invoiceModal} onClick={e => e.stopPropagation()}>
                         <div className={styles.invoiceModalHeader}>
                             <div className={styles.invoiceModalTitle}>
