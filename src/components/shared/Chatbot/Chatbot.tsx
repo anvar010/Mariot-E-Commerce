@@ -31,6 +31,7 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isStreaming, setIsStreaming] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -67,7 +68,7 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
     const generateId = () => `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const sendMessage = async (content: string) => {
-        if (!content.trim() || isLoading) return;
+        if (!content.trim() || isLoading || isStreaming) return;
 
         setHasInteracted(true);
         const userMessage: Message = {
@@ -80,6 +81,8 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
         setMessages(updatedMessages);
         setInput('');
         setIsLoading(true);
+
+        const assistantId = generateId();
 
         try {
             // Build the API payload (exclude the welcome message from context)
@@ -99,27 +102,30 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
                 body: JSON.stringify({ messages: apiMessages, locale }),
             });
 
-            if (!response.ok) throw new Error('Failed to get response');
+            if (!response.ok) {
+                const errBody = await response.text().catch(() => '');
+                console.error('[Chat] API error', response.status, errBody);
+                throw new Error(`API ${response.status}: ${errBody}`);
+            }
 
             const data = await response.json();
+            const text = data.message || t('errorMessage');
 
-            const assistantMessage: Message = {
-                id: generateId(),
-                role: 'assistant',
-                content: data.message || t('errorMessage'),
-            };
-
-            setMessages(prev => [...prev, assistantMessage]);
+            setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: text }]);
         } catch (error) {
             console.error('Chat error:', error);
-            const errorMessage: Message = {
-                id: generateId(),
-                role: 'assistant',
-                content: t('errorMessage'),
-            };
-            setMessages(prev => [...prev, errorMessage]);
+            setMessages(prev => {
+                const hasPlaceholder = prev.some(m => m.id === assistantId);
+                if (hasPlaceholder) {
+                    return prev.map(m =>
+                        m.id === assistantId ? { ...m, content: t('errorMessage') } : m
+                    );
+                }
+                return [...prev, { id: assistantId, role: 'assistant', content: t('errorMessage') }];
+            });
         } finally {
             setIsLoading(false);
+            setIsStreaming(false);
         }
     };
 
@@ -144,7 +150,8 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
             .replaceAll(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replaceAll(/\*(.*?)\*/g, '<em>$1</em>')
             .replaceAll(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #25d366; text-decoration: underline; font-weight: 600;">$1</a>')
-            .replaceAll(/^- /gm, '• ');
+            .replaceAll(/^- /gm, '• ')
+            .replaceAll(/\n/g, '<br>');
     };
 
     return (
@@ -269,13 +276,13 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
                                 placeholder={t('placeholder')}
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                disabled={isLoading}
+                                disabled={isLoading || isStreaming}
                                 dir={isArabic ? 'rtl' : 'ltr'}
                             />
                             <button
                                 type="submit"
                                 className={styles.sendBtn}
-                                disabled={!input.trim() || isLoading}
+                                disabled={!input.trim() || isLoading || isStreaming}
                                 aria-label="Send message"
                             >
                                 <Send size={18} style={isArabic ? { transform: 'scaleX(-1)' } : undefined} />

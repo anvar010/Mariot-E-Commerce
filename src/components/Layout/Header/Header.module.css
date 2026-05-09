@@ -133,7 +133,8 @@
 }
 
 .miniIcon {
-    height: 40px;
+    height: 55px;
+    /* Increased from 40px */
     width: auto;
     object-fit: contain;
 }
@@ -145,7 +146,8 @@
 }
 
 .logoImage {
-    height: 38px;
+    height: 52px;
+    /* Increased from 38px */
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease;

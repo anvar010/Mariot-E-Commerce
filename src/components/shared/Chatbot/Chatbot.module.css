@@ -7,14 +7,14 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #337c7f 0%, #2a6668 100%);
+    background: linear-gradient(135deg, #16a1db 0%, #1282b0 100%);
     color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     border: none;
-    box-shadow: 0 4px 20px rgba(51, 124, 127, 0.4), 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 20px rgba(22, 161, 219, 0.4), 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -26,7 +26,7 @@ html[dir="rtl"] .chatFab {
 @media (hover: hover) {
     .chatFab:hover {
         transform: scale(1.08);
-        box-shadow: 0 6px 28px rgba(51, 124, 127, 0.5), 0 4px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 6px 28px rgba(22, 161, 219, 0.5), 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 }
 
@@ -90,7 +90,7 @@ html[dir="rtl"] .chatWindow {
 
 /* ===== Chat Header ===== */
 .chatHeader {
-    background: linear-gradient(135deg, #337c7f 0%, #2d6b6e 50%, #245658 100%);
+    background: linear-gradient(135deg, #16a1db 0%, #128ec4 50%, #0d79a8 100%);
     padding: 16px 18px;
     display: flex;
     align-items: center;
@@ -221,7 +221,7 @@ html[dir="rtl"] .messageRowAssistant {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #337c7f, #2a6668);
+    background: linear-gradient(135deg, #16a1db, #1282b0);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -246,7 +246,7 @@ html[dir="rtl"] .messageRowAssistant {
 }
 
 .messageBubbleUser {
-    background: linear-gradient(135deg, #337c7f 0%, #2a6668 100%);
+    background: linear-gradient(135deg, #16a1db 0%, #1282b0 100%);
     color: #ffffff;
     border-bottom-right-radius: 4px;
 }
@@ -283,8 +283,8 @@ html[dir="rtl"] .messageBubbleAssistant {
     font-size: 12px;
     font-weight: 600;
     background: #ffffff;
-    color: #337c7f;
-    border: 1.5px solid #337c7f;
+    color: #16a1db;
+    border: 1.5px solid #16a1db;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
@@ -292,7 +292,7 @@ html[dir="rtl"] .messageBubbleAssistant {
 
 @media (hover: hover) {
     .quickBtn:hover {
-        background: #337c7f;
+        background: #16a1db;
         color: #ffffff;
     }
 }
@@ -324,7 +324,7 @@ html[dir="rtl"] .typingDots {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background-color: #337c7f;
+    background-color: #16a1db;
     opacity: 0.5;
     animation: dotBounce 1.4s infinite;
 }
@@ -377,7 +377,7 @@ html[dir="rtl"] .typingDots {
 }
 
 .chatInput:focus {
-    border-color: #337c7f;
+    border-color: #16a1db;
     background: #ffffff;
 }
 
@@ -389,7 +389,7 @@ html[dir="rtl"] .typingDots {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #337c7f 0%, #2a6668 100%);
+    background: linear-gradient(135deg, #16a1db 0%, #1282b0 100%);
     color: #ffffff;
     border: none;
     cursor: pointer;

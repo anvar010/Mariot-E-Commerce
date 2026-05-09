@@ -1347,11 +1347,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         >
                                             <span className={styles.qtyCustomSelectText}>
                                                 {effectiveStock > 0 ? (
-                                                    <div className={styles.manualInputWrapper} onClick={(e) => e.stopPropagation()}>
+                                                    <div className={styles.manualInputWrapper}>
                                                         <span className={styles.qtyPrefix}>{t('qty')}</span>
                                                         <input
                                                             type="number"
                                                             value={qty}
+                                                            onClick={(e) => e.stopPropagation()}
                                                             onChange={(e) => {
                                                                 const val = parseInt(e.target.value);
                                                                 if (!isNaN(val)) {

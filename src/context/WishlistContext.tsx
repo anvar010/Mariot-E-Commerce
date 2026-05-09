@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
+import { useLoginPrompt } from './LoginPromptContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { useTranslations } from 'next-intl';
@@ -31,6 +32,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [loading, setLoading] = useState(false);
     const { token, user } = useAuth();
     const { showNotification } = useNotification();
+    const { showLoginPrompt } = useLoginPrompt();
     const t = useTranslations('notifications');
 
     // 1. Initial Load & Sync Logic (Same pattern as CartContext)
@@ -125,6 +127,10 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     const addToWishlist = async (product: any) => {
+        if (!token) {
+            showLoginPrompt();
+            return;
+        }
         // Optimistic Update
         const newItem = {
             id: product.id,

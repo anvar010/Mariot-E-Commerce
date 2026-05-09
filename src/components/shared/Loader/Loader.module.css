@@ -92,7 +92,7 @@
 .progressFill {
     width: 40%;
     height: 100%;
-    background: linear-gradient(90deg, #337c7f, #8ecfcc);
+    background: linear-gradient(90deg, #16a1db, #79d1f3);
     border-radius: 10px;
     animation: scan 1.5s ease-in-out infinite;
 }

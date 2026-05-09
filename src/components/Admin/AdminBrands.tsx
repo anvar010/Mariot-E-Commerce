@@ -690,7 +690,7 @@ const AdminBrands = () => {
                                                 <label className={styles.fileLabel}>
                                                     <Plus size={24} />
                                                     <span>Click to upload brand banner</span>
-                                                    <span className={styles.uploadHint}>Recommended: 1400 × 150 px</span>
+                                                    <span className={styles.uploadHint}>Recommended: 1920 × 576 px</span>
                                                     <input type="file" accept="image/*" onChange={handleBannerChange} hidden />
                                                 </label>
                                             )}
@@ -716,7 +716,7 @@ const AdminBrands = () => {
                                             <label className={styles.fileLabel} style={{ height: '90px' }}>
                                                 <Plus size={20} />
                                                 <span>Click to upload mobile banner</span>
-                                                <span className={styles.uploadHint}>Recommended: 800 × 120 px</span>
+                                                <span className={styles.uploadHint}>Recommended: 1080 × 400 px</span>
                                                 <input type="file" accept="image/*" onChange={handleBannerMobileChange} hidden />
                                             </label>
                                         )}

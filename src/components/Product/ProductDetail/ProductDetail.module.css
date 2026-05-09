@@ -771,6 +771,7 @@
     flex-shrink: 0;
     padding: 8px;
     transition: all 0.3s ease;
+    pointer-events: none;
 }
 
 @media (hover: hover) {
@@ -807,6 +808,7 @@
 .chevronIcon {
     color: #94a3b8;
     transition: all 0.3s ease;
+    pointer-events: none;
 }
 
 @media (hover: hover) {
@@ -826,6 +828,10 @@
     z-index: 10;
 }
 
+:global(html[dir="rtl"]) .purchaseActions {
+    flex-direction: row-reverse;
+}
+
 .qtyWrapper {
     position: relative;
     width: 185px;
@@ -839,7 +845,8 @@
     height: 100%;
     display: flex;
     align-items: center;
-    padding-inline: 24px 40px;
+    justify-content: space-between;
+    padding-inline: 24px 20px;
     font-size: 16px;
     font-weight: 700;
     color: #0f172a;
@@ -914,17 +921,15 @@
 }
 
 .qtyArrow {
-    position: absolute;
-    inset-inline-end: 18px;
-    top: 50%;
-    transform: translateY(-50%);
+    margin-inline-start: 10px;
     color: #64748b;
     pointer-events: none;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease;
+    flex-shrink: 0;
 }
 
 .qtyCustomSelect.open .qtyArrow {
-    transform: translateY(-50%) rotate(180deg);
+    transform: rotate(180deg);
     color: #0f172a;
 }
 
@@ -1735,6 +1740,52 @@
     opacity: 0.9;
 }
 
+/* Tabby Modal Responsiveness */
+@media (max-width: 576px) {
+    .modal {
+        border-radius: 16px;
+        max-height: 95vh;
+    }
+
+    .modalHeader {
+        padding: 16px 20px;
+    }
+
+    .tabbyLogoLarge {
+        height: 22px;
+    }
+
+    .modalContent {
+        padding: 0 16px 24px 16px;
+    }
+
+    .tabbyPromoBanner {
+        padding: 80px 16px 20px 16px;
+        margin-bottom: 20px;
+    }
+
+    .promoTitle {
+        font-size: 20px;
+    }
+
+    .promoSubtitle {
+        font-size: 13px;
+    }
+
+    .installmentRow {
+        padding: 12px 16px;
+        border-radius: 12px;
+    }
+
+    .installmentInfo h4 {
+        font-size: 14px;
+    }
+
+    .installmentPrice {
+        font-size: 15px;
+    }
+}
+
 /* Installment Rows */
 .installmentRow {
     background: white;
@@ -1998,6 +2049,84 @@
     color: #475569;
     line-height: 1.5;
     user-select: none;
+}
+
+/* Mobile Responsiveness for Price Match Modal */
+@media (max-width: 640px) {
+    .pmModalOverlay {
+        padding: 10px;
+    }
+
+    .pmModal {
+        max-height: 95vh;
+        border-radius: 16px;
+    }
+
+    .pmHeader {
+        padding: 16px 20px;
+    }
+
+    .pmHeaderTitle {
+        font-size: 17px;
+        gap: 8px;
+    }
+
+    .pmContent {
+        padding: 20px;
+    }
+
+    .pmFormGroup {
+        margin-bottom: 20px;
+    }
+
+    .pmLabel {
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .pmInputUnderline {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+
+    .pmSubLabel {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    .pmUploadZone {
+        padding: 30px 16px;
+        gap: 10px;
+    }
+
+    .pmUploadIcon {
+        width: 24px;
+        height: 24px;
+        padding: 8px;
+    }
+
+    .pmUploadText {
+        font-size: 13px;
+    }
+
+    .pmContactGrid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .pmCheckboxGroup {
+        margin-top: 24px;
+        padding: 12px;
+    }
+
+    .pmCheckboxLabel {
+        font-size: 13px;
+    }
+
+    .pmSubmitBtn {
+        width: 100%;
+        padding: 14px;
+    }
 }
 
 .pmCheckboxLabel a {
@@ -3002,16 +3131,32 @@
     }
 
     .qtyWrapper {
-        width: 120px;
+        width: 150px;
     }
 
     .qtyCustomSelect {
-        padding: 0 30px 0 10px;
+        padding: 0 10px;
         font-size: 14px;
+        justify-content: center;
+    }
+
+    .qtyCustomSelectText {
+        flex: 0 1 auto;
+    }
+
+    .qtyPrefix {
+        margin-inline-end: 8px;
+    }
+
+    .manualQtyInput {
+        width: 45px;
+        text-align: center;
     }
 
     .qtyArrow {
-        inset-inline-end: 10px;
+        margin-inline-start: 6px;
+        width: 18px;
+        height: 18px;
     }
 
     .addToCartBtn {

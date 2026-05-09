@@ -16,6 +16,7 @@ import {
     FolderTree,
     Tag,
     FileText,
+    Receipt,
     Layout
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -53,6 +54,7 @@ const AdminSidebar = () => {
 
     const activityItems: MenuItem[] = [
         { name: 'Quotations', key: 'quotations', icon: <FileText size={20} />, path: '/admin/quotations' },
+        { name: 'Invoices', key: 'invoices', icon: <Receipt size={20} />, path: '/admin/invoices' },
         { name: 'Reviews', key: 'reviews', icon: <Layout size={20} />, path: '/admin/reviews' },
     ];
 

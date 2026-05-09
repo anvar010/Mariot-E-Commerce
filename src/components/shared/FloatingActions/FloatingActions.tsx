@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { X, ChevronUp, Bot } from 'lucide-react';
 import styles from './FloatingActions.module.css';
 import { useCart } from '@/context/CartContext';
@@ -8,6 +9,9 @@ import dynamic from 'next/dynamic';
 const Chatbot = dynamic(() => import('../Chatbot/Chatbot'), { ssr: false });
 
 const FloatingActions = () => {
+    const pathname = usePathname();
+    if (pathname && /^\/[^/]+\/admin(\/|$)/.test(pathname)) return null;
+
     const [isVisible, setIsVisible] = useState(false);
     const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
     const [message, setMessage] = useState('');

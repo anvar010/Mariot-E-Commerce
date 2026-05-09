@@ -1,25 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
-import { Search, Package, Download } from 'lucide-react';
+import { Search, Package, Download, FileText, X, Loader2, Eye } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
+import { useAuth } from '@/context/AuthContext';
 
 type StatusFilter = 'all' | 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
 const STATUS_FILTERS: { key: StatusFilter; label: string; dotColor: string }[] = [
-    { key: 'all',        label: 'All',        dotColor: '#64748b' },
-    { key: 'pending',    label: 'Pending',    dotColor: '#ca8a04' },
+    { key: 'all', label: 'All', dotColor: '#64748b' },
+    { key: 'pending', label: 'Pending', dotColor: '#ca8a04' },
     { key: 'processing', label: 'Processing', dotColor: '#3b82f6' },
-    { key: 'shipped',    label: 'Shipped',    dotColor: '#8b5cf6' },
-    { key: 'delivered',  label: 'Delivered',  dotColor: '#10b981' },
-    { key: 'cancelled',  label: 'Cancelled',  dotColor: '#dc2626' }
+    { key: 'shipped', label: 'Shipped', dotColor: '#8b5cf6' },
+    { key: 'delivered', label: 'Delivered', dotColor: '#10b981' },
+    { key: 'cancelled', label: 'Cancelled', dotColor: '#dc2626' }
 ];
 
 const AdminOrders = () => {
@@ -27,6 +28,7 @@ const AdminOrders = () => {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const initialStatus = (searchParams.get('status') as StatusFilter) || 'all';
+    const { user } = useAuth();
 
     const [orders, setOrders] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -36,6 +38,20 @@ const AdminOrders = () => {
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     const { showNotification } = useNotification();
+
+    // Invoice modal state
+    const [invoiceModal, setInvoiceModal] = useState<{
+        isOpen: boolean;
+        orderId: number | null;
+        order: any | null;
+    }>({ isOpen: false, orderId: null, order: null });
+    const [invoiceNumber, setInvoiceNumber] = useState('');
+    const [givenByName, setGivenByName] = useState('');
+    const [invoiceOrderItems, setInvoiceOrderItems] = useState<any[]>([]);
+    const [isSubmittingInvoice, setIsSubmittingInvoice] = useState(false);
+    const [invoiceSubmitStep, setInvoiceSubmitStep] = useState<string>('');
+    const [invoiceError, setInvoiceError] = useState<string | null>(null);
+    const invoiceInputRef = useRef<HTMLInputElement>(null);
 
     // Keep URL in sync so the dashboard cards' deep links work + are shareable.
     const handleStatusFilter = (status: StatusFilter) => {
@@ -121,7 +137,159 @@ const AdminOrders = () => {
         }
     };
 
-    const handleStatusChange = (orderId: number, newStatus: string) => {
+    const openInvoiceModal = async (orderId: number, orderData: any) => {
+        setInvoiceNumber('');
+        setGivenByName(user?.name || '');
+        setInvoiceOrderItems([]);
+        setInvoiceError(null);
+        setInvoiceModal({ isOpen: true, orderId, order: orderData });
+        setTimeout(() => invoiceInputRef.current?.focus(), 100);
+
+        // Fetch order items in background so PDF has line items
+        try {
+            const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+                credentials: 'include',
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
+            if (data.success) setInvoiceOrderItems(data.data?.items || []);
+        } catch {
+            // PDF will render with empty items if fetch fails — not critical
+        }
+    };
+
+    const submitDeliveredWithInvoice = async () => {
+        if (!invoiceNumber.trim()) {
+            showNotification('Please enter an invoice number', 'error');
+            return;
+        }
+        const orderId = invoiceModal.orderId!;
+        const order = invoiceModal.order;
+        try {
+            setIsSubmittingInvoice(true);
+            setInvoiceError(null);
+
+            // 0. Validate invoice isn't duplicate natively
+            setInvoiceSubmitStep('Validating invoice...');
+            const checkRes = await fetch(`${API_BASE_URL}/invoices/check?number=${encodeURIComponent(invoiceNumber.trim())}`, {
+                credentials: 'include',
+                headers: getAuthHeaders()
+            });
+            const checkData = await checkRes.json();
+            if (checkData.success && checkData.exists) {
+                setInvoiceError('This invoice number already exists. Please use a unique number.');
+                setIsSubmittingInvoice(false);
+                setInvoiceSubmitStep('');
+                return;
+            }
+
+            // 1. Generate invoice PDF — non-blocking, delivery continues even if PDF fails
+            let pdfDataUri: string | null = null;
+            try {
+                setInvoiceSubmitStep('Generating PDF...');
+                const { generateInvoicePDF } = await import('@/utils/pdfGenerator');
+                pdfDataUri = await generateInvoicePDF({
+                    invoice_number: invoiceNumber.trim(),
+                    order_id: orderId,
+                    customer_name: order?.user_name || '',
+                    given_by_name: givenByName.trim() || user?.name || '',
+                    final_amount: Number(order?.final_amount || 0),
+                    items: invoiceOrderItems
+                });
+            } catch (pdfErr: any) {
+                console.error('[Invoice PDF] Generation failed, continuing without PDF:', pdfErr?.message || pdfErr);
+            }
+
+            // 2. Update order status to delivered
+            setInvoiceSubmitStep('Updating order status...');
+            const statusRes = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+                credentials: 'include',
+                method: 'PUT',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'delivered' })
+            });
+            const statusData = await statusRes.json();
+            if (!statusData.success) {
+                showNotification(statusData.message || 'Failed to update status', 'error');
+                return;
+            }
+
+            // 3. Create invoice record + send email (with PDF if generated successfully)
+            setInvoiceSubmitStep('Sending invoice email...');
+            const invoiceRes = await fetch(`${API_BASE_URL}/invoices`, {
+                credentials: 'include',
+                method: 'POST',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    invoice_number: invoiceNumber.trim(),
+                    given_by_name: givenByName.trim() || user?.name || '',
+                    ...(pdfDataUri && { pdf_base64: pdfDataUri })
+                })
+            });
+            const invoiceData = await invoiceRes.json();
+            if (!invoiceData.success) {
+                setInvoiceError(invoiceData.message || 'Invoice creation failed. Please check the invoice number.');
+                return;
+            } else {
+                showNotification(`Order #${orderId} delivered — Invoice #${invoiceNumber.trim()} sent${pdfDataUri ? ' with PDF' : ''}`);
+            }
+
+            setInvoiceModal({ isOpen: false, orderId: null, order: null });
+            setInvoiceError(null);
+            fetchOrders();
+        } catch (error: any) {
+            console.error('[Invoice] Submission error:', error?.message || error);
+            showNotification(error?.message || 'Error processing delivery', 'error');
+        } finally {
+            setIsSubmittingInvoice(false);
+            setInvoiceSubmitStep('');
+        }
+    };
+
+    const previewInvoice = async () => {
+        if (!invoiceNumber.trim()) {
+            showNotification('Please enter an invoice number to preview', 'error');
+            return;
+        }
+        try {
+            setIsSubmittingInvoice(true);
+            setInvoiceSubmitStep('Generating Preview...');
+            const { generateInvoicePDF } = await import('@/utils/pdfGenerator');
+            const pdfDataUri = await generateInvoicePDF({
+                invoice_number: invoiceNumber.trim(),
+                order_id: invoiceModal.orderId!,
+                customer_name: invoiceModal.order?.user_name || 'Customer',
+                given_by_name: givenByName.trim() || user?.name || '',
+                final_amount: Number(invoiceModal.order?.final_amount || invoiceModal.order?.total_amount || 0),
+                items: invoiceOrderItems
+            });
+
+            // Convert and open
+            const base64 = pdfDataUri.replace(/^data:application\/pdf[^,]*,/, '');
+            const byteChars = atob(base64);
+            const byteNumbers = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+            const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        } catch (error: any) {
+            console.error('Preview Error:', error);
+            showNotification('Failed to generate preview', 'error');
+        } finally {
+            setIsSubmittingInvoice(false);
+            setInvoiceSubmitStep('');
+        }
+    };
+
+    const handleStatusChange = (orderId: number, newStatus: string, orderData?: any) => {
+        // Delivered requires invoice — open special modal instead
+        if (newStatus === 'delivered') {
+            openInvoiceModal(orderId, orderData);
+            return;
+        }
+
         setConfirmModal({
             isOpen: true,
             title: 'Update Order Status',
@@ -350,8 +518,8 @@ const AdminOrders = () => {
                                         <div className={styles.customDropdown}>
                                             <div
                                                 className={`${styles.dropdownHeader} ${order.payment_status === 'paid' ? styles.paymentPaid :
-                                                        order.payment_status === 'failed' ? styles.paymentFailed :
-                                                            order.payment_status === 'pending' ? styles.paymentPending : ''
+                                                    order.payment_status === 'failed' ? styles.paymentFailed :
+                                                        order.payment_status === 'pending' ? styles.paymentPending : ''
                                                     } ${activeDropdown?.id === order.id && activeDropdown?.type === 'payment' ? styles.isOpen : ''}`}
                                                 onClick={(e) => toggleDropdown(order.id, 'payment', e)}
                                             >
@@ -378,8 +546,8 @@ const AdminOrders = () => {
                                         <div className={styles.customDropdown}>
                                             <div
                                                 className={`${styles.dropdownHeader} ${order.status === 'delivered' ? styles.orderDelivered :
-                                                        order.status === 'processing' ? styles.orderProcessing :
-                                                            order.status === 'cancelled' ? styles.orderCancelled : ''
+                                                    order.status === 'processing' ? styles.orderProcessing :
+                                                        order.status === 'cancelled' ? styles.orderCancelled : ''
                                                     } ${activeDropdown?.id === order.id && activeDropdown?.type === 'status' ? styles.isOpen : ''}`}
                                                 onClick={(e) => toggleDropdown(order.id, 'status', e)}
                                             >
@@ -392,11 +560,14 @@ const AdminOrders = () => {
                                                         key={status}
                                                         className={styles.dropdownOption}
                                                         onClick={() => {
-                                                            handleStatusChange(order.id, status);
+                                                            handleStatusChange(order.id, status, order);
                                                             setActiveDropdown(null);
                                                         }}
                                                     >
-                                                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                                                        {status === 'delivered'
+                                                            ? <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FileText size={13} />Delivered + Invoice</span>
+                                                            : status.charAt(0).toUpperCase() + status.slice(1)
+                                                        }
                                                     </div>
                                                 ))}
                                             </div>
@@ -419,6 +590,93 @@ const AdminOrders = () => {
                 type={confirmModal.type}
                 isLoading={isActionLoading}
             />
+
+            {/* Invoice Modal */}
+            {invoiceModal.isOpen && (
+                <div className={styles.invoiceOverlay} onClick={() => !isSubmittingInvoice && setInvoiceModal({ isOpen: false, orderId: null })}>
+                    <div className={styles.invoiceModal} onClick={e => e.stopPropagation()}>
+                        <div className={styles.invoiceModalHeader}>
+                            <div className={styles.invoiceModalTitle}>
+                                <FileText size={20} />
+                                <span>Mark as Delivered — Issue Invoice</span>
+                            </div>
+                            <button className={styles.invoiceModalClose} onClick={() => setInvoiceModal({ isOpen: false, orderId: null, order: null })} disabled={isSubmittingInvoice}>
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className={styles.invoiceModalBody}>
+                            <p className={styles.invoiceModalDesc}>
+                                Order <strong>#{invoiceModal.orderId}</strong> will be marked as delivered.
+                                Enter the invoice number to attach to this delivery — the invoice will be emailed to the customer.
+                            </p>
+
+                            <div className={styles.invoiceField}>
+                                <label>Invoice Number <span style={{ color: '#ef4444' }}>*</span></label>
+                                <input
+                                    ref={invoiceInputRef}
+                                    type="text"
+                                    placeholder="e.g. INV-2025-0001"
+                                    value={invoiceNumber}
+                                    onChange={e => { setInvoiceNumber(e.target.value); setInvoiceError(null); }}
+                                    onKeyDown={e => e.key === 'Enter' && submitDeliveredWithInvoice()}
+                                    disabled={isSubmittingInvoice}
+                                />
+                            </div>
+
+                            <div className={styles.invoiceField}>
+                                <label>Invoice Given By</label>
+                                <input
+                                    type="text"
+                                    placeholder="Staff / admin name"
+                                    value={givenByName}
+                                    onChange={e => setGivenByName(e.target.value)}
+                                    disabled={isSubmittingInvoice}
+                                />
+                                <span className={styles.invoiceFieldHint}>The name that will appear on the invoice email sent to customer.</span>
+                            </div>
+                        </div>
+
+                        {invoiceError && (
+                            <div style={{ margin: '0 20px 10px', padding: '12px 16px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#b91c1c', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}>
+                                <span style={{ fontSize: '16px' }}>⚠️</span> {invoiceError}
+                            </div>
+                        )}
+
+                        <div className={styles.invoiceModalFooter}>
+                            <button
+                                className={styles.invoiceCancelBtn}
+                                onClick={() => setInvoiceModal({ isOpen: false, orderId: null, order: null })}
+                                disabled={isSubmittingInvoice}
+                            >
+                                Cancel
+                            </button>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button
+                                    className={styles.invoiceCancelBtn}
+                                    style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                    onClick={previewInvoice}
+                                    disabled={isSubmittingInvoice || !invoiceNumber.trim()}
+                                >
+                                    <Eye size={14} /> Preview
+                                </button>
+                                <button
+                                    className={styles.invoiceSubmitBtn}
+                                    onClick={submitDeliveredWithInvoice}
+                                    disabled={isSubmittingInvoice || !invoiceNumber.trim()}
+                                >
+                                    {isSubmittingInvoice ? (
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                            <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                                            {invoiceSubmitStep || 'Processing...'}
+                                        </span>
+                                    ) : 'Confirm Delivery & Send Invoice'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
