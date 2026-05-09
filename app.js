@@ -25,6 +25,7 @@ const couponRoutes = require('./routes/coupon.routes');
 const uploadRoutes = require('./routes/upload.routes');
 const reviewRoutes = require('./routes/review.routes');
 const quotationRoutes = require('./routes/quotation.routes');
+const invoiceRoutes = require('./routes/invoice.routes');
 const contactRoutes = require('./routes/contact.routes');
 const cmsRoutes = require('./routes/cms.routes');
 const settingsRoutes = require('./routes/settings.routes');
@@ -41,6 +42,7 @@ app.set('trust proxy', 1);
 
 // Body parser with raw body support for Stripe webhooks
 app.use(express.json({
+    limit: '15mb', // large enough for base64-encoded invoice PDFs
     verify: (req, res, buf) => {
         if (req.originalUrl.startsWith('/api/v1/orders/webhook/stripe')) {
             req.rawBody = buf;
@@ -170,6 +172,7 @@ app.use('/api/v1/coupons', couponRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/reviews', reviewRoutes);
 app.use('/api/v1/quotations', quotationRoutes);
+app.use('/api/v1/invoices', invoiceRoutes);
 // app.use('/api/v1/contact', contactRoutes); // Moved up with limiter
 app.use('/api/v1/cms', cmsRoutes);
 app.use('/api/v1/settings', settingsRoutes);

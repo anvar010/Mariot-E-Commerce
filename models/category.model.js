@@ -24,7 +24,7 @@ class Category {
             FROM categories c
             JOIN products p ON p.category_id = c.id
             JOIN brands b ON p.brand_id = b.id
-            WHERE b.slug = ? AND p.status = 'active' AND c.is_active = 1
+            WHERE b.slug = ? AND (p.status = 'active' OR p.status IS NULL) AND p.is_active = 1 AND c.is_active = 1
             GROUP BY c.id
             ORDER BY c.name ASC
         `, [brandSlug]);

@@ -885,10 +885,10 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
 
     const badgeColors = {
         'Limited Offer': { bg: '#ef4444', text: '🔥 LIMITED OFFER — Hurry Up!' },
-        'Daily Offer':   { bg: '#f59e0b', text: '⚡ DAILY OFFER — Today Only!' },
-        'Weekly Deal':   { bg: '#8b5cf6', text: '🏷️ WEEKLY DEAL — Don\'t Miss It!' },
-        'Featured':      { bg: '#0ea5e9', text: '⭐ FEATURED PRODUCT' },
-        'Best Seller':   { bg: '#10b981', text: '🏆 BEST SELLER' },
+        'Daily Offer': { bg: '#f59e0b', text: '⚡ DAILY OFFER — Today Only!' },
+        'Weekly Deal': { bg: '#8b5cf6', text: '🏷️ WEEKLY DEAL — Don\'t Miss It!' },
+        'Featured': { bg: '#0ea5e9', text: '⭐ FEATURED PRODUCT' },
+        'Best Seller': { bg: '#10b981', text: '🏆 BEST SELLER' },
     };
     const badge = badgeColors[offerLabel] || { bg: '#ef4444', text: `🔥 ${offerLabel.toUpperCase()}` };
 
@@ -1003,6 +1003,268 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
     }
 };
 
+/**
+ * Send a clean invoice notification email with the invoice PDF as attachment
+ */
+const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, totalAmount, items = [], givenByName = '', pdfBuffer = null) => {
+    const transporter = createTransporter();
+    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+
+    const invoiceDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>
+        .info-row { border-bottom: 1px dashed #e2e8f0; }
+        .info-row:last-child { border-bottom: none; }
+    </style>
+</head>
+<body style="margin:0;padding:0;background:#f4f7f9;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7f9;padding:40px 0;">
+<tr><td align="center">
+
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;max-width:600px;box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+
+    <!-- Header -->
+    <tr>
+        <td style="background:#111827;padding:20px 32px;border-bottom:4px solid #16a1db;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="vertical-align:middle;text-align:left;">
+                        <img src="cid:mariotLogoEn" alt="MARIOT" style="height:35px;object-fit:contain;">
+                    </td>
+                    <td style="vertical-align:middle;text-align:right;">
+                        <img src="cid:mariotLogoAr" alt="ماريوت" style="height:35px;object-fit:contain;">
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <!-- Body -->
+    <tr>
+        <td style="padding:40px 32px 30px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                <tr>
+                    <td width="70" style="vertical-align:top;">
+                        <div style="background:#e0f2fe;width:55px;height:55px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;">
+                            <img src="https://cdn-icons-png.flaticon.com/64/2933/2933116.png" style="width:30px;height:30px;margin-top:12px;">
+                        </div>
+                    </td>
+                    <td style="vertical-align:middle;">
+                        <p style="margin:0 0 5px;font-size:16px;font-weight:700;color:#333;">Hello ${userName || 'Customer'},</p>
+                        <h1 style="margin:0;font-size:24px;font-weight:800;color:#111;">Your order has been delivered!</h1>
+                    </td>
+                </tr>
+            </table>
+
+            <p style="margin:0 0 5px;font-size:14px;color:#444;line-height:1.6;">
+                Thank you for choosing Mariot Kitchen Equipment.
+            </p>
+            <p style="margin:0 0 25px;font-size:14px;color:#444;line-height:1.6;">
+                We're pleased to inform you that your order #${orderId} has been successfully delivered.
+            </p>
+
+            <!-- Order summary box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:24px;overflow:hidden;">
+                <tr>
+                    <td style="padding:15px 20px;border-bottom: 1px dashed #e2e8f0;">
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td width="30"><img src="https://cdn-icons-png.flaticon.com/32/2956/2956485.png" style="width:16px;opacity:0.6;"></td>
+                                <td style="font-size:14px;color:#333;font-weight:600;">Invoice Number</td>
+                                <td style="font-size:14px;color:#111;font-weight:700;text-align:right;">${invoiceNumber}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:15px 20px;border-bottom: 1px dashed #e2e8f0;">
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td width="30"><img src="https://cdn-icons-png.flaticon.com/32/679/679821.png" style="width:16px;opacity:0.6;"></td>
+                                <td style="font-size:14px;color:#333;font-weight:600;">Order Number</td>
+                                <td style="font-size:14px;color:#111;font-weight:700;text-align:right;">#${orderId}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:15px 20px;">
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td width="30"><img src="https://cdn-icons-png.flaticon.com/32/2838/2838779.png" style="width:16px;opacity:0.6;"></td>
+                                <td style="font-size:14px;color:#333;font-weight:600;">Date</td>
+                                <td style="font-size:14px;color:#111;font-weight:700;text-align:right;">${invoiceDate}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:15px 20px;background:#f0f9ff;">
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td width="30">
+                                    <div style="background:#16a1db;color:#fff;width:20px;height:20px;border-radius:50%;text-align:center;line-height:20px;font-size:12px;font-weight:bold;">$</div>
+                                </td>
+                                <td style="font-size:14px;color:#111;font-weight:700;">Total Amount</td>
+                                <td style="font-size:18px;color:#16a1db;font-weight:800;text-align:right;">AED ${Number(totalAmount).toFixed(2)}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Blue info box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #eef2f6;border-radius:8px;margin-bottom:24px;">
+                <tr>
+                    <td style="padding:15px 20px;">
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td width="50" style="vertical-align:middle;">
+                                    <div style="background:#e0f2fe;width:35px;height:35px;border-radius:6px;display:flex;align-items:center;justify-content:center;text-align:center;">
+                                        <img src="https://cdn-icons-png.flaticon.com/32/2956/2956485.png" style="width:18px;opacity:0.7;margin-top:8px;">
+                                    </div>
+                                </td>
+                                <td style="font-size:13px;color:#444;line-height:1.5;">
+                                    Your invoice is attached to this email as <strong>Invoice-${invoiceNumber}.pdf</strong>.<br>
+                                    Please download it for your records.
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <p style="margin:0 0 20px;font-size:13px;color:#666;line-height:1.5;">
+                If you have any questions regarding your invoice or order,<br>
+                please don't hesitate to contact us.
+            </p>
+
+            <a href="#" style="display:inline-block;background:#16a1db;color:#ffffff;text-decoration:none;padding:12px 25px;border-radius:6px;font-weight:700;font-size:14px;">
+                <img src="https://cdn-icons-png.flaticon.com/32/2926/2926214.png" style="width:16px;vertical-align:middle;margin-right:8px;filter:invert(1);">
+                Download Invoice
+            </a>
+        </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+        <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:30px 40px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                <tr>
+                    <td width="50%" style="vertical-align:top;">
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td width="45" style="vertical-align:top;">
+                                    <div style="background:#e0f2fe;width:32px;height:32px;border-radius:6px;text-align:center;">
+                                        <img src="https://cdn-icons-png.flaticon.com/32/724/724664.png" style="width:16px;margin-top:8px;opacity:0.8;">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:4px;">Get in touch</div>
+                                    <div style="font-size:11px;color:#666;line-height:1.6;">
+                                        <strong>Dubai:</strong> +971 4-288-2777<br>
+                                        <strong>Abu Dhabi:</strong> +971 2-877-4544<br>
+                                        <strong>Al Ain:</strong> +971 3-722-7337<br>
+                                        <strong>Sharjah:</strong> +971 6-787-7777
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td width="50%" style="vertical-align:top;padding-left:15px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:15px;">
+                            <tr>
+                                <td width="45" style="vertical-align:top;">
+                                    <div style="background:#e0f2fe;width:32px;height:32px;border-radius:6px;text-align:center;">
+                                        <img src="https://cdn-icons-png.flaticon.com/32/732/732200.png" style="width:16px;margin-top:8px;opacity:0.8;">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:2px;">Email</div>
+                                    <a href="mailto:info@mariotkitchen.com" style="font-size:11px;color:#3b82f6;text-decoration:none;">info@mariotkitchen.com</a>
+                                </td>
+                            </tr>
+                        </table>
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td width="45" style="vertical-align:top;">
+                                    <div style="background:#e0f2fe;width:32px;height:32px;border-radius:6px;text-align:center;">
+                                        <img src="https://cdn-icons-png.flaticon.com/32/1006/1006771.png" style="width:16px;margin-top:8px;opacity:0.8;">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:2px;">Website</div>
+                                    <a href="${SITE}" style="font-size:11px;color:#3b82f6;text-decoration:none;">www.mariotstore.com</a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <div style="text-align:center;border-top:1px solid #e2e8f0;padding-top:20px;">
+                <p style="margin:0 0 10px;font-size:11px;color:#888;">© ${new Date().getFullYear()} Mariot Kitchen Equipment. All rights reserved.</p>
+                <div>
+                    <a href="https://www.facebook.com/mariotuae" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145802.png" alt="Facebook" style="width:18px;opacity:0.8;"></a>
+                    <a href="https://www.instagram.com/mariotuae/" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png" alt="Instagram" style="width:18px;opacity:0.8;"></a>
+                    <a href="https://x.com/MariotUae" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/5969/5969020.png" alt="X (Twitter)" style="width:18px;opacity:0.8;"></a>
+                    <a href="https://www.youtube.com/channel/UCUCWktTJNpRzUEJ58JHLu_g" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/1384/1384060.png" alt="YouTube" style="width:18px;opacity:0.8;"></a>
+                    <a href="https://www.tiktok.com/@mariotmedia" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/3046/3046121.png" alt="TikTok" style="width:18px;opacity:0.8;"></a>
+                    <a href="https://ae.linkedin.com/in/mariot-kitchen-equipment-8a34a4108" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145807.png" alt="LinkedIn" style="width:18px;opacity:0.8;"></a>
+                    <a href="https://www.pinterest.com/mariotkitchen/" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/733/733564.png" alt="Pinterest" style="width:18px;opacity:0.8;"></a>
+                </div>
+            </div>
+        </td>
+    </tr>
+
+</table>
+
+</td></tr>
+</table>
+</body>
+</html>`;
+
+    const path = require('path');
+    const invoicePdfAttachment = pdfBuffer ? [{
+        filename: `Invoice-${invoiceNumber}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+    }] : [];
+
+    const mailOptions = {
+        from: `"Mariot Kitchen Equipment" <${process.env.SMTP_EMAIL}>`,
+        to: toEmail,
+        subject: `Invoice #${invoiceNumber} — Order #${orderId} | Mariot Kitchen Equipment`,
+        html,
+        attachments: [
+            ...invoicePdfAttachment,
+            {
+                filename: 'mariot-logo.png',
+                path: path.join(__dirname, '../../frontend/public/assets/mariot-logo.png'),
+                cid: 'mariotLogoEn'
+            },
+            {
+                filename: 'MARIOT-A.png',
+                path: path.join(__dirname, '../../frontend/public/MARIOT-A.png'),
+                cid: 'mariotLogoAr'
+            }
+        ]
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[EMAIL] ✅ Invoice email sent to ${toEmail}${pdfBuffer ? ' (with PDF)' : ''}`);
+    } catch (error) {
+        console.error(`[EMAIL] ❌ Failed to send invoice email to ${toEmail}:`, error.message);
+        throw error;
+    }
+};
+
 module.exports = {
     sendPasswordResetEmail,
     sendOrderConfirmationEmail,
@@ -1012,7 +1274,8 @@ module.exports = {
     verifySmtpConnection,
     sendQuotationEmail,
     sendEmail,
-    sendOfferNotificationEmail
+    sendOfferNotificationEmail,
+    sendInvoiceEmail
 };
 
 
