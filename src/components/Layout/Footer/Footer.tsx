@@ -4,19 +4,47 @@ import React from 'react';
 import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 import { Phone, Mail, Headset, Facebook, Instagram, Youtube, Linkedin, Music2, Twitter, ChevronRight } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { usePathname, useRouter } from '@/i18n/navigation';
+import { useAuth } from '@/context/AuthContext';
 import styles from './Footer.module.css';
 
 const Footer = () => {
     const t = useTranslations('footer');
+    const locale = useLocale();
+    const pathname = usePathname();
+    const router = useRouter();
+    const { user } = useAuth();
+
+    const switchLocale = (newLocale: 'en' | 'ar') => {
+        const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+        router.replace(pathname + currentSearch, { locale: newLocale });
+    };
+
     return (
         <footer className={styles.footer}>
             {/* 1. Top Support Bar */}
             <div className={styles.supportBar}>
                 <div className={styles.container}>
-                    <div className={styles.supportText}>
-                        <h3>{t('alwaysReady')}</h3>
-                        <p>{t('reachOut')}</p>
+                    <div className={styles.supportHeader}>
+                        <div className={styles.supportText}>
+                            <h3>{t('alwaysReady')}</h3>
+                            <p>{t('reachOut')}</p>
+                        </div>
+                        <div className={styles.mobileLanguageToggle} dir="ltr">
+                            <div className={styles.switch}>
+                                <input
+                                    type="checkbox"
+                                    id="footerLanguageToggle"
+                                    className={`${styles.checkToggle} ${styles.checkToggleRoundFlat}`}
+                                    checked={locale === 'en'}
+                                    onChange={() => switchLocale(locale === 'en' ? 'ar' : 'en')}
+                                />
+                                <label htmlFor="footerLanguageToggle"></label>
+                                <span className={styles.switchOn}>عربي</span>
+                                <span className={styles.switchOff}>EN</span>
+                            </div>
+                        </div>
                     </div>
                     <div className={styles.supportIcons}>
                         <a href="tel:+97142882777" className={styles.supportItem}>
@@ -86,6 +114,21 @@ const Footer = () => {
                             <p>
                                 {t('descLong')}
                             </p>
+                            <div className={styles.desktopLanguageSection} dir="ltr">
+                                <h4>{t('changeLanguage')}</h4>
+                                <div className={styles.switch}>
+                                    <input
+                                        type="checkbox"
+                                        id="desktopLanguageToggle"
+                                        className={`${styles.checkToggle} ${styles.checkToggleRoundFlat}`}
+                                        checked={locale === 'en'}
+                                        onChange={() => switchLocale(locale === 'en' ? 'ar' : 'en')}
+                                    />
+                                    <label htmlFor="desktopLanguageToggle"></label>
+                                    <span className={styles.switchOn}>عربي</span>
+                                    <span className={styles.switchOff}>EN</span>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Quick Links */}

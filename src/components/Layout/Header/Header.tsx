@@ -544,21 +544,28 @@ const Header = () => {
                 )}
 
                 {/* Navigation Bar */}
-                {/* Support Info Bar - Desktop Only */}
+                {/* Support Info Bar */}
                 <div className={`${styles.supportBar} ${styles.desktopOnly}`}>
                     <div className={styles.container}>
                         <div className={styles.supportItem}>
                             <Phone size={16} className={styles.whatsappIcon} />
                             <a href="https://wa.me/97142882777" target="_blank" rel="noopener noreferrer">
-                                {t.rich('customEquipments', {
-                                    phone: (chunks) => <span dir="ltr" style={{ display: 'inline-block', direction: 'ltr', unicodeBidi: 'isolate' }}>(+971 4 288 2777)</span>
-                                })}
+                                <span className={styles.desktopOnly}>
+                                    {t.rich('customEquipments', {
+                                        phone: (chunks) => <span dir="ltr" style={{ display: 'inline-block', direction: 'ltr', unicodeBidi: 'isolate' }}>(+971 4 288 2777)</span>
+                                    })}
+                                </span>
+                                <span className={styles.mobileOnly}>
+                                    {t('liveSupport')}
+                                </span>
                             </a>
                         </div>
+                        <div className={styles.supportDivider}>|</div>
                         <div className={styles.supportItem}>
                             <MessageCircle size={16} className={styles.supportIcon} />
                             <a href="#">{t('liveSupport')}</a>
                         </div>
+                        <div className={styles.supportDivider}>|</div>
                         <div className={styles.supportItem}>
                             <HelpCircle size={16} className={styles.helpIcon} />
                             <Link href="/shop?category=parts">{t('needHelp')}</Link>

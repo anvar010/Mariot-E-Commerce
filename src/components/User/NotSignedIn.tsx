@@ -6,7 +6,7 @@ import styles from './NotSignedIn.module.css';
 import { useTranslations } from 'next-intl';
 
 const NotSignedIn = () => {
-    const t = useTranslations('auth'); // Assuming there's an auth translation or similar
+    const t = useTranslations('auth');
 
     return (
         <div className={styles.container}>

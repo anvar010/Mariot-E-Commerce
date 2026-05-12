@@ -75,3 +75,152 @@
         padding: 40px 16px;
     }
 }
+
+.headerRow {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0 4px;
+}
+
+.languageLabel {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e3a5f;
+}
+
+.languageSwitch {
+    display: flex;
+    align-items: center;
+}
+
+.switch {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.switch>span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    font-family: 'Helvetica', Arial, sans-serif;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .06);
+    width: 47px;
+    z-index: 3;
+    line-height: normal;
+}
+
+.checkToggleRoundFlat:checked~.switchOff {
+    color: #fff;
+}
+
+.checkToggleRoundFlat:checked~.switchOn {
+    color: var(--primary-teal);
+}
+
+.switch>span.switchOn {
+    left: 3px;
+    padding-left: 0;
+    color: #fff;
+    transform: translate(-2px, -1px);
+}
+
+.switch>span.switchOff {
+    right: 3px;
+    padding-right: 0;
+    color: var(--primary-teal);
+}
+
+.checkToggle {
+    position: absolute;
+    margin-left: -9999px;
+    visibility: hidden;
+}
+
+.checkToggle+label {
+    display: block;
+    position: relative;
+    cursor: pointer;
+    outline: none;
+    user-select: none;
+}
+
+.checkToggleRoundFlat+label {
+    padding: 2px;
+    width: 97px;
+    height: 35px;
+    background-color: transparent;
+    border-radius: 60px;
+}
+
+.checkToggleRoundFlat+label:before,
+.checkToggleRoundFlat+label:after {
+    display: block;
+    position: absolute;
+    content: "";
+}
+
+.checkToggleRoundFlat+label:before {
+    top: 0px;
+    left: 0px;
+    bottom: 0px;
+    right: 0px;
+    border: 2px solid var(--primary-teal);
+    background-color: transparent;
+    border-radius: 60px;
+}
+
+.checkToggleRoundFlat+label:after {
+    top: 3px;
+    left: 3px;
+    bottom: 3px;
+    width: 47px;
+    background-color: var(--primary-teal);
+    border-radius: 52px;
+    transition: margin 0.2s;
+    z-index: 2;
+}
+
+.checkToggleRoundFlat:checked+label:after {
+    margin-left: 44px;
+}
+
+@media (max-width: 768px) {
+    .checkToggleRoundFlat+label {
+        width: 75px;
+        height: 28px;
+    }
+
+    .checkToggleRoundFlat+label:after {
+        width: 36px;
+    }
+
+    .checkToggleRoundFlat:checked+label:after {
+        margin-left: 33px;
+    }
+
+    .switch>span {
+        width: 36px;
+        font-size: 10px;
+    }
+
+    .switch>span.switchOn {
+        left: 2px;
+    }
+
+    .switch>span.switchOff {
+        right: 2px;
+    }
+}
