@@ -269,8 +269,8 @@ const Header = () => {
                                             <div key={i} className={styles.tickerItem}>
                                                 {(() => {
                                                     const textToDisplay = isArabic ? (announcement.text_ar || announcement.text) : announcement.text;
-                                                    const segments = textToDisplay.split(/[\n\r]+/).map(s => s.trim()).filter(Boolean);
-                                                    return segments.map((seg, sIdx) => (
+                                                    const segments = textToDisplay.split(/[\n\r]+/).map((s: string) => s.trim()).filter(Boolean);
+                                                    return segments.map((seg: string, sIdx: number) => (
                                                         <React.Fragment key={sIdx}>
                                                             <span>{seg}</span>
                                                             <span className={styles.tickerSeparator}>✦</span>
