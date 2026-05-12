@@ -90,6 +90,11 @@
     color: #888;
 }
 
+.chevronIcon {
+    display: none;
+    color: #f1a91a;
+}
+
 /* 2. Main Footer */
 .mainFooter {
     background-color: #f1f1f1;
@@ -100,7 +105,8 @@
     display: grid;
     grid-template-columns: 1fr 1.8fr 1fr 1.2fr;
     gap: 30px;
-    margin-bottom: 20px; /* Reduced from 50px */
+    margin-bottom: 20px;
+    /* Reduced from 50px */
 }
 
 /* Logo & About Col */
@@ -317,7 +323,8 @@
 .paymentSection h4 {
     font-size: 18px;
     font-weight: 800;
-    margin-bottom: 10px; /* Reduced from 20px */
+    margin-bottom: 10px;
+    /* Reduced from 20px */
     color: #111;
 }
 
@@ -377,24 +384,96 @@
 }
 
 @media (max-width: 768px) {
+    .supportBar {
+        background-color: #f8f9fa;
+        /* Lighter background for cards to pop */
+        padding: 40px 0;
+    }
+
     .supportBar .container {
         flex-direction: column;
         text-align: start;
-        gap: 40px;
+        gap: 30px;
+        padding: 0 12px;
+        /* Reduced side padding for full-width feel */
     }
 
     .supportIcons {
         flex-direction: column;
-        gap: 30px;
+        gap: 12px;
+        /* Spacing between cards */
         align-items: flex-start;
         width: 100%;
     }
 
     .supportItem {
-        justify-content: flex-start;
-        text-align: start;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        /* Space icon+text from chevron */
         width: 100%;
-        gap: 20px;
+        background-color: #ffffff;
+        padding: 15px;
+        /* Reduced from 20px */
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        gap: 12px;
+        text-decoration: none;
+        /* In case it's a link */
+        transition: transform 0.2s;
+    }
+
+    .supportItem:active {
+        transform: scale(0.98);
+    }
+
+    .supportItem .iconCircle {
+        width: 50px;
+        /* Reduced to give more room for text */
+        height: 50px;
+        flex-shrink: 0;
+        box-shadow: 0 4px 10px rgba(241, 169, 26, 0.2);
+    }
+
+    .supportItem .iconCircle svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .itemInfo {
+        flex: 1;
+        gap: 1px;
+        overflow: hidden;
+    }
+
+    .itemLabel {
+        font-size: 11px;
+        /* Reduced label font */
+        font-weight: 800;
+        color: #f1a91a;
+        /* Orange-yellow labels on mobile */
+        text-transform: uppercase;
+    }
+
+    .itemValue {
+        font-size: 15.5px;
+        /* Fine-tuned for fit */
+        color: #1a1a1a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .itemSub {
+        font-size: 11px;
+        color: #888;
+    }
+
+    .chevronIcon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     }
 
     .footerGrid {
@@ -419,7 +498,8 @@
         flex-direction: column;
         align-items: flex-start;
         text-align: start;
-        gap: 15px; /* Reduced from 35px */
+        gap: 15px;
+        /* Reduced from 35px */
         margin-top: 15px;
         padding-top: 15px;
     }

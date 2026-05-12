@@ -78,10 +78,23 @@
     max-height: 100px;
 }
 
+.topBanner .container {
+    padding: 0;
+    max-width: none;
+}
+
+@media (max-width: 768px) {
+    .topBanner .container {
+        padding: 0;
+    }
+}
+
 .topBannerLeft {
+    flex: 1;
     display: flex;
     align-items: center;
     gap: 8px;
+    overflow: hidden;
 }
 
 .bannerFlag {
@@ -99,6 +112,58 @@
 
 .globeIcon {
     color: #a5d8ff;
+}
+
+/* Announcement Ticker */
+.topAnnouncement {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.tickerTrack {
+    display: flex;
+    white-space: nowrap;
+    animation: headerMarquee 120s linear infinite;
+    width: max-content;
+}
+
+[dir='rtl'] .tickerTrack {
+    animation: headerMarqueeRtl 120s linear infinite;
+}
+
+.tickerItem {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    padding-inline-end: 40px;
+}
+
+.tickerSeparator {
+    opacity: 0.6;
+    font-size: 14px;
+}
+
+@keyframes headerMarquee {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes headerMarqueeRtl {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(50%);
+    }
 }
 
 /* Main Header */

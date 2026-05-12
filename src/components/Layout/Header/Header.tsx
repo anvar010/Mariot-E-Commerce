@@ -261,14 +261,37 @@ const Header = () => {
             >
                 <div className={styles.topBanner}>
                     <div className={styles.container}>
-                        <div className={styles.topBannerLeft} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            {announcement?.is_active ? announcement.text : t('topBanner')}
-                            <Image
-                                src="/Flag_of_the_United_Arab_Emirates.svg"
-                                alt="UAE"
-                                width={18}
-                                height={12}
-                            />
+                        <div className={styles.topBannerLeft}>
+                            {announcement?.is_active ? (
+                                <div className={styles.topAnnouncement}>
+                                    <div className={styles.tickerTrack}>
+                                        {[...Array(10)].map((_, i) => (
+                                            <div key={i} className={styles.tickerItem}>
+                                                {(() => {
+                                                    const textToDisplay = isArabic ? (announcement.text_ar || announcement.text) : announcement.text;
+                                                    const segments = textToDisplay.split(/[\n\r]+/).map(s => s.trim()).filter(Boolean);
+                                                    return segments.map((seg, sIdx) => (
+                                                        <React.Fragment key={sIdx}>
+                                                            <span>{seg}</span>
+                                                            <span className={styles.tickerSeparator}>✦</span>
+                                                        </React.Fragment>
+                                                    ));
+                                                })()}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {t('topBanner')}
+                                    <Image
+                                        src="/Flag_of_the_United_Arab_Emirates.svg"
+                                        alt="UAE"
+                                        width={18}
+                                        height={12}
+                                    />
+                                </div>
+                            )}
                         </div>
                         <div className={`${styles.topBannerRight} ${styles.desktopOnly}`}>
                             <Globe size={14} className={styles.globeIcon} />

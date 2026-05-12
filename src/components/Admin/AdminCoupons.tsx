@@ -1,4 +1,6 @@
 'use client';
+// Triggering rebuild
+
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminCoupons.module.css';

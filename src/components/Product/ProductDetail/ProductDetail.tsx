@@ -1339,6 +1339,24 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 </div>
 
                                 <div className={styles.purchaseActions}>
+                                    <button
+                                        className={styles.addToCartBtn}
+                                        onClick={handleAddToCart}
+                                        disabled={effectiveStock === 0 || cartAdded || (hasVariants && !selectedVariant)}
+                                        style={{
+                                            opacity: effectiveStock === 0 ? 0.6 : 1,
+                                            cursor: effectiveStock === 0 ? 'not-allowed' : 'pointer',
+                                            backgroundColor: cartAdded ? '#28a745' : ''
+                                        }}
+                                    >
+                                        {cartAdded ? null : <ShoppingCart size={24} />}
+                                        {cartAdded
+                                            ? t('added')
+                                            : (hasVariants && !selectedVariant
+                                                ? t('selectOptions', { defaultValue: 'Select options' })
+                                                : (effectiveStock > 0 ? t('addToCart') : t('outOfStock')))}
+                                    </button>
+
                                     <div className={styles.qtyWrapper} ref={qtyRef}>
                                         <div
                                             className={`${styles.qtyCustomSelect} ${isQtyOpen ? styles.open : ''}`}
@@ -1396,23 +1414,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             </div>
                                         )}
                                     </div>
-                                    <button
-                                        className={styles.addToCartBtn}
-                                        onClick={handleAddToCart}
-                                        disabled={effectiveStock === 0 || cartAdded || (hasVariants && !selectedVariant)}
-                                        style={{
-                                            opacity: effectiveStock === 0 ? 0.6 : 1,
-                                            cursor: effectiveStock === 0 ? 'not-allowed' : 'pointer',
-                                            backgroundColor: cartAdded ? '#28a745' : ''
-                                        }}
-                                    >
-                                        {cartAdded ? null : <ShoppingCart size={24} />}
-                                        {cartAdded
-                                            ? t('added')
-                                            : (hasVariants && !selectedVariant
-                                                ? t('selectOptions', { defaultValue: 'Select options' })
-                                                : (effectiveStock > 0 ? t('addToCart') : t('outOfStock')))}
-                                    </button>
                                 </div>
 
                                 <button
@@ -1438,7 +1439,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                     </div>
 
-                    <div className={styles.sidebar}>
+                    <div className={`${styles.sidebar} ${styles.sidebarDesktop}`}>
                         <div className={styles.trustList}>
                             <TrustItem icon={<Truck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('freeShipping')} text={t('freeShippingText')} />
                             <TrustItem icon={<Award size={32} color="#4caf50" strokeWidth={1.5} />} title={t('gulfShipping')} text={t('freeShippingText')} />
@@ -1702,6 +1703,28 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             })()}
                         </div>
                     )}
+                </div>
+
+                <div className={`${styles.sidebar} ${styles.sidebarMobile}`}>
+                    <div className={styles.trustList}>
+                        <TrustItem icon={<Truck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('freeShipping')} text={t('freeShippingText')} />
+                        <TrustItem icon={<Award size={32} color="#4caf50" strokeWidth={1.5} />} title={t('gulfShipping')} text={t('freeShippingText')} />
+                        <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('securePayment')} text={t('securePaymentText')} />
+                        <TrustItem icon={<RotateCcw size={32} color="#4caf50" strokeWidth={1.5} />} title={t('satisfaction')} text={t('satisfactionText')} />
+                        <TrustItem icon={<Headset size={32} color="#4caf50" strokeWidth={1.5} />} title={t('onlineSupport')} text={t('onlineSupportText')} />
+                        <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('warranty')} text={t('warrantyText', { count: product?.warranty_years || 1 })} />
+                    </div>
+
+                    <div className={styles.paymentMethods}>
+                        <div className={styles.paymentTitle}>{t('weAcceptPayment')}</div>
+                        <div className={styles.paymentLogos}>
+                            <img src="/assets/visa-logo.svg" alt="Visa" className={styles.visaDetailLogo} />
+                            <img src="/assets/mastercard-logo.svg" alt="Mastercard" />
+                            <img src="/assets/Tabby.webp" alt="Tabby" />
+                            <img src="/assets/apple-pay-logo.svg" alt="ApplePay" />
+                            <img src="/assets/google-pay-logo.svg" alt="GPay" />
+                        </div>
+                    </div>
                 </div>
 
 

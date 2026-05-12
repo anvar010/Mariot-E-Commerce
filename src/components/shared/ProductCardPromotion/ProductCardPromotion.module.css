@@ -41,7 +41,7 @@
 
 .tagsWrapperStart {
     position: absolute;
-    top: 80px;
+    top: 85px;
     left: 4px;
     z-index: 25;
     display: flex;
@@ -52,7 +52,7 @@
 
 .discountTagWrapper {
     position: absolute;
-    top: 80px;
+    top: 85px;
     right: 4px;
     z-index: 25;
 }
@@ -63,7 +63,7 @@
     padding: 4px 10px;
     font-size: 10px;
     font-weight: 700;
-    border-radius: 20px;
+    border-radius: 4px;
     text-transform: capitalize;
     letter-spacing: 0.5px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -76,7 +76,7 @@
     padding: 3px 12px;
     font-size: 9px;
     font-weight: 800;
-    border-radius: 20px;
+    border-radius: 4px;
     box-shadow: 0 4px 10px rgba(255, 59, 48, 0.2);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -91,7 +91,7 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-radius: 20px;
+    border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     white-space: nowrap;
     width: fit-content;
@@ -413,7 +413,7 @@
     position: relative;
     margin: 2px auto 8px auto;
     z-index: 5;
-    max-width: 220px;
+    max-width: 280px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
@@ -434,7 +434,7 @@
 }
 
 .brandLogoImgOverlay {
-    max-height: 60px;
+    max-height: 90px;
     width: auto;
     object-fit: contain;
     display: block;
@@ -683,20 +683,20 @@
 
     .brandLogoOverlay {
         margin: 4px auto 4px auto;
-        max-width: 150px;
+        max-width: 200px;
     }
 
     .brandLogoImgOverlay {
-        max-height: 45px;
+        max-height: 65px;
     }
 
     .tagsWrapperStart {
-        top: 60px !important;
+        top: 85px !important;
         left: 2px !important;
     }
 
     .discountTagWrapper {
-        top: 60px !important;
+        top: 85px !important;
         right: 2px !important;
     }
 

@@ -1,4 +1,6 @@
 'use client';
+// Triggering rebuild
+
 
 import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';

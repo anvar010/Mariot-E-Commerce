@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
-import { Phone, Mail, Headset, Facebook, Instagram, Youtube, Linkedin, Music2, Twitter } from 'lucide-react';
+import { Phone, Mail, Headset, Facebook, Instagram, Youtube, Linkedin, Music2, Twitter, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import styles from './Footer.module.css';
 
@@ -19,7 +19,7 @@ const Footer = () => {
                         <p>{t('reachOut')}</p>
                     </div>
                     <div className={styles.supportIcons}>
-                        <div className={styles.supportItem}>
+                        <a href="tel:+97142882777" className={styles.supportItem}>
                             <div className={styles.iconCircle}>
                                 <Phone size={24} color="#ffffff" strokeWidth={2.5} />
                             </div>
@@ -28,8 +28,11 @@ const Footer = () => {
                                 <span className={styles.itemValue} dir="ltr">+971 4 288 2777</span>
                                 <span className={styles.itemSub}>{t('available247')}</span>
                             </div>
-                        </div>
-                        <div className={styles.supportItem}>
+                            <div className={styles.chevronIcon}>
+                                <ChevronRight size={24} />
+                            </div>
+                        </a>
+                        <a href="mailto:info@mariot-group.com" className={styles.supportItem}>
                             <div className={styles.iconCircle}>
                                 <Mail size={24} color="#ffffff" strokeWidth={2.5} />
                             </div>
@@ -37,8 +40,11 @@ const Footer = () => {
                                 <span className={styles.itemLabel}>{t('infoEmailLabel')}</span>
                                 <span className={styles.itemValue}>info@mariot-group.com</span>
                             </div>
-                        </div>
-                        <div className={styles.supportItem}>
+                            <div className={styles.chevronIcon}>
+                                <ChevronRight size={24} />
+                            </div>
+                        </a>
+                        <Link href="/help-center" className={styles.supportItem}>
                             <div className={styles.iconCircle}>
                                 <Headset size={24} color="#ffffff" strokeWidth={2.5} />
                             </div>
@@ -46,7 +52,10 @@ const Footer = () => {
                                 <span className={styles.itemLabel}>{t('helpCenterLabel')}</span>
                                 <span className={styles.itemValue}>help@mariot-group.com</span>
                             </div>
-                        </div>
+                            <div className={styles.chevronIcon}>
+                                <ChevronRight size={24} />
+                            </div>
+                        </Link>
                     </div>
                 </div>
             </div>
