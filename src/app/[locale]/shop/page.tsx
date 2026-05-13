@@ -28,6 +28,7 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
     const seller = searchParams.seller as string | undefined;
     const search = searchParams.search as string | undefined;
     const limited = searchParams.limited as string | undefined;
+    const weekly = searchParams.weekly as string | undefined;
     const page = searchParams.page as string | undefined;
     const pageNum = page ? parseInt(page) : 1;
 
@@ -39,20 +40,34 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
         if (seller) productUrl += `&seller=${seller}`;
         if (search) productUrl += `&search=${encodeURIComponent(search)}`;
         if (limited) productUrl += `&is_limited_offer=true`;
+        if (weekly) productUrl += `&is_weekly_deal=true`;
 
         // Build brands URL
         const bParams = new URLSearchParams();
         if (category) bParams.set('category', category);
         if (search) bParams.set('search', search);
         if (limited) bParams.set('is_limited', 'true');
+        if (weekly) bParams.set('is_weekly', 'true');
         if (seller) bParams.set('seller', seller);
         const brandsUrl = `${API_BASE_URL_SERVER}/brands?${bParams.toString()}`;
 
+        // Categories URL — filter to offer types when applicable
+        const cParams = new URLSearchParams();
+        if (limited) cParams.set('is_limited', 'true');
+        if (weekly) cParams.set('is_weekly', 'true');
+        const categoriesUrl = `${API_BASE_URL_SERVER}/categories${cParams.toString() ? `?${cParams.toString()}` : ''}`;
+
+        // Offer-filtered fetches depend on offer_end > NOW(), so they must not be cached.
+        const isOffer = !!(limited || weekly);
+        const productOpts: RequestInit & { next?: any } = isOffer ? { cache: 'no-store' } : { next: { revalidate: 60 } };
+        const brandOpts: RequestInit & { next?: any } = isOffer ? { cache: 'no-store' } : { next: { revalidate: 3600 } };
+        const categoryOpts: RequestInit & { next?: any } = isOffer ? { cache: 'no-store' } : { next: { revalidate: 3600 } };
+
         // 1. Fetch data in parallel
         const [productsRes, brandsRes, categoriesRes] = await Promise.all([
-            fetch(productUrl, { next: { revalidate: 60 } }),
-            fetch(brandsUrl, { next: { revalidate: 3600 } }),
-            fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 3600 } })
+            fetch(productUrl, productOpts),
+            fetch(brandsUrl, brandOpts),
+            fetch(categoriesUrl, categoryOpts)
         ]);
 
         const productsData = await productsRes.json();

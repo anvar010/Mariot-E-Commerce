@@ -18,6 +18,52 @@ interface ChatbotProps {
     setExternalOpen?: (open: boolean) => void;
 }
 
+const STORAGE_KEY = 'mariot_chat_history_v1';
+const STORAGE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const STORAGE_MAX_MESSAGES = 40;
+
+function buildPageContext(pathname: string | null, locale: string): string {
+    if (!pathname) return '';
+
+    // Strip locale prefix
+    const path = pathname.replace(new RegExp(`^/${locale}(?=/|$)`), '') || '/';
+
+    // Pull richer context if the page published one (ProductDetail sets this)
+    const pub = typeof window !== 'undefined' ? (window as any).__mariotChatContext : null;
+
+    if (path.startsWith('/product/')) {
+        if (pub?.type === 'product' && pub.name) {
+            const cat = pub.category ? `, category: ${pub.category}` : '';
+            const brand = pub.brand ? `, brand: ${pub.brand}` : '';
+            const price = pub.price ? `, price: AED ${pub.price}` : '';
+            return `[User is viewing product page — ${pub.name}${cat}${brand}${price}]`;
+        }
+        // Fallback: derive readable name from slug
+        const slug = path.replace('/product/', '').split('/').pop() || '';
+        const readable = decodeURIComponent(slug).replace(/[-_]/g, ' ').trim();
+        return readable
+            ? `[User is viewing product page: "${readable}"]`
+            : `[User is viewing a product page]`;
+    }
+
+    if (path.startsWith('/shop')) {
+        return `[User is browsing the shop page${path !== '/shop' ? ' (' + path + ')' : ''}]`;
+    }
+    if (path.startsWith('/category/') || path.startsWith('/categories/')) {
+        const slug = path.split('/').pop() || '';
+        const readable = decodeURIComponent(slug).replace(/[-_]/g, ' ').trim();
+        return readable ? `[User is viewing category: "${readable}"]` : `[User is on a category page]`;
+    }
+    if (path.startsWith('/today-offers') || path.startsWith('/offers')) {
+        return `[User is viewing today's offers]`;
+    }
+    if (path.startsWith('/cart')) return `[User is viewing their cart]`;
+    if (path.startsWith('/checkout')) return `[User is at checkout]`;
+    if (path === '/' || path === '') return `[User is on the homepage]`;
+
+    return `[User is currently viewing: ${path}]`;
+}
+
 const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
     const locale = useLocale();
     const pathname = usePathname();
@@ -33,11 +79,11 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
+    const [hydrated, setHydrated] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Auto-scroll to the latest message
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, []);
@@ -46,24 +92,68 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
         scrollToBottom();
     }, [messages, isLoading, scrollToBottom]);
 
-    // Focus input when chat opens
     useEffect(() => {
         if (isOpen && inputRef.current) {
             setTimeout(() => inputRef.current?.focus(), 300);
         }
     }, [isOpen]);
 
-    // Add welcome message when chat first opens
+    // --- Conversation persistence: load on mount ---
     useEffect(() => {
-        if (isOpen && messages.length === 0) {
-            const welcomeMsg: Message = {
-                id: 'welcome',
-                role: 'assistant',
-                content: t('welcomeMessage'),
-            };
-            setMessages([welcomeMsg]);
+        if (typeof window === 'undefined') return;
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && Array.isArray(parsed.messages) && typeof parsed.savedAt === 'number') {
+                    const fresh = Date.now() - parsed.savedAt < STORAGE_MAX_AGE_MS;
+                    if (fresh && parsed.messages.length > 0) {
+                        setMessages(parsed.messages.filter((m: any) =>
+                            m && typeof m.content === 'string' && (m.role === 'user' || m.role === 'assistant')
+                        ));
+                        // Hide quick-action buttons once a real user message exists
+                        if (parsed.messages.some((m: any) => m.role === 'user')) {
+                            setHasInteracted(true);
+                        }
+                    } else {
+                        localStorage.removeItem(STORAGE_KEY);
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn('[Chat] Failed to restore history', err);
+        } finally {
+            setHydrated(true);
         }
-    }, [isOpen, messages.length, t]);
+    }, []);
+
+    // Welcome message on first open (only if no restored history)
+    useEffect(() => {
+        if (!hydrated) return;
+        if (isOpen && messages.length === 0) {
+            setMessages([{ id: 'welcome', role: 'assistant', content: t('welcomeMessage') }]);
+        }
+    }, [isOpen, messages.length, t, hydrated]);
+
+    // --- Conversation persistence: save on change ---
+    useEffect(() => {
+        if (!hydrated || typeof window === 'undefined') return;
+        try {
+            // Skip persisting if only the welcome message is present
+            const meaningful = messages.filter(m => m.id !== 'welcome');
+            if (meaningful.length === 0) {
+                localStorage.removeItem(STORAGE_KEY);
+                return;
+            }
+            const trimmed = messages.slice(-STORAGE_MAX_MESSAGES);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                savedAt: Date.now(),
+                messages: trimmed,
+            }));
+        } catch (err) {
+            // Quota / private mode — fail silently
+        }
+    }, [messages, hydrated]);
 
     const generateId = () => `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -85,21 +175,21 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
         const assistantId = generateId();
 
         try {
-            // Build the API payload (exclude the welcome message from context)
             const apiMessages = updatedMessages
                 .filter(m => m.id !== 'welcome')
                 .map(m => ({ role: m.role, content: m.content }));
 
-            // Add page context so AI knows which page the user is on
-            const pageContext = pathname ? `[User is currently viewing: ${pathname}]` : '';
+            // Richer page context (product name/category, etc.)
+            const pageContext = buildPageContext(pathname, locale);
             if (pageContext && apiMessages.length > 0) {
-                apiMessages[apiMessages.length - 1].content = `${pageContext}\n\n${apiMessages[apiMessages.length - 1].content}`;
+                apiMessages[apiMessages.length - 1].content =
+                    `${pageContext}\n\n${apiMessages[apiMessages.length - 1].content}`;
             }
 
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: apiMessages, locale }),
+                body: JSON.stringify({ messages: apiMessages, locale, stream: true }),
             });
 
             if (!response.ok) {
@@ -108,10 +198,37 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
                 throw new Error(`API ${response.status}: ${errBody}`);
             }
 
-            const data = await response.json();
-            const text = data.message || t('errorMessage');
+            // Streaming path: read body chunks and update the assistant message incrementally
+            if (response.body && response.headers.get('content-type')?.includes('text/plain')) {
+                setIsLoading(false);
+                setIsStreaming(true);
+                setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
 
-            setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: text }]);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let accumulated = '';
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    accumulated += chunk;
+                    setMessages(prev =>
+                        prev.map(m => (m.id === assistantId ? { ...m, content: accumulated } : m))
+                    );
+                }
+
+                if (!accumulated.trim()) {
+                    setMessages(prev =>
+                        prev.map(m => (m.id === assistantId ? { ...m, content: t('errorMessage') } : m))
+                    );
+                }
+            } else {
+                // JSON fallback
+                const data = await response.json();
+                const text = data.message || t('errorMessage');
+                setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: text }]);
+            }
         } catch (error) {
             console.error('Chat error:', error);
             setMessages(prev => {
@@ -144,7 +261,6 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
         { label: t('quickQuote'), question: t('quickQuoteQ') },
     ];
 
-    // Format message text (basic markdown-like formatting)
     const formatMessage = (text: string) => {
         return text
             .replaceAll(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -250,7 +366,7 @@ const Chatbot = ({ externalOpen, setExternalOpen }: ChatbotProps) => {
                                 </div>
                             )}
 
-                            {/* Typing Indicator */}
+                            {/* Typing Indicator (only before first stream chunk arrives) */}
                             {isLoading && (
                                 <div className={styles.typingIndicator}>
                                     <div className={styles.botAvatar}>

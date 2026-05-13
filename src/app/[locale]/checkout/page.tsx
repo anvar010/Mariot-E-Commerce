@@ -346,7 +346,9 @@ function CheckoutContent() {
                     product_id: item.id,
                     variant_id: item.variant_id ?? null,
                     quantity: item.quantity,
-                    price: item.price
+                    price: item.price,
+                    custom_dimensions: item.custom_dimensions || null,
+                    custom_label: item.variant_label || null
                 })),
                 shipping_address_id: selectedAddressId || 1, // Use selected if exists, 1 is placeholder
                 payment_method: paymentMethod,
@@ -920,10 +922,13 @@ function CheckoutContent() {
 
                                 <div className={styles.itemList}>
                                     {cartItems.map(item => (
-                                        <div key={item.id} className={styles.itemRow}>
+                                        <div key={`${item.id}-${item.variant_id ?? 'base'}-${item.custom_signature ?? ''}`} className={styles.itemRow}>
                                             <img src={resolveUrl(item.image)} alt={item.name} className={styles.itemImg} />
                                             <div className={styles.itemDetails}>
                                                 <div className={styles.itemName}>{item.name}</div>
+                                                {item.variant_label && (
+                                                    <div style={{ fontSize: 12, color: '#64748b' }}>{item.variant_label}</div>
+                                                )}
                                                 <div className={styles.itemMeta}>Qty: {item.quantity}</div>
                                             </div>
                                             <div className={styles.itemPrice}>

@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 // --- Rate Limiting (in-memory, per-IP) ---
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_MAX = 20;        // max requests per window
-const RATE_LIMIT_WINDOW = 60000;  // 1 minute window
+const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_WINDOW = 60000;
 
 function isRateLimited(ip: string): boolean {
     const now = Date.now();
@@ -19,7 +20,6 @@ function isRateLimited(ip: string): boolean {
     return entry.count > RATE_LIMIT_MAX;
 }
 
-// Clean up stale entries every 5 minutes to prevent memory leaks
 setInterval(() => {
     const now = Date.now();
     Array.from(rateLimitMap.entries()).forEach(([key, value]) => {
@@ -28,13 +28,13 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // --- Input Sanitization ---
-const MAX_MESSAGE_LENGTH = 2000;  // max chars per message
-const MAX_MESSAGES = 50;          // max messages in conversation history
+const MAX_MESSAGE_LENGTH = 2000;
+const MAX_MESSAGES = 50;
 
 function sanitizeText(text: string): string {
     return text
-        .replace(/<[^>]*>/g, '')    // Strip HTML tags
-        .replace(/&[#\w]+;/g, '')   // Strip HTML entities
+        .replace(/<[^>]*>/g, '')
+        .replace(/&[#\w]+;/g, '')
         .trim();
 }
 
@@ -42,11 +42,9 @@ function validateMessages(messages: any): { valid: boolean; error?: string } {
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
         return { valid: false, error: 'Messages array is required and must not be empty' };
     }
-
     if (messages.length > MAX_MESSAGES) {
         return { valid: false, error: `Too many messages (max ${MAX_MESSAGES})` };
     }
-
     for (let i = 0; i < messages.length; i++) {
         const msg = messages[i];
         if (!msg || typeof msg.content !== 'string' || typeof msg.role !== 'string') {
@@ -59,8 +57,62 @@ function validateMessages(messages: any): { valid: boolean; error?: string } {
             return { valid: false, error: `Message at index ${i} exceeds max length of ${MAX_MESSAGE_LENGTH} characters` };
         }
     }
-
     return { valid: true };
+}
+
+// --- Product Search Helpers ---
+const PRODUCT_KEYWORDS_EN = [
+    'oven', 'fridge', 'refriger', 'freezer', 'mixer', 'slicer', 'blender', 'dishwasher',
+    'ice cream', 'ice maker', 'pizza', 'fryer', 'grill', 'griddle', 'cooker', 'stove',
+    'sealer', 'coffee', 'espresso', 'machine', 'equipment', 'product', 'price', 'aed',
+    'buy', 'cost', 'cheap', 'under', 'budget', 'kitchen', 'bakery', 'combi', 'stainless',
+    'show me', 'looking for', 'recommend', 'available', 'in stock', 'do you have', 'do you sell',
+];
+const PRODUCT_KEYWORDS_AR = [
+    'فرن', 'ثلاج', 'مجمد', 'عجان', 'قطاع', 'خلاط', 'غسالة', 'آيس كريم', 'مثلج',
+    'بيتزا', 'قلاي', 'شواي', 'موقد', 'تغليف', 'قهوة', 'إسبريسو', 'جهاز', 'معدات',
+    'منتج', 'سعر', 'درهم', 'شراء', 'كم', 'مطبخ', 'مخبز', 'كومبي', 'ستانلس',
+    'لديكم', 'تبيعون', 'متوفر', 'أبحث', 'أوصي',
+];
+
+function looksLikeProductQuery(text: string, locale: string): boolean {
+    const lower = text.toLowerCase();
+    const keywords = locale === 'ar' ? PRODUCT_KEYWORDS_AR : PRODUCT_KEYWORDS_EN;
+    return keywords.some(k => lower.includes(k));
+}
+
+function extractSearchTerm(text: string): string {
+    // Strip the page-context prefix the client may have added
+    const cleaned = text.replace(/^\[[\s\S]*?\]\s*/, '').trim();
+    // Keep first ~80 chars; backend tokenizes anyway
+    return cleaned.slice(0, 80);
+}
+
+async function fetchRelevantProducts(query: string, locale: string): Promise<string> {
+    try {
+        const url = `${API_BASE_URL_SERVER}/products?search=${encodeURIComponent(query)}&limit=5`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(2500) });
+        if (!res.ok) return '';
+        const data = await res.json();
+        const products = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.products) ? data.products : []);
+        if (!products.length) return '';
+
+        const lines = products.slice(0, 5).map((p: any) => {
+            const name = locale === 'ar' ? (p.name_ar || p.name) : (p.name || p.name_ar);
+            const price = p.sale_price || p.price;
+            const cat = p.category_name || p.category || '';
+            const slug = p.slug || p.id;
+            const link = slug ? `https://mariotstore.com/${locale}/product/${slug}` : '';
+            const priceStr = price ? `AED ${price}` : (locale === 'ar' ? 'السعر عند الطلب' : 'Price on request');
+            return `- **${name}**${cat ? ` (${cat})` : ''} — ${priceStr}${link ? ` — [${locale === 'ar' ? 'عرض' : 'View'}](${link})` : ''}`;
+        }).join('\n');
+
+        return locale === 'ar'
+            ? `\n\nمنتجات ذات صلة من كتالوج ماريوت الحالي:\n${lines}\n\nاستخدم هذه المنتجات الحقيقية في إجابتك إذا كانت ذات صلة. لا تختلق أسعاراً أخرى.`
+            : `\n\nRelevant products from Mariot's current catalog:\n${lines}\n\nUse these real products in your answer if relevant. Do not invent other prices.`;
+    } catch {
+        return '';
+    }
 }
 
 const SYSTEM_PROMPT_EN = `You are the Mariot Kitchen Expert — the official AI assistant for Mariot Kitchen Equipment, the #1 commercial kitchen equipment supplier in the UAE.
@@ -127,7 +179,6 @@ const SYSTEM_PROMPT_AR = `أنت خبير مطابخ ماريوت — المسا
 
 export async function POST(request: NextRequest) {
     try {
-        // Rate limiting by IP
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
             || request.headers.get('x-real-ip')
             || 'unknown';
@@ -140,50 +191,78 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { messages, locale } = body;
+        const { messages, locale, stream } = body;
 
-        // Validate messages
         const validation = validateMessages(messages);
         if (!validation.valid) {
-            return NextResponse.json(
-                { error: validation.error },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: validation.error }, { status: 400 });
         }
 
-        // Validate locale
         const safeLocale = ['en', 'ar'].includes(locale) ? locale : 'en';
 
-        // Sanitize all message content
         const sanitizedMessages = messages.map((msg: { role: string; content: string }) => ({
             role: msg.role,
             content: sanitizeText(msg.content),
         }));
 
-        const systemPrompt = safeLocale === 'ar' ? SYSTEM_PROMPT_AR : SYSTEM_PROMPT_EN;
+        let systemPrompt = safeLocale === 'ar' ? SYSTEM_PROMPT_AR : SYSTEM_PROMPT_EN;
+
+        // --- Product-aware enrichment ---
+        const lastUserMsg = sanitizedMessages[sanitizedMessages.length - 1];
+        if (lastUserMsg?.role === 'user' && looksLikeProductQuery(lastUserMsg.content, safeLocale)) {
+            const searchTerm = extractSearchTerm(lastUserMsg.content);
+            if (searchTerm) {
+                const productContext = await fetchRelevantProducts(searchTerm, safeLocale);
+                if (productContext) systemPrompt += productContext;
+            }
+        }
 
         const model = genAI.getGenerativeModel({
             model: 'gemini-flash-latest',
             systemInstruction: systemPrompt,
         });
 
-        // Build conversation history for Gemini
         const history = sanitizedMessages.slice(0, -1).map((msg: { role: string; content: string }) => ({
             role: msg.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: msg.content }],
         }));
 
         const chat = model.startChat({ history });
-
         const lastMessage = sanitizedMessages[sanitizedMessages.length - 1].content;
-        const result = await chat.sendMessage(lastMessage);
-        const response = result.response;
-        const text = response.text();
 
+        // --- Streaming response ---
+        if (stream) {
+            const result = await chat.sendMessageStream(lastMessage);
+            const encoder = new TextEncoder();
+            const readable = new ReadableStream({
+                async start(controller) {
+                    try {
+                        for await (const chunk of result.stream) {
+                            const text = chunk.text();
+                            if (text) controller.enqueue(encoder.encode(text));
+                        }
+                    } catch (err: any) {
+                        console.error('Chat stream error:', err?.message || err);
+                    } finally {
+                        controller.close();
+                    }
+                },
+            });
+            return new Response(readable, {
+                headers: {
+                    'Content-Type': 'text/plain; charset=utf-8',
+                    'Cache-Control': 'no-cache, no-transform',
+                    'X-Accel-Buffering': 'no',
+                },
+            });
+        }
+
+        // --- Non-streaming fallback ---
+        const result = await chat.sendMessage(lastMessage);
+        const text = result.response.text();
         return NextResponse.json({ message: text });
     } catch (error: any) {
         console.error('Chat API Error:', error?.message || error);
-        // Don't leak internal error details to client
         return NextResponse.json(
             { error: 'Failed to generate response. Please try again.' },
             { status: 500 }

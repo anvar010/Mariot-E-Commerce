@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useLocale } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import styles from './ShopLayout.module.css';
@@ -16,6 +17,9 @@ interface CategoryGridProps {
 const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc, brandParam }) => {
     const locale = useLocale();
     const isArabic = locale === 'ar';
+    const searchParams = useSearchParams();
+    const weeklyParam = searchParams.get('weekly');
+    const limitedParam = searchParams.get('limited');
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
@@ -71,10 +75,15 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc,
                     const catName = (isArabic && cat.name_ar) ? cat.name_ar : cat.name;
                     const catImage = cat.image_url || '';
                     const slug = cat.slug || cat.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
-                    
+                    const params = new URLSearchParams();
+                    if (brandParam) params.set('brand', brandParam);
+                    params.set('category', slug);
+                    if (weeklyParam) params.set('weekly', weeklyParam);
+                    if (limitedParam) params.set('limited', limitedParam);
+
                     return (
                         <Link
-                            href={brandParam ? `/shop?brand=${brandParam}&category=${slug}` : `/shop?category=${slug}`}
+                            href={`/shop?${params.toString()}`}
                             key={idx}
                             className={styles.categoryCard}
                         >

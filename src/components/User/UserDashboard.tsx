@@ -527,6 +527,9 @@ const UserDashboard = () => {
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <h4 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '5px' }}>{locale === 'ar' && item.name_ar ? item.name_ar : item.name}</h4>
+                                        {item.custom_label && (
+                                            <div style={{ color: '#475569', fontSize: '12px', marginBottom: '4px' }}>{item.custom_label}</div>
+                                        )}
                                         <div style={{ color: '#64748b', fontSize: '13px' }}>{t('orders.qty')} {item.quantity}  ×  <CurrencyPrice amount={parseFloat(item.price_at_purchase)} /></div>
                                     </div>
                                     <div style={{ fontWeight: 'bold', fontSize: '15px' }}>

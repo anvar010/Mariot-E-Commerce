@@ -167,11 +167,11 @@
 }
 
 .mainTitle {
-    font-size: 32px;
-    font-weight: 800;
+    font-size: 24px;
+    font-weight: 700;
     color: #0f172a;
     margin: 0 0 15px 0;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.2px;
 }
 
 .container {
@@ -889,7 +889,7 @@
     }
 
     .mainTitle {
-        font-size: 24px;
+        font-size: 18px;
     }
 
     .breadcrumbs {
@@ -1020,7 +1020,7 @@
     }
 
     .mainTitle {
-        font-size: 20px;
+        font-size: 16px;
     }
 
     .resultsCount {
@@ -1409,7 +1409,7 @@
     }
 
     .mainTitle {
-        font-size: 28px;
+        font-size: 20px;
         margin-bottom: 15px;
     }
 

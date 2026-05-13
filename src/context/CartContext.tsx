@@ -20,13 +20,36 @@ interface CartItem {
     slug?: string;
     stock_quantity?: number;
     track_inventory?: number | boolean;
+    custom_dimensions?: Record<string, number | string> | null;
+    custom_signature?: string | null;
 }
+
+// Build a stable signature from a custom-dimensions object. Used to treat
+// each unique customization as its own line item in the cart.
+const buildCustomSignature = (dims: any): string | null => {
+    if (!dims || typeof dims !== 'object') return null;
+    const keys = Object.keys(dims).sort();
+    const parts = keys
+        .map(k => {
+            const v = dims[k];
+            if (v === undefined || v === null || v === '') return null;
+            return `${k}:${v}`;
+        })
+        .filter(Boolean);
+    return parts.length > 0 ? parts.join('|') : null;
+};
+
+// Matches two cart items as "the same line"
+const sameLine = (a: { id: any; variant_id?: any; custom_signature?: any }, b: { id: any; variant_id?: any; custom_signature?: any }) =>
+    a.id === b.id &&
+    (a.variant_id ?? null) === (b.variant_id ?? null) &&
+    (a.custom_signature ?? null) === (b.custom_signature ?? null);
 
 interface CartContextType {
     cartItems: CartItem[];
     addToCart: (product: any, options?: { silent?: boolean }) => Promise<boolean>;
-    removeFromCart: (productId: string | number, variantId?: number | null) => void;
-    updateQuantity: (productId: string | number, quantity: number, variantId?: number | null) => void;
+    removeFromCart: (productId: string | number, variantId?: number | null, customSignature?: string | null) => void;
+    updateQuantity: (productId: string | number, quantity: number, variantId?: number | null, customSignature?: string | null) => void;
     clearCart: () => void;
     cartCount: number;
     cartTotal: number;
@@ -174,13 +197,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (data.success && Array.isArray(data.data)) {
                 const items = data.data.map((item: any) => {
                     const variantOpts = item.variant_options || null;
-                    const variantLabel = Array.isArray(variantOpts) && variantOpts.length > 0
+                    const variantLabelFromOpts = Array.isArray(variantOpts) && variantOpts.length > 0
                         ? variantOpts.map((o: any) => `${o.name}: ${o.value}`).join(' / ')
                         : undefined;
                     return {
                         id: item.product_id || item.id,
                         variant_id: item.variant_id ?? null,
-                        variant_label: variantLabel,
+                        // Prefer the saved custom label (e.g. "Width: 60cm / ..."), fall back to variant options label
+                        variant_label: item.custom_label || variantLabelFromOpts,
                         variant_options: variantOpts,
                         name: item.name || item.product?.name || 'Product',
                         slug: item.slug || item.product?.slug || '',
@@ -189,7 +213,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         quantity: Number(item.quantity),
                         brand: item.brand || item.brand_name || item.product?.brand?.name || '',
                         stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined,
-                        track_inventory: item.track_inventory
+                        track_inventory: item.track_inventory,
+                        custom_dimensions: item.custom_dimensions || null,
+                        custom_signature: item.custom_signature || null
                     };
                 });
                 setCartItems(items);
@@ -204,9 +230,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const displayPrice = Number(product.offer_price) > 0 ? Number(product.offer_price) : Number(product.price || 0);
         const stockLimit = product.stock_quantity !== undefined ? Number(product.stock_quantity) : undefined;
         const variantId: number | null = product.variant_id ?? null;
+        const customSignature = buildCustomSignature(product.custom_dimensions);
+        const lineKey = { id: product.id, variant_id: variantId, custom_signature: customSignature };
 
         // Validation against current state
-        const existingItem = cartItems.find(item => item.id === product.id && (item.variant_id ?? null) === variantId);
+        const existingItem = cartItems.find(item => sameLine(item, lineKey));
         const isInventoryTracked = product.track_inventory === 1 || String(product.track_inventory) === '1' || product.track_inventory === true;
 
         let quantityToAdd = productQuantity;
@@ -228,10 +256,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Optimistic UI Update
         setCartItems(prev => {
-            const existing = prev.find(item => item.id === product.id && (item.variant_id ?? null) === variantId);
+            const existing = prev.find(item => sameLine(item, lineKey));
             if (existing) {
                 return prev.map(item =>
-                    item.id === product.id && (item.variant_id ?? null) === variantId
+                    sameLine(item, lineKey)
                         ? { ...item, quantity: item.quantity + quantityToAdd }
                         : item
                 );
@@ -247,7 +275,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 brand: product.brand || product.brand_name || '',
                 quantity: quantityToAdd,
                 stock_quantity: stockLimit,
-                track_inventory: product.track_inventory
+                track_inventory: product.track_inventory,
+                custom_dimensions: product.custom_dimensions || null,
+                custom_signature: customSignature
             }];
         });
 
@@ -258,7 +288,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const currentTotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
             const currentCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-            const isNewItem = !cartItems.some(item => item.id === product.id && (item.variant_id ?? null) === variantId);
+            const isNewItem = !cartItems.some(item => sameLine(item, lineKey));
             const newTotal = currentTotal + (displayPrice * quantityToAdd);
             const newCount = currentCount + quantityToAdd;
 
@@ -290,7 +320,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     body: JSON.stringify({
                         product_id: product.id,
                         quantity: quantityToAdd,
-                        variant_id: variantId
+                        variant_id: variantId,
+                        custom_dimensions: product.custom_dimensions || null,
+                        custom_label: product.variant_label || null
                     })
                 });
             } catch (error) {
@@ -300,9 +332,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
     };
 
-    const removeFromCart = async (productId: string | number, variantId: number | null = null) => {
-        const itemToRemove = cartItems.find(i => i.id === productId && (i.variant_id ?? null) === variantId);
-        setCartItems(prevItems => prevItems.filter(item => !(item.id === productId && (item.variant_id ?? null) === variantId)));
+    const removeFromCart = async (productId: string | number, variantId: number | null = null, customSignature: string | null = null) => {
+        const lineKey = { id: productId, variant_id: variantId, custom_signature: customSignature };
+        const itemToRemove = cartItems.find(i => sameLine(i, lineKey));
+        setCartItems(prevItems => prevItems.filter(item => !sameLine(item, lineKey)));
 
         if (itemToRemove) {
             showNotification(t('cartRemove', { name: itemToRemove.name }), 'error', { title: t('itemRemoved') });
@@ -310,7 +343,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (token) {
             try {
-                const qs = variantId != null ? `?variant_id=${variantId}` : '';
+                const qsParts: string[] = [];
+                if (variantId != null) qsParts.push(`variant_id=${variantId}`);
+                if (customSignature) qsParts.push(`custom_signature=${encodeURIComponent(customSignature)}`);
+                const qs = qsParts.length > 0 ? `?${qsParts.join('&')}` : '';
                 await fetch(`${API_BASE_URL}/cart/${productId}${qs}`, {
                     method: 'DELETE',
                     credentials: "include",
@@ -322,11 +358,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const updateQuantity = async (productId: string | number, quantity: number, variantId: number | null = null) => {
+    const updateQuantity = async (productId: string | number, quantity: number, variantId: number | null = null, customSignature: string | null = null) => {
         if (quantity < 1) return;
 
+        const lineKey = { id: productId, variant_id: variantId, custom_signature: customSignature };
+
         // Validation against current state
-        const item = cartItems.find(i => i.id === productId && (i.variant_id ?? null) === variantId);
+        const item = cartItems.find(i => sameLine(i, lineKey));
         let validQuantity = quantity;
 
         const isInventoryTracked = item && (item.track_inventory === 1 || String(item.track_inventory) === '1' || item.track_inventory === true);
@@ -338,7 +376,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setCartItems(prevItems => {
             return prevItems.map(it =>
-                it.id === productId && (it.variant_id ?? null) === variantId
+                sameLine(it, lineKey)
                     ? { ...it, quantity: validQuantity }
                     : it
             );
@@ -356,7 +394,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     body: JSON.stringify({
                         product_id: productId,
                         quantity: validQuantity,
-                        variant_id: variantId
+                        variant_id: variantId,
+                        custom_signature: customSignature
                     })
                 });
             } catch (error) {

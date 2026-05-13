@@ -1,0 +1,359 @@
+.dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    border: 1px solid #e2e8f0;
+    z-index: 1100;
+    max-height: min(720px, calc(100vh - 180px));
+    overflow: hidden;
+    animation: dropdownSlideIn 0.18s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    height: 100%;
+    max-height: min(720px, calc(100vh - 180px));
+}
+
+.leftCol {
+    border-right: 1px solid #edf2f7;
+    overflow-y: auto;
+    padding: 16px 18px;
+    max-height: min(720px, calc(100vh - 180px));
+}
+
+.rightCol {
+    overflow-y: auto;
+    padding: 16px 18px;
+    background: #fafbfc;
+    max-height: min(720px, calc(100vh - 180px));
+}
+
+.leftCol::-webkit-scrollbar,
+.rightCol::-webkit-scrollbar {
+    width: 6px;
+}
+.leftCol::-webkit-scrollbar-thumb,
+.rightCol::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 6px;
+}
+
+.section {
+    margin-bottom: 14px;
+}
+
+.section:last-child {
+    margin-bottom: 0;
+}
+
+.sectionTitle {
+    font-size: 14px;
+    font-weight: 700;
+    color: #16a1db;
+    margin: 0 0 8px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.trendingTitle {
+    color: #16a1db;
+}
+
+.linkList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.linkItem {
+    background: none;
+    border: 0;
+    text-align: start;
+    width: 100%;
+    padding: 6px 4px;
+    font-size: 13.5px;
+    color: #1e293b;
+    cursor: pointer;
+    border-radius: 6px;
+    line-height: 1.4;
+}
+
+.linkItem:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.linkItem.plain {
+    color: #334155;
+}
+
+.linkMeta {
+    color: #94a3b8;
+    font-size: 12.5px;
+    margin-inline-start: 4px;
+}
+
+.emptyHint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #64748b;
+    padding: 40px 16px;
+    gap: 4px;
+    min-height: 200px;
+}
+
+.emptyHint span {
+    font-weight: 600;
+    font-size: 14px;
+    color: #334155;
+}
+
+.emptyHint small {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.skeletonRow {
+    height: 18px;
+    margin: 8px 0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f1f5f9;
+    position: relative;
+}
+
+.shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.emptyTrending {
+    color: #94a3b8;
+    font-size: 13px;
+    padding: 24px 8px;
+    text-align: center;
+}
+
+.trendingList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.trendingItem {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.trendingThumbBtn {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.trendingThumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trendingImage {
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
+}
+
+.trendingInfo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.trendingName {
+    background: none;
+    border: 0;
+    padding: 0;
+    text-align: start;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.trendingName:hover {
+    color: #0f172a;
+}
+
+.trendingPrice {
+    font-size: 13px;
+    font-weight: 700;
+    color: #16a1db;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.trendingOriginal {
+    font-size: 11px;
+    color: #94a3b8;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+.trendingActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.qtyControl {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #fff;
+    border: 1px solid #cdeaf7;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.qtyControl button {
+    background: none;
+    border: 0;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #16a1db;
+}
+
+.qtyControl button:hover {
+    background: #ecf7fc;
+}
+
+.qtyControl span {
+    min-width: 22px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.qtyInput {
+    width: 32px;
+    height: 26px;
+    border: 0;
+    background: transparent;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    outline: none;
+    padding: 0;
+    -moz-appearance: textfield;
+}
+
+.qtyInput::-webkit-outer-spin-button,
+.qtyInput::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.qtyInput:focus {
+    background: #ecf7fc;
+}
+
+.addBtn {
+    flex: 1;
+    background: #cdeaf7;
+    color: #0e6b94;
+    border: 0;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.15s;
+}
+
+.addBtn:hover {
+    background: #a8dcf0;
+}
+
+@media (max-width: 768px) {
+    .dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-height: min(70vh, 560px);
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+        max-height: min(70vh, 560px);
+    }
+
+    .leftCol,
+    .rightCol {
+        max-height: min(70vh, 560px);
+    }
+
+    .leftCol {
+        border-right: 0;
+        border-bottom: 1px solid #edf2f7;
+    }
+}

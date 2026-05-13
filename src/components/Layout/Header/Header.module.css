@@ -269,9 +269,10 @@
 
 /* Search Bar */
 .searchSection {
-    flex: 1;
-    max-width: 600px;
-    margin: 0 40px;
+    flex: 2;
+    max-width: 800px;
+    min-width: 280px;
+    margin: 0 25px;
 }
 
 .searchBar {
@@ -456,7 +457,7 @@
 .userActions {
     display: flex;
     align-items: center;
-    gap: 30px;
+    gap: 20px;
 }
 
 .rewardPoints,
@@ -1579,16 +1580,6 @@
     }
 }
 
-.supportDivider {
-    color: #337c7f;
-    font-weight: 400;
-}
-
-@media (max-width: 768px) {
-    .supportDivider {
-        margin: 0;
-    }
-}
 
 /* Search Suggestions Dropdown */
 .searchSection {

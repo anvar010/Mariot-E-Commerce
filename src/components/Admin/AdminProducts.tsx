@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminProducts.module.css';
-import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag, Ruler, MoveHorizontal, MoveVertical } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
@@ -223,6 +223,13 @@ const AdminProducts = () => {
     const [variantsEnabled, setVariantsEnabled] = useState(false);
     const [variantOptions, setVariantOptions] = useState<VariantOption[]>([]);
     const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
+
+    // Custom-size (dimension-based) pricing state
+    type SizeTierRow = { dimension: 'width' | 'depth' | 'height'; min_cm: string; max_cm: string; price: string };
+    const [customizableEnabled, setCustomizableEnabled] = useState(false);
+    const [customDimensions, setCustomDimensions] = useState<Array<'width' | 'depth' | 'height'>>(['width', 'depth', 'height']);
+    const [sizeTiers, setSizeTiers] = useState<SizeTierRow[]>([]);
+    const [baseDimensions, setBaseDimensions] = useState<{ width: string; depth: string; height: string }>({ width: '', depth: '', height: '' });
     const [brands, setBrands] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
     const [exporting, setExporting] = useState(false);
@@ -1038,6 +1045,43 @@ const AdminProducts = () => {
             setVariantRows([]);
         }
 
+        // Load custom-size pricing
+        const isCust = Number(product.is_customizable) === 1;
+        setCustomizableEnabled(isCust);
+        if (isCust) {
+            let dims: Array<'width' | 'depth' | 'height'> = ['width', 'depth', 'height'];
+            const raw = product.custom_dimensions;
+            if (Array.isArray(raw)) {
+                dims = raw.filter((d: any) => ['width', 'depth', 'height'].includes(d));
+            } else if (typeof raw === 'string' && raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) dims = parsed.filter((d: any) => ['width', 'depth', 'height'].includes(d));
+                } catch (e) { /* ignore */ }
+            }
+            setCustomDimensions(dims.length > 0 ? dims : ['width', 'height']);
+            const tiers = Array.isArray(product.size_tiers) ? product.size_tiers : [];
+            setSizeTiers(tiers.map((t: any) => ({
+                dimension: t.dimension,
+                min_cm: String(t.min_cm ?? ''),
+                max_cm: String(t.max_cm ?? ''),
+                price: String(t.price ?? '')
+            })));
+            let bd: any = product.base_dimensions;
+            if (typeof bd === 'string' && bd) {
+                try { bd = JSON.parse(bd); } catch (e) { bd = {}; }
+            }
+            setBaseDimensions({
+                width: bd?.width !== undefined ? String(bd.width) : '',
+                depth: bd?.depth !== undefined ? String(bd.depth) : '',
+                height: bd?.height !== undefined ? String(bd.height) : ''
+            });
+        } else {
+            setCustomDimensions(['width', 'depth', 'height']);
+            setSizeTiers([]);
+            setBaseDimensions({ width: '', depth: '', height: '' });
+        }
+
         setIsModalOpen(true);
     };
 
@@ -1094,6 +1138,10 @@ const AdminProducts = () => {
         setVariantsEnabled(false);
         setVariantOptions([]);
         setVariantRows([]);
+        setCustomizableEnabled(false);
+        setCustomDimensions(['width', 'depth', 'height']);
+        setSizeTiers([]);
+        setBaseDimensions({ width: '', depth: '', height: '' });
         setActiveTab('basic');
     };
 
@@ -1166,6 +1214,27 @@ const AdminProducts = () => {
                             value_ar: variantOptions[idx]?.values.find(x => x.value === value)?.value_ar || null
                         }))
                     }))
+                    : [],
+                // Custom-size pricing payload
+                is_customizable: Boolean(customizableEnabled),
+                custom_dimensions: customizableEnabled ? customDimensions : [],
+                base_dimensions: customizableEnabled
+                    ? customDimensions.reduce((acc, d) => {
+                        const v = baseDimensions[d];
+                        if (v !== '' && Number.isFinite(Number(v))) acc[d] = Number(v);
+                        return acc;
+                    }, {} as Record<string, number>)
+                    : {},
+                size_tiers: customizableEnabled
+                    ? sizeTiers
+                        .filter(t => customDimensions.includes(t.dimension))
+                        .map(t => ({
+                            dimension: t.dimension,
+                            min_cm: Number(t.min_cm),
+                            max_cm: Number(t.max_cm),
+                            price: Number(t.price)
+                        }))
+                        .filter(t => Number.isFinite(t.min_cm) && Number.isFinite(t.max_cm) && Number.isFinite(t.price) && t.max_cm >= t.min_cm)
                     : []
             };
 
@@ -1176,6 +1245,28 @@ const AdminProducts = () => {
                 }
                 if (variantRows.length === 0) {
                     showNotification('Click Regenerate to build combinations before saving', 'error');
+                    return;
+                }
+            }
+
+            if (customizableEnabled) {
+                if (customDimensions.length === 0) {
+                    showNotification('Pick at least one dimension (width / depth / height) for customization', 'error');
+                    return;
+                }
+                const missingBase = customDimensions.find(d => baseDimensions[d] === '' || !Number.isFinite(Number(baseDimensions[d])));
+                if (missingBase) {
+                    showNotification(`Set the base ${missingBase} value for the standard combination`, 'error');
+                    return;
+                }
+                const validTiers = sizeTiers.filter(t =>
+                    customDimensions.includes(t.dimension) &&
+                    t.min_cm !== '' && t.max_cm !== '' && t.price !== '' &&
+                    Number(t.max_cm) >= Number(t.min_cm)
+                );
+                const missingDim = customDimensions.find(d => !validTiers.some(t => t.dimension === d));
+                if (missingDim) {
+                    showNotification(`Add at least one valid price tier for ${missingDim}`, 'error');
                     return;
                 }
             }
@@ -1896,6 +1987,14 @@ const AdminProducts = () => {
                                     <Layers size={18} />
                                     <span>Variants</span>
                                 </button>
+                                <button
+                                    className={`${styles.navItem} ${activeTab === 'customization' ? styles.activeNav : ''}`}
+                                    onClick={() => setActiveTab('customization')}
+                                    type="button"
+                                >
+                                    <Ruler size={18} />
+                                    <span>Customization</span>
+                                </button>
                             </div>
 
                             {/* Main Content Area */}
@@ -2088,6 +2187,54 @@ const AdminProducts = () => {
                                                     </div>
                                                 </div>
                                             )}
+                                            {!variantsEnabled && customizableEnabled && (
+                                                <div style={{
+                                                    background: '#fffbeb',
+                                                    border: '1px solid #fde68a',
+                                                    borderRadius: '10px',
+                                                    padding: '12px 16px',
+                                                    margin: '0 0 16px 0',
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    gap: '10px',
+                                                    color: '#92400e',
+                                                    fontSize: '13px',
+                                                    lineHeight: 1.5
+                                                }}>
+                                                    <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '1px', color: '#d97706' }} />
+                                                    <div>
+                                                        <strong style={{ display: 'block', marginBottom: '2px', color: '#78350f' }}>
+                                                            Pricing disabled
+                                                        </strong>
+                                                        Custom-size pricing is turned on, so price, discount, and offer price come from your dimension tiers in the <strong>Customization</strong> tab. Stock and status below still apply.
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <fieldset
+                                                disabled={variantsEnabled || customizableEnabled}
+                                                style={{
+                                                    border: 'none',
+                                                    padding: 0,
+                                                    margin: 0,
+                                                    opacity: (variantsEnabled || customizableEnabled) ? 0.5 : 1,
+                                                    pointerEvents: (variantsEnabled || customizableEnabled) ? 'none' : 'auto'
+                                                }}
+                                            >
+                                                <div className={styles.formGridFour}>
+                                                    <div className={styles.formGroup}>
+                                                        <label>{t('modal.fields.price')}</label>
+                                                        <input type="number" name="price" required={!variantsEnabled && !customizableEnabled} step="0.01" value={formData.price} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className={styles.formGroup}>
+                                                        <label>{t('modal.fields.discount')}</label>
+                                                        <input type="number" name="discount_percentage" step="0.01" value={formData.discount_percentage} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className={styles.formGroup}>
+                                                        <label>{t('modal.fields.offerPrice')}</label>
+                                                        <input type="number" name="offer_price" step="0.01" value={formData.offer_price} onChange={handleInputChange} />
+                                                    </div>
+                                                </div>
+                                            </fieldset>
                                             <fieldset
                                                 disabled={variantsEnabled}
                                                 style={{
@@ -2099,18 +2246,6 @@ const AdminProducts = () => {
                                                 }}
                                             >
                                                 <div className={styles.formGridFour}>
-                                                    <div className={styles.formGroup}>
-                                                        <label>{t('modal.fields.price')}</label>
-                                                        <input type="number" name="price" required={!variantsEnabled} step="0.01" value={formData.price} onChange={handleInputChange} />
-                                                    </div>
-                                                    <div className={styles.formGroup}>
-                                                        <label>{t('modal.fields.discount')}</label>
-                                                        <input type="number" name="discount_percentage" step="0.01" value={formData.discount_percentage} onChange={handleInputChange} />
-                                                    </div>
-                                                    <div className={styles.formGroup}>
-                                                        <label>{t('modal.fields.offerPrice')}</label>
-                                                        <input type="number" name="offer_price" step="0.01" value={formData.offer_price} onChange={handleInputChange} />
-                                                    </div>
                                                     <div className={styles.formGroup}>
                                                         <label>{t('modal.fields.trackStock')}</label>
                                                         <div className={styles.toggleWrapper}>
@@ -2462,6 +2597,206 @@ const AdminProducts = () => {
                                                     </div>
                                                 )}
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'customization' && (
+                                        <div className={styles.tabPane}>
+                                            <div className={styles.paneHeader}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <div className={`${styles.iconBox} ${styles.blueIcon}`}>
+                                                        <Layers size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <h3>Custom Size Pricing</h3>
+                                                        <p>Configure dimension-based pricing tiers for this product.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                className={`${styles.featureToggleCard} ${customizableEnabled ? styles.active : ''}`}
+                                                onClick={() => setCustomizableEnabled(!customizableEnabled)}
+                                            >
+                                                <div className={styles.switch}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={customizableEnabled}
+                                                        readOnly
+                                                    />
+                                                    <span className={styles.slider}></span>
+                                                </div>
+                                                <div className={styles.featureToggleContent}>
+                                                    <span className={styles.featureToggleTitle}>Enable custom-size pricing</span>
+                                                    <span className={styles.featureToggleDesc}>Allow customers to provide specific dimensions and pay based on calculated tiers.</span>
+                                                </div>
+                                            </div>
+
+                                            {customizableEnabled && (
+                                                <>
+                                                    <div className={styles.customSizingSection}>
+                                                        <h4><Ruler size={16} style={{ verticalAlign: 'middle', marginRight: 8, color: '#3b82f6' }} />Dimensions this product uses</h4>
+                                                        <p>Select which dimensions customers can customize.</p>
+                                                        <div className={styles.dimensionCheckboxGroup}>
+                                                            {(['width', 'depth', 'height'] as const).map(dim => (
+                                                                <label key={dim} className={styles.dimensionCheckboxLabel}>
+                                                                    <div className={styles.dimensionToggleIcon}>
+                                                                        {dim === 'width' && <MoveHorizontal size={14} />}
+                                                                        {dim === 'depth' && <Ruler size={14} />}
+                                                                        {dim === 'height' && <MoveVertical size={14} />}
+                                                                    </div>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={customDimensions.includes(dim)}
+                                                                        onChange={(e) => {
+                                                                            setCustomDimensions(prev =>
+                                                                                e.target.checked
+                                                                                    ? Array.from(new Set([...prev, dim]))
+                                                                                    : prev.filter(d => d !== dim)
+                                                                            );
+                                                                            if (!e.target.checked) {
+                                                                                setSizeTiers(prev => prev.filter(t => t.dimension !== dim));
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <span style={{ textTransform: 'capitalize' }}>{dim}</span>
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className={styles.customSizingSection}>
+                                                        <h4><BarChart3 size={16} style={{ verticalAlign: 'middle', marginRight: 8, color: '#3b82f6' }} />Base (Standard) Combination</h4>
+                                                        <p>Define the default dimension values shown on the product page. These act as the standard size.</p>
+
+                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16 }}>
+                                                            {customDimensions.map(dim => (
+                                                                <div key={dim} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                                    <label style={{ fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>{dim} (cm)</label>
+                                                                    <input
+                                                                        type="number" min="0" step="1"
+                                                                        value={baseDimensions[dim]}
+                                                                        onChange={(e) => setBaseDimensions(prev => ({ ...prev, [dim]: e.target.value }))}
+                                                                        placeholder={dim === 'width' ? '30' : dim === 'depth' ? '70' : '90'}
+                                                                        className={styles.tierInput}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        {(() => {
+                                                            let computedBase: number | null = 0;
+                                                            for (const dim of customDimensions) {
+                                                                const baseV = Number(baseDimensions[dim]);
+                                                                if (!Number.isFinite(baseV) || baseDimensions[dim] === '') { computedBase = null; break; }
+                                                                const tiers = sizeTiers.filter(t => t.dimension === dim);
+                                                                if (tiers.length === 0) { computedBase = null; break; }
+                                                                const tier = tiers.find(t =>
+                                                                    t.min_cm !== '' && t.max_cm !== '' && t.price !== '' &&
+                                                                    baseV >= Number(t.min_cm) && baseV <= Number(t.max_cm)
+                                                                );
+                                                                if (!tier) { computedBase = null; break; }
+                                                                computedBase += Number(tier.price);
+                                                            }
+                                                            return (
+                                                                <div className={styles.basePriceSummary}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                                        <Banknote size={20} color="#3b82f6" />
+                                                                        <span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>Computed static base price</span>
+                                                                    </div>
+                                                                    <span style={{ fontSize: 16, fontWeight: 800, color: computedBase === null ? '#dc2626' : '#0f172a' }}>
+                                                                        {computedBase === null ? '--' : computedBase.toFixed(2)}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </div>
+
+                                                    {customDimensions.map(dim => {
+                                                        const dimTiers = sizeTiers
+                                                            .map((t, i) => ({ ...t, _idx: i }))
+                                                            .filter(t => t.dimension === dim);
+                                                        return (
+                                                            <div key={dim} className={styles.customSizingSection}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                                                                    <h4 style={{ textTransform: 'capitalize', margin: 0 }}>{dim} Price Tiers</h4>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setSizeTiers(prev => {
+                                                                            const existingForDim = prev.filter(t => t.dimension === dim);
+                                                                            let nextMin = '';
+                                                                            if (existingForDim.length === 0) {
+                                                                                const baseV = parseInt(baseDimensions[dim], 10);
+                                                                                if (Number.isFinite(baseV)) nextMin = String(baseV);
+                                                                            } else {
+                                                                                const maxes = existingForDim
+                                                                                    .map(t => parseInt(t.max_cm, 10))
+                                                                                    .filter(n => Number.isFinite(n));
+                                                                                if (maxes.length > 0) nextMin = String(Math.max(...maxes) + 1);
+                                                                            }
+                                                                            return [...prev, { dimension: dim, min_cm: nextMin, max_cm: '', price: '' }];
+                                                                        })}
+                                                                        className={styles.addTierBtn}
+                                                                    >
+                                                                        <Plus size={16} /> Add tier
+                                                                    </button>
+                                                                </div>
+
+                                                                {dimTiers.length === 0 ? (
+                                                                    <div style={{ textAlign: 'center', padding: 24, color: '#94a3b8', fontSize: 13, background: '#f8fafc', borderRadius: 12, border: '1px dashed #e2e8f0' }}>
+                                                                        No tiers configured for {dim}.
+                                                                    </div>
+                                                                ) : (
+                                                                    <div>
+                                                                        <div className={styles.tierTableHeader}>
+                                                                            <span>Min cm</span>
+                                                                            <span>Max cm</span>
+                                                                            <span>Tier Price</span>
+                                                                            <span></span>
+                                                                        </div>
+                                                                        {dimTiers.map(t => (
+                                                                            <div key={t._idx} className={styles.tierRow}>
+                                                                                <input
+                                                                                    type="number" min="0" step="1" value={t.min_cm}
+                                                                                    onChange={(e) => setSizeTiers(prev => prev.map((row, i) => i === t._idx ? { ...row, min_cm: e.target.value } : row))}
+                                                                                    className={styles.tierInput}
+                                                                                />
+                                                                                <input
+                                                                                    type="number" min="0" step="1" value={t.max_cm}
+                                                                                    onChange={(e) => setSizeTiers(prev => prev.map((row, i) => i === t._idx ? { ...row, max_cm: e.target.value } : row))}
+                                                                                    className={styles.tierInput}
+                                                                                />
+                                                                                <input
+                                                                                    type="number" min="0" step="0.01" value={t.price}
+                                                                                    onChange={(e) => setSizeTiers(prev => prev.map((row, i) => i === t._idx ? { ...row, price: e.target.value } : row))}
+                                                                                    className={styles.tierInput}
+                                                                                />
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => setSizeTiers(prev => prev.filter((_, i) => i !== t._idx))}
+                                                                                    className={styles.tierDeleteBtn}
+                                                                                >
+                                                                                    <X size={16} />
+                                                                                </button>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+
+                                                    <div className={styles.infoBox}>
+                                                        <div style={{ display: 'flex', gap: 10 }}>
+                                                            <CheckCircle2 size={18} style={{ flexShrink: 0, marginTop: 2, color: '#3b82f6' }} />
+                                                            <div>
+                                                                <strong>Calculation Logic:</strong> Final price = sum of the matched tier price for each enabled dimension.
+                                                                Make sure every dimension has at least one tier that covers its base value.
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     )}
 

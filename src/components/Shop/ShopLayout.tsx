@@ -59,6 +59,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const searchQueryRaw = searchParams.get('search');
     const searchQuery = defaultSearchQuery || (searchQueryRaw ? searchQueryRaw.replace(/\+/g, ' ') : null);
     const isLimited = searchParams.get('limited') === 'true';
+    const isWeekly = searchParams.get('weekly') === 'true';
     const sellerParam = searchParams.get('seller');
 
     const [products, setProducts] = useState<any[]>(initialProducts);
@@ -156,6 +157,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const getFormattedCategoryName = () => {
         if (categoryNameOverride) return categoryNameOverride;
         if (searchQuery) return tc("search-results-for", { query: searchQuery });
+        if (isWeekly) return tc('weekly-deals');
+        if (isLimited) return tc('limited-time-offers');
         if (brandParam) return getBrandDisplayName() || '';
         if (activeCategory) {
             if (tc.has(activeCategory)) return tc(activeCategory);
@@ -165,7 +168,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         if (sellerParam) {
             return products.length > 0 ? (products[0].seller_company || products[0].seller_name || 'Seller Store') : 'Seller Store';
         }
-        return isLimited ? tc('limited-time-offers') : tc('all-products');
+        return tc('all-products');
     };
 
     const formattedCategoryName = getFormattedCategoryName();
@@ -197,12 +200,14 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const isInitialMount = React.useRef(true);
 
     useEffect(() => {
-        if (isInitialMount.current && initialBrands.length > 0 && !searchQuery) return;
+        if (isInitialMount.current && initialBrands.length > 0 && !searchQuery && !isLimited && !isWeekly) return;
         const fetchBrands = async () => {
             try {
                 let url = `${API_BASE_URL}/brands?`;
                 if (activeCategory) url += `category=${activeCategory}&`;
                 if (searchQuery) url += `search=${encodeURIComponent(searchQuery)}&`;
+                if (isLimited) url += `is_limited=true&`;
+                if (isWeekly) url += `is_weekly=true&`;
 
                 const res = await fetch(url, { credentials: "include" });
                 const data = await res.json();
@@ -215,7 +220,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             }
         };
         fetchBrands();
-    }, [activeCategory, searchQuery, initialBrands.length]);
+    }, [activeCategory, searchQuery, isLimited, isWeekly, initialBrands.length]);
 
     useEffect(() => {
         if (!brandParam) { setBrandCategories([]); return; }
@@ -232,7 +237,12 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/categories`, { credentials: "include" });
+                let catUrl = `${API_BASE_URL}/categories`;
+                const catParams = new URLSearchParams();
+                if (isLimited) catParams.set('is_limited', 'true');
+                if (isWeekly) catParams.set('is_weekly', 'true');
+                if (catParams.toString()) catUrl += `?${catParams.toString()}`;
+                const res = await fetch(catUrl, { credentials: "include" });
                 const data = await res.json();
                 if (data.success) {
                     setApiCategories(data.data);
@@ -244,7 +254,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             }
         };
         fetchCategories();
-    }, []);
+    }, [isLimited, isWeekly]);
 
     const fetchProducts = useCallback(async () => {
         setFetchingProducts(true);
@@ -258,6 +268,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
             if (isFeatured) url += `&is_featured=1`;
             if (isLimited) url += `&is_limited_offer=true`;
+            if (isWeekly) url += `&is_weekly_deal=true`;
             if (sellerParam) url += `&seller=${sellerParam}`;
             if (sortBy === 'price_asc') url += `&sort=price_asc`;
             else if (sortBy === 'price_desc') url += `&sort=price_desc`;
@@ -276,7 +287,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             setLoading(false);
             setFetchingProducts(false);
         }
-    }, [activeCategory, selectedBrands, minPrice, maxPrice, inStockOnly, sortBy, currentPage, searchQuery, isFeatured, isLimited, sellerParam]);
+    }, [activeCategory, selectedBrands, minPrice, maxPrice, inStockOnly, sortBy, currentPage, searchQuery, isFeatured, isLimited, isWeekly, sellerParam]);
 
     useEffect(() => {
         if (isInitialMount.current && initialProducts.length > 0) {
@@ -295,6 +306,10 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         setSelectedBrands(brandParam ? brandParam.split(',') : []);
         const newParams = new URLSearchParams();
         if (brandParam) newParams.set('brand', brandParam);
+        if (isLimited) newParams.set('limited', 'true');
+        if (isWeekly) newParams.set('weekly', 'true');
+        if (searchQueryRaw) newParams.set('search', searchQueryRaw);
+        if (activeCategory) newParams.set('category', activeCategory);
         router.push(`${pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`, { scroll: false });
     };
 
@@ -344,6 +359,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             onCategoryChange: (slug: string) => { handleCategoryChange(slug); setIsMobileFilterOpen(false); }
         };
         if (brandParam) return <FilterShopByBrand {...commonProps} />;
+        if (isWeekly || isLimited) return <DefaultShopFilter {...commonProps} />;
         if (activeCategory) {
             const isMainCategory = !matchedCategoryForGrid?.parent_id;
             if (isMainCategory && subCategoriesToShow.length > 0) return <FilterCategory {...commonProps} />;

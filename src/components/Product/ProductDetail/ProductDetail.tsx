@@ -28,7 +28,10 @@ import {
     Maximize2,
     PlayCircle,
     Info,
-    ListChecks
+    ListChecks,
+    Ruler,
+    MoveHorizontal,
+    MoveVertical
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
@@ -275,6 +278,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [qty, setQty] = useState<number | string>(1);
     const [selectedValues, setSelectedValues] = useState<Record<number, string>>({});
+    const [customDims, setCustomDims] = useState<Record<'width' | 'depth' | 'height', string>>({ width: '', depth: '', height: '' });
     const [showTabbyModal, setShowTabbyModal] = useState(false);
     const [showPriceMatchModal, setShowPriceMatchModal] = useState(false);
     const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({
@@ -495,6 +499,22 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         }
                         setSelectedValues(defaults);
                     }
+
+                    // Pre-fill custom-size inputs with the product's base combination
+                    if (Number(data.data.is_customizable) === 1) {
+                        let bd: any = data.data.base_dimensions;
+                        if (typeof bd === 'string' && bd) {
+                            try { bd = JSON.parse(bd); } catch (e) { bd = {}; }
+                        }
+                        if (bd && typeof bd === 'object') {
+                            setCustomDims({
+                                width: bd.width !== undefined ? String(bd.width) : '',
+                                depth: bd.depth !== undefined ? String(bd.depth) : '',
+                                height: bd.height !== undefined ? String(bd.height) : ''
+                            });
+                        }
+                    }
+
                     // Use manually curated "You May Also Need" products if set, otherwise fall back to category
                     if (Array.isArray(data.data.you_may_also_need_products) && data.data.you_may_also_need_products.length > 0) {
                         setRelatedProducts(data.data.you_may_also_need_products);
@@ -571,6 +591,28 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         return () => {
             clearTimeout(timer);
             window.removeEventListener('resize', checkHeight);
+        };
+    }, [product, locale]);
+
+    // Publish current product to the chatbot's page-context channel
+    useEffect(() => {
+        if (!product) return;
+        const name = locale === 'ar' ? (product.name_ar || product.name) : (product.name || product.name_ar);
+        const category = locale === 'ar'
+            ? (product.category_name_ar || product.category_name)
+            : (product.category_name || product.category_name_ar);
+        (window as any).__mariotChatContext = {
+            type: 'product',
+            name,
+            category,
+            brand: product.brand_name || product.brand,
+            price: product.sale_price || product.price,
+            slug: product.slug,
+        };
+        return () => {
+            if ((window as any).__mariotChatContext?.slug === product.slug) {
+                (window as any).__mariotChatContext = null;
+            }
         };
     }, [product, locale]);
 
@@ -810,16 +852,45 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         ? productVariants.find((v: any) => v.options_signature === variantSignature(selectedValues)) || null
         : null;
 
+    // --- Custom-size pricing ---
+    const isCustomizable = Number(product.is_customizable) === 1;
+    const customDimensionList: Array<'width' | 'depth' | 'height'> = Array.isArray(product.custom_dimensions)
+        ? product.custom_dimensions.filter((d: any) => ['width', 'depth', 'height'].includes(d))
+        : [];
+    const sizeTiers: Array<{ dimension: string; min_cm: number; max_cm: number; price: number }> =
+        Array.isArray(product.size_tiers) ? product.size_tiers : [];
+
+    // Final price = sum of the matched tier price for every enabled dimension.
+    // Out of range when ANY enabled dim has no tier covering the value.
+    const customPrice = (() => {
+        if (!isCustomizable || customDimensionList.length === 0 || sizeTiers.length === 0) return null;
+        let total = 0;
+        for (const dim of customDimensionList) {
+            const v = Number(customDims[dim]);
+            if (!Number.isFinite(v) || customDims[dim] === '') return null;
+            const dimTiers = sizeTiers.filter(t => t.dimension === dim);
+            if (dimTiers.length === 0) return null;
+            const tier = dimTiers.find(t => v >= Number(t.min_cm) && v <= Number(t.max_cm));
+            if (!tier) return null;
+            total += Number(tier.price);
+        }
+        return total;
+    })();
+
+    const customAllValid = isCustomizable && customPrice !== null;
+
     const variantHasOffer = !!(selectedVariant && selectedVariant.offer_price !== null && Number(selectedVariant.offer_price) > 0);
     const productHasOffer = !!(product.offer_price && Number(product.offer_price) > 0);
     const hasOffer = selectedVariant ? variantHasOffer : productHasOffer;
 
-    const displayPrice = selectedVariant
-        ? (variantHasOffer ? Number(selectedVariant.offer_price) : Number(selectedVariant.price))
-        : (productHasOffer ? Number(product.offer_price) : Number(product.price || 0));
-    const oldPrice = selectedVariant
+    const displayPrice = isCustomizable
+        ? (customPrice ?? 0)
+        : (selectedVariant
+            ? (variantHasOffer ? Number(selectedVariant.offer_price) : Number(selectedVariant.price))
+            : (productHasOffer ? Number(product.offer_price) : Number(product.price || 0)));
+    const oldPrice = isCustomizable ? null : (selectedVariant
         ? (variantHasOffer ? Number(selectedVariant.price) : null)
-        : (productHasOffer ? Number(product.price) : null);
+        : (productHasOffer ? Number(product.price) : null));
 
     const variantsTotalStock = hasVariants
         ? productVariants.reduce((s: number, v: any) => s + Number(v.stock_quantity || 0), 0)
@@ -867,10 +938,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             showNotification(t('selectOptionsFirst', { defaultValue: 'Please select all options first' }), 'error');
             return;
         }
+        if (isCustomizable && !customAllValid) {
+            showNotification(t('enterValidDimensions', { defaultValue: 'Please enter valid dimensions within the allowed ranges' }), 'error');
+            return;
+        }
+        const customLabel = isCustomizable
+            ? customDimensionList.map(d => `${d.charAt(0).toUpperCase() + d.slice(1)}: ${customDims[d]}cm`).join(' / ')
+            : undefined;
         const success = await addToCart({
             id: product.id,
             variant_id: selectedVariant?.id || null,
-            variant_label: variantLabel || undefined,
+            variant_label: variantLabel || customLabel || undefined,
             name: product.name,
             price: displayPrice,
             image: images[0],
@@ -879,7 +957,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             stock_quantity: effectiveStock,
             track_inventory: hasVariants ? 1 : product.track_inventory,
             quantity: Number(qty) || 1,
-            oldPrice: oldPrice
+            oldPrice: oldPrice,
+            custom_dimensions: isCustomizable ? { ...customDims } : undefined
         });
 
         if (success) {
@@ -1260,7 +1339,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </div>
                                 )}
 
-                                <div className={styles.priceSection}>
+                                <div className={styles.priceSection} style={isCustomizable ? { display: 'none' } : undefined}>
                                     <div className={styles.priceRowMain}>
                                         <div className={styles.currentPrice}>
                                             <CurrencyPrice amount={displayPrice} />
@@ -1338,11 +1417,80 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </div>
                                 </div>
 
+                                {isCustomizable && customDimensionList.length > 0 && (
+                                    <div className={styles.customSizingCard}>
+                                        <div className={styles.customSizingHeader}>
+                                            <ListChecks size={20} color="#16a1db" />
+                                            <span>{isArabic ? 'تكوين مخصص' : 'Custom Configuration'}</span>
+                                        </div>
+
+                                        <div className={styles.customSizingNote}>
+                                            <Info size={18} />
+                                            <span>{t('customSizeNote')}</span>
+                                        </div>
+
+                                        <div className={styles.customSizingGrid}>
+                                            {customDimensionList.map(dim => {
+                                                const dimTiers = sizeTiers.filter(t => t.dimension === dim);
+                                                const minAllowed = dimTiers.length > 0 ? Math.min(...dimTiers.map(t => Number(t.min_cm))) : undefined;
+                                                const maxAllowed = dimTiers.length > 0 ? Math.max(...dimTiers.map(t => Number(t.max_cm))) : undefined;
+                                                const val = customDims[dim];
+                                                const numericVal = Number(val);
+                                                const isInvalid = val !== '' && (!Number.isFinite(numericVal) || !dimTiers.some(t => numericVal >= Number(t.min_cm) && numericVal <= Number(t.max_cm)));
+                                                const dimLabel = t(dim as any, { defaultValue: dim.charAt(0).toUpperCase() + dim.slice(1) });
+
+                                                // Choose icon based on dimension
+                                                let DimIcon = Ruler;
+                                                if (dim === 'width') DimIcon = MoveHorizontal;
+                                                if (dim === 'depth') DimIcon = Ruler;
+                                                if (dim === 'height') DimIcon = MoveVertical;
+
+                                                return (
+                                                    <div key={dim} className={styles.customInputWrapper}>
+                                                        <label className={styles.customInputLabel}>
+                                                            <DimIcon size={16} color="#475569" />
+                                                            {dimLabel} (cm)
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min={minAllowed}
+                                                            max={maxAllowed}
+                                                            step={1}
+                                                            placeholder={minAllowed !== undefined && maxAllowed !== undefined ? `${minAllowed}–${maxAllowed}` : ''}
+                                                            value={val}
+                                                            onChange={(e) => setCustomDims(prev => ({ ...prev, [dim]: e.target.value }))}
+                                                            className={`${styles.dimensionInput} ${isInvalid ? styles.dimensionInputError : ''}`}
+                                                        />
+                                                        {minAllowed !== undefined && maxAllowed !== undefined && (
+                                                            <span className={`${styles.customInputRange} ${isInvalid ? styles.customInputRangeError : ''}`}>
+                                                                {isInvalid
+                                                                    ? t('outOfRange')
+                                                                    : `${minAllowed}–${maxAllowed} cm`}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className={styles.customPriceFooter}>
+                                            <span className={styles.customPriceLabel}>{isArabic ? 'السعر المحتسب' : 'Calculated Price'}</span>
+                                            <div className={styles.customPriceValue}>
+                                                {customAllValid ? (
+                                                    <CurrencyPrice amount={displayPrice} />
+                                                ) : (
+                                                    <span style={{ color: '#94a3b8' }}>--</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className={styles.purchaseActions}>
                                     <button
                                         className={styles.addToCartBtn}
                                         onClick={handleAddToCart}
-                                        disabled={effectiveStock === 0 || cartAdded || (hasVariants && !selectedVariant)}
+                                        disabled={effectiveStock === 0 || cartAdded || (hasVariants && !selectedVariant) || (isCustomizable && !customAllValid)}
                                         style={{
                                             opacity: effectiveStock === 0 ? 0.6 : 1,
                                             cursor: effectiveStock === 0 ? 'not-allowed' : 'pointer',
@@ -1442,7 +1590,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                     <div className={`${styles.sidebar} ${styles.sidebarDesktop}`}>
                         <div className={styles.trustList}>
                             <TrustItem icon={<Truck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('freeShipping')} text={t('freeShippingText')} />
-                            <TrustItem icon={<Award size={32} color="#4caf50" strokeWidth={1.5} />} title={t('gulfShipping')} text={t('freeShippingText')} />
+                            <TrustItem icon={<Award size={32} color="#4caf50" strokeWidth={1.5} />} title={t('gulfShipping')} text={t('gulfShippingText')} />
                             <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('securePayment')} text={t('securePaymentText')} />
                             <TrustItem icon={<RotateCcw size={32} color="#4caf50" strokeWidth={1.5} />} title={t('satisfaction')} text={t('satisfactionText')} />
                             <TrustItem icon={<Headset size={32} color="#4caf50" strokeWidth={1.5} />} title={t('onlineSupport')} text={t('onlineSupportText')} />
@@ -1708,7 +1856,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 <div className={`${styles.sidebar} ${styles.sidebarMobile}`}>
                     <div className={styles.trustList}>
                         <TrustItem icon={<Truck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('freeShipping')} text={t('freeShippingText')} />
-                        <TrustItem icon={<Award size={32} color="#4caf50" strokeWidth={1.5} />} title={t('gulfShipping')} text={t('freeShippingText')} />
+                        <TrustItem icon={<Award size={32} color="#4caf50" strokeWidth={1.5} />} title={t('gulfShipping')} text={t('gulfShippingText')} />
                         <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('securePayment')} text={t('securePaymentText')} />
                         <TrustItem icon={<RotateCcw size={32} color="#4caf50" strokeWidth={1.5} />} title={t('satisfaction')} text={t('satisfactionText')} />
                         <TrustItem icon={<Headset size={32} color="#4caf50" strokeWidth={1.5} />} title={t('onlineSupport')} text={t('onlineSupportText')} />

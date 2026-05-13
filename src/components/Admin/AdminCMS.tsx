@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import styles from './AdminAnalytics.module.css'; // Reusing styles for consistency, or I'll create new ones
 import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/context/AuthContext';
-import { Save, RefreshCw, Layout, Megaphone, Plus, Trash2, ChevronLeft, ChevronRight, ShoppingBag, MessageSquare, Tag } from 'lucide-react';
+import { Save, RefreshCw, Layout, Megaphone, Plus, Trash2, ChevronLeft, ChevronRight, ShoppingBag, MessageSquare, Tag, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNotification } from '@/context/NotificationContext';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
@@ -592,6 +593,25 @@ const AdminCMS = () => {
                 }}>
                     <Tag size={14} /> Promotions (Banners & Popups)
                 </a>
+
+                <Link href="/admin/cms/trending-products" className={styles.jumpLink} style={{
+                    textDecoration: 'none',
+                    padding: '8px 18px',
+                    background: '#eef2ff',
+                    color: '#6366f1',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: '0 2px 5px rgba(99, 102, 241, 0.08)',
+                    border: '1px solid #e0e7ff'
+                }}>
+                    <TrendingUp size={14} /> Trending Products (Search Dropdown)
+                </Link>
             </div>
 
             <style jsx>{`

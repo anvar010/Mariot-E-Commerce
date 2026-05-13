@@ -635,6 +635,29 @@ const AdminOrders = () => {
                                 />
                                 <span className={styles.invoiceFieldHint}>The name that will appear on the invoice email sent to customer.</span>
                             </div>
+
+                            {invoiceOrderItems.length > 0 && (
+                                <div style={{ marginTop: 12 }}>
+                                    <label style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Order items</label>
+                                    <div style={{ marginTop: 6, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+                                        {invoiceOrderItems.map((it: any, idx: number) => (
+                                            <div key={idx} style={{ padding: '10px 12px', borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0', background: idx % 2 === 0 ? '#fff' : '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: 13, fontWeight: 600 }}>{it.name}</div>
+                                                    {it.custom_label && (
+                                                        <div style={{ fontSize: 12, color: '#0f172a', background: '#fef3c7', padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginTop: 4 }}>
+                                                            Custom: {it.custom_label}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
+                                                    Qty {it.quantity} × <CurrencyPrice amount={Number(it.price_at_purchase)} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {invoiceError && (
