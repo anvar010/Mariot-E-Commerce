@@ -40,15 +40,25 @@ async function resolveTarget(productId, variantId) {
 
 exports.addToCart = async (req, res, next) => {
     try {
-        const { product_id, quantity = 1, variant_id = null } = req.body;
+        const { product_id, quantity = 1, variant_id = null, custom_dimensions = null, custom_label = null } = req.body;
         const target = await resolveTarget(product_id, variant_id);
         if (target.error) {
             return res.status(404).json({ success: false, message: target.error });
         }
 
+        // Build signature for stock-check matching of customizations
+        const signature = (() => {
+            if (!custom_dimensions || typeof custom_dimensions !== 'object') return null;
+            return Object.keys(custom_dimensions).sort()
+                .filter(k => custom_dimensions[k] !== '' && custom_dimensions[k] !== null && custom_dimensions[k] !== undefined)
+                .map(k => `${k}:${custom_dimensions[k]}`).join('|') || null;
+        })();
+
         const currentCartItems = await Cart.getCartItems(req.user.id);
         const existingItem = currentCartItems.find(
-            it => it.product_id === product_id && (it.variant_id ?? null) === (variant_id ?? null)
+            it => it.product_id === product_id
+                && (it.variant_id ?? null) === (variant_id ?? null)
+                && (it.custom_signature ?? null) === signature
         );
         const currentQty = existingItem ? existingItem.quantity : 0;
 
@@ -56,7 +66,7 @@ exports.addToCart = async (req, res, next) => {
             return res.status(400).json({ success: false, message: `Only ${target.stock} available in stock` });
         }
 
-        await Cart.addItem(req.user.id, product_id, quantity, variant_id);
+        await Cart.addItem(req.user.id, product_id, quantity, variant_id, custom_dimensions, custom_label);
         res.json({ success: true, message: 'Item added to cart' });
     } catch (error) {
         next(error);
@@ -65,7 +75,7 @@ exports.addToCart = async (req, res, next) => {
 
 exports.updateCartItem = async (req, res, next) => {
     try {
-        const { product_id, quantity, variant_id = null } = req.body;
+        const { product_id, quantity, variant_id = null, custom_signature = null } = req.body;
         const target = await resolveTarget(product_id, variant_id);
         if (target.error) {
             return res.status(404).json({ success: false, message: target.error });
@@ -75,7 +85,7 @@ exports.updateCartItem = async (req, res, next) => {
             return res.status(400).json({ success: false, message: `Only ${target.stock} available in stock` });
         }
 
-        await Cart.updateQuantity(req.user.id, product_id, quantity, variant_id);
+        await Cart.updateQuantity(req.user.id, product_id, quantity, variant_id, custom_signature);
         res.json({ success: true, message: 'Cart updated' });
     } catch (error) {
         next(error);
@@ -85,7 +95,8 @@ exports.updateCartItem = async (req, res, next) => {
 exports.removeFromCart = async (req, res, next) => {
     try {
         const variantId = req.query.variant_id ? Number(req.query.variant_id) : null;
-        await Cart.removeItem(req.user.id, req.params.id, variantId);
+        const customSignature = req.query.custom_signature ? String(req.query.custom_signature) : null;
+        await Cart.removeItem(req.user.id, req.params.id, variantId, customSignature);
         res.json({ success: true, message: 'Item removed from cart' });
     } catch (error) {
         next(error);

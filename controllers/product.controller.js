@@ -472,6 +472,255 @@ exports.deleteProducts = async (req, res, next) => {
     }
 };
 
+// Ensures the trending_products table exists. Lazy migration like cms.controller.
+let trendingTableEnsured = false;
+const ensureTrendingProductsTable = async () => {
+    if (trendingTableEnsured) return;
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS trending_products (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            product_id INT NOT NULL,
+            position INT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_product (product_id),
+            INDEX idx_position (position),
+            CONSTRAINT fk_trending_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        )
+    `);
+    trendingTableEnsured = true;
+};
+
+const fetchTrendingProductsData = async (limit = 8) => {
+    await ensureTrendingProductsTable();
+    const safeLimit = Math.max(1, Math.min(parseInt(limit) || 8, 20));
+    const [rows] = await db.query(`
+        SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+               p.stock_quantity, p.track_inventory,
+               (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
+               c.id as category_id, c.name as category_name, c.slug as category_slug,
+               sc.id as sub_category_id, sc.name as sub_category_name, sc.slug as sub_category_slug,
+               b.id as brand_id, b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image,
+               tp.position
+        FROM trending_products tp
+        JOIN products p ON p.id = tp.product_id
+        LEFT JOIN categories c ON p.category_id = c.id
+        LEFT JOIN categories sc ON p.sub_category_id = sc.id
+        LEFT JOIN brands b ON p.brand_id = b.id
+        WHERE p.is_active = 1 AND (p.status = 'active' OR p.status IS NULL)
+        ORDER BY tp.position ASC, tp.id ASC
+        LIMIT ${safeLimit}
+    `);
+    return rows;
+};
+
+// Build the empty-query left side: derives products-suggestions / sub-categories /
+// brands from the admin-curated trending list, so clicking the search bar shows
+// content related to what the admin promoted.
+const deriveRelatedFromTrending = (trending) => {
+    const products = trending.slice(0, 5).map(p => ({
+        id: p.id,
+        name: p.name,
+        name_ar: p.name_ar,
+        slug: p.slug,
+        model: p.model || null,
+        price: p.price,
+        offer_price: p.offer_price,
+        primary_image: p.primary_image,
+        category_name: p.category_name
+    }));
+
+    const seenCats = new Set();
+    const categories = [];
+    for (const p of trending) {
+        // Prefer sub-category; fall back to main category
+        const id = p.sub_category_id || p.category_id;
+        const name = p.sub_category_name || p.category_name;
+        const slug = p.sub_category_slug || p.category_slug;
+        if (id && name && !seenCats.has(id)) {
+            seenCats.add(id);
+            categories.push({ id, name, slug });
+            if (categories.length >= 5) break;
+        }
+    }
+
+    const seenBrands = new Set();
+    const brands = [];
+    for (const p of trending) {
+        if (p.brand_id && p.brand_name && !seenBrands.has(p.brand_id)) {
+            seenBrands.add(p.brand_id);
+            brands.push({
+                id: p.brand_id,
+                name: p.brand_name,
+                name_ar: p.brand_name_ar,
+                slug: p.brand_slug,
+                image_url: p.brand_image
+            });
+            if (brands.length >= 5) break;
+        }
+    }
+
+    return { products, categories, brands };
+};
+
+/**
+ * @desc    Public search-dropdown endpoint. Returns dynamic suggestions for products,
+ *          categories, brands when `q` is provided, plus admin-curated trending products
+ *          (always returned regardless of `q`).
+ * @route   GET /api/v1/products/search-dropdown?q=<term>
+ * @access  Public
+ */
+exports.getSearchDropdown = async (req, res, next) => {
+    try {
+        const q = (req.query.q || '').trim();
+        const trending = await fetchTrendingProductsData(8);
+
+        if (q.length < 2) {
+            // Empty/short query: derive the left side from the admin's trending picks
+            // so the dropdown is still useful on first click.
+            const related = deriveRelatedFromTrending(trending);
+            return res.json({
+                success: true,
+                data: { ...related, trending }
+            });
+        }
+
+        // Dynamic product search (top 5)
+        const { products: prodRows } = await Product.findAll({
+            search: q,
+            limit: 5,
+            status: 'active',
+            stockStatus: 'in_stock'
+        });
+        const products = prodRows.map(p => ({
+            id: p.id,
+            name: p.name,
+            name_ar: p.name_ar,
+            slug: p.slug,
+            model: p.model,
+            price: p.price,
+            offer_price: p.offer_price,
+            primary_image: p.primary_image,
+            category_name: p.category_name,
+            stock_quantity: p.stock_quantity,
+            track_inventory: p.track_inventory
+        }));
+
+        // Singular fallback (matches existing getSuggestions behavior)
+        let qSingular = q;
+        if (q.length > 3 && q.endsWith('s')) {
+            qSingular = q.endsWith('ies') ? q.slice(0, -3) + 'y' : q.slice(0, -1);
+        }
+
+        const likePatterns = [
+            `${q}%`, `% ${q}%`, `${qSingular}%`, `% ${qSingular}%`,
+            `${q}%`, `% ${q}%`, `${qSingular}%`, `% ${qSingular}%`
+        ];
+
+        const [categories] = await db.query(
+            'SELECT id, name, name_ar, slug FROM categories WHERE is_active = 1 AND ((name LIKE ? OR name LIKE ? OR name LIKE ? OR name LIKE ?) OR (slug LIKE ? OR slug LIKE ? OR slug LIKE ? OR slug LIKE ?)) LIMIT 5',
+            likePatterns
+        );
+
+        // Brands: match either by the brand's own name OR by any of its products
+        // matching the query (so "coffee" surfaces brands that sell coffee gear
+        // even when the brand name itself doesn't contain "coffee").
+        const productMatchPatterns = [`${q}%`, `% ${q}%`, `${qSingular}%`, `% ${qSingular}%`];
+        const [brands] = await db.query(
+            `SELECT DISTINCT b.id, b.name, b.name_ar, b.slug, b.image_url
+             FROM brands b
+             WHERE (b.name LIKE ? OR b.name LIKE ? OR b.name LIKE ? OR b.name LIKE ?
+                    OR b.slug LIKE ? OR b.slug LIKE ? OR b.slug LIKE ? OR b.slug LIKE ?)
+                OR b.id IN (
+                    SELECT p.brand_id FROM products p
+                    LEFT JOIN categories c ON c.id = p.category_id
+                    WHERE p.is_active = 1
+                      AND p.brand_id IS NOT NULL
+                      AND (p.status = 'active' OR p.status IS NULL)
+                      AND (
+                            p.name LIKE ? OR p.name LIKE ? OR p.name LIKE ? OR p.name LIKE ?
+                         OR c.name LIKE ? OR c.name LIKE ? OR c.name LIKE ? OR c.name LIKE ?
+                         OR p.product_group LIKE ? OR p.product_group LIKE ? OR p.product_group LIKE ? OR p.product_group LIKE ?
+                      )
+                )
+             LIMIT 5`,
+            [
+                ...likePatterns,
+                ...productMatchPatterns,
+                ...productMatchPatterns,
+                ...productMatchPatterns
+            ]
+        );
+
+        res.json({
+            success: true,
+            data: { products, categories, brands, trending }
+        });
+    } catch (error) {
+        console.error('GET SEARCH DROPDOWN ERROR:', error);
+        res.status(500).json({ success: false, message: 'Error fetching search dropdown' });
+    }
+};
+
+/**
+ * @desc    Admin: list current trending products in order
+ * @route   GET /api/v1/admin/trending-products
+ * @access  Private/Admin
+ */
+exports.adminGetTrendingProducts = async (req, res, next) => {
+    try {
+        const data = await fetchTrendingProductsData(50);
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error('ADMIN GET TRENDING ERROR:', error);
+        next(error);
+    }
+};
+
+/**
+ * @desc    Admin: replace the trending-products list
+ *          Body: { items: [{ product_id, position }, ...] }
+ * @route   PUT /api/v1/admin/trending-products
+ * @access  Private/Admin
+ */
+exports.adminSetTrendingProducts = async (req, res, next) => {
+    try {
+        await ensureTrendingProductsTable();
+        const items = Array.isArray(req.body?.items) ? req.body.items : [];
+
+        const cleaned = items
+            .map((it, idx) => ({
+                product_id: parseInt(it.product_id, 10),
+                position: Number.isFinite(parseInt(it.position, 10)) ? parseInt(it.position, 10) : idx
+            }))
+            .filter(it => Number.isFinite(it.product_id) && it.product_id > 0);
+
+        // De-duplicate by product_id, keeping the first occurrence's position
+        const seen = new Set();
+        const unique = [];
+        for (const it of cleaned) {
+            if (seen.has(it.product_id)) continue;
+            seen.add(it.product_id);
+            unique.push(it);
+        }
+
+        await db.query('DELETE FROM trending_products');
+        if (unique.length > 0) {
+            const placeholders = unique.map(() => '(?, ?)').join(', ');
+            const params = unique.flatMap(it => [it.product_id, it.position]);
+            await db.query(
+                `INSERT INTO trending_products (product_id, position) VALUES ${placeholders}`,
+                params
+            );
+        }
+
+        const data = await fetchTrendingProductsData(50);
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error('ADMIN SET TRENDING ERROR:', error);
+        next(error);
+    }
+};
+
 exports.getSuggestions = async (req, res, next) => {
     try {
         const { search } = req.query;

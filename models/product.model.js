@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const slugify = require('slugify');
 const ProductVariant = require('./productVariant.model');
+const ProductSizeTier = require('./productSizeTier.model');
 
 class Product {
     static async findAll({ category, brand, seller, minPrice, maxPrice, search, sort, limit, offset, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, is_best_seller, status, stockStatus }) {
@@ -260,6 +261,58 @@ class Product {
                         }
                     });
                 }
+
+                // ---- Customizable products: compute the base price from size tiers ----
+                // For each customizable product, the displayed price = sum of the matched
+                // tier price for each base dimension. Override p.price (and clear offer_price)
+                // so cards/listings show the correct customized base price.
+                await ProductSizeTier.ensureSchema();
+                const customProductIds = rows.filter(p => Number(p.is_customizable) === 1).map(p => p.id);
+                if (customProductIds.length > 0) {
+                    const [tierRows] = await db.query(
+                        `SELECT product_id, dimension, min_cm, max_cm, price
+                         FROM product_size_tiers
+                         WHERE product_id IN (${customProductIds.join(',')})`
+                    );
+                    const tiersByProduct = {};
+                    for (const t of tierRows) {
+                        (tiersByProduct[t.product_id] = tiersByProduct[t.product_id] || []).push(t);
+                    }
+
+                    rows.forEach(p => {
+                        if (Number(p.is_customizable) !== 1) return;
+                        // Parse base_dimensions JSON
+                        let baseDims = {};
+                        try {
+                            if (p.base_dimensions) baseDims = typeof p.base_dimensions === 'string' ? JSON.parse(p.base_dimensions) : p.base_dimensions;
+                        } catch (e) { baseDims = {}; }
+                        let customDims = [];
+                        try {
+                            if (p.custom_dimensions) customDims = typeof p.custom_dimensions === 'string' ? JSON.parse(p.custom_dimensions) : p.custom_dimensions;
+                        } catch (e) { customDims = []; }
+                        if (!Array.isArray(customDims) || customDims.length === 0) return;
+
+                        const tiers = tiersByProduct[p.id] || [];
+                        let total = 0;
+                        let ok = true;
+                        for (const dim of customDims) {
+                            const baseV = Number(baseDims[dim]);
+                            if (!Number.isFinite(baseV)) { ok = false; break; }
+                            const dimTiers = tiers.filter(t => t.dimension === dim);
+                            if (dimTiers.length === 0) { ok = false; break; }
+                            const tier = dimTiers.find(t => baseV >= Number(t.min_cm) && baseV <= Number(t.max_cm));
+                            if (!tier) { ok = false; break; }
+                            total += Number(tier.price);
+                        }
+                        if (ok) {
+                            p.price = total;
+                            // Customizable products don't currently support a separate offer;
+                            // clear offer fields so cards don't show stale strike-through prices.
+                            p.offer_price = null;
+                            p.discount_percentage = 0;
+                        }
+                    });
+                }
             }
 
             // Count query
@@ -360,6 +413,34 @@ class Product {
                 product.variants = [];
             }
 
+            // Size tiers (custom-dimension pricing). custom_dimensions stored as JSON string.
+            if (Number(product.is_customizable) === 1) {
+                try {
+                    product.size_tiers = await ProductSizeTier.getByProductId(product.id);
+                } catch (e) {
+                    console.error('Failed to load size tiers for product', product.id, e.message);
+                    product.size_tiers = [];
+                }
+                try {
+                    product.custom_dimensions = product.custom_dimensions
+                        ? JSON.parse(product.custom_dimensions)
+                        : [];
+                } catch (e) {
+                    product.custom_dimensions = [];
+                }
+                try {
+                    product.base_dimensions = product.base_dimensions
+                        ? JSON.parse(product.base_dimensions)
+                        : {};
+                } catch (e) {
+                    product.base_dimensions = {};
+                }
+            } else {
+                product.size_tiers = [];
+                product.custom_dimensions = [];
+                product.base_dimensions = {};
+            }
+
             return product;
         }
 
@@ -393,6 +474,8 @@ class Product {
 
     static async create(data) {
         try {
+            // Ensure customizable schema exists before INSERT (lazy migration)
+            await ProductSizeTier.ensureSchema();
             const name = String(data.name || '');
             const model = data.model ? String(data.model) : null;
             const youtube_video_link = data.youtube_video_link ? String(data.youtube_video_link) : null;
@@ -426,6 +509,33 @@ class Product {
             const seller_id = (data.seller_id && !isNaN(parseInt(data.seller_id))) ? parseInt(data.seller_id) : null;
             const offer_start = data.offer_start || null;
             const offer_end = data.offer_end || null;
+            const is_customizable = isTrue(data.is_customizable) ? 1 : 0;
+            const custom_dimensions = (() => {
+                if (!is_customizable) return null;
+                const allowed = ['width', 'depth', 'height'];
+                let dims = data.custom_dimensions;
+                if (typeof dims === 'string') {
+                    try { dims = JSON.parse(dims); } catch (e) { dims = []; }
+                }
+                if (!Array.isArray(dims)) return null;
+                const clean = dims.filter(d => allowed.includes(String(d)));
+                return clean.length > 0 ? JSON.stringify(clean) : null;
+            })();
+            const base_dimensions = (() => {
+                if (!is_customizable) return null;
+                const allowed = ['width', 'depth', 'height'];
+                let bd = data.base_dimensions;
+                if (typeof bd === 'string') {
+                    try { bd = JSON.parse(bd); } catch (e) { bd = {}; }
+                }
+                if (!bd || typeof bd !== 'object') return null;
+                const clean = {};
+                for (const k of allowed) {
+                    const n = parseInt(bd[k], 10);
+                    if (Number.isFinite(n) && n >= 0) clean[k] = n;
+                }
+                return Object.keys(clean).length > 0 ? JSON.stringify(clean) : null;
+            })();
 
             const params = [
                 name, name_ar, slug, description, description_ar, short_description, short_description_ar,
@@ -437,15 +547,25 @@ class Product {
                 data.frequently_bought_together ? String(data.frequently_bought_together) : null,
                 data.you_may_also_need ? String(data.you_may_also_need) : null,
                 (data.warranty !== undefined && data.warranty !== '' && data.warranty !== null) ? parseInt(data.warranty) : null,
-                (data.warranty_ar !== undefined && data.warranty_ar !== '' && data.warranty_ar !== null) ? parseInt(data.warranty_ar) : null
+                (data.warranty_ar !== undefined && data.warranty_ar !== '' && data.warranty_ar !== null) ? parseInt(data.warranty_ar) : null,
+                is_customizable, custom_dimensions, base_dimensions
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, warranty, warranty_ar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
             const productId = result.insertId;
+
+            // Persist size tiers if customizable
+            if (is_customizable && Array.isArray(data.size_tiers)) {
+                try {
+                    await ProductSizeTier.replaceForProduct(productId, data.size_tiers);
+                } catch (e) {
+                    console.error('Failed to persist size tiers for new product', productId, e.message);
+                }
+            }
 
             // Handle multiple images
             if (data.images && Array.isArray(data.images)) {
@@ -490,6 +610,8 @@ class Product {
     }
 
     static async update(id, data) {
+        // Ensure customizable schema exists before UPDATE references the new columns
+        await ProductSizeTier.ensureSchema();
         const allowedColumns = [
             'name', 'name_ar', 'description', 'description_ar', 'short_description', 'short_description_ar',
             'specifications', 'price', 'discount_percentage', 'offer_price', 'stock_quantity',
@@ -497,7 +619,8 @@ class Product {
             'seller_id', 'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer',
             'is_best_seller', 'status', 'product_group', 'sub_category', 'model',
             'youtube_video_link', 'resources', 'offer_start', 'offer_end',
-            'frequently_bought_together', 'you_may_also_need', 'warranty', 'warranty_ar'
+            'frequently_bought_together', 'you_may_also_need', 'warranty', 'warranty_ar',
+            'is_customizable', 'custom_dimensions', 'base_dimensions'
         ];
 
         const productId = parseInt(id);
@@ -520,9 +643,37 @@ class Product {
 
         Object.keys(data).forEach(key => {
             if (allowedColumns.includes(key) && data[key] !== undefined && key !== 'slug') {
-                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'track_inventory'].includes(key)) {
+                if (['is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer', 'is_active', 'track_inventory', 'is_customizable'].includes(key)) {
                     const val = data[key];
                     cleanData[key] = (val === true || val === 'true' || val === 1 || val === '1') ? 1 : 0;
+                } else if (key === 'custom_dimensions') {
+                    const allowed = ['width', 'depth', 'height'];
+                    let dims = data[key];
+                    if (typeof dims === 'string') {
+                        try { dims = JSON.parse(dims); } catch (e) { dims = []; }
+                    }
+                    if (Array.isArray(dims)) {
+                        const clean = dims.filter(d => allowed.includes(String(d)));
+                        cleanData[key] = clean.length > 0 ? JSON.stringify(clean) : null;
+                    } else {
+                        cleanData[key] = null;
+                    }
+                } else if (key === 'base_dimensions') {
+                    const allowed = ['width', 'depth', 'height'];
+                    let bd = data[key];
+                    if (typeof bd === 'string') {
+                        try { bd = JSON.parse(bd); } catch (e) { bd = {}; }
+                    }
+                    if (bd && typeof bd === 'object') {
+                        const clean = {};
+                        for (const k of allowed) {
+                            const n = parseInt(bd[k], 10);
+                            if (Number.isFinite(n) && n >= 0) clean[k] = n;
+                        }
+                        cleanData[key] = Object.keys(clean).length > 0 ? JSON.stringify(clean) : null;
+                    } else {
+                        cleanData[key] = null;
+                    }
                 } else if (['category_id', 'sub_category_id', 'sub_sub_category_id', 'brand_id'].includes(key)) {
                     // Handle numeric foreign keys: empty string or null -> null
                     const val = data[key];
@@ -595,6 +746,22 @@ class Product {
         // Persist variants if payload includes them. An empty variants array clears them.
         if (Array.isArray(data.options) && Array.isArray(data.variants)) {
             await this._persistVariants(productId, data.options, data.variants);
+        }
+
+        // Persist size tiers when payload provides them. If is_customizable was just
+        // turned off (cleanData.is_customizable === 0), wipe the tiers regardless.
+        if (cleanData.is_customizable === 0) {
+            try {
+                await ProductSizeTier.replaceForProduct(productId, []);
+            } catch (e) {
+                console.error('Failed to clear size tiers for product', productId, e.message);
+            }
+        } else if (Array.isArray(data.size_tiers)) {
+            try {
+                await ProductSizeTier.replaceForProduct(productId, data.size_tiers);
+            } catch (e) {
+                console.error('Failed to persist size tiers for product', productId, e.message);
+            }
         }
     }
 

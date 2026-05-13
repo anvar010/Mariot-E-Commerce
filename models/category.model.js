@@ -17,6 +17,37 @@ class Category {
         }));
     }
 
+    static async findActiveByOffer({ is_limited_offer, is_weekly_deal }) {
+        const conds = [];
+        if (is_limited_offer) conds.push('(p.is_limited_offer = 1 AND p.is_weekly_deal = 0)');
+        if (is_weekly_deal) conds.push('(p.is_weekly_deal = 1 AND p.is_limited_offer = 0)');
+        if (conds.length === 0) return this.findAll();
+
+        const offerWhere = conds.join(' OR ');
+        // Match only the product's main category (category_id) so unrelated parents don't appear via sub-category mapping.
+        // Walk up to the top-level main_category for each matching product.
+        const [rows] = await db.execute(`
+            WITH RECURSIVE cat_chain AS (
+                SELECT c.id, c.parent_id, c.id AS origin_id
+                FROM categories c
+                JOIN products p ON p.category_id = c.id
+                WHERE (p.status = 'active' OR p.status IS NULL) AND p.is_active = 1
+                  AND p.offer_end IS NOT NULL AND p.offer_end > NOW()
+                  AND (${offerWhere})
+                UNION ALL
+                SELECT pc.id, pc.parent_id, cc.origin_id
+                FROM categories pc
+                JOIN cat_chain cc ON cc.parent_id = pc.id
+            )
+            SELECT DISTINCT c.id, c.name, c.name_ar, c.slug, c.type, c.is_active, c.parent_id
+            FROM cat_chain cc
+            JOIN categories c ON c.id = cc.id
+            WHERE c.is_active = 1
+            ORDER BY c.name ASC
+        `);
+        return rows.map(row => ({ ...row, brand_ids: [] }));
+    }
+
     static async findByBrand(brandSlug) {
         const [rows] = await db.execute(`
             SELECT DISTINCT c.id, c.name, c.name_ar, c.slug, c.type, c.is_active, c.parent_id,

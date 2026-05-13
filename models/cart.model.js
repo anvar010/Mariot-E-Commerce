@@ -1,5 +1,40 @@
 const db = require('../config/db');
 
+// Lazy migration: cart_items needs columns for custom-size persistence.
+let cartCustomColsEnsured = false;
+async function ensureCartCustomColumns() {
+    if (cartCustomColsEnsured) return;
+    const [cols] = await db.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cart_items'
+           AND COLUMN_NAME IN ('custom_dimensions','custom_label','custom_signature')`
+    );
+    const have = new Set(cols.map(r => r.COLUMN_NAME));
+    if (!have.has('custom_dimensions')) {
+        await db.query(`ALTER TABLE cart_items ADD COLUMN custom_dimensions TEXT NULL`);
+    }
+    if (!have.has('custom_label')) {
+        await db.query(`ALTER TABLE cart_items ADD COLUMN custom_label VARCHAR(255) NULL`);
+    }
+    if (!have.has('custom_signature')) {
+        await db.query(`ALTER TABLE cart_items ADD COLUMN custom_signature VARCHAR(255) NULL`);
+    }
+    cartCustomColsEnsured = true;
+}
+
+function buildCustomSignature(dims) {
+    if (!dims || typeof dims !== 'object') return null;
+    const keys = Object.keys(dims).sort();
+    const parts = keys
+        .map(k => {
+            const v = dims[k];
+            if (v === undefined || v === null || v === '') return null;
+            return `${k}:${v}`;
+        })
+        .filter(Boolean);
+    return parts.length > 0 ? parts.join('|') : null;
+}
+
 class Cart {
     static async getOrCreateCart(userId) {
         let [rows] = await db.execute('SELECT id FROM carts WHERE user_id = ?', [userId]);
@@ -11,12 +46,16 @@ class Cart {
     }
 
     static async getCartItems(userId) {
+        await ensureCartCustomColumns();
         const cartId = await this.getOrCreateCart(userId);
         const [items] = await db.execute(`
             SELECT
                 ci.product_id,
                 ci.variant_id,
                 ci.quantity,
+                ci.custom_dimensions,
+                ci.custom_label,
+                ci.custom_signature,
                 p.name, p.name_ar, p.price, p.offer_price, p.slug, p.stock_quantity, p.track_inventory,
                 b.name as brand_name,
                 (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
@@ -60,6 +99,11 @@ class Cart {
         return items.map(it => {
             const hasVariant = it.variant_id != null;
             const usePrimary = hasVariant && Number(it.variant_use_primary) === 1;
+            let parsedDims = null;
+            if (it.custom_dimensions) {
+                try { parsedDims = typeof it.custom_dimensions === 'string' ? JSON.parse(it.custom_dimensions) : it.custom_dimensions; }
+                catch (e) { parsedDims = null; }
+            }
             return {
                 product_id: it.product_id,
                 variant_id: it.variant_id,
@@ -78,18 +122,24 @@ class Cart {
                 stock_quantity: hasVariant ? Number(it.variant_stock) : Number(it.stock_quantity),
                 image: (hasVariant && !usePrimary && it.variant_image) ? it.variant_image : it.primary_image,
                 variant_sku: it.variant_sku,
-                variant_options: labelsByVariant[it.variant_id] || null
+                variant_options: labelsByVariant[it.variant_id] || null,
+                custom_dimensions: parsedDims,
+                custom_label: it.custom_label || null,
+                custom_signature: it.custom_signature || null
             };
         });
     }
 
-    static async addItem(userId, productId, quantity, variantId = null) {
+    static async addItem(userId, productId, quantity, variantId = null, customDimensions = null, customLabel = null) {
+        await ensureCartCustomColumns();
         const cartId = await this.getOrCreateCart(userId);
+        const customSignature = buildCustomSignature(customDimensions);
+        const customDimsStr = customDimensions ? JSON.stringify(customDimensions) : null;
 
-        // Match on (cart, product, variant) — NULL compared with <=> (null-safe equal)
+        // Match on (cart, product, variant, custom_signature) — NULL compared with <=> (null-safe equal)
         const [existing] = await db.execute(
-            'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id <=> ?',
-            [cartId, productId, variantId]
+            'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id <=> ? AND custom_signature <=> ?',
+            [cartId, productId, variantId, customSignature]
         );
 
         if (existing.length > 0) {
@@ -99,28 +149,30 @@ class Cart {
             );
         } else {
             await db.execute(
-                'INSERT INTO cart_items (cart_id, product_id, variant_id, quantity) VALUES (?, ?, ?, ?)',
-                [cartId, productId, variantId, quantity]
+                'INSERT INTO cart_items (cart_id, product_id, variant_id, quantity, custom_dimensions, custom_label, custom_signature) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [cartId, productId, variantId, quantity, customDimsStr, customLabel, customSignature]
             );
         }
     }
 
-    static async updateQuantity(userId, productId, quantity, variantId = null) {
+    static async updateQuantity(userId, productId, quantity, variantId = null, customSignature = null) {
+        await ensureCartCustomColumns();
         const cartId = await this.getOrCreateCart(userId);
         if (quantity <= 0) {
-            return this.removeItem(userId, productId, variantId);
+            return this.removeItem(userId, productId, variantId, customSignature);
         }
         await db.execute(
-            'UPDATE cart_items SET quantity = ? WHERE cart_id = ? AND product_id = ? AND variant_id <=> ?',
-            [quantity, cartId, productId, variantId]
+            'UPDATE cart_items SET quantity = ? WHERE cart_id = ? AND product_id = ? AND variant_id <=> ? AND custom_signature <=> ?',
+            [quantity, cartId, productId, variantId, customSignature]
         );
     }
 
-    static async removeItem(userId, productId, variantId = null) {
+    static async removeItem(userId, productId, variantId = null, customSignature = null) {
+        await ensureCartCustomColumns();
         const cartId = await this.getOrCreateCart(userId);
         await db.execute(
-            'DELETE FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id <=> ?',
-            [cartId, productId, variantId]
+            'DELETE FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id <=> ? AND custom_signature <=> ?',
+            [cartId, productId, variantId, customSignature]
         );
     }
 

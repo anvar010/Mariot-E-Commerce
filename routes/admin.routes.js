@@ -27,6 +27,7 @@ const {
     notifyOfferByEmail
 } = require('../controllers/admin.controller');
 const { getAllReviews } = require('../controllers/review.controller');
+const { adminGetTrendingProducts, adminSetTrendingProducts } = require('../controllers/product.controller');
 const { protect, authorize, authorizeAdminOrStaff } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
@@ -85,6 +86,11 @@ router.route('/cms/promotions/:id')
 
 // Offer email notification
 router.post('/products/:id/notify-offer', authorizeAdminOrStaff('products'), notifyOfferByEmail);
+
+// Trending products (search dropdown curation)
+router.route('/trending-products')
+    .get(authorizeAdminOrStaff('cms'), adminGetTrendingProducts)
+    .put(authorizeAdminOrStaff('cms'), adminSetTrendingProducts);
 
 // Exports — admin only
 router.get('/export/products', authorize('admin'), exportProducts);

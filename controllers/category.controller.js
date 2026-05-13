@@ -3,10 +3,14 @@ const generateUniqueSlug = require('../utils/generateSlug');
 
 exports.getCategories = async (req, res, next) => {
     try {
-        const { brand } = req.query;
+        const { brand, is_limited, is_weekly } = req.query;
+        const isLimited = is_limited === '1' || is_limited === 'true';
+        const isWeekly = is_weekly === '1' || is_weekly === 'true';
         const categories = brand
             ? await Category.findByBrand(brand)
-            : await Category.findAll();
+            : (isLimited || isWeekly)
+                ? await Category.findActiveByOffer({ is_limited_offer: isLimited, is_weekly_deal: isWeekly })
+                : await Category.findAll();
         res.json({ success: true, data: categories });
     } catch (error) {
         next(error);

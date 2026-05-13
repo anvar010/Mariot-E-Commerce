@@ -1,8 +1,29 @@
 const db = require('../config/db');
 const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
 
+// Lazy migration: make sure order_items has the customization columns.
+let customColsEnsured = false;
+async function ensureCustomColumns(connection) {
+    if (customColsEnsured) return;
+    const conn = connection || db;
+    const [cols] = await conn.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'order_items'
+           AND COLUMN_NAME IN ('custom_dimensions','custom_label')`
+    );
+    const have = new Set(cols.map(r => r.COLUMN_NAME));
+    if (!have.has('custom_dimensions')) {
+        await conn.query(`ALTER TABLE order_items ADD COLUMN custom_dimensions TEXT NULL`);
+    }
+    if (!have.has('custom_label')) {
+        await conn.query(`ALTER TABLE order_items ADD COLUMN custom_label VARCHAR(255) NULL`);
+    }
+    customColsEnsured = true;
+}
+
 class Order {
     static async create(userId, { items, shipping_address_id, billing_details, payment_method, total_amount, vat_amount, final_amount, points_to_use = 0, coupon_id = null, discount_amount = 0 }) {
+        await ensureCustomColumns(null);
         const connection = await db.getConnection();
         try {
             await connection.beginTransaction();
@@ -49,10 +70,16 @@ class Order {
 
             // 2. Create order items (No stock deduction yet)
             for (const item of items) {
+                const customDims = (() => {
+                    if (!item.custom_dimensions) return null;
+                    if (typeof item.custom_dimensions === 'string') return item.custom_dimensions;
+                    try { return JSON.stringify(item.custom_dimensions); } catch (e) { return null; }
+                })();
+                const customLabel = item.custom_label ? String(item.custom_label).slice(0, 255) : null;
                 await connection.execute(
-                    `INSERT INTO order_items (order_id, product_id, variant_id, quantity, price_at_purchase)
-                     VALUES (?, ?, ?, ?, ?)`,
-                    [orderId, item.product_id, item.variant_id || null, item.quantity, item.price]
+                    `INSERT INTO order_items (order_id, product_id, variant_id, quantity, price_at_purchase, custom_dimensions, custom_label)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [orderId, item.product_id, item.variant_id || null, item.quantity, item.price, customDims, customLabel]
                 );
             }
 
@@ -150,15 +177,23 @@ class Order {
     }
 
     static async findById(id) {
+        await ensureCustomColumns(null);
         const [rows] = await db.execute('SELECT * FROM orders WHERE id = ?', [id]);
         if (rows.length === 0) return null;
 
         const [items] = await db.execute(`
-            SELECT oi.*, p.name, (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1) as image
+            SELECT oi.*, p.name, p.name_ar, p.slug, (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1) as image
             FROM order_items oi
             JOIN products p ON oi.product_id = p.id
             WHERE oi.order_id = ?
         `, [id]);
+
+        // Parse stored JSON for custom_dimensions so consumers get an object
+        for (const it of items) {
+            if (it.custom_dimensions && typeof it.custom_dimensions === 'string') {
+                try { it.custom_dimensions = JSON.parse(it.custom_dimensions); } catch (e) { it.custom_dimensions = null; }
+            }
+        }
 
         rows[0].items = items;
         return rows[0];

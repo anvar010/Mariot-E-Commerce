@@ -43,7 +43,7 @@ class Brand {
      * Useful for dynamic filter sidebars.
      */
     static async findActiveBrands(filters = {}) {
-        const { category, search, is_featured, is_limited_offer, is_daily_offer, seller, minPrice, maxPrice } = filters;
+        const { category, search, is_featured, is_limited_offer, is_weekly_deal, is_daily_offer, seller, minPrice, maxPrice } = filters;
         
         let catIds = null;
         if (category) {
@@ -88,8 +88,9 @@ class Brand {
         }
 
         if (is_featured) query += ' AND p.is_featured = 1';
-        if (is_limited_offer) query += ' AND p.is_limited_offer = 1';
-        if (is_daily_offer) query += ' AND p.is_daily_offer = 1';
+        if (is_limited_offer) query += ' AND p.is_limited_offer = 1 AND p.is_weekly_deal = 0 AND p.offer_end IS NOT NULL AND p.offer_end > NOW()';
+        if (is_weekly_deal) query += ' AND p.is_weekly_deal = 1 AND p.is_limited_offer = 0 AND p.offer_end IS NOT NULL AND p.offer_end > NOW()';
+        if (is_daily_offer) query += ' AND p.is_daily_offer = 1 AND p.offer_end IS NOT NULL AND p.offer_end > NOW()';
         
         if (seller) {
             query += ' AND (p.seller_id = ? OR p.seller_name = ?)';

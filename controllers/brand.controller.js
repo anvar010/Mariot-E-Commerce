@@ -50,13 +50,14 @@ const checkPriorityUnique = async (priority, excludeId = 0) => {
 exports.getBrands = async (req, res, next) => {
     try {
         await ensurePriorityColumn();
-        const { category, is_daily_offer, search, is_featured, is_limited, seller, minPrice, maxPrice } = req.query;
-        
+        const { category, is_daily_offer, search, is_featured, is_limited, is_weekly, seller, minPrice, maxPrice } = req.query;
+
         const brands = await Brand.findActiveBrands({
             category,
             search,
             is_featured: is_featured === '1' || is_featured === 'true',
             is_limited_offer: is_limited === '1' || is_limited === 'true',
+            is_weekly_deal: is_weekly === '1' || is_weekly === 'true',
             is_daily_offer: is_daily_offer === '1' || is_daily_offer === 'true',
             seller,
             minPrice: minPrice ? Number(minPrice) : null,
