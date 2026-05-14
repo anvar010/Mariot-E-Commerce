@@ -193,10 +193,10 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
         {/* Layout Grid - Starting from the Heading level */}
         <div className={styles.layoutGrid}>
           {/* Left Column: Heading + Grid + Brands */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: (categorySlug === 'cooking-equipment' || categorySlug === 'cooking') ? '0' : '20px' }}>
             {(categorySlug === 'cooking-equipment' || categorySlug === 'cooking') ? (
               <>
-                <main className={styles.mainArea}>
+                <main className={`${styles.mainArea} ${styles.cookingMainArea}`}>
                   <header className={styles.headerSection}>
                     <div className={styles.offerBadge}>UP TO 20% OFF</div>
                     <h1 className={styles.title}>{categoryName}</h1>
