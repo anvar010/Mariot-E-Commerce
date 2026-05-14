@@ -289,6 +289,13 @@ const CartDrawer = () => {
                                                     {item.variant_label && (
                                                         <p className={styles.itemVariant}>{item.variant_label}</p>
                                                     )}
+                                                    {item.custom_dimensions && (
+                                                        <div className={styles.itemDimensions}>
+                                                            {Object.entries(item.custom_dimensions).map(([key, val]) => (
+                                                                <span key={key}>{key.charAt(0).toUpperCase() + key.slice(1)}: {val}cm</span>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <button className={styles.removeBtn} onClick={() => removeFromCart(item.id, item.variant_id ?? null, item.custom_signature ?? null)}>
                                                     <Trash2 size={18} />
