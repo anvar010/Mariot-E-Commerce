@@ -1451,16 +1451,44 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                             <DimIcon size={16} color="#475569" />
                                                             {dimLabel} (cm)
                                                         </label>
-                                                        <input
-                                                            type="number"
-                                                            min={minAllowed}
-                                                            max={maxAllowed}
-                                                            step={1}
-                                                            placeholder={minAllowed !== undefined && maxAllowed !== undefined ? `${minAllowed}–${maxAllowed}` : ''}
-                                                            value={val}
-                                                            onChange={(e) => setCustomDims(prev => ({ ...prev, [dim]: e.target.value }))}
-                                                            className={`${styles.dimensionInput} ${isInvalid ? styles.dimensionInputError : ''}`}
-                                                        />
+                                                        <div className={styles.dimInputContainer}>
+                                                            <input
+                                                                type="number"
+                                                                min={minAllowed}
+                                                                max={maxAllowed}
+                                                                step={1}
+                                                                placeholder={minAllowed !== undefined && maxAllowed !== undefined ? `${minAllowed}–${maxAllowed}` : ''}
+                                                                value={val}
+                                                                onChange={(e) => setCustomDims(prev => ({ ...prev, [dim]: e.target.value }))}
+                                                                className={`${styles.dimensionInput} ${isInvalid ? styles.dimensionInputError : ''}`}
+                                                            />
+                                                            <div className={styles.dimStepControls}>
+                                                                <button
+                                                                    type="button"
+                                                                    className={styles.dimStepBtn}
+                                                                    onClick={() => {
+                                                                        const current = Number(val) || 0;
+                                                                        const next = Math.min(maxAllowed !== undefined ? maxAllowed : 99999, Math.max(minAllowed !== undefined ? minAllowed : 0, current + 1));
+                                                                        setCustomDims(prev => ({ ...prev, [dim]: next.toString() }));
+                                                                    }}
+                                                                    title={isArabic ? 'زيادة' : 'Increase'}
+                                                                >
+                                                                    <ChevronUp size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className={styles.dimStepBtn}
+                                                                    onClick={() => {
+                                                                        const current = Number(val) || 0;
+                                                                        const next = Math.max(minAllowed !== undefined ? minAllowed : 0, current - 1);
+                                                                        setCustomDims(prev => ({ ...prev, [dim]: next.toString() }));
+                                                                    }}
+                                                                    title={isArabic ? 'تقليل' : 'Decrease'}
+                                                                >
+                                                                    <ChevronDown size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                         {minAllowed !== undefined && maxAllowed !== undefined && (
                                                             <span className={`${styles.customInputRange} ${isInvalid ? styles.customInputRangeError : ''}`}>
                                                                 {isInvalid
