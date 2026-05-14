@@ -694,22 +694,7 @@ const Header = () => {
                                             <ChevronRight size={18} />
                                         </Link>
                                     </li>
-                                    <li className={styles.mobileOnly}>
-                                        <div className={styles.mobileLanguageSwitch}>
-                                            <button
-                                                onClick={() => switchLocale('en')}
-                                                className={locale === 'en' ? styles.activeLocale : ''}
-                                            >
-                                                English
-                                            </button>
-                                            <button
-                                                onClick={() => switchLocale('ar')}
-                                                className={locale === 'ar' ? styles.activeLocale : ''}
-                                            >
-                                                العربية
-                                            </button>
-                                        </div>
-                                    </li>
+
                                 </ul>
 
                                 {user && (
