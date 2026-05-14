@@ -579,7 +579,7 @@
 
 .checkoutBtn {
     width: 100%;
-    background: #f59e0b;
+    background: var(--primary-teal);
     color: white;
     padding: 10px;
     border-radius: 6px;
