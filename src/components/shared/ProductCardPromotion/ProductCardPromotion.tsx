@@ -92,6 +92,18 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
 
     const handleAddToCart = () => {
         if (isInStock) {
+            // Build base dimensions for customizable products
+            let baseDims: Record<string, any> | undefined = undefined;
+            if (Number(product?.is_customizable) === 1 && product?.base_dimensions) {
+                let bd = product.base_dimensions;
+                if (typeof bd === 'string') {
+                    try { bd = JSON.parse(bd); } catch (e) { bd = {}; }
+                }
+                if (bd && typeof bd === 'object' && Object.keys(bd).length > 0) {
+                    baseDims = bd;
+                }
+            }
+
             addToCart({
                 id: product.id,
                 name: (isArabic && product.name_ar) ? product.name_ar : product.name,
@@ -101,7 +113,8 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                 slug: product.slug,
                 stock_quantity: product.stock_quantity,
                 track_inventory: product.track_inventory,
-                oldPrice: displayOldPrice
+                oldPrice: displayOldPrice,
+                custom_dimensions: baseDims || undefined
             });
         }
     };

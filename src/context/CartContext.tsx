@@ -302,7 +302,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     oldPrice: product.old_price || product.price_old || product.oldPrice,
                     quantity: quantityToAdd,
                     cartCount: newCount,
-                    cartTotal: newTotal
+                    cartTotal: newTotal,
+                    custom_dimensions: product.custom_dimensions || null
                 }
             );
         }

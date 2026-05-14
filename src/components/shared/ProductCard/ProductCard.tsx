@@ -139,6 +139,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
     const [cartAdded, setCartAdded] = useState(false);
 
     const handleAddToCart = async () => {
+        // Build base dimensions for customizable products
+        let baseDims: Record<string, any> | undefined = undefined;
+        if (Number(product?.is_customizable) === 1 && product?.base_dimensions) {
+            let bd = product.base_dimensions;
+            if (typeof bd === 'string') {
+                try { bd = JSON.parse(bd); } catch (e) { bd = {}; }
+            }
+            if (bd && typeof bd === 'object' && Object.keys(bd).length > 0) {
+                baseDims = bd;
+            }
+        }
+
         const success = await addToCart({
             id: displayId,
             name: displayModel,
@@ -147,7 +159,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
             brand: displayBrand,
             slug: product?.slug,
             stock_quantity: product?.stock_quantity,
-            oldPrice: displayOldPrice
+            oldPrice: displayOldPrice,
+            custom_dimensions: baseDims || undefined
         });
 
         if (success) {

@@ -17,6 +17,7 @@ interface Notification {
     quantity?: number;
     cartCount?: number;
     cartTotal?: number;
+    custom_dimensions?: Record<string, any> | null;
 }
 
 interface NotificationContextType {
@@ -243,16 +244,25 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                             <X size={18} style={{ cursor: 'pointer', color: '#9ca3af' }} onClick={() => removeNotification(n.id)} />
                                         </div>
                                         <div className="cart-body">
-                                            <img 
-                                                src={n.image || '/assets/mariot-logo2.webp'} 
-                                                alt="product" 
-                                                className="cart-img" 
+                                            <img
+                                                src={n.image || '/assets/mariot-logo2.webp'}
+                                                alt="product"
+                                                className="cart-img"
                                                 onError={(e) => {
                                                     (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp';
                                                 }}
                                             />
                                             <div className="cart-info">
                                                 <h4>{n.title}</h4>
+                                                {n.custom_dimensions && (
+                                                    <div style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 6px 0', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                        {Object.entries(n.custom_dimensions).map(([key, val]) => (
+                                                            <span key={key} style={{ background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>
+                                                                {key.charAt(0).toUpperCase() + key.slice(1)}: <b>{val}cm</b>
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                                 <div className="cart-price-line">
                                                     {tCart('qtyLabel')}: {n.quantity || 1} &nbsp; <b><CurrencyPrice amount={Number(n.price)} /></b>
                                                     {n.oldPrice && <span style={{ textDecoration: 'line-through', color: '#9ca3af', marginInlineStart: '12px', fontSize: '13px' }}><CurrencyPrice amount={Number(n.oldPrice)} /></span>}
