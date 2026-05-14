@@ -3,6 +3,19 @@ const fs = require('fs');
 const fsPromises = require('fs').promises;
 const sharp = require('sharp');
 
+// Max width (px) per upload folder. Logos/icons get aggressive downscaling;
+// product/gallery images stay larger. `null` means no resize.
+const FOLDER_MAX_WIDTH = {
+    brands: 480,
+    categories: 800,
+    icons: 256,
+};
+
+const getMaxWidthForFolder = (folder) => {
+    if (!folder) return null;
+    return FOLDER_MAX_WIDTH[folder] ?? null;
+};
+
 exports.uploadImage = async (req, res, next) => {
     if (!req.file) {
         return res.status(400).json({ success: false, message: 'Please upload a file' });
@@ -18,9 +31,12 @@ exports.uploadImage = async (req, res, next) => {
             const optimizedFilename = `${parsedPath.name}.webp`;
             const optimizedPath = path.join(parsedPath.dir, optimizedFilename);
 
-            await sharp(originalPath)
-                .webp({ quality: 80, effort: 4 })
-                .toFile(optimizedPath);
+            const maxWidth = getMaxWidthForFolder(req.query.folder);
+            let pipeline = sharp(originalPath);
+            if (maxWidth) {
+                pipeline = pipeline.resize({ width: maxWidth, withoutEnlargement: true });
+            }
+            await pipeline.webp({ quality: 80, effort: 4 }).toFile(optimizedPath);
 
             // Delete the original file
             await fsPromises.unlink(originalPath).catch(err => console.error('Error deleting original image:', err));
@@ -80,9 +96,12 @@ exports.uploadImages = async (req, res, next) => {
                     const optimizedFilename = `${parsedPath.name}.webp`;
                     const optimizedPath = path.join(parsedPath.dir, optimizedFilename);
 
-                    await sharp(originalPath)
-                        .webp({ quality: 80, effort: 4 })
-                        .toFile(optimizedPath);
+                    const maxWidth = getMaxWidthForFolder(req.query.folder);
+                    let pipeline = sharp(originalPath);
+                    if (maxWidth) {
+                        pipeline = pipeline.resize({ width: maxWidth, withoutEnlargement: true });
+                    }
+                    await pipeline.webp({ quality: 80, effort: 4 }).toFile(optimizedPath);
 
                     // Delete original
                     await fsPromises.unlink(originalPath).catch(err => console.error('Error deleting original image:', err));

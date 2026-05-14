@@ -48,6 +48,69 @@ class Category {
         return rows.map(row => ({ ...row, brand_ids: [] }));
     }
 
+    static async findBySearch(search) {
+        const term = (search || '').trim();
+        if (!term) return this.findAll();
+
+        const searchWords = term.split(/\s+/).filter(w => w.length > 0);
+        if (searchWords.length === 0) return this.findAll();
+
+        const params = [];
+        const wordConditions = searchWords.map(originalWord => {
+            const wordsToMatch = [originalWord];
+            if (originalWord.length > 3 && originalWord.endsWith('s')) {
+                let singular = originalWord.slice(0, -1);
+                if (originalWord.endsWith('ies')) singular = originalWord.slice(0, -3) + 'y';
+                wordsToMatch.push(singular);
+            } else if (originalWord.length > 3 && !originalWord.endsWith('s')) {
+                wordsToMatch.push(originalWord + 's');
+            }
+
+            const subConditions = [];
+            for (const word of wordsToMatch) {
+                for (let i = 0; i < 8; i++) {
+                    params.push(`${word}%`, `% ${word}%`);
+                }
+                subConditions.push('(' +
+                    'p.name LIKE ? OR p.name LIKE ? OR ' +
+                    'p.name_ar LIKE ? OR p.name_ar LIKE ? OR ' +
+                    'c0.name LIKE ? OR c0.name LIKE ? OR ' +
+                    'p.product_group LIKE ? OR p.product_group LIKE ? OR ' +
+                    'p.sub_category LIKE ? OR p.sub_category LIKE ? OR ' +
+                    'b.name LIKE ? OR b.name LIKE ? OR ' +
+                    'b.name_ar LIKE ? OR b.name_ar LIKE ? OR ' +
+                    'p.model LIKE ? OR p.model LIKE ?' +
+                    ')');
+            }
+            return '(' + subConditions.join(' OR ') + ')';
+        });
+
+        const whereSql = wordConditions.join(' AND ');
+
+        const sql = `
+            WITH RECURSIVE cat_chain AS (
+                SELECT c0.id, c0.parent_id
+                FROM categories c0
+                JOIN products p ON p.category_id = c0.id
+                LEFT JOIN brands b ON p.brand_id = b.id
+                WHERE (p.status = 'active' OR p.status IS NULL) AND p.is_active = 1
+                  AND (${whereSql})
+                UNION
+                SELECT pc.id, pc.parent_id
+                FROM categories pc
+                JOIN cat_chain cc ON cc.parent_id = pc.id
+            )
+            SELECT DISTINCT c.id, c.name, c.name_ar, c.slug, c.type, c.is_active, c.parent_id, c.image_url
+            FROM cat_chain cc
+            JOIN categories c ON c.id = cc.id
+            WHERE c.is_active = 1
+            ORDER BY c.name ASC
+        `;
+
+        const [rows] = await db.query(sql, params);
+        return rows.map(row => ({ ...row, brand_ids: [] }));
+    }
+
     static async findByBrand(brandSlug) {
         const [rows] = await db.execute(`
             SELECT DISTINCT c.id, c.name, c.name_ar, c.slug, c.type, c.is_active, c.parent_id,
