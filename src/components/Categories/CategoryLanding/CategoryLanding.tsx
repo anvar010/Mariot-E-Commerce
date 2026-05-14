@@ -52,7 +52,20 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                 const subSubs = allCats.filter((ss: any) => ss.parent_id === sub.id && ss.is_active);
                 return { ...sub, subCategories: subSubs };
               });
-            setSubCategories(subs);
+
+            // Wait for counts concurrently for the main subcategories
+            const subsWithCounts = await Promise.all(subs.map(async (sub: any) => {
+              try {
+                const subSlug = sub.slug || sub.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                const pRes = await fetch(`${API_BASE_URL}/products?category=${subSlug}&limit=1`);
+                const pData = await pRes.json();
+                return { ...sub, products_count: pData.total || 0 };
+              } catch (err) {
+                return { ...sub, products_count: 0 };
+              }
+            }));
+
+            setSubCategories(subsWithCounts);
 
             // 3. Fetch top products and brands in parallel
             const [prodRes, brandRes] = await Promise.all([
@@ -143,8 +156,8 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
               {isArabic ? 'الفئة غير موجودة' : 'Category Not Found'}
             </h1>
             <p className={styles.notFoundText}>
-              {isArabic 
-                ? 'عذراً، لم نتمكن من العثور على الفئة التي تبحث عنها. قد تكون تمت إزالتها أو تغيير اسمها.' 
+              {isArabic
+                ? 'عذراً، لم نتمكن من العثور على الفئة التي تبحث عنها. قد تكون تمت إزالتها أو تغيير اسمها.'
                 : "Sorry, we couldn't find the category you're looking for. It might have been moved, renamed, or deleted."}
             </p>
             <Link href="/all-categories" className={styles.backBtn}>
@@ -158,7 +171,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
   }
 
   const resolveImage = (url: string | null) => {
-    if (!url) return '/assets/placeholder-image.webp';
+    if (!url) return '/assets/mariot-logo.webp';
     if (url.startsWith('http')) return url;
     return `${MEDIA_BASE_URL}${url}`;
   };
@@ -181,63 +194,137 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
         <div className={styles.layoutGrid}>
           {/* Left Column: Heading + Grid + Brands */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <main className={styles.mainArea}>
-              <header className={styles.headerSection}>
-                <div className={styles.offerBadge}>UP TO 20% OFF</div>
-                <h1 className={styles.title}>{categoryName}</h1>
-                <div className={styles.descriptionWrapper}>
-                  <p className={styles.description}>
-                    {(isArabic && category.description_ar) ? category.description_ar : category.description || `Professional ${category.name} equipment is built to withstand heavy-duty commercial use while ensuring consistent quality in cafes and restaurants. Whether you need an espresso machine or a specialized coffee brewer, we have the right solution for your business needs.`}
-                  </p>
-                </div>
-              </header>
-
-              <div className={styles.categoryGrid}>
-                {subCategories.map((sub) => {
-                  const subSlug = sub.slug || sub.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
-                  return (
-                  <div key={sub.id} className={styles.categoryCard}>
-                    <Link href={`/shop?category=${subSlug}`} className={styles.imageWrapper}>
-                      <Image
-                        src={resolveImage(sub.image_url)}
-                        alt={sub.name}
-                        width={250}
-                        height={250}
-                        className={styles.cardImage}
-                        unoptimized
-                      />
-                    </Link>
-                    <div className={styles.cardContent}>
-                      <Link href={`/shop?category=${subSlug}`} className={styles.cardTitle}>
-                        {isArabic && sub.name_ar ? sub.name_ar : sub.name}
-                      </Link>
-                      <p className={styles.cardDescription}>
-                        {(isArabic && sub.description_ar) ? sub.description_ar : sub.description || `Choosing a reliable ${sub.name.toLowerCase()} is essential to meet the needs of specialty coffee...`}
+            {(categorySlug === 'cooking-equipment' || categorySlug === 'cooking') ? (
+              <>
+                <main className={styles.mainArea}>
+                  <header className={styles.headerSection}>
+                    <div className={styles.offerBadge}>UP TO 20% OFF</div>
+                    <h1 className={styles.title}>{categoryName}</h1>
+                    <div className={styles.descriptionWrapper}>
+                      <p className={styles.description}>
+                        {(isArabic && category.description_ar) ? category.description_ar : category.description || `Professional ${category.name} equipment is built to withstand heavy-duty commercial use while ensuring consistent quality in cafes and restaurants. Whether you need an espresso machine or a specialized coffee brewer, we have the right solution for your business needs.`}
                       </p>
-
-                      <ul className={styles.subList}>
-                        {sub.subCategories?.slice(0, 4).map((ss: any) => {
-                          const ssSlug = ss.slug || ss.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
-                          return (
-                          <li key={ss.id}>
-                            <Link href={`/shop?category=${ssSlug}`} className={styles.subLink}>
-                              <span style={{ flex: 1 }}>{isArabic && ss.name_ar ? ss.name_ar : ss.name}</span>
-                              <ChevronRight className={styles.chevron} size={14} />
-                            </Link>
-                          </li>
-                        )})}
-                        <li>
-                          <Link href={`/shop?category=${subSlug}`} className={styles.shopAll}>
-                            {t('shopAll')} <ChevronRight size={14} />
-                          </Link>
-                        </li>
-                      </ul>
                     </div>
+                  </header>
+                </main>
+                <div className={styles.cookingLayout}>
+                  {subCategories.map((sub) => {
+                    const subSlug = sub.slug || sub.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                    return (
+                      <div key={sub.id} className={styles.cookingSection}>
+                        <div className={styles.cookingSectionHeader}>
+                          <h2 className={styles.cookingSectionTitle}>
+                            {isArabic && sub.name_ar ? sub.name_ar : sub.name}
+                          </h2>
+                          <Link href={`/shop?category=${subSlug}`} className={styles.cookingShopAll}>
+                            {t('shopAll')} {sub.products_count > 0 ? `${sub.products_count} ` : ''}products <ChevronRight size={14} />
+                          </Link>
+                        </div>
+                        {(!sub.subCategories || sub.subCategories.length === 0) ? (
+                          <div className={styles.emptyStateContainer}>
+                            {sub.products_count === 0 ? (
+                              <p className={styles.emptyStateText}>
+                                {isArabic ? 'لا توجد منتجات متاحة حالياً' : 'No products currently available in this category.'}
+                              </p>
+                            ) : (
+                              <div className={styles.exploreAction}>
+                                <p className={styles.emptyStateText}>
+                                  {isArabic ? 'اكتشف مجموعة المنتجات في هذه الفئة' : 'Explore the full range of products in this category.'}
+                                </p>
+                                <Link href={`/shop?category=${subSlug}`} className={styles.exploreBtn}>
+                                  {isArabic ? 'تصفح المنتجات' : 'Browse Products'}
+                                </Link>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className={styles.cookingGrid}>
+                            {sub.subCategories?.map((ss: any) => {
+                              const ssSlug = ss.slug || ss.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                              return (
+                                <Link key={ss.id} href={`/shop?category=${ssSlug}`} className={styles.cookingCard}>
+                                  <div className={styles.cookingImageWrapper}>
+                                    <Image
+                                      src={resolveImage(ss.image_url)}
+                                      alt={ss.name}
+                                      width={150}
+                                      height={150}
+                                      className={styles.cookingImage}
+                                      unoptimized
+                                    />
+                                  </div>
+                                  <span className={styles.cookingCardTitle}>
+                                    {isArabic && ss.name_ar ? ss.name_ar : ss.name}
+                                  </span>
+                                </Link>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            ) : (
+              <main className={styles.mainArea}>
+                <header className={styles.headerSection}>
+                  <div className={styles.offerBadge}>UP TO 20% OFF</div>
+                  <h1 className={styles.title}>{categoryName}</h1>
+                  <div className={styles.descriptionWrapper}>
+                    <p className={styles.description}>
+                      {(isArabic && category.description_ar) ? category.description_ar : category.description || `Professional ${category.name} equipment is built to withstand heavy-duty commercial use while ensuring consistent quality in cafes and restaurants. Whether you need an espresso machine or a specialized coffee brewer, we have the right solution for your business needs.`}
+                    </p>
                   </div>
-                )})}
+                </header>
+                <div className={styles.categoryGrid}>
+                  {subCategories.map((sub) => {
+                    const subSlug = sub.slug || sub.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                    return (
+                      <div key={sub.id} className={styles.categoryCard}>
+                        <Link href={`/shop?category=${subSlug}`} className={styles.imageWrapper}>
+                          <Image
+                            src={resolveImage(sub.image_url)}
+                            alt={sub.name}
+                            width={250}
+                            height={250}
+                            className={styles.cardImage}
+                            unoptimized
+                          />
+                        </Link>
+                        <div className={styles.cardContent}>
+                          <Link href={`/shop?category=${subSlug}`} className={styles.cardTitle}>
+                            {isArabic && sub.name_ar ? sub.name_ar : sub.name}
+                          </Link>
+                          <p className={styles.cardDescription}>
+                            {(isArabic && sub.description_ar) ? sub.description_ar : sub.description || `Choosing a reliable ${sub.name.toLowerCase()} is essential to meet the needs of specialty coffee...`}
+                          </p>
 
-              </div>
-            </main>
+                          <ul className={styles.subList}>
+                            {sub.subCategories?.slice(0, 4).map((ss: any) => {
+                              const ssSlug = ss.slug || ss.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                              return (
+                                <li key={ss.id}>
+                                  <Link href={`/shop?category=${ssSlug}`} className={styles.subLink}>
+                                    <span>{isArabic && ss.name_ar ? ss.name_ar : ss.name}</span>
+                                    <ChevronRight size={14} className={styles.chevron} />
+                                  </Link>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                          <div className={styles.shopAllWrapper}>
+                            <Link href={`/shop?category=${subSlug}`} className={styles.shopAll}>
+                              {t('shopAll')} {sub.products_count > 0 ? `${sub.products_count} ` : ''}products <ChevronRight size={14} />
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </main>
+            )}
 
             {/* Popular Brands Section - After categories in the same column */}
             {brands.length > 0 && (
@@ -288,16 +375,16 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
 
             {/* Promo Card */}
             {promoProduct && (
-              <div className={styles.promoCard}>
+              <Link href={`/product/${promoProduct.slug}`} className={styles.promoCard} style={{ textDecoration: 'none' }}>
                 <div className={styles.promoHeader}>Featured Solution</div>
                 <div className={styles.promoContent}>
-                  <img src={resolveImage(promoProduct.primary_image)} alt={promoProduct.name} className={styles.promoImage} />
+                  <img src={resolveImage(promoProduct.primary_image)} alt={promoProduct.name} className={styles.promoImage} onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo.webp'; }} />
                   <div className={styles.promoText}>
                     <span className={styles.promoTitle}>{promoProduct.name}</span>
                     <span style={{ fontSize: '13px', color: '#64748b' }}>Technical precision and reliability.</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             )}
 
             {/* Top Products */}
@@ -308,7 +395,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                   {topProducts.map((prod) => (
                     <Link key={prod.id} href={`/product/${prod.slug}`} className={styles.productMini}>
                       <div className={styles.miniImgWrapper}>
-                        <img src={resolveImage(prod.primary_image)} alt={prod.name} className={styles.miniImg} />
+                        <img src={resolveImage(prod.primary_image)} alt={prod.name} className={styles.miniImg} onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo.webp'; }} />
                       </div>
                       <div className={styles.miniDetails}>
                         <span className={styles.miniName}>{prod.name}</span>
@@ -320,9 +407,9 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
               </div>
             )}
           </aside>
-        </div>
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   );
 };
 
