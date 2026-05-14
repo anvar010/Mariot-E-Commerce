@@ -36,6 +36,7 @@ const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSticky, setIsSticky] = useState(false);
     const [isCategoriesHovered, setIsCategoriesHovered] = useState(false);
+    const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
     const [showRewardToast, setShowRewardToast] = useState(false);
     const [announcement, setAnnouncement] = useState<any>(null);
 
@@ -275,9 +276,17 @@ const Header = () => {
         }
     };
 
-    // With locale-aware usePathname, pathname already excludes locale prefix
-    const cleanPath = pathname || '/';
-    const isCategoriesPage = cleanPath === '/all-categories';
+    // Traditional nav link configuration
+    const navItems = [
+        { label: t('todayOffers'), path: '/today-offers', isHot: true, icon: Flame },
+        { label: t('weeklyDeals'), path: '/shop?weekly=true', icon: Gift },
+        { label: t('shopByBrand'), path: '/shop-by-brands', icon: Tag },
+        { label: t('kitchenEquipments'), path: '/category/kitchen-equipment', icon: Utensils },
+        { label: t('stainlessSteelFabrications'), path: '/category/stainless-steel-fabrications', icon: Hammer },
+        { label: t('superMarket'), path: '/category/supermarket', icon: ShoppingCart },
+        { label: t('laundry'), path: '/category/laundry', icon: Shirt },
+        { label: t('rewardPoints'), path: '/profile?tab=myRewards', icon: Trophy, hasBadge: true },
+    ];
 
     return (
         <>
@@ -327,7 +336,6 @@ const Header = () => {
                         </div>
                     </div>
 
-                    {/* Main Header */}
                     <div className={styles.mainHeader}>
                         <div className={styles.container}>
                             <div className={styles.logoSection}>
@@ -373,7 +381,7 @@ const Header = () => {
                                     )}
                                     <input
                                         type="text"
-                                        placeholder={searchQuery ? '' : ''}
+                                        placeholder=""
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         onFocus={() => setShowSuggestions(true)}
@@ -483,266 +491,173 @@ const Header = () => {
                         </div>
                     </div>
 
-                    {/* Mobile Menu Overlay */}
-                    {isMenuOpen && (
-                        <div className={styles.overlay} onClick={() => setIsMenuOpen(false)} />
-                    )}
-
-                    {/* Navigation Bar */}
-                    <nav className={`${styles.navBar} ${isMenuOpen ? styles.navOpen : ''}`}>
+                    <div className={`${styles.navBar} ${styles.desktopOnly}`}>
                         <div className={styles.container}>
-                            {/* Mobile-only Header Section */}
-                            <div className={`${styles.mobileMenuHeader} ${styles.mobileOnly}`}>
-                                {user ? (
-                                    <div className={styles.mobileProfileSection}>
-                                        <div className={styles.mobileUserInfo}>
-                                            <span className={styles.mobileUserName}>{user.name}</span>
-                                            <span className={styles.mobileUserEmail}>{user.email}</span>
-                                        </div>
+                            <div
+                                className={styles.categoriesWrapper}
+                                onMouseEnter={() => setIsCategoriesHovered(true)}
+                                onMouseLeave={() => setIsCategoriesHovered(false)}
+                            >
+                                <Link
+                                    href="/all-categories"
+                                    className={`${styles.categories} ${isCategoriesHovered ? styles.categoriesActive : ''}`}
+                                    onClick={() => setIsCategoriesHovered(false)}
+                                >
+                                    <div className={styles.navItemContent}>
+                                        <Menu size={20} />
+                                        <span>{t('allCategories')}</span>
                                     </div>
-                                ) : (
-                                    <div className={styles.mobileGuestSection}>
-                                        <div className={styles.mobileUserInfo}>
-                                            <span className={styles.mobileUserName}>{t('account')}</span>
-                                            <Link href="/signin" className={styles.mobileSignInLink} onClick={() => setIsMenuOpen(false)}>
-                                                {t('signIn')}
-                                            </Link>
-                                        </div>
+                                    <ChevronRight size={14} />
+                                </Link>
+                                {isCategoriesHovered && (
+                                    <div className={styles.megaMenu}>
+                                        <CategoriesLayout isPopup={true} onClose={() => setIsCategoriesHovered(false)} />
                                     </div>
                                 )}
-                                <button className={styles.mobileCloseBtn} onClick={() => setIsMenuOpen(false)}>
-                                    <X size={24} />
-                                </button>
                             </div>
 
-                            <div className={styles.mobileScrollArea}>
-                                <div
-                                    className={styles.categoriesWrapper}
-                                    onMouseEnter={() => setIsCategoriesHovered(true)}
-                                    onMouseLeave={() => setIsCategoriesHovered(false)}
-                                >
-                                    <Link
-                                        href="/all-categories"
-                                        className={`${styles.categories} ${isCategoriesPage ? styles.categoriesActive : ''}`}
-                                        onClick={() => setIsMenuOpen(false)}
-                                    >
-                                        <div className={styles.navItemContent}>
-                                            <Menu size={24} className={styles.desktopOnly} />
-                                            <Menu size={20} className={styles.mobileOnly} />
-                                            <span>{t('allCategories')}</span>
-                                        </div>
-                                        <ChevronRight size={18} className={styles.mobileOnly} />
-                                    </Link>
-
-                                    {isCategoriesHovered && (
-                                        <div className={styles.megaMenu}>
-                                            <CategoriesLayout
-                                                isPopup={true}
-                                                onClose={() => setIsCategoriesHovered(false)}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-
-                                <ul className={styles.navLinks}>
-                                    <li>
-                                        <Link
-                                            href="/today-offers"
-                                            className={`${styles.hot} ${cleanPath === '/today-offers' ? styles.linkActive : ''}`}
-                                            onClick={() => setIsMenuOpen(false)}
-                                        >
-                                            <div className={styles.navItemContent}>
-                                                <Flame size={20} className={styles.mobileOnly} />
-                                                <span className={styles.desktopOnly}>🔥 </span>
-                                                <span>{t('todayOffers')}</span>
-                                                <span className={`${styles.hotBadge} ${styles.mobileOnly}`}>HOT</span>
-                                            </div>
-                                            <ChevronRight size={18} className={styles.mobileOnly} />
-                                        </Link>
-                                    </li>
-                                    <li className={styles.mobileOnly}>
-                                        <Link
-                                            href="/shop?weekly=true"
-                                            onClick={() => setIsMenuOpen(false)}
-                                        >
-                                            <div className={styles.navItemContent}>
-                                                <Gift size={20} className={styles.mobileOnly} />
-                                                <span>{t('weeklyDeals')}</span>
-                                            </div>
-                                            <ChevronRight size={18} className={styles.mobileOnly} />
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href="/shop-by-brands"
-                                            className={cleanPath === '/shop-by-brands' ? styles.linkActive : ''}
-                                            onClick={() => setIsMenuOpen(false)}
-                                        >
-                                            <div className={styles.navItemContent}>
-                                                <Tag size={20} className={styles.mobileOnly} />
-                                                <span>{t('shopByBrand')}</span>
-                                            </div>
-                                            <ChevronRight size={18} className={styles.mobileOnly} />
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href="/category/kitchen-equipment"
-                                            className={cleanPath === '/category/kitchen-equipment' ? styles.linkActive : ''}
-                                            onClick={() => setIsMenuOpen(false)}
-                                        >
-                                            <div className={styles.navItemContent}>
-                                                <Utensils size={20} className={styles.mobileOnly} />
-                                                <span>{t('kitchenEquipments')}</span>
-                                            </div>
-                                            <ChevronRight size={18} className={styles.mobileOnly} />
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href="/category/stainless-steel-fabrications"
-                                            className={cleanPath === '/category/stainless-steel-fabrications' ? styles.linkActive : ''}
-                                            onClick={() => setIsMenuOpen(false)}
-                                        >
-                                            <div className={styles.navItemContent}>
-                                                <Hammer size={20} className={styles.mobileOnly} />
-                                                <span>{t('stainlessSteelFabrications')}</span>
-                                            </div>
-                                            <ChevronRight size={18} className={styles.mobileOnly} />
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href="/category/supermarket"
-                                            className={cleanPath === '/category/supermarket' ? styles.linkActive : ''}
-                                            onClick={() => setIsMenuOpen(false)}
-                                        >
-                                            <div className={styles.navItemContent}>
-                                                <ShoppingCart size={20} className={styles.mobileOnly} />
-                                                <span>{t('superMarket')}</span>
-                                            </div>
-                                            <ChevronRight size={18} className={styles.mobileOnly} />
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href="/category/laundry"
-                                            className={cleanPath === '/category/laundry' ? styles.linkActive : ''}
-                                            onClick={() => setIsMenuOpen(false)}
-                                        >
-                                            <div className={styles.navItemContent}>
-                                                <Shirt size={20} className={styles.mobileOnly} />
-                                                <span>{t('laundry')}</span>
-                                            </div>
-                                            <ChevronRight size={18} className={styles.mobileOnly} />
-                                        </Link>
-                                    </li>
-                                    {user ? (
-                                        <>
-                                            <li className={styles.mobileOnly}>
-                                                <Link href="/profile" onClick={() => setIsMenuOpen(false)}>
-                                                    <div className={styles.navItemContent}>
-                                                        <User size={20} />
-                                                        <span>{t('myAccount')}</span>
-                                                    </div>
-                                                    <ChevronRight size={18} />
-                                                </Link>
-                                            </li>
-                                            <li className={styles.mobileOnly}>
-                                                <Link href="/rewards" onClick={() => setIsMenuOpen(false)}>
-                                                    <div className={styles.navItemContent}>
-                                                        <Trophy size={20} />
-                                                        <span>{t('rewardPointsNav')}</span>
-                                                        <span className={styles.pointsBadge}>{user?.reward_points || 0}</span>
-                                                    </div>
-                                                    <ChevronRight size={18} />
-                                                </Link>
-                                            </li>
-                                            {(user?.role === 'admin' || user?.role === 'staff') && (
-                                                <li className={styles.mobileOnly}>
-                                                    <Link
-                                                        href="/admin"
-                                                        onClick={() => setIsMenuOpen(false)}
-                                                        className={styles.adminMobileLink}
-                                                    >
-                                                        <div className={styles.navItemContent}>
-                                                            <Shield size={20} />
-                                                            <span>{t('adminDashboard')}</span>
-                                                        </div>
-                                                        <ChevronRight size={18} />
-                                                    </Link>
-                                                </li>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <li className={styles.mobileOnly}>
-                                            <Link href="/signin" onClick={() => setIsMenuOpen(false)}>
-                                                <div className={styles.navItemContent}>
-                                                    <UserPlus size={20} />
-                                                    <span>{t('signInRegister')}</span>
-                                                </div>
-                                                <ChevronRight size={18} />
+                            <ul className={styles.navLinks}>
+                                {navItems
+                                    .filter(item => item.path !== '/shop?weekly=true' && item.path !== '/profile?tab=myRewards')
+                                    .map((item, index) => (
+                                        <li key={index}>
+                                            <Link
+                                                href={item.path}
+                                                className={`${pathname === item.path ? styles.linkActive : ''} ${item.isHot ? styles.desktopHotLink : ''}`}
+                                            >
+                                                {item.isHot && item.icon && (
+                                                    <item.icon
+                                                        size={16}
+                                                        style={{
+                                                            marginInlineEnd: '4px',
+                                                            verticalAlign: 'middle',
+                                                            color: '#ef4444',
+                                                            display: 'inline-block'
+                                                        }}
+                                                    />
+                                                )}
+                                                {item.label}
                                             </Link>
                                         </li>
-                                    )}
-                                    <li className={styles.mobileOnly}>
-                                        <Link href="/track-order" onClick={() => setIsMenuOpen(false)}>
-                                            <div className={styles.navItemContent}>
-                                                <MessageCircle size={20} />
-                                                <span>{t('liveSupport')}</span>
-                                            </div>
-                                            <ChevronRight size={18} />
-                                        </Link>
-                                    </li>
-
-                                </ul>
-
-                                {user && (
-                                    <div className={`${styles.mobileSignOutContainer} ${styles.mobileOnly}`}>
-                                        <button
-                                            onClick={() => {
-                                                logout();
-                                                setIsMenuOpen(false);
-                                            }}
-                                            className={styles.newMobileSignOutBtn}
-                                        >
-                                            <LogOut size={20} />
-                                            <span>{t('signOut')}</span>
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </nav>
-
-                    {/* Support Info Bar */}
-                    <div className={`${styles.supportBar} ${styles.desktopOnly}`}>
-                        <div className={styles.container}>
-                            <div className={styles.supportItem}>
-                                <Phone size={16} className={styles.whatsappIcon} />
-                                <a href="https://wa.me/97142882777" target="_blank" rel="noopener noreferrer">
-                                    <span className={styles.desktopOnly}>
-                                        {t.rich('customEquipments', {
-                                            phone: (chunks) => <span dir="ltr" style={{ display: 'inline-block', direction: 'ltr', unicodeBidi: 'isolate' }}>(+971 4 288 2777)</span>
-                                        })}
-                                    </span>
-                                    <span className={styles.mobileOnly}>
-                                        {t('liveSupport')}
-                                    </span>
-                                </a>
-                            </div>
-                            <div className={styles.supportItem}>
-                                <MessageCircle size={16} className={styles.supportIcon} />
-                                <a href="#">{t('liveSupport')}</a>
-                            </div>
-                            <div className={styles.supportItem}>
-                                <HelpCircle size={16} className={styles.helpIcon} />
-                                <Link href="/shop?category=parts">{t('needHelp')}</Link>
-                            </div>
+                                    ))}
+                            </ul>
                         </div>
                     </div>
                 </header>
             </div>
+
+            {/* Mobile Menu Components - Moved outside sticky wrapper for stability */}
+            {isMenuOpen && (
+                <div className={styles.overlay} onClick={() => setIsMenuOpen(false)} />
+            )}
+
+            <nav className={`${styles.navBar} ${styles.mobileOnly} ${isMenuOpen ? styles.navOpen : ''}`}>
+                <div className={styles.container}>
+                    <div className={styles.mobileMenuHeader}>
+                        <div className={styles.mobileUserInfo}>
+                            <span className={styles.mobileUserName}>{user ? user.name : t('account')}</span>
+                            {user && <span className={styles.mobileUserEmail}>{user.email}</span>}
+                            {!user && (
+                                <Link href="/signin" className={styles.mobileSignInLink} onClick={() => setIsMenuOpen(false)}>
+                                    {t('signIn')}
+                                </Link>
+                            )}
+                        </div>
+                        <button className={styles.mobileCloseBtn} onClick={() => setIsMenuOpen(false)}>
+                            <X size={24} />
+                        </button>
+                    </div>
+
+                    <div className={styles.mobileScrollArea}>
+                        {/* Categories section */}
+                        <div className={styles.categoriesWrapper}>
+                            <div
+                                className={`${styles.categories} ${isMegaMenuOpen ? styles.categoriesActive : ''} ${pathname === '/all-categories' ? styles.categoriesPageActive : ''}`}
+                                onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
+                            >
+                                <Link
+                                    href="/all-categories"
+                                    className={styles.navItemContent}
+                                    onClick={() => {
+                                        setIsMenuOpen(false);
+                                        setIsMegaMenuOpen(false);
+                                    }}
+                                >
+                                    <Menu size={20} />
+                                    <span>{t('allCategories')}</span>
+                                </Link>
+                                <ChevronRight size={14} className={styles.mobileOnly} />
+                                {isMegaMenuOpen && (
+                                    <div className={styles.megaMenu} style={{ display: 'block', position: 'static', width: '100%', boxShadow: 'none', animation: 'none' }}>
+                                        <CategoriesLayout isPopup={true} onClose={() => {
+                                            setIsMenuOpen(false);
+                                            setIsMegaMenuOpen(false);
+                                        }} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Traditional nav links */}
+                        <ul className={styles.navLinks}>
+                            {navItems.map((item, index) => (
+                                <li key={index} className={item.isHot ? styles.hot : ''}>
+                                    <Link
+                                        href={item.path}
+                                        className={pathname === item.path ? styles.linkActive : ''}
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        <div className={styles.navItemContent}>
+                                            {item.icon && <item.icon size={20} />}
+                                            {item.label}
+                                        </div>
+                                        {item.isHot && <span className={styles.hotBadge}>HOT</span>}
+                                        {item.hasBadge && (
+                                            <span className={styles.pointsBadge}>
+                                                {user?.reward_points || 0} PTS
+                                            </span>
+                                        )}
+                                        <ChevronRight size={14} className={styles.mobileOnly} />
+                                    </Link>
+                                </li>
+                            ))}
+
+                            {/* Mobile-only Admin Link */}
+                            {(user?.role === 'admin' || user?.role === 'staff') && (
+                                <li className={styles.mobileOnly}>
+                                    <Link
+                                        href="/admin"
+                                        className={`${styles.adminMobileLink}`}
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        <div className={styles.navItemContent}>
+                                            <Shield size={20} />
+                                            {t('admin')}
+                                        </div>
+                                        <ChevronRight size={14} />
+                                    </Link>
+                                </li>
+                            )}
+                        </ul>
+
+                        {/* Sign Out for Mobile */}
+                        {user && (
+                            <div className={`${styles.mobileSignOutContainer} ${styles.mobileOnly}`}>
+                                <button
+                                    onClick={() => {
+                                        logout();
+                                        setIsMenuOpen(false);
+                                    }}
+                                    className={styles.newMobileSignOutBtn}
+                                >
+                                    <LogOut size={20} />
+                                    {t('signOut')}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </nav>
         </>
     );
 };

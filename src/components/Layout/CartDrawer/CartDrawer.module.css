@@ -6,7 +6,7 @@
     height: 100vh;
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(2px);
-    z-index: 2000;
+    z-index: 30000;
     opacity: 0;
     visibility: hidden;
     transition: all 0.4s ease;
@@ -26,7 +26,7 @@
     width: 480px;
     height: 100vh;
     background: #f8fafc;
-    z-index: 2001;
+    z-index: 30001;
     transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), right 0.45s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.45s;
     display: flex;
     flex-direction: column;
