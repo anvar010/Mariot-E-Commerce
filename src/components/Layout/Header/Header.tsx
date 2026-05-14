@@ -30,6 +30,8 @@ const Header = () => {
         products: [], categories: [], brands: [], trending: []
     });
     const [isSearching, setIsSearching] = useState(false);
+    const [parentCategoryIds, setParentCategoryIds] = useState<Set<number>>(new Set());
+    const [categorySlugToId, setCategorySlugToId] = useState<Record<string, number>>({});
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSticky, setIsSticky] = useState(false);
@@ -38,6 +40,28 @@ const Header = () => {
     const [announcement, setAnnouncement] = useState<any>(null);
 
     const isArabic = locale === 'ar';
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/categories`);
+                const data = await res.json();
+                if (cancelled || !data?.success || !Array.isArray(data.data)) return;
+                const parents = new Set<number>();
+                const slugMap: Record<string, number> = {};
+                for (const c of data.data) {
+                    if (c?.parent_id) parents.add(Number(c.parent_id));
+                    if (c?.slug && c?.id != null) slugMap[String(c.slug)] = Number(c.id);
+                }
+                setParentCategoryIds(parents);
+                setCategorySlugToId(slugMap);
+            } catch (err) {
+                if (!cancelled) console.error('Header categories fetch failed', err);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
 
     useEffect(() => {
         const fetchCMS = async () => {
@@ -75,6 +99,39 @@ const Header = () => {
 
     useEffect(() => {
         let cancelled = false;
+
+        const fetchTrendingFallback = async () => {
+            const tryUrls = [
+                `${API_BASE_URL}/products?is_featured=1&limit=6&status=active`,
+                `${API_BASE_URL}/products?limit=6&status=active`,
+            ];
+            for (const url of tryUrls) {
+                try {
+                    const res = await fetch(url);
+                    const json = await res.json();
+                    const list = json?.data?.products || json?.data || json?.products || [];
+                    if (Array.isArray(list) && list.length > 0) {
+                        return list.slice(0, 6).map((p: any) => ({
+                            id: p.id,
+                            name: p.name,
+                            name_ar: p.name_ar ?? null,
+                            slug: p.slug,
+                            model: p.model ?? null,
+                            price: p.price ?? null,
+                            offer_price: p.offer_price ?? null,
+                            primary_image: p.primary_image ?? p.image ?? null,
+                            category_name: p.category_name ?? null,
+                            stock_quantity: p.stock_quantity ?? null,
+                            track_inventory: p.track_inventory ?? 0,
+                        }));
+                    }
+                } catch {
+                    /* try next */
+                }
+            }
+            return [];
+        };
+
         const fetchDropdown = async () => {
             const q = searchQuery.trim();
             setIsSearching(q.length >= 2);
@@ -86,15 +143,29 @@ const Header = () => {
                 const data = await res.json();
                 if (cancelled) return;
                 if (data.success && data.data) {
+                    let trending = data.data.trending || [];
+                    if (q.length < 2 && trending.length === 0) {
+                        const fallback = await fetchTrendingFallback();
+                        if (cancelled) return;
+                        trending = fallback;
+                    }
                     setDropdownData({
                         products: data.data.products || [],
                         categories: data.data.categories || [],
                         brands: data.data.brands || [],
-                        trending: data.data.trending || []
+                        trending
                     });
+                } else if (q.length < 2) {
+                    const fallback = await fetchTrendingFallback();
+                    if (cancelled) return;
+                    setDropdownData(prev => ({ ...prev, trending: fallback }));
                 }
             } catch (err) {
                 if (!cancelled) console.error('Search dropdown fetch failed', err);
+                if (!cancelled && searchQuery.trim().length < 2) {
+                    const fallback = await fetchTrendingFallback();
+                    if (!cancelled) setDropdownData(prev => ({ ...prev, trending: fallback }));
+                }
             } finally {
                 if (!cancelled) setIsSearching(false);
             }
@@ -325,7 +396,17 @@ const Header = () => {
                                         query={searchQuery}
                                         data={dropdownData}
                                         loading={isSearching}
-                                        onNavigate={(path) => router.push(path)}
+                                        onNavigate={(path) => {
+                                            const match = /^\/category\/([^/?#]+)$/.exec(path);
+                                            if (match) {
+                                                const slug = decodeURIComponent(match[1]);
+                                                const id = categorySlugToId[slug];
+                                                const hasChildren = id != null && parentCategoryIds.has(id);
+                                                router.push(hasChildren ? `/category/${slug}` : `/shop?category=${slug}`);
+                                                return;
+                                            }
+                                            router.push(path);
+                                        }}
                                         onClose={() => {
                                             setShowSuggestions(false);
                                             setSearchQuery('');

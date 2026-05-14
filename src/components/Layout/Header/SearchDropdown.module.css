@@ -340,16 +340,21 @@
         right: 0;
         width: 100%;
         max-height: min(70vh, 560px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
     }
 
     .grid {
         grid-template-columns: 1fr;
-        max-height: min(70vh, 560px);
+        max-height: none;
+        height: auto;
     }
 
     .leftCol,
     .rightCol {
-        max-height: min(70vh, 560px);
+        max-height: none;
+        overflow-y: visible;
     }
 
     .leftCol {

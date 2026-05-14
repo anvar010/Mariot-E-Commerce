@@ -241,6 +241,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 const catParams = new URLSearchParams();
                 if (isLimited) catParams.set('is_limited', 'true');
                 if (isWeekly) catParams.set('is_weekly', 'true');
+                if (searchQuery) catParams.set('search', searchQuery);
                 if (catParams.toString()) catUrl += `?${catParams.toString()}`;
                 const res = await fetch(catUrl, { credentials: "include" });
                 const data = await res.json();
@@ -254,7 +255,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             }
         };
         fetchCategories();
-    }, [isLimited, isWeekly]);
+    }, [isLimited, isWeekly, searchQuery]);
 
     const fetchProducts = useCallback(async () => {
         setFetchingProducts(true);
@@ -359,6 +360,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             onCategoryChange: (slug: string) => { handleCategoryChange(slug); setIsMobileFilterOpen(false); }
         };
         if (brandParam) return <FilterShopByBrand {...commonProps} />;
+        if (searchQuery) return <DefaultShopFilter {...commonProps} />;
         if (isWeekly || isLimited) return <DefaultShopFilter {...commonProps} />;
         if (activeCategory) {
             const isMainCategory = !matchedCategoryForGrid?.parent_id;
@@ -373,13 +375,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     return (
         <div className={styles.shopLayout}>
             {brandParam && activeBrandInfo?.banner_url && (
-                <div className={`${styles.brandBanner} ${styles.desktopBanner}`}>
+                <div className={styles.brandBanner}>
                     <img src={resolveUrl(activeBrandInfo.banner_url)} alt={getBrandDisplayName() || ""} className={styles.brandBannerImg} />
-                </div>
-            )}
-            {brandParam && activeBrandInfo?.banner_url_mobile && (
-                <div className={`${styles.brandBanner} ${styles.mobileBanner}`}>
-                    <img src={resolveUrl(activeBrandInfo.banner_url_mobile)} alt={getBrandDisplayName() || ""} className={styles.brandBannerImg} />
                 </div>
             )}
             <div className={styles.topInfo}>

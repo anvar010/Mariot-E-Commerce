@@ -518,7 +518,9 @@
 
 .cartBtn {
     flex: 1;
+    min-width: 0;
     height: 38px;
+    padding: 0 10px;
     background: #00aeef;
     color: white;
     border: none;
@@ -532,6 +534,15 @@
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
+}
+
+.cartBtn svg {
+    flex-shrink: 0;
+}
+
+.cartBtn span {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .notifyBtn {
@@ -596,6 +607,14 @@
     .cartBtn {
         height: 40px;
         border-radius: 10px;
+        font-size: 12px;
+        gap: 6px;
+        padding: 0 8px;
+    }
+
+    .cartBtn svg {
+        width: 16px;
+        height: 16px;
     }
 }
 
@@ -651,6 +670,13 @@
         height: 38px;
         font-size: 11px;
         gap: 4px;
+        padding: 0 6px;
+        letter-spacing: 0;
+    }
+
+    .cartBtn svg {
+        width: 14px;
+        height: 14px;
     }
 
     .timerWrapper {

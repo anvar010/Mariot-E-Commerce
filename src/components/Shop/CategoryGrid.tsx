@@ -20,6 +20,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc,
     const searchParams = useSearchParams();
     const weeklyParam = searchParams.get('weekly');
     const limitedParam = searchParams.get('limited');
+    const searchParam = searchParams.get('search');
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
@@ -80,6 +81,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc,
                     params.set('category', slug);
                     if (weeklyParam) params.set('weekly', weeklyParam);
                     if (limitedParam) params.set('limited', limitedParam);
+                    if (searchParam) params.set('search', searchParam);
 
                     return (
                         <Link

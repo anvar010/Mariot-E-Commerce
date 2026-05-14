@@ -22,20 +22,29 @@
 
 .breadcrumb {
   font-size: 13px;
+  line-height: 1.6;
   color: #64748b;
   margin-bottom: 15px;
+  padding-bottom: 2px;
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .breadcrumbLink {
   color: #64748b;
   text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .breadcrumbItem {
   color: #334155;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .offerBadge {

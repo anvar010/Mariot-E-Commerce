@@ -55,6 +55,7 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
         const cParams = new URLSearchParams();
         if (limited) cParams.set('is_limited', 'true');
         if (weekly) cParams.set('is_weekly', 'true');
+        if (search) cParams.set('search', search);
         const categoriesUrl = `${API_BASE_URL_SERVER}/categories${cParams.toString() ? `?${cParams.toString()}` : ''}`;
 
         // Offer-filtered fetches depend on offer_end > NOW(), so they must not be cached.
