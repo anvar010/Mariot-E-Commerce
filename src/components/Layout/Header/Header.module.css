@@ -84,6 +84,10 @@
 }
 
 @media (max-width: 768px) {
+    .topBanner {
+        padding: 3px 0;
+    }
+
     .topBanner .container {
         padding: 0;
     }
@@ -139,6 +143,19 @@
     align-items: center;
     gap: 40px;
     padding-inline-end: 40px;
+    font-size: 13px;
+}
+
+@media (max-width: 768px) {
+    .tickerItem {
+        font-size: 11px;
+        gap: 20px;
+        padding-inline-end: 20px;
+    }
+
+    .topBannerLeft {
+        font-size: 11px;
+    }
 }
 
 .tickerSeparator {
@@ -1229,7 +1246,15 @@
         display: block;
     }
 
-    .profile,
+    .profile {
+        display: flex !important;
+        margin-inline-end: 5px;
+    }
+
+    .headerLangSelector {
+        display: none !important;
+    }
+
     .cart {
         display: none !important;
     }
@@ -1547,6 +1572,22 @@
         width: 100%;
         justify-content: space-between;
     }
+}
+
+.rewardPointsMobile {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #fff9e6;
+    padding: 4px 8px;
+    border-radius: 12px;
+    text-decoration: none;
+}
+
+.mobilePointsValue {
+    font-size: 13px;
+    font-weight: 700;
+    color: #a16207;
 }
 
 @media (max-width: 576px) {

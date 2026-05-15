@@ -157,7 +157,6 @@
 }
 
 .imageSlide img {
-    transform: scale(1.15);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

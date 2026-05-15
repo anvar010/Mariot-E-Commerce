@@ -117,7 +117,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                 margin-bottom: 12px;
                             }
                             .cart-header h3 {
-                                color: #059669;
+                                color: #16a1db;
                                 font-size: 15px;
                                 font-weight: 600;
                                 margin: 0;
@@ -191,7 +191,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                 flex: 1.2;
                                 padding: 8px;
                                 border: none;
-                                background: #237073;
+                                background: #16a1db;
                                 color: #fff;
                                 border-radius: 6px;
                                 font-weight: 600;
@@ -200,14 +200,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                 transition: all 0.2s;
                             }
                             .btn-checkout:hover {
-                                background: #1a5658;
+                                background: #1289bd;
                             }
                             .cart-progress {
                                 position: absolute;
                                 bottom: 0;
                                 inset-inline-start: 0;
                                 height: 3px;
-                                background: #059669;
+                                background: #16a1db;
                                 width: 100%;
                                 transform-origin: left;
                                 animation: progress-drain 3.5s linear forwards;
@@ -237,8 +237,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                     <div key={n.id} className="notification-item cart-notif">
                                         <div className="cart-progress" />
                                         <div className="cart-header">
-                                            <div style={{ backgroundColor: '#ecfdf5', borderRadius: '50%', padding: '4px', display: 'flex' }}>
-                                                <CheckCircle size={18} color="#10b981" />
+                                            <div style={{ backgroundColor: '#e6f4fb', borderRadius: '50%', padding: '4px', display: 'flex' }}>
+                                                <CheckCircle size={18} color="#16a1db" />
                                             </div>
                                             <h3>{tCart('title')}</h3>
                                             <X size={18} style={{ cursor: 'pointer', color: '#9ca3af' }} onClick={() => removeNotification(n.id)} />

@@ -307,10 +307,17 @@ const BrandsLayout = () => {
                     <div className={styles.searchWrapper}>
                         <Search size={18} className={styles.searchIcon} />
                         <input
-                            type="text"
+                            type="search"
                             placeholder={isArabic ? 'البحث عن الماركات...' : 'Search brands...'}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    (e.currentTarget as HTMLInputElement).blur();
+                                }
+                            }}
+                            enterKeyHint="search"
                             className={styles.searchInput}
                         />
                     </div>

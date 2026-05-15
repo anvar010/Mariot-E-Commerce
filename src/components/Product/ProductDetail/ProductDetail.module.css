@@ -224,7 +224,6 @@
     height: 100%;
     object-fit: contain;
     max-height: 100%;
-    transform: scale(1.15);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1054,6 +1053,7 @@
 .whatsappBtn {
     width: 100%;
     height: 56px;
+    margin-bottom: 12px;
     background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     color: #ffffff;
     border: none;

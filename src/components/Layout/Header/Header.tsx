@@ -33,6 +33,7 @@ const Header = () => {
     const [parentCategoryIds, setParentCategoryIds] = useState<Set<number>>(new Set());
     const [categorySlugToId, setCategorySlugToId] = useState<Record<string, number>>({});
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const skipNextFetchRef = React.useRef(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSticky, setIsSticky] = useState(false);
     const [isCategoriesHovered, setIsCategoriesHovered] = useState(false);
@@ -134,6 +135,10 @@ const Header = () => {
         };
 
         const fetchDropdown = async () => {
+            if (skipNextFetchRef.current) {
+                skipNextFetchRef.current = false;
+                return;
+            }
             const q = searchQuery.trim();
             setIsSearching(q.length >= 2);
             try {
@@ -270,6 +275,12 @@ const Header = () => {
         if (e) e.preventDefault();
         const trimmed = searchQuery.trim();
         if (trimmed) {
+            skipNextFetchRef.current = true;
+            setIsSearching(false);
+            if (typeof document !== 'undefined') {
+                const active = document.activeElement as HTMLElement | null;
+                if (active && typeof active.blur === 'function') active.blur();
+            }
             router.push(`/shop?search=${encodeURIComponent(trimmed)}`);
             setIsMenuOpen(false);
             setShowSuggestions(false);
@@ -383,7 +394,10 @@ const Header = () => {
                                         type="text"
                                         placeholder=""
                                         value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onChange={(e) => {
+                                            skipNextFetchRef.current = false;
+                                            setSearchQuery(e.target.value);
+                                        }}
                                         onFocus={() => setShowSuggestions(true)}
                                         onClick={() => setShowSuggestions(true)}
                                         className={styles.searchInput}
@@ -457,6 +471,15 @@ const Header = () => {
                                     <span className={styles.switchOn}>عربي</span>
                                     <span className={styles.switchOff}>EN</span>
                                 </div>
+
+                                {user && (
+                                    <Link href="/profile?tab=myRewards" className={`${styles.rewardPointsMobile} ${styles.mobileOnly}`}>
+                                        <Coins size={20} className={styles.pointIcon} />
+                                        <span className={styles.mobilePointsValue}>
+                                            {user?.reward_points || 0}
+                                        </span>
+                                    </Link>
+                                )}
 
                                 <Link href={user ? "/profile" : "/signin"} className={styles.profile}>
                                     <User size={28} className={styles.userIcon} />
@@ -554,14 +577,31 @@ const Header = () => {
             <nav className={`${styles.navBar} ${styles.mobileOnly} ${isMenuOpen ? styles.navOpen : ''}`}>
                 <div className={styles.container}>
                     <div className={styles.mobileMenuHeader}>
-                        <div className={styles.mobileUserInfo}>
-                            <span className={styles.mobileUserName}>{user ? user.name : t('account')}</span>
-                            {user && <span className={styles.mobileUserEmail}>{user.email}</span>}
-                            {!user && (
-                                <Link href="/signin" className={styles.mobileSignInLink} onClick={() => setIsMenuOpen(false)}>
-                                    {t('signIn')}
-                                </Link>
-                            )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingInlineEnd: '40px' }}>
+                            <div className={styles.mobileUserInfo}>
+                                <span className={styles.mobileUserName}>{user ? user.name : t('account')}</span>
+                                {user && <span className={styles.mobileUserEmail}>{user.email}</span>}
+                                {!user && (
+                                    <Link href="/signin" className={styles.mobileSignInLink} onClick={() => setIsMenuOpen(false)}>
+                                        {t('signIn')}
+                                    </Link>
+                                )}
+                            </div>
+                            <div className={`${styles.switch} ${styles.mobileLangSelector}`} dir="ltr">
+                                <input
+                                    id="languageToggleMobile"
+                                    className={`${styles.checkToggle} ${styles.checkToggleRoundFlat}`}
+                                    type="checkbox"
+                                    checked={!optimisticIsArabic}
+                                    onChange={() => {
+                                        switchLocale(optimisticIsArabic ? 'en' : 'ar');
+                                        setIsMenuOpen(false);
+                                    }}
+                                />
+                                <label htmlFor="languageToggleMobile"></label>
+                                <span className={styles.switchOn}>عربي</span>
+                                <span className={styles.switchOff}>EN</span>
+                            </div>
                         </div>
                         <button className={styles.mobileCloseBtn} onClick={() => setIsMenuOpen(false)}>
                             <X size={24} />

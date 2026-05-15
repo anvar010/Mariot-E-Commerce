@@ -203,22 +203,34 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                             {data.brands.length > 0 && (
                                 <div className={styles.section}>
                                     <h4 className={styles.sectionTitle}>Brands</h4>
-                                    <ul className={styles.linkList}>
+                                    <div className={styles.brandsGrid}>
                                         {data.brands.map(b => (
-                                            <li key={`b-${b.id}`}>
-                                                <button
-                                                    type="button"
-                                                    className={`${styles.linkItem} ${styles.plain}`}
-                                                    onClick={() => {
-                                                        onNavigate(`/shop?brand=${b.slug}`);
-                                                        onClose();
-                                                    }}
-                                                >
-                                                    {b.name}
-                                                </button>
-                                            </li>
+                                            <button
+                                                key={`b-${b.id}`}
+                                                type="button"
+                                                className={styles.brandCard}
+                                                onClick={() => {
+                                                    onNavigate(`/shop?brand=${b.slug}`);
+                                                    onClose();
+                                                }}
+                                                title={b.name}
+                                            >
+                                                <div className={styles.brandLogoWrap}>
+                                                    {b.image_url ? (
+                                                        <Image
+                                                            src={resolveUrl(b.image_url)}
+                                                            alt={b.name}
+                                                            width={200}
+                                                            height={90}
+                                                            className={styles.brandLogo}
+                                                        />
+                                                    ) : (
+                                                        <span className={styles.brandLogoFallback}>{b.name.charAt(0)}</span>
+                                                    )}
+                                                </div>
+                                            </button>
                                         ))}
-                                    </ul>
+                                    </div>
                                 </div>
                             )}
                         </>
@@ -272,8 +284,8 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                                                 <Image
                                                     src={resolveUrl(p.primary_image || '/assets/placeholder-image.webp')}
                                                     alt={stripHtml(p.name)}
-                                                    width={64}
-                                                    height={64}
+                                                    width={72}
+                                                    height={72}
                                                     className={styles.trendingImage}
                                                 />
                                             </div>
