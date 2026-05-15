@@ -85,7 +85,7 @@ export default async function LocaleLayout({
                 <link rel="dns-prefetch" href="https://checkout.tabby.ai" />
                 <link rel="dns-prefetch" href="https://accounts.google.com" />
             </head>
-            <body>
+            <body suppressHydrationWarning>
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <Providers>
                         <Promotions />
