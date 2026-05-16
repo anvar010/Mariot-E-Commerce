@@ -175,7 +175,8 @@ const initDb = async () => {
                 { name: 'is_active', definition: "BOOLEAN DEFAULT TRUE" },
                 { name: 'name_ar', definition: "VARCHAR(255)" },
                 { name: 'description_ar', definition: "TEXT NULL" },
-                { name: 'brand_names', definition: "TEXT" }
+                { name: 'brand_names', definition: "TEXT" },
+                { name: 'banner_url', definition: "VARCHAR(500) NULL" }
             ];
 
             for (const col of categoryColumns) {
@@ -311,6 +312,119 @@ const initDb = async () => {
             }
         } catch (err) {
             console.error('[DB] Error adding you_may_also_need column:', err.message);
+        }
+
+        // Migration: products extras (warranty, warranty_ar, you_may_also_need_default)
+        try {
+            const [prodCols] = await db.query("SHOW COLUMNS FROM products");
+            const names = prodCols.map(c => c.Field);
+            if (!names.includes('warranty')) {
+                await db.query("ALTER TABLE products ADD COLUMN warranty INT NULL");
+                console.log('[DB] Migration: Added warranty column to products table');
+            }
+            if (!names.includes('warranty_ar')) {
+                await db.query("ALTER TABLE products ADD COLUMN warranty_ar INT NULL");
+                console.log('[DB] Migration: Added warranty_ar column to products table');
+            }
+            if (!names.includes('you_may_also_need_default')) {
+                await db.query("ALTER TABLE products ADD COLUMN you_may_also_need_default TINYINT(1) NOT NULL DEFAULT 0");
+                console.log('[DB] Migration: Added you_may_also_need_default column to products table');
+            }
+        } catch (err) {
+            console.error('[DB] Error migrating products extras:', err.message);
+        }
+
+        // Migration: users OTP / phone verification + widen phone_number
+        try {
+            const [userCols] = await db.query("SHOW COLUMNS FROM users");
+            const colByName = Object.fromEntries(userCols.map(c => [c.Field, c]));
+            if (!colByName.phone_verified) {
+                await db.query("ALTER TABLE users ADD COLUMN phone_verified TINYINT(1) NOT NULL DEFAULT 0");
+                console.log('[DB] Migration: Added phone_verified column to users table');
+            }
+            if (!colByName.otp_code) {
+                await db.query("ALTER TABLE users ADD COLUMN otp_code VARCHAR(10) NULL");
+                console.log('[DB] Migration: Added otp_code column to users table');
+            }
+            if (!colByName.otp_expires_at) {
+                await db.query("ALTER TABLE users ADD COLUMN otp_expires_at DATETIME NULL");
+                console.log('[DB] Migration: Added otp_expires_at column to users table');
+            }
+            const pn = colByName.phone_number;
+            if (pn && /^varchar\((\d+)\)/i.test(pn.Type)) {
+                const len = parseInt(pn.Type.match(/\d+/)[0]);
+                if (len < 50) {
+                    await db.query("ALTER TABLE users MODIFY COLUMN phone_number VARCHAR(50) NULL");
+                    console.log('[DB] Migration: Widened users.phone_number to VARCHAR(50)');
+                }
+            }
+        } catch (err) {
+            console.error('[DB] Error migrating users OTP columns:', err.message);
+        }
+
+        // 6.8 Invoices table
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS invoices (
+                    id INT NOT NULL AUTO_INCREMENT,
+                    invoice_number VARCHAR(100) NOT NULL,
+                    order_id INT NOT NULL,
+                    user_id INT DEFAULT NULL,
+                    user_email VARCHAR(255) DEFAULT NULL,
+                    user_name VARCHAR(255) DEFAULT NULL,
+                    order_total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    given_by_user_id INT DEFAULT NULL,
+                    given_by_name VARCHAR(255) DEFAULT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY invoice_number (invoice_number),
+                    KEY idx_order_id (order_id),
+                    CONSTRAINT invoices_ibfk_1 FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            console.log('[DB] invoices table verified');
+        } catch (err) {
+            console.error('[DB] Error creating invoices table:', err.message);
+        }
+
+        // 6.9 Staff permissions table
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS staff_permissions (
+                    id INT NOT NULL AUTO_INCREMENT,
+                    user_id INT NOT NULL,
+                    allowed_menus JSON NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY user_id (user_id),
+                    CONSTRAINT staff_permissions_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            console.log('[DB] staff_permissions table verified');
+        } catch (err) {
+            console.error('[DB] Error creating staff_permissions table:', err.message);
+        }
+
+        // 6.10 Stock notifications table
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS stock_notifications (
+                    id INT NOT NULL AUTO_INCREMENT,
+                    product_id INT NOT NULL,
+                    variant_label VARCHAR(255) NOT NULL DEFAULT '',
+                    email VARCHAR(255) NOT NULL,
+                    user_id INT DEFAULT NULL,
+                    notified_at TIMESTAMP NULL DEFAULT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uniq_pve (product_id, variant_label, email),
+                    KEY idx_pending (product_id, notified_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            console.log('[DB] stock_notifications table verified');
+        } catch (err) {
+            console.error('[DB] Error creating stock_notifications table:', err.message);
         }
 
         // 7. Settings Table (Ensure it exists)
