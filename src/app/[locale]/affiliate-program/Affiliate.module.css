@@ -1,0 +1,588 @@
+.main {
+    min-height: 100vh;
+    background-color: var(--white);
+    color: var(--text-dark);
+}
+
+.container {
+    max-width: 1650px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Banner Section */
+.banner {
+    position: relative;
+    width: 100%;
+    background-color: var(--white);
+    overflow: hidden;
+}
+
+.bannerImg {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+}
+
+/* Welcome Section */
+.welcomeSection {
+    padding: 40px 0;
+    background: #fff;
+}
+
+.welcomeGrid {
+    display: flex;
+    gap: 8%;
+    align-items: flex-start;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.welcomeLeft {
+    flex: 0 0 40%;
+}
+
+.welcomeRight {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.welcomeIconWrapper {
+    margin-bottom: 32px;
+}
+
+.welcomeLeft h2 {
+    font-size: clamp(1.8rem, 2.5vw, 2.2rem);
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.welcomeSubtitleLeft {
+    font-size: 1.1rem;
+    color: #64748b;
+    line-height: 1.6;
+    margin-top: 16px;
+    max-width: 90%;
+}
+
+.tealText {
+    color: var(--primary-teal);
+}
+
+.welcomeRight p {
+    font-size: 1.1rem;
+    color: #475569;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.boldText {
+    font-weight: 700;
+    color: #0f172a !important;
+    margin-top: 10px !important;
+}
+
+.registerBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    padding: 16px 40px;
+    background: var(--primary-teal);
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    margin-top: 16px;
+}
+
+.registerBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(43, 90, 91, 0.15);
+}
+
+/* How It Works Section */
+.howItWorksNew {
+    padding: 40px 0;
+    background: #f1f7f9;
+    /* Light blueish grey like Rowad */
+    border-radius: 32px;
+    margin: 0 20px;
+}
+
+.howTitle {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 60px;
+}
+
+.stepsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.stepNew {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stepImageWrapper {
+    height: 310px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    width: 100%;
+}
+
+.stepImage {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.08));
+}
+
+.stepNew h4 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 12px;
+}
+
+.stepNew p {
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* Ways to Earn Section */
+.waysToEarn {
+    padding: 40px 0;
+    background: #ffffff;
+}
+
+.waysGrid {
+    display: flex;
+    gap: 80px;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.waysLeft {
+    flex: 0 0 35%;
+    display: flex;
+    flex-direction: column;
+}
+
+.waysArrows {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.arrowUp {
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 10px solid #1e293b;
+}
+
+.arrowDown {
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 10px solid #16a1db;
+}
+
+:global([dir="rtl"]) .arrowUp,
+:global([dir="rtl"]) .arrowDown {
+    align-self: flex-start;
+}
+
+.titleDark {
+    display: block;
+    font-size: clamp(2rem, 3vw, 2.5rem);
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.titleLight {
+    display: block;
+    font-size: clamp(2rem, 3vw, 2.5rem);
+    font-weight: 700;
+    color: #64748b;
+    line-height: 1.2;
+    margin-bottom: 24px;
+}
+
+.waysSubtitle {
+    font-size: 1.05rem;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.waysRight {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.bonusesGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+}
+
+.bonusItem {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bonusIconCircle {
+    width: 72px;
+    height: 72px;
+    background-color: #e6f6fd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #16a1db;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.bonusItem:hover .bonusIconCircle {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(22, 161, 219, 0.1);
+    background-color: #16a1db;
+    color: #ffffff;
+}
+
+.bonusValue {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.bonusLabel {
+    font-size: 0.95rem;
+    color: #475569;
+}
+
+/* CTA Bottom Section */
+.ctaBottom {
+    padding: 40px 0;
+    background: #f1f7f9;
+    border-radius: 32px;
+    margin: 0 20px;
+}
+
+.ctaContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.ctaBtn {
+    align-self: center;
+}
+
+.ctaLogo {
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 12px;
+}
+
+.ctaBrand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-teal);
+    margin-bottom: 32px;
+}
+
+.ctaText {
+    font-size: clamp(1.2rem, 2.5vw, 1.4rem);
+    font-weight: 700;
+    color: #1e293b;
+    max-width: 800px;
+    line-height: 1.5;
+    margin-bottom: 40px;
+}
+
+/* FAQ & Contact Split Section */
+.faqContactSplit {
+    padding: 40px 0;
+    background: #ffffff;
+}
+
+.splitGrid {
+    display: flex;
+    gap: 80px;
+    align-items: stretch;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.faqColumn {
+    flex: 0 0 55%;
+}
+
+.splitTitle {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.titleDark {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.1;
+}
+
+.titleLight {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.2;
+}
+
+.faqListMinimal {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.faqItemMinimal {
+    background: transparent;
+}
+
+.faqItemMinimal summary {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e293b;
+    cursor: pointer;
+    list-style: none;
+    position: relative;
+    padding: 12px 0;
+}
+
+.faqItemMinimal summary::-webkit-details-marker {
+    display: none;
+}
+
+.chevronMinimal {
+    color: var(--primary-teal);
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+.faqItemMinimal[open] .chevronMinimal {
+    transform: rotate(90deg);
+}
+
+:global([dir="rtl"]) .faqItemMinimal[open] .chevronMinimal {
+    transform: rotate(-90deg);
+}
+
+.faqAnswerMinimal {
+    padding: 16px 0 16px 36px;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+:global([dir="rtl"]) .faqAnswerMinimal {
+    padding: 16px 36px 16px 0;
+}
+
+/* Right Side: Contact */
+.contactColumnWrapper {
+    flex: 1;
+}
+
+.contactSticky {
+    position: sticky;
+    top: 160px;
+    /* Increased offset for better header clearance when scrolling */
+}
+
+.contactItemsList {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.contactListItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.contactIconCircle {
+    width: 36px;
+    height: 36px;
+    background: #FEF3C7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #D97706;
+    flex-shrink: 0;
+}
+
+.contactIconCircle svg {
+    width: 18px;
+    height: 18px;
+}
+
+.contactItemContent {
+    display: flex;
+    flex-direction: column;
+}
+
+.contactItemLabel {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.contactItemValue {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.contactItemSub {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 12px;
+}
+
+.whatsappPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.whatsappPill:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.termsBox {
+    padding-top: 24px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.contactLinkInline {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.contactLinkInline:hover {
+    color: #0ea5e9;
+}
+
+.termsBox h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.termsBox p {
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.termsLink {
+    color: #0ea5e9;
+    /* Sky blue matching screenshot link style */
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.termsLink:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+    .welcomeGrid {
+        flex-direction: column;
+        gap: 40px;
+    }
+
+    .welcomeLeft,
+    .welcomeRight {
+        flex: none;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .bannerImg {
+        min-height: auto;
+    }
+
+    .stepsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .splitGrid {
+        flex-direction: column;
+        gap: 80px;
+    }
+
+    .contactSticky {
+        position: relative;
+        top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .registerBtn {
+        align-self: stretch;
+        text-align: center;
+    }
+}

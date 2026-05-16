@@ -138,7 +138,7 @@ const Footer = () => {
                                 <li><Link href="/about">{t('aboutUs')}</Link></li>
                                 <li><Link href="/shop-by-brands">{t('shopByBrand')}</Link></li>
                                 <li><Link href="/contact">{t('contactUs')}</Link></li>
-                                <li><Link href="/affiliate-program">{t('affiliateProgram')}</Link></li>
+                                <li><Link href={user ? '/profile?tab=myRewards' : '/affiliate-program'}>{t('affiliateProgram')}</Link></li>
                                 <li><Link href="/privacy-policy">{t('privacyPolicy')}</Link></li>
                                 <li><Link href="/return-policy">{t('returnPolicy')}</Link></li>
                                 <li><Link href="/shipping-details">{t('shippingDetails')}</Link></li>
