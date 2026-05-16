@@ -255,6 +255,7 @@ const initDb = async () => {
                     option_id INT NOT NULL,
                     value VARCHAR(100) NOT NULL,
                     value_ar VARCHAR(100) NULL,
+                    swatch_color VARCHAR(20) NULL,
                     PRIMARY KEY (variant_id, option_id),
                     FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
                     FOREIGN KEY (option_id) REFERENCES product_options(id) ON DELETE CASCADE
@@ -267,6 +268,20 @@ const initDb = async () => {
             if (!pColumns.map(c => c.Field).includes('has_variants')) {
                 await db.query("ALTER TABLE products ADD COLUMN has_variants TINYINT(1) NOT NULL DEFAULT 0");
                 console.log('[DB] Migration: Added has_variants column to products table');
+            }
+
+            // Add values_json to product_options (preserves admin-defined value order + swatch_color)
+            const [poColumns] = await db.query("SHOW COLUMNS FROM product_options");
+            if (!poColumns.map(c => c.Field).includes('values_json')) {
+                await db.query("ALTER TABLE product_options ADD COLUMN values_json LONGTEXT NULL");
+                console.log('[DB] Migration: Added values_json column to product_options table');
+            }
+
+            // Add swatch_color to product_variant_options
+            const [pvoColumns] = await db.query("SHOW COLUMNS FROM product_variant_options");
+            if (!pvoColumns.map(c => c.Field).includes('swatch_color')) {
+                await db.query("ALTER TABLE product_variant_options ADD COLUMN swatch_color VARCHAR(20) NULL");
+                console.log('[DB] Migration: Added swatch_color column to product_variant_options table');
             }
 
             // Add variant_id to cart_items

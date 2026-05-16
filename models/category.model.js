@@ -140,7 +140,7 @@ class Category {
         };
     }
 
-    static async create({ name, name_ar = null, slug, image_url = null, description = null, description_ar = null, is_active = 1, parent_id = null, type = 'main_category', brands = [] }) {
+    static async create({ name, name_ar = null, slug, image_url = null, banner_url = null, description = null, description_ar = null, is_active = 1, parent_id = null, type = 'main_category', brands = [] }) {
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
@@ -154,8 +154,8 @@ class Category {
             const brandNamesStr = brandNames.join(', ');
 
             const [result] = await conn.execute(
-                'INSERT INTO categories (name, name_ar, slug, image_url, description, description_ar, is_active, parent_id, type, brand_names) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [name, name_ar, slug, image_url, description, description_ar, is_active, parent_id, type, brandNamesStr]
+                'INSERT INTO categories (name, name_ar, slug, image_url, banner_url, description, description_ar, is_active, parent_id, type, brand_names) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [name, name_ar, slug, image_url, banner_url, description, description_ar, is_active, parent_id, type, brandNamesStr]
             );
             const categoryId = result.insertId;
 

@@ -13,7 +13,7 @@ class ProductVariant {
     // Returns { options, variants } for a product
     static async getByProductId(productId) {
         const [options] = await db.query(
-            'SELECT id, name, name_ar, position FROM product_options WHERE product_id = ? ORDER BY position ASC, id ASC',
+            'SELECT id, name, name_ar, position, values_json FROM product_options WHERE product_id = ? ORDER BY position ASC, id ASC',
             [productId]
         );
 
@@ -33,7 +33,7 @@ class ProductVariant {
 
         const variantIds = variants.map(v => v.id);
         const [valueRows] = await db.query(
-            `SELECT variant_id, option_id, value, value_ar
+            `SELECT variant_id, option_id, value, value_ar, swatch_color
              FROM product_variant_options WHERE variant_id IN (?)`,
             [variantIds]
         );
@@ -43,19 +43,35 @@ class ProductVariant {
         valueRows.forEach(r => {
             if (!valuesByOption[r.option_id]) valuesByOption[r.option_id] = new Map();
             if (!valuesByOption[r.option_id].has(r.value)) {
-                valuesByOption[r.option_id].set(r.value, r.value_ar || null);
+                valuesByOption[r.option_id].set(r.value, { value_ar: r.value_ar || null, swatch_color: r.swatch_color || null });
             }
         });
         options.forEach(opt => {
             const map = valuesByOption[opt.id] || new Map();
-            opt.values = Array.from(map.entries()).map(([value, value_ar]) => ({ value, value_ar }));
+            const derived = Array.from(map.entries()).map(([value, meta]) => ({ value, value_ar: meta.value_ar, swatch_color: meta.swatch_color }));
+            // Prefer canonical ordered values from values_json if present; fall back to derived.
+            let canonical = null;
+            if (opt.values_json) {
+                try {
+                    const parsed = typeof opt.values_json === 'string' ? JSON.parse(opt.values_json) : opt.values_json;
+                    if (Array.isArray(parsed)) {
+                        canonical = parsed.map(v => ({
+                            value: String(v.value || '').trim(),
+                            value_ar: v.value_ar || null,
+                            swatch_color: v.swatch_color || null
+                        })).filter(v => v.value);
+                    }
+                } catch (e) { /* ignore malformed json */ }
+            }
+            opt.values = canonical && canonical.length > 0 ? canonical : derived;
+            delete opt.values_json;
         });
 
         // Attach option selections to each variant
         const valuesByVariant = {};
         valueRows.forEach(r => {
             if (!valuesByVariant[r.variant_id]) valuesByVariant[r.variant_id] = [];
-            valuesByVariant[r.variant_id].push({ option_id: r.option_id, value: r.value, value_ar: r.value_ar });
+            valuesByVariant[r.variant_id].push({ option_id: r.option_id, value: r.value, value_ar: r.value_ar, swatch_color: r.swatch_color });
         });
         variants.forEach(v => {
             v.options = valuesByVariant[v.id] || [];
@@ -96,9 +112,16 @@ class ProductVariant {
         const optionIdByIndex = [];
         for (let i = 0; i < options.length; i++) {
             const opt = options[i];
+            const valuesJson = Array.isArray(opt.values) && opt.values.length > 0
+                ? JSON.stringify(opt.values.map(v => ({
+                    value: String(v.value || '').trim(),
+                    value_ar: v.value_ar ? String(v.value_ar).trim() : null,
+                    swatch_color: v.swatch_color ? String(v.swatch_color).trim() : null
+                })).filter(v => v.value))
+                : null;
             const [res] = await conn.execute(
-                'INSERT INTO product_options (product_id, name, name_ar, position) VALUES (?, ?, ?, ?)',
-                [productId, String(opt.name).trim(), opt.name_ar ? String(opt.name_ar).trim() : null, i]
+                'INSERT INTO product_options (product_id, name, name_ar, position, values_json) VALUES (?, ?, ?, ?, ?)',
+                [productId, String(opt.name).trim(), opt.name_ar ? String(opt.name_ar).trim() : null, i, valuesJson]
             );
             optionIdByIndex.push(res.insertId);
         }
@@ -107,7 +130,8 @@ class ProductVariant {
             const variantOptions = (v.options || []).map(vo => ({
                 option_id: optionIdByIndex[vo.option_index],
                 value: String(vo.value).trim(),
-                value_ar: vo.value_ar ? String(vo.value_ar).trim() : null
+                value_ar: vo.value_ar ? String(vo.value_ar).trim() : null,
+                swatch_color: vo.swatch_color ? String(vo.swatch_color).trim() : null
             })).filter(vo => vo.option_id && vo.value);
 
             if (variantOptions.length !== options.length) continue; // skip malformed combos
@@ -133,8 +157,8 @@ class ProductVariant {
 
             for (const vo of variantOptions) {
                 await conn.execute(
-                    'INSERT INTO product_variant_options (variant_id, option_id, value, value_ar) VALUES (?, ?, ?, ?)',
-                    [variantId, vo.option_id, vo.value, vo.value_ar]
+                    'INSERT INTO product_variant_options (variant_id, option_id, value, value_ar, swatch_color) VALUES (?, ?, ?, ?, ?)',
+                    [variantId, vo.option_id, vo.value, vo.value_ar, vo.swatch_color]
                 );
             }
         }

@@ -236,7 +236,72 @@ class Product {
                         }
                     }
 
+                    // Fetch swatch options ({color, image, value}) from the "Color" option
+                    // so listings/cards can render color dots and swap the card image on click.
+                    const swatchByProduct = {};
+                    const swatchOptionsByProduct = {};
+                    try {
+                        const [optRows] = await db.query(
+                            `SELECT id, product_id, name, name_ar, values_json
+                             FROM product_options
+                             WHERE product_id IN (${variantProductIds.join(',')})
+                               AND (LOWER(name) IN ('color','colour') OR name_ar IN ('اللون','لون'))`
+                        );
+                        const colorOptionByProduct = {};
+                        for (const r of optRows) {
+                            colorOptionByProduct[r.product_id] = r;
+                            if (!r.values_json) continue;
+                            let parsed = null;
+                            try { parsed = JSON.parse(r.values_json); } catch (e) { parsed = null; }
+                            if (!Array.isArray(parsed)) continue;
+                            const colors = parsed
+                                .map(v => (v && v.swatch_color) ? String(v.swatch_color).trim() : null)
+                                .filter(Boolean);
+                            if (colors.length > 0) swatchByProduct[r.product_id] = colors;
+                        }
+
+                        // Map each color value -> a representative variant image (per product)
+                        const colorOptionIds = Object.values(colorOptionByProduct).map(r => r.id);
+                        if (colorOptionIds.length > 0) {
+                            const [imgRows] = await db.query(
+                                `SELECT pvo.option_id, pvo.value, pv.product_id, pv.image_url, pv.use_primary_image
+                                 FROM product_variant_options pvo
+                                 JOIN product_variants pv ON pv.id = pvo.variant_id
+                                 WHERE pvo.option_id IN (${colorOptionIds.join(',')})
+                                   AND pv.is_active = 1
+                                 ORDER BY pv.is_default DESC, pv.id ASC`
+                            );
+                            const bestByPidValue = {};
+                            for (const ir of imgRows) {
+                                const key = `${ir.product_id}::${(ir.value || '').trim()}`;
+                                const hasCustom = !Number(ir.use_primary_image) && ir.image_url;
+                                if (!bestByPidValue[key] || (hasCustom && !bestByPidValue[key].hasCustom)) {
+                                    bestByPidValue[key] = { image: hasCustom ? ir.image_url : null, hasCustom };
+                                }
+                            }
+                            for (const r of optRows) {
+                                if (!r.values_json) continue;
+                                let parsed = null;
+                                try { parsed = JSON.parse(r.values_json); } catch (e) { parsed = null; }
+                                if (!Array.isArray(parsed)) continue;
+                                const list = parsed
+                                    .filter(v => v && v.swatch_color)
+                                    .map(v => {
+                                        const key = `${r.product_id}::${String(v.value || '').trim()}`;
+                                        return {
+                                            color: String(v.swatch_color).trim(),
+                                            value: String(v.value || '').trim(),
+                                            image: bestByPidValue[key]?.image || null
+                                        };
+                                    });
+                                if (list.length > 0) swatchOptionsByProduct[r.product_id] = list;
+                            }
+                        }
+                    } catch (e) { /* non-fatal */ }
+
                     rows.forEach(p => {
+                        if (swatchByProduct[p.id]) p.swatch_colors = swatchByProduct[p.id];
+                        if (swatchOptionsByProduct[p.id]) p.swatch_options = swatchOptionsByProduct[p.id];
                         const v = chosenByProduct[p.id];
                         if (!v) return;
                         const parts = (labelByVariantId[v.id] || []).filter(Boolean);
