@@ -24,6 +24,7 @@ const AdminCategories = () => {
     const [additionalCategories, setAdditionalCategories] = useState<{ name: string, name_ar: string }[]>([]);
     const [expandedMains, setExpandedMains] = useState<number[]>([]);
     const [uploading, setUploading] = useState(false);
+    const [uploadingBanner, setUploadingBanner] = useState(false);
     const { showNotification } = useNotification();
 
     // Form state
@@ -33,6 +34,7 @@ const AdminCategories = () => {
         description: '',
         description_ar: '',
         image_url: '',
+        banner_url: '',
         is_active: true,
         type: 'main_category' as string,
         parent_id: '' as string | number,
@@ -146,6 +148,36 @@ const AdminCategories = () => {
         }
     };
 
+    const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        const formDataUpload = new FormData();
+        formDataUpload.append('image', file);
+
+        setUploadingBanner(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/upload/image`, {
+                credentials: "include",
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: formDataUpload
+            });
+            const data = await res.json();
+            if (data.success) {
+                setFormData(prev => ({ ...prev, banner_url: data.data }));
+                showNotification('Banner uploaded successfully');
+            } else {
+                showNotification(data.message || 'Failed to upload banner', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showNotification('An error occurred while uploading the banner', 'error');
+        } finally {
+            setUploadingBanner(false);
+        }
+    };
+
     const handleEditClick = (category: any) => {
         setEditingId(category.id);
 
@@ -164,6 +196,7 @@ const AdminCategories = () => {
             description: category.description || '',
             description_ar: category.description_ar || '',
             image_url: category.image_url || '',
+            banner_url: category.banner_url || '',
             is_active: Boolean(category.is_active),
             type: category.type || 'main_category',
             parent_id: category.parent_id || '',
@@ -194,7 +227,8 @@ const AdminCategories = () => {
             is_active: true,
             type,
             parent_id: parentId,
-            brands: []
+            brands: [],
+            banner_url: ''
         });
         setIsModalOpen(true);
     };
@@ -212,6 +246,7 @@ const AdminCategories = () => {
             description: '',
             description_ar: '',
             image_url: '',
+            banner_url: '',
             is_active: true,
             type: 'main_category',
             parent_id: '',
@@ -248,6 +283,7 @@ const AdminCategories = () => {
                     description: formData.description,
                     description_ar: formData.description_ar,
                     image_url: formData.image_url,
+                    banner_url: formData.banner_url,
                     is_active: formData.is_active ? 1 : 0,
                     type: formData.type,
                     parent_id: formData.parent_id || null,
@@ -885,6 +921,62 @@ const AdminCategories = () => {
                                                 name="image_url"
                                                 placeholder="https://example.com/image.jpg"
                                                 value={formData.image_url}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label>Category Banner <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>(shown on top of the category landing page)</span></label>
+                                <div className={styles.imageUploadSection}>
+                                    <div className={styles.imagePreview} style={{ width: '220px', height: '90px' }}>
+                                        {formData.banner_url ? (
+                                            <div className={styles.previewContainer}>
+                                                <img src={formData.banner_url} alt="Banner Preview" />
+                                                <button
+                                                    type="button"
+                                                    className={styles.removeImgBtn}
+                                                    onClick={() => setFormData(prev => ({ ...prev, banner_url: '' }))}
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className={styles.imagePlaceholder}>
+                                                <ImageIcon size={28} />
+                                                <span>No banner</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className={styles.uploadControls}>
+                                        <div className={styles.uploadActions}>
+                                            <button
+                                                type="button"
+                                                className={styles.secondaryUploadBtn}
+                                                onClick={() => document.getElementById('category-banner-upload')?.click()}
+                                                disabled={uploadingBanner}
+                                            >
+                                                {uploadingBanner ? <Loader2 size={16} className={styles.spinner} /> : <Upload size={16} />}
+                                                {uploadingBanner ? 'Uploading...' : 'Upload Banner'}
+                                            </button>
+                                            <input
+                                                id="category-banner-upload"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleBannerUpload}
+                                                style={{ display: 'none' }}
+                                            />
+                                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>Recommended: 1920 × 400 px</span>
+                                        </div>
+                                        <div className={styles.urlInputGroup}>
+                                            <span>Or paste URL:</span>
+                                            <input
+                                                type="text"
+                                                name="banner_url"
+                                                placeholder="https://example.com/banner.jpg"
+                                                value={formData.banner_url}
                                                 onChange={handleInputChange}
                                             />
                                         </div>

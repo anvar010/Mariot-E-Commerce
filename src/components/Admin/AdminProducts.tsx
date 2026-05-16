@@ -1013,7 +1013,7 @@ const AdminProducts = () => {
             const loadedOptions: VariantOption[] = product.options.map((o: any) => ({
                 name: o.name || '',
                 name_ar: o.name_ar || '',
-                values: (o.values || []).map((v: any) => ({ value: v.value || '', value_ar: v.value_ar || '' }))
+                values: (o.values || []).map((v: any) => ({ value: v.value || '', value_ar: v.value_ar || '', swatch_color: v.swatch_color || '' }))
             }));
             const optionIdToIndex = new Map<number, number>();
             product.options.forEach((o: any, i: number) => optionIdToIndex.set(o.id, i));
@@ -1196,7 +1196,15 @@ const AdminProducts = () => {
                     : null,
                 // Variants payload — only send when enabled; an empty array clears them server-side
                 options: variantsEnabled
-                    ? variantOptions.map(o => ({ name: o.name.trim(), name_ar: o.name_ar.trim() }))
+                    ? variantOptions.map(o => ({
+                        name: o.name.trim(),
+                        name_ar: o.name_ar.trim(),
+                        values: (o.values || []).map(v => ({
+                            value: (v.value || '').trim(),
+                            value_ar: (v.value_ar || '').trim() || null,
+                            swatch_color: v.swatch_color || null
+                        })).filter(v => v.value || v.value_ar)
+                    }))
                     : [],
                 variants: variantsEnabled
                     ? variantRows.map(v => ({
@@ -1208,11 +1216,15 @@ const AdminProducts = () => {
                         use_primary_image: v.use_primary_image,
                         is_active: v.is_active,
                         is_default: v.is_default,
-                        options: v.combo.map((value, idx) => ({
-                            option_index: idx,
-                            value,
-                            value_ar: variantOptions[idx]?.values.find(x => x.value === value)?.value_ar || null
-                        }))
+                        options: v.combo.map((value, idx) => {
+                            const meta = variantOptions[idx]?.values.find(x => x.value === value);
+                            return {
+                                option_index: idx,
+                                value,
+                                value_ar: meta?.value_ar || null,
+                                swatch_color: meta?.swatch_color || null
+                            };
+                        })
                     }))
                     : [],
                 // Custom-size pricing payload

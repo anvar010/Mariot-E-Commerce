@@ -180,6 +180,15 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
 
   return (
     <div className={styles.landingPage}>
+      {category.banner_url && (
+        <div className={styles.categoryBanner}>
+          <img
+            src={resolveImage(category.banner_url)}
+            alt={categoryName}
+            className={styles.categoryBannerImg}
+          />
+        </div>
+      )}
       <div className={styles.container}>
         {/* Breadcrumb Area */}
         <div className={styles.breadcrumbWrapper}>

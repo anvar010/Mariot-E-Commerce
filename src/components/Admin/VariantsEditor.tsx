@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Plus, Trash2, X, RefreshCw, Layers, Image as ImageIcon, Upload, Loader2 } from 'lucide-react';
+import { Plus, Trash2, X, RefreshCw, Layers, Image as ImageIcon, Upload, Loader2, GripVertical } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
 import styles from './AdminProducts.module.css';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -10,6 +10,7 @@ import { resolveUrl } from '@/utils/resolveUrl';
 export interface OptionValue {
     value: string;
     value_ar: string;
+    swatch_color?: string;
 }
 
 export interface VariantOption {
@@ -40,7 +41,7 @@ interface Props {
     primaryImage?: string;
 }
 
-const emptyValue = (): OptionValue => ({ value: '', value_ar: '' });
+const emptyValue = (): OptionValue => ({ value: '', value_ar: '', swatch_color: '' });
 const emptyOption = (): VariantOption => ({ name: '', name_ar: '', values: [emptyValue()] });
 const rowFromCombo = (combo: string[]): VariantRow => ({
     combo,
@@ -89,6 +90,16 @@ const VariantsEditor: React.FC<Props> = ({
 }) => {
     const [uploadingIdx, setUploadingIdx] = React.useState<number | null>(null);
     const [regenError, setRegenError] = React.useState<string | null>(null);
+    const [dragInfo, setDragInfo] = React.useState<{ optIdx: number; valIdx: number } | null>(null);
+    const [dragOverIdx, setDragOverIdx] = React.useState<{ optIdx: number; valIdx: number } | null>(null);
+
+    const reorderValue = (optIdx: number, from: number, to: number) => {
+        if (from === to) return;
+        const vals = [...options[optIdx].values];
+        const [moved] = vals.splice(from, 1);
+        vals.splice(to, 0, moved);
+        updateOption(optIdx, { values: vals });
+    };
 
     const addOption = () => onOptionsChange([...options, emptyOption()]);
     const removeOption = (idx: number) => {
@@ -111,9 +122,23 @@ const VariantsEditor: React.FC<Props> = ({
         }
     };
     const updateValue = (optIdx: number, valIdx: number, patch: Partial<OptionValue>) => {
+        const oldVal = options[optIdx].values[valIdx];
+        const newVal = { ...oldVal, ...patch };
+        const oldKey = effectiveKey(oldVal);
+        const newKey = effectiveKey(newVal);
         updateOption(optIdx, {
-            values: options[optIdx].values.map((v, i) => i === valIdx ? { ...v, ...patch } : v)
+            values: options[optIdx].values.map((v, i) => i === valIdx ? newVal : v)
         });
+        // If the effective key changed (rename), rewrite that slot in existing combos
+        // so signatures stay aligned with the variant rows (preserves SKU/price/image).
+        if (oldKey && newKey && oldKey !== newKey) {
+            onVariantsChange(variants.map(v => {
+                if (v.combo[optIdx] !== oldKey) return v;
+                const nextCombo = [...v.combo];
+                nextCombo[optIdx] = newKey;
+                return { ...v, combo: nextCombo };
+            }));
+        }
     };
 
     const regenerate = () => {
@@ -125,7 +150,30 @@ const VariantsEditor: React.FC<Props> = ({
         setRegenError(null);
         const combos = cartesian(options);
         const bySig = new Map(variants.map(v => [signatureOf(v.combo), v]));
-        const next = combos.map(combo => bySig.get(signatureOf(combo)) || rowFromCombo(combo));
+
+        // Pass 1: exact signature match — keeps data when nothing changed.
+        const usedSigs = new Set<string>();
+        const matched: (VariantRow | null)[] = combos.map(combo => {
+            const sig = signatureOf(combo);
+            const hit = bySig.get(sig);
+            if (hit) { usedSigs.add(sig); return { ...hit, combo }; }
+            return null;
+        });
+
+        // Pass 2: any new combo with no exact match adopts the next unused old
+        // variant in original order. This handles renames (e.g. "120" → "1202")
+        // without losing SKU / price / stock / uploaded image / default flag.
+        const unusedOld = variants.filter(v => !usedSigs.has(signatureOf(v.combo)));
+        let unusedIdx = 0;
+        const next = matched.map((row, i) => {
+            if (row) return row;
+            if (unusedIdx < unusedOld.length) {
+                const old = unusedOld[unusedIdx++];
+                return { ...old, combo: combos[i] };
+            }
+            return rowFromCombo(combos[i]);
+        });
+
         onVariantsChange(next);
     };
 
@@ -223,7 +271,11 @@ const VariantsEditor: React.FC<Props> = ({
                             </div>
                         )}
 
-                        {options.map((opt, optIdx) => (
+                        {options.map((opt, optIdx) => {
+                        const nameLc = (opt.name || '').trim().toLowerCase();
+                        const nameArTrim = (opt.name_ar || '').trim();
+                        const isColorOption = nameLc === 'color' || nameLc === 'colour' || nameArTrim === 'اللون' || nameArTrim === 'لون';
+                        return (
                             <div key={optIdx} style={{
                                 border: '1px solid #e2e8f0', borderRadius: 10, padding: 12,
                                 display: 'flex', flexDirection: 'column', gap: 10
@@ -247,11 +299,54 @@ const VariantsEditor: React.FC<Props> = ({
                                     </button>
                                 </div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                    {opt.values.map((val, valIdx) => (
-                                        <div key={valIdx} style={{
-                                            display: 'flex', gap: 4, alignItems: 'center',
-                                            background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 4
-                                        }}>
+                                    {opt.values.map((val, valIdx) => {
+                                        const isDragOver = dragOverIdx?.optIdx === optIdx && dragOverIdx.valIdx === valIdx
+                                            && (dragInfo?.optIdx !== optIdx || dragInfo?.valIdx !== valIdx);
+                                        return (
+                                        <div
+                                            key={valIdx}
+                                            onDragOver={(e) => {
+                                                if (dragInfo?.optIdx !== optIdx) return;
+                                                e.preventDefault();
+                                                e.dataTransfer.dropEffect = 'move';
+                                                setDragOverIdx({ optIdx, valIdx });
+                                            }}
+                                            onDragLeave={() => {
+                                                if (dragOverIdx?.optIdx === optIdx && dragOverIdx.valIdx === valIdx) setDragOverIdx(null);
+                                            }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                if (dragInfo && dragInfo.optIdx === optIdx) {
+                                                    reorderValue(optIdx, dragInfo.valIdx, valIdx);
+                                                }
+                                                setDragInfo(null);
+                                                setDragOverIdx(null);
+                                            }}
+                                            style={{
+                                                display: 'flex', gap: 4, alignItems: 'center',
+                                                background: isDragOver ? '#eff6ff' : '#f8fafc',
+                                                border: `1px solid ${isDragOver ? '#3b82f6' : '#e2e8f0'}`,
+                                                borderRadius: 8, padding: 4,
+                                                opacity: dragInfo?.optIdx === optIdx && dragInfo.valIdx === valIdx ? 0.4 : 1,
+                                                transition: 'background 0.1s, border-color 0.1s, opacity 0.1s'
+                                            }}>
+                                            <span
+                                                draggable
+                                                onDragStart={(e) => {
+                                                    setDragInfo({ optIdx, valIdx });
+                                                    e.dataTransfer.effectAllowed = 'move';
+                                                    try { e.dataTransfer.setData('text/plain', String(valIdx)); } catch { /* noop */ }
+                                                }}
+                                                onDragEnd={() => { setDragInfo(null); setDragOverIdx(null); }}
+                                                title="Drag to reorder"
+                                                style={{
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'grab', color: '#475569',
+                                                    background: '#e2e8f0', borderRadius: 4,
+                                                    width: 18, height: 22, marginRight: 2
+                                                }}>
+                                                <GripVertical size={14} />
+                                            </span>
                                             <input
                                                 type="text" placeholder="Value (e.g. Red)"
                                                 value={val.value}
@@ -264,12 +359,40 @@ const VariantsEditor: React.FC<Props> = ({
                                                 onChange={(e) => updateValue(optIdx, valIdx, { value_ar: e.target.value })}
                                                 style={{ width: 80, padding: '4px 6px', fontSize: 12, border: 'none', background: 'transparent' }}
                                             />
+                                            {isColorOption && (
+                                            <label
+                                                title="Pick a swatch color (shows as a colored circle on the product page)"
+                                                style={{
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    width: 26, height: 26, borderRadius: '50%', cursor: 'pointer',
+                                                    border: val.swatch_color ? '1px solid #cbd5e1' : '1px dashed #cbd5e1',
+                                                    background: val.swatch_color || 'repeating-conic-gradient(#e2e8f0 0% 25%, #ffffff 0% 50%) 50% / 8px 8px',
+                                                    position: 'relative', overflow: 'hidden'
+                                                }}
+                                            >
+                                                <input
+                                                    type="color"
+                                                    value={val.swatch_color || '#ffffff'}
+                                                    onChange={(e) => updateValue(optIdx, valIdx, { swatch_color: e.target.value })}
+                                                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', border: 'none', padding: 0 }}
+                                                />
+                                            </label>
+                                            )}
+                                            {isColorOption && val.swatch_color && (
+                                                <button type="button"
+                                                    title="Clear swatch color"
+                                                    onClick={() => updateValue(optIdx, valIdx, { swatch_color: '' })}
+                                                    style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 2, fontSize: 10 }}>
+                                                    ⌀
+                                                </button>
+                                            )}
                                             <button type="button" onClick={() => removeValue(optIdx, valIdx)}
                                                 style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 2 }}>
                                                 <X size={12} />
                                             </button>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                     <button type="button" onClick={() => addValue(optIdx)}
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: 4,
@@ -280,7 +403,8 @@ const VariantsEditor: React.FC<Props> = ({
                                     </button>
                                 </div>
                             </div>
-                        ))}
+                        );
+                        })}
                     </div>
 
                     {/* Combinations */}

@@ -4,6 +4,18 @@
   padding-bottom: 50px;
 }
 
+.categoryBanner {
+  position: relative;
+  width: 100%;
+  background-color: #f8fafc;
+}
+
+.categoryBannerImg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 .container {
   max-width: 1650px;
   margin: 0 auto;

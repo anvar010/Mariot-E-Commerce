@@ -46,7 +46,12 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     const localBrandLogo = getBrandLogo(displayBrand);
 
     const displayBrandImage = resolveUrl(localBrandLogo ?? product.brand_image ?? (product as any)?.brand_logo);
-    const displayImage = resolveUrl(product.primary_image) || '/assets/mariot-logo2.webp';
+    const swatchOptions: Array<{ color: string; image: string | null; value: string }> =
+        Array.isArray((product as any).swatch_options) ? (product as any).swatch_options : [];
+    const [selectedSwatchIdx, setSelectedSwatchIdx] = useState<number | null>(null);
+    const swatchOverrideImage = selectedSwatchIdx !== null ? swatchOptions[selectedSwatchIdx]?.image : null;
+    const baseImage = resolveUrl(swatchOverrideImage || product.primary_image) || '/assets/mariot-logo2.webp';
+    const displayImage = baseImage;
     const formatTime = (num: number) => num.toString().padStart(2, '0');
     const isInventoryTracked = product.track_inventory === 1 || product.track_inventory === '1' || product.track_inventory === true;
     const isInStock = !isInventoryTracked || product.stock_quantity === undefined || product.stock_quantity > 0;
@@ -317,6 +322,34 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                     <div className={`${styles.stockBadge} ${isInStock ? styles.inStock : styles.outOfStock}`}>
                         <span>• {isInStock ? t('inStock') : t('outOfStock')}</span>
                     </div>
+                    {(swatchOptions.length > 0 || (Array.isArray((product as any).swatch_colors) && (product as any).swatch_colors.length > 0)) && (
+                        <div className={styles.swatchDots} aria-label="Available colors">
+                            {(swatchOptions.length > 0
+                                ? swatchOptions
+                                : ((product as any).swatch_colors as string[]).map((c: string) => ({ color: c, image: null, value: '' }))
+                            ).slice(0, 4).map((opt: { color: string; image: string | null }, i: number) => {
+                                const isActive = selectedSwatchIdx === i;
+                                return (
+                                    <button
+                                        key={i}
+                                        type="button"
+                                        title={`Color ${i + 1}`}
+                                        aria-label={`Show color ${i + 1}`}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setSelectedSwatchIdx(isActive ? null : i);
+                                        }}
+                                        className={`${styles.swatchDot} ${isActive ? styles.swatchDotActive : ''} ${!opt.image && swatchOptions.length > 0 ? styles.swatchDotDisabled : ''}`}
+                                        style={{ background: opt.color }}
+                                    />
+                                );
+                            })}
+                            {(swatchOptions.length > 0 ? swatchOptions.length : (product as any).swatch_colors.length) > 4 && (
+                                <span className={styles.swatchMore}>+{(swatchOptions.length > 0 ? swatchOptions.length : (product as any).swatch_colors.length) - 4}</span>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className={styles.ratingBox}>

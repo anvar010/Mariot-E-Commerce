@@ -820,25 +820,43 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             .map((prevOpt: any) => ({ optionId: prevOpt.id, value: selectedValues[prevOpt.id] }))
             .filter((s: any) => !!s.value);
 
-        const activeValues = new Map<string, string | null>();
+        // First, collect the set of keys that have at least one matching active variant
+        // (subject to prior selections). Then walk opt.values in admin-defined order to
+        // emit only the active ones — this preserves the canonical order.
+        const activeKeys = new Set<string>();
+        const arByKey: Record<string, string | null> = {};
+        const swatchFromVariant: Record<string, string | null> = {};
         productVariants.forEach((v: any) => {
-            // Check that this variant satisfies all prior selections
             const matchesPrior = priorSelections.every((sel: any) => {
                 const vo = v.options?.find((o: any) => o.option_id === sel.optionId);
                 return vo && ((vo.value || '').trim() || (vo.value_ar || '').trim()) === sel.value;
             });
             if (!matchesPrior) return;
-
             const vo = v.options?.find((o: any) => o.option_id === opt.id);
             if (vo) {
                 const key = (vo.value || '').trim() || (vo.value_ar || '').trim();
-                if (key && !activeValues.has(key)) activeValues.set(key, vo.value_ar || null);
+                if (key) {
+                    activeKeys.add(key);
+                    if (!(key in arByKey)) arByKey[key] = vo.value_ar || null;
+                    if (!(key in swatchFromVariant)) swatchFromVariant[key] = vo.swatch_color || null;
+                }
             }
+        });
+
+        const canonical = (opt.values || []).map((ov: any) => {
+            const key = (ov.value || '').trim() || (ov.value_ar || '').trim();
+            return { key, value_ar: ov.value_ar || null, swatch_color: ov.swatch_color || null };
+        }).filter((x: any) => x.key && activeKeys.has(x.key));
+
+        // Append any active keys that weren't in opt.values (defensive fallback)
+        const seen = new Set(canonical.map((c: any) => c.key));
+        activeKeys.forEach(k => {
+            if (!seen.has(k)) canonical.push({ key: k, value_ar: arByKey[k] || null, swatch_color: swatchFromVariant[k] || null });
         });
 
         return {
             ...opt,
-            values: Array.from(activeValues.entries()).map(([value, value_ar]) => ({ value, value_ar }))
+            values: canonical.map((c: any) => ({ value: c.key, value_ar: c.value_ar, swatch_color: c.swatch_color }))
         };
     }).filter((opt: any) => opt.values.length > 0);
 
@@ -1243,9 +1261,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             );
                                             const selectedLabel = (isArabic && selectedMeta?.value_ar) ? selectedMeta.value_ar : (selectedMeta?.value || selectedVal);
 
-                                            // Only the first option (e.g. Color) uses image cards.
-                                            // All subsequent options (Size, Memory, etc.) always use text chips.
-                                            const showAsImageCards = optIdx === 0;
+                                            // If any value of this option has a swatch_color, render colored circles.
+                                            // Otherwise the first option falls back to image cards and the rest to text chips.
+                                            const hasSwatchColors = Array.isArray(opt.values) && opt.values.some((v: any) => v.swatch_color);
+                                            const showAsSwatches = hasSwatchColors;
+                                            const showAsImageCards = !showAsSwatches && optIdx === 0;
 
                                             const primaryFallback = product.images?.[0]
                                                 ? resolveUrl(product.images[0].image_url)
@@ -1257,7 +1277,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                         <span className={styles.variantOptionName}>{optName.toUpperCase()}</span>
                                                         {selectedVal && <span className={styles.variantOptionValue}>{selectedLabel}</span>}
                                                     </div>
-                                                    <div className={showAsImageCards ? styles.variantImageCards : styles.variantChips}>
+                                                    <div className={showAsSwatches ? styles.variantSwatches : (showAsImageCards ? styles.variantImageCards : styles.variantChips)}>
                                                         {opt.values?.map((val: any) => {
                                                             const key = val.value.trim() || val.value_ar.trim();
                                                             const isSelected = selectedVal === key;
@@ -1289,6 +1309,24 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                                 setCurrentImageIndex(0);
                                                                 setQty(1);
                                                             };
+
+                                                            if (showAsSwatches) {
+                                                                return (
+                                                                    <button
+                                                                        key={key}
+                                                                        type="button"
+                                                                        title={label}
+                                                                        aria-label={label}
+                                                                        className={`${styles.variantSwatch} ${isSelected ? styles.variantSwatchActive : ''}`}
+                                                                        onClick={handleSelect}
+                                                                    >
+                                                                        <span
+                                                                            className={styles.variantSwatchDot}
+                                                                            style={{ background: val.swatch_color || '#e5e7eb' }}
+                                                                        />
+                                                                    </button>
+                                                                );
+                                                            }
 
                                                             if (showAsImageCards) {
                                                                 // First try to find a variant with a custom image for this option value

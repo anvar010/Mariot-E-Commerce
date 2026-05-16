@@ -22,6 +22,7 @@ import {
     ShoppingCart,
     X,
     ChevronLeft,
+    ChevronRight,
     Store,
     Phone,
     Edit2,
@@ -602,7 +603,7 @@ const UserDashboard = () => {
                             {filteredOrders.map((order) => (
                                 <div key={order.id} className={styles.premiumOrderCard}>
                                     <div className={styles.orderMain}>
-                                        <div className={styles.orderIconWrapper}>
+                                        <div className={`${styles.orderIconWrapper} ${styles[`iconBg_${order.status}`]}`}>
                                             <Package size={24} />
                                         </div>
                                         <div className={styles.orderBrief}>
@@ -624,18 +625,21 @@ const UserDashboard = () => {
                                                         day: '2-digit', month: 'short', year: 'numeric'
                                                     })}
                                                 </div>
+                                                <div className={styles.metaSeparator}>|</div>
                                                 <div className={styles.orderMetaItem}>
-                                                    <span>{t('orders.total')}</span>
-                                                    <span className={styles.orderPrice}>
-                                                        <CurrencyPrice amount={parseFloat(order.final_amount)} />
-                                                    </span>
+                                                    <div className={styles.totalBlock}>
+                                                        <span className={styles.totalLabel}>{t('orders.total')}</span>
+                                                        <span className={styles.orderPrice}>
+                                                            <CurrencyPrice amount={parseFloat(order.final_amount)} />
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                     <div className={styles.orderActions}>
                                         <button
-                                            className={styles.orderViewBtn}
+                                            className={`${styles.orderViewBtn} ${styles[`btnBorder_${order.status}`]}`}
                                             onClick={async () => {
                                                 setLoadingOrderDetails(true);
                                                 try {
@@ -655,7 +659,12 @@ const UserDashboard = () => {
                                             }}
                                             disabled={loadingOrderDetails}
                                         >
-                                            {loadingOrderDetails && selectedOrder?.id === order.id ? t('common.loading') : t('orders.viewDetails')}
+                                            {loadingOrderDetails && selectedOrder?.id === order.id ? t('common.loading') : (
+                                                <div className={styles.btnContent}>
+                                                    {t('orders.view')}
+                                                    <ChevronRight size={16} />
+                                                </div>
+                                            )}
                                         </button>
                                     </div>
                                 </div>
@@ -732,16 +741,16 @@ const UserDashboard = () => {
                                                 type="button"
                                                 onClick={() => setOtpOpen(true)}
                                                 disabled={!formData.phone_number || formData.phone_number.length < 7}
-                                                style={{ 
-                                                    padding: '8px 14px', 
-                                                    background: (!formData.phone_number || formData.phone_number.length < 7) ? '#ccc' : '#237073', 
-                                                    color: '#fff', 
-                                                    border: 'none', 
-                                                    borderRadius: 8, 
-                                                    fontSize: 13, 
-                                                    fontWeight: 600, 
-                                                    cursor: (!formData.phone_number || formData.phone_number.length < 7) ? 'not-allowed' : 'pointer', 
-                                                    whiteSpace: 'nowrap' 
+                                                style={{
+                                                    padding: '8px 14px',
+                                                    background: (!formData.phone_number || formData.phone_number.length < 7) ? '#ccc' : '#237073',
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    borderRadius: 8,
+                                                    fontSize: 13,
+                                                    fontWeight: 600,
+                                                    cursor: (!formData.phone_number || formData.phone_number.length < 7) ? 'not-allowed' : 'pointer',
+                                                    whiteSpace: 'nowrap'
                                                 }}
                                             >
                                                 Verify
@@ -1224,10 +1233,17 @@ const UserDashboard = () => {
                 {/* Sidebar */}
                 <aside className={styles.sidebar}>
                     <div className={styles.userCard}>
-                        <h2 className={styles.welcomeText}>
-                            {t('hello', { name: user.name })}
-                        </h2>
-                        <p className={styles.emailText}>{user.email}</p>
+                        <div className={styles.userCardInner}>
+                            <div className={styles.userAvatar}>
+                                <User size={24} />
+                            </div>
+                            <div className={styles.userInfo}>
+                                <h2 className={styles.welcomeText}>
+                                    {t('hello', { name: user.name })}
+                                </h2>
+                                <p className={styles.emailText}>{user.email}</p>
+                            </div>
+                        </div>
                         <div className={styles.statusIndicator}>
                             <span className={styles.statusDot}></span>
                             {t('activeSession')}

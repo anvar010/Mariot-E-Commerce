@@ -518,6 +518,43 @@
     color: #1a1a1a;
 }
 
+/* ── Color swatches (circular) ── */
+.variantSwatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.variantSwatch {
+    width: 36px;
+    height: 36px;
+    padding: 3px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s;
+}
+
+.variantSwatch:hover {
+    border-color: #cbd5e1;
+}
+
+.variantSwatchActive {
+    border-color: #16a1db;
+}
+
+.variantSwatchDot {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
 /* ── Image cards (colour / style with thumbnail) ── */
 .variantImageCards {
     display: flex;

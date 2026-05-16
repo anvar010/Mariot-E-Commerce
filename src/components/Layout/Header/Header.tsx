@@ -578,18 +578,21 @@ const Header = () => {
                 <div className={styles.container}>
                     <div className={styles.mobileMenuHeader}>
                         <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '12px', paddingInlineEnd: '45px' }}>
-                            <div className={styles.mobileAvatar}>
-                                <User size={24} color="#16a1db" />
-                            </div>
-                            <div className={styles.mobileUserInfo} style={{ flex: 1 }}>
-                                <span className={styles.mobileUserName}>{user ? user.name : t('account')}</span>
-                                {user && <span className={styles.mobileUserEmail}>{user.email}</span>}
-                                {!user && (
-                                    <Link href="/signin" className={styles.mobileSignInLink} onClick={() => setIsMenuOpen(false)}>
-                                        {t('signIn')}
-                                    </Link>
-                                )}
-                            </div>
+                            <Link
+                                href={user ? "/profile" : "/signin"}
+                                className={styles.mobileProfileLink}
+                                onClick={() => setIsMenuOpen(false)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, textDecoration: 'none' }}
+                            >
+                                <div className={styles.mobileAvatar}>
+                                    <User size={24} color="#16a1db" />
+                                </div>
+                                <div className={styles.mobileUserInfo}>
+                                    <span className={styles.mobileUserName}>{user ? user.name : t('account')}</span>
+                                    {user && <span className={styles.mobileUserEmail}>{user.email}</span>}
+                                    {!user && <span className={styles.mobileSignInLink}>{t('signIn')}</span>}
+                                </div>
+                            </Link>
                             <div className={`${styles.switch} ${styles.mobileLangSelector}`} dir="ltr">
                                 <input
                                     id="languageToggleMobile"

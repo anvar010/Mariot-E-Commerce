@@ -699,6 +699,7 @@
             "orderNumber": "طلب رقم #",
             "placedOn": "تم الطلب في:",
             "total": "الإجمالي:",
+            "view": "عرض",
             "viewDetails": "عرض التفاصيل",
             "backToOrders": "العودة إلى الطلبات",
             "status": "الحالة",
