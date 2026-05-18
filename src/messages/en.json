@@ -29,7 +29,7 @@
     "customEquipments": "Custom equipments? Talk to us <phone></phone>",
     "liveSupport": "24X7 LiveSupport",
     "needHelp": "Need help finding parts?",
-    "congratsPoints": "Congratulations! You got 1000 points",
+    "congratsPoints": "Congratulations! You got {points} points",
     "searching": "Searching",
     "noResultsFound": "No products found",
     "signOut": "Sign Out"
@@ -689,6 +689,14 @@
       "addresses": "Addresses",
       "payments": "Payments",
       "sellerDashboard": "Seller Dashboard"
+    },
+    "rewards": {
+      "earnPoints": "Earn Points",
+      "bonusChip": "+{points} points",
+      "completeProfileTitle": "Complete your business profile",
+      "completeProfileDesc": "Filling in your information helps us create a personalized experience for you.",
+      "fillProfileCta": "Fill in your profile",
+      "completed": "Completed"
     },
     "orders": {
       "title": "Your Orders",

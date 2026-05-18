@@ -1,0 +1,129 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+    padding: 20px;
+    animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal {
+    background: #f1f5f9;
+    border-radius: 18px;
+    width: 100%;
+    max-width: 440px;
+    padding: 34px 28px 30px;
+    position: relative;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    animation: pop 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes pop {
+    from { opacity: 0; transform: scale(0.94) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.closeBtn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: #ffffff;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.15s ease;
+}
+
+.closeBtn:hover {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #fef9c3;
+    padding: 10px 22px 10px 16px;
+    border-radius: 999px;
+    margin: 0 0 22px;
+    position: relative;
+}
+
+.badgeStar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #1e6b6e;
+    color: #fef9c3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badgeText {
+    color: #ea7c1c;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.cursorArt {
+    position: absolute;
+    right: -22px;
+    bottom: -6px;
+    color: #0f172a;
+}
+
+.copy {
+    font-size: 15px;
+    color: #0f172a;
+    line-height: 1.55;
+    margin: 0 0 26px;
+}
+
+.highlight {
+    color: #ea7c1c;
+    font-weight: 700;
+}
+
+.cta {
+    width: 100%;
+    background: linear-gradient(135deg, #16a1db 0%, #1388b8 100%);
+    color: #ffffff;
+    border: none;
+    padding: 15px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 6px 18px rgba(22, 161, 219, 0.25);
+}
+
+.cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(22, 161, 219, 0.32);
+    background: linear-gradient(135deg, #1db1ee 0%, #16a1db 100%);
+}
+
+.cta:active {
+    transform: translateY(0);
+}

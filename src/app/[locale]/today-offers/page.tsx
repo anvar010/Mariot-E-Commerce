@@ -4,7 +4,13 @@ import Footer from '@/components/Layout/Footer/Footer';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import TodayOffersPage from '@/components/Offers/TodayOffersPage';
 
-export async function generateMetadata({ params: { locale } }: { params: { locale: string } }) {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }) {
+    const params = await props.params;
+
+    const {
+        locale
+    } = params;
+
     const isArabic = locale === 'ar';
     return {
         title: isArabic ? 'العروض اليومية على معدات المطابخ | ماريوت' : 'Daily Deals on Premium Kitchen Equipment | Mariot Store',

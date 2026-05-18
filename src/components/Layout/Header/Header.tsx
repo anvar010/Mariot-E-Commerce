@@ -39,6 +39,7 @@ const Header = () => {
     const [isCategoriesHovered, setIsCategoriesHovered] = useState(false);
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
     const [showRewardToast, setShowRewardToast] = useState(false);
+    const [rewardToastPoints, setRewardToastPoints] = useState(0);
     const [announcement, setAnnouncement] = useState<any>(null);
 
     const isArabic = locale === 'ar';
@@ -90,14 +91,23 @@ const Header = () => {
         };
     }, []);
 
+    // Show a toast whenever the user's reward_points increase (welcome bonus,
+    // profile-completion bonus, order points, etc.). The "last seen" value
+    // lives in localStorage so the delta survives page reloads.
     useEffect(() => {
-        if (user?.reward_points === 1000) {
-            const hasShown = sessionStorage.getItem('reward_toast_shown');
-            if (!hasShown) {
-                setShowRewardToast(true);
-            }
+        if (!user) return;
+        const current = Number(user.reward_points) || 0;
+        const stored = Number(localStorage.getItem('mariot.lastRewardPoints') || '0');
+        if (current > stored) {
+            const delta = current - stored;
+            setRewardToastPoints(delta);
+            setShowRewardToast(true);
+            localStorage.setItem('mariot.lastRewardPoints', String(current));
+        } else if (current !== stored) {
+            // Points went down (redeemed) — sync silently so the next earn fires correctly.
+            localStorage.setItem('mariot.lastRewardPoints', String(current));
         }
-    }, [user]);
+    }, [user?.reward_points]);
 
     useEffect(() => {
         let cancelled = false;
@@ -438,21 +448,20 @@ const Header = () => {
                             </div>
 
                             <div className={styles.userActions}>
-                                <Link href="/profile?tab=myRewards" className={`${styles.rewardPoints} ${styles.desktopOnly}`}>
+                                <Link href={user ? '/profile?tab=myRewards' : '/affiliate-program'} className={`${styles.rewardPoints} ${styles.desktopOnly}`}>
                                     <Coins size={24} className={styles.pointIcon} />
                                     <div className={styles.actionText}>
                                         <span className={styles.label}>{t('rewardPoints')}</span>
                                         <span className={styles.value}>{user?.reward_points || 0}</span>
                                     </div>
-                                    {showRewardToast && (
+                                    {showRewardToast && rewardToastPoints > 0 && (
                                         <div className={styles.rewardToast}>
                                             <div className={styles.rewardToastContent}>
                                                 <Trophy size={16} className={styles.trophyIcon} />
-                                                <span>{t('congratsPoints')}</span>
+                                                <span>{t('congratsPoints', { points: rewardToastPoints })}</span>
                                                 <X size={14} className={styles.closeToast} onClick={(e) => {
                                                     e.stopPropagation();
                                                     setShowRewardToast(false);
-                                                    sessionStorage.setItem('reward_toast_shown', 'true');
                                                 }} />
                                             </div>
                                         </div>
@@ -472,14 +481,14 @@ const Header = () => {
                                     <span className={styles.switchOff}>EN</span>
                                 </div>
 
-                                {user && (
-                                    <Link href="/profile?tab=myRewards" className={`${styles.rewardPointsMobile} ${styles.mobileOnly}`}>
-                                        <Coins size={20} className={styles.pointIcon} />
+                                <Link href={user ? '/profile?tab=myRewards' : '/affiliate-program'} className={`${styles.rewardPointsMobile} ${styles.mobileOnly}`}>
+                                    <Coins size={20} className={styles.pointIcon} />
+                                    {user && (
                                         <span className={styles.mobilePointsValue}>
-                                            {user?.reward_points || 0}
+                                            {user.reward_points || 0}
                                         </span>
-                                    </Link>
-                                )}
+                                    )}
+                                </Link>
 
                                 <Link href={user ? "/profile" : "/signin"} className={styles.profile}>
                                     <User size={28} className={styles.userIcon} />
@@ -530,7 +539,6 @@ const Header = () => {
                                         <Menu size={20} />
                                         <span>{t('allCategories')}</span>
                                     </div>
-                                    <ChevronRight size={14} />
                                 </Link>
                                 {isCategoriesHovered && (
                                     <div className={styles.megaMenu}>

@@ -6,16 +6,17 @@ import { Metadata } from 'next';
 import { API_BASE_URL } from '@/config';
 
 interface CategoryPageProps {
-  params: {
+  params: Promise<{
     locale: string;
     slug: string;
-  };
+  }>;
 }
 
-export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+export async function generateMetadata(props: CategoryPageProps): Promise<Metadata> {
+  const params = await props.params;
   const { slug, locale } = params;
   const isArabic = locale === 'ar';
-  
+
   try {
     const res = await fetch(`${API_BASE_URL}/categories`);
     const data = await res.json();
@@ -31,13 +32,14 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   } catch (err) {
     console.error('Metadata fetch error:', err);
   }
-  
+
   return {
     title: 'Category | Mariot Store'
   };
 }
 
-const CategoryPage = ({ params }: CategoryPageProps) => {
+const CategoryPage = async (props: CategoryPageProps) => {
+  const params = await props.params;
   return (
     <main>
       <Header />

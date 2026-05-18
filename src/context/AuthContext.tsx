@@ -10,7 +10,7 @@ interface AuthContextType {
     isAuthenticated: boolean;
     loading: boolean;
     login: (credentials: any, redirectTo?: string) => Promise<void>;
-    googleLogin: (token: string, redirectTo?: string) => Promise<void>;
+    googleLogin: (token: string, redirectTo?: string) => Promise<any>;
     register: (userData: any, redirectTo?: string) => Promise<void>;
     logout: () => void;
     updateUser: (userData: any) => Promise<void>;
@@ -83,6 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsAuthenticated(true);
             // Store user info in localStorage for UI persistence (NOT the token)
             localStorage.setItem('user', JSON.stringify(data.user));
+            // Mark a fresh login event so post-login prompts can fire.
+            try { sessionStorage.setItem('mariot.justLoggedIn', '1'); } catch {}
             router.push(redirectTo || '/');
         } catch (err: any) {
             setError(err.message);
@@ -101,7 +103,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(data.user);
             setIsAuthenticated(true);
             localStorage.setItem('user', JSON.stringify(data.user));
+            try { sessionStorage.setItem('mariot.justLoggedIn', '1'); } catch {}
             router.push(redirectTo || '/');
+            return data;
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -158,6 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(newUser);
         setIsAuthenticated(true);
         localStorage.setItem('user', JSON.stringify(newUser));
+        try { sessionStorage.setItem('mariot.justLoggedIn', '1'); } catch {}
         if (typeof window !== 'undefined') {
             window.location.assign(redirectTo || '/');
         } else {

@@ -29,7 +29,7 @@
         "customEquipments": "معدات مخصصة؟ تحدث إلينا <phone></phone>",
         "liveSupport": "دعم مباشر 24/7",
         "needHelp": "هل تحتاج مساعدة في إيجاد القطع؟",
-        "congratsPoints": "تهانينا! حصلت على 1000 نقطة",
+        "congratsPoints": "تهانينا! حصلت على {points} نقطة",
         "searching": "جاري البحث",
         "noResultsFound": "لم يتم العثور على منتجات",
         "signOut": "تسجيل الخروج"
@@ -689,6 +689,14 @@
             "addresses": "العناوين",
             "payments": "المدفوعات",
             "sellerDashboard": "لوحة التاجر"
+        },
+        "rewards": {
+            "earnPoints": "اكسب النقاط",
+            "bonusChip": "+{points} نقطة",
+            "completeProfileTitle": "أكمل ملفك التجاري",
+            "completeProfileDesc": "تعبئة معلوماتك يساعدنا على تقديم تجربة مخصصة لك.",
+            "fillProfileCta": "أكمل ملفك",
+            "completed": "مكتمل"
         },
         "orders": {
             "title": "طلباتك",

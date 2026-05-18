@@ -81,6 +81,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             try {
                 await googleLogin(tokenResponse.access_token, redirectTo);
                 showNotification(t('googleSuccess'), 'success', { title: 'Google Login' });
+                // Any awarded bonus surfaces automatically via the Header reward toast.
             } catch (err: any) {
                 console.error(err);
                 if (err.message?.includes('suspended')) {

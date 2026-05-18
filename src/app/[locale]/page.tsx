@@ -87,7 +87,13 @@ async function getHomeData(locale: string) {
     }
 }
 
-export default async function Home({ params: { locale } }: { params: { locale: string } }) {
+export default async function Home(props: { params: Promise<{ locale: string }> }) {
+    const params = await props.params;
+
+    const {
+        locale
+    } = params;
+
     const data = await getHomeData(locale);
 
     const localBusinessJsonLd = {

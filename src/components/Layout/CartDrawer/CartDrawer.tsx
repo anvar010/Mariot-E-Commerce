@@ -481,7 +481,7 @@ const CartDrawer = () => {
             {showCoupons && (
                 <div
                     className={`${styles.overlay} ${styles.overlayOpen}`}
-                    style={{ zIndex: 2004 }}
+                    style={{ zIndex: 30004 }}
                     onClick={() => setShowCoupons(false)}
                 />
             )}

@@ -29,7 +29,8 @@ import {
     Calendar,
     Download,
     Banknote,
-    Check
+    Check,
+    ArrowUpRight
 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
@@ -679,7 +680,7 @@ const UserDashboard = () => {
         }
 
         if (activeSection === 'profileSecurity') {
-            const profileTabs = ['Personal Info', 'Bussiness Info', 'Sign-in Info'];
+            const profileTabs = ['Personal Info', 'Business Info', 'Sign-in Info'];
 
             return (
                 <div className={styles.profileSection}>
@@ -690,71 +691,59 @@ const UserDashboard = () => {
                                 className={`${styles.profileTab} ${profileTab === tab ? styles.profileTabActive : ''}`}
                                 onClick={() => setProfileTab(tab)}
                             >
-                                {tabTranslations[tab] || tab}
+                                {tab === 'Business Info' ? (tabTranslations['Bussiness Info'] || tab) : (tabTranslations[tab] || tab)}
                             </span>
                         ))}
                     </div>
 
                     <form onSubmit={handleProfileUpdate} className={styles.profileForm}>
                         {message && (
-                            <div style={{
-                                padding: '10px',
-                                borderRadius: '4px',
-                                marginBottom: '20px',
-                                background: message.type === 'success' ? '#ebfbee' : '#fff0f0',
-                                color: message.type === 'success' ? '#2b8a3e' : '#fa5252',
-                                fontSize: '14px',
-                                fontWeight: 600
-                            }}>
-                                {message.text}
+                            <div className={`${styles.messageAlert} ${message.type === 'success' ? styles.messageSuccess : styles.messageError}`}>
+                                {message.type === 'success' ? <Check size={18} /> : null}
+                                <span>{message.text}</span>
                             </div>
                         )}
 
                         {profileTab === 'Personal Info' && (
-                            <>
+                            <div className={styles.formContentFadeIn}>
                                 <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('profile.fullName')}</label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        className={styles.formInput}
-                                        placeholder={t('profile.fullName')}
-                                    />
-                                </div>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('profile.phoneNumber')}</label>
-                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <label htmlFor="name" className={styles.formLabel}>{t('profile.fullName')}</label>
+                                    <div className={styles.inputWrapper}>
                                         <input
                                             type="text"
+                                            id="name"
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleInputChange}
+                                            className={styles.formInput}
+                                            placeholder={t('profile.fullName')}
+                                            autoComplete="name"
+                                        />
+                                    </div>
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label htmlFor="phone_number" className={styles.formLabel}>{t('profile.phoneNumber')}</label>
+                                    <div className={styles.inputActionGroup}>
+                                        <input
+                                            type="tel"
+                                            id="phone_number"
                                             name="phone_number"
                                             value={formData.phone_number}
                                             onChange={handleInputChange}
                                             className={styles.formInput}
                                             placeholder={t('profile.phoneNumber')}
-                                            style={{ flex: 1 }}
+                                            autoComplete="tel"
                                         />
                                         {formData.phone_number && user?.phone_number === formData.phone_number && user?.phone_verified ? (
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '8px 12px', background: '#dcfce7', color: '#166534', borderRadius: 8, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                                <Check size={14} /> Verified
+                                            <span className={styles.verifiedBadge}>
+                                                <Check size={16} strokeWidth={2.5} /> Verified
                                             </span>
                                         ) : (
                                             <button
                                                 type="button"
                                                 onClick={() => setOtpOpen(true)}
                                                 disabled={!formData.phone_number || formData.phone_number.length < 7}
-                                                style={{
-                                                    padding: '8px 14px',
-                                                    background: (!formData.phone_number || formData.phone_number.length < 7) ? '#ccc' : '#237073',
-                                                    color: '#fff',
-                                                    border: 'none',
-                                                    borderRadius: 8,
-                                                    fontSize: 13,
-                                                    fontWeight: 600,
-                                                    cursor: (!formData.phone_number || formData.phone_number.length < 7) ? 'not-allowed' : 'pointer',
-                                                    whiteSpace: 'nowrap'
-                                                }}
+                                                className={`${styles.actionBtn} ${(!formData.phone_number || formData.phone_number.length < 7) ? styles.actionBtnDisabled : styles.actionBtnPrimary}`}
                                             >
                                                 Verify
                                             </button>
@@ -762,104 +751,120 @@ const UserDashboard = () => {
                                     </div>
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('profile.emailAddress')}</label>
-                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <label htmlFor="email" className={styles.formLabel}>{t('profile.emailAddress')}</label>
+                                    <div className={styles.inputActionGroup}>
                                         <input
                                             type="email"
+                                            id="email"
                                             name="email"
                                             value={formData.email}
                                             onChange={handleInputChange}
                                             className={styles.formInput}
                                             placeholder={t('profile.emailAddress')}
-                                            style={{ flex: 1 }}
+                                            autoComplete="email"
+                                            spellCheck={false}
                                         />
                                         {formData.email && user?.email === formData.email && user?.email_verified ? (
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '8px 12px', background: '#dcfce7', color: '#166534', borderRadius: 8, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                                <Check size={14} /> Verified
+                                            <span className={styles.verifiedBadge}>
+                                                <Check size={16} strokeWidth={2.5} /> Verified
                                             </span>
                                         ) : (
                                             <button
                                                 type="button"
                                                 onClick={() => { setPendingEmail(formData.email); setEmailOtpOpen(true); }}
                                                 disabled={!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)}
-                                                style={{
-                                                    padding: '8px 14px',
-                                                    background: (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) ? '#ccc' : '#16a1db',
-                                                    color: '#fff',
-                                                    border: 'none',
-                                                    borderRadius: 8,
-                                                    fontSize: 13,
-                                                    fontWeight: 600,
-                                                    cursor: (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) ? 'not-allowed' : 'pointer',
-                                                    whiteSpace: 'nowrap'
-                                                }}
+                                                className={`${styles.actionBtn} ${(!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) ? styles.actionBtnDisabled : styles.actionBtnPrimary}`}
                                             >
                                                 Verify
                                             </button>
                                         )}
                                     </div>
                                 </div>
-                            </>
+                            </div>
                         )}
 
-                        {profileTab === 'Bussiness Info' && (
-                            <>
+                        {profileTab === 'Business Info' && (
+                            <div className={styles.formContentFadeIn}>
                                 <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('profile.companyName')}</label>
-                                    <input
-                                        type="text"
-                                        name="company_name"
-                                        value={formData.company_name}
-                                        onChange={handleInputChange}
-                                        className={styles.formInput}
-                                        placeholder={t('profile.companyName')}
-                                    />
+                                    <label htmlFor="company_name" className={styles.formLabel}>{t('profile.companyName')}</label>
+                                    <div className={styles.inputWrapper}>
+                                        <input
+                                            type="text"
+                                            id="company_name"
+                                            name="company_name"
+                                            value={formData.company_name}
+                                            onChange={handleInputChange}
+                                            className={styles.formInput}
+                                            placeholder={t('profile.companyName')}
+                                            autoComplete="organization"
+                                        />
+                                    </div>
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('profile.vatNumber')}</label>
-                                    <input
-                                        type="text"
-                                        name="vat_number"
-                                        value={formData.vat_number}
-                                        onChange={handleInputChange}
-                                        className={styles.formInput}
-                                        placeholder={t('profile.vatNumber')}
-                                    />
+                                    <label htmlFor="vat_number" className={styles.formLabel}>{t('profile.vatNumber')}</label>
+                                    <div className={styles.inputWrapper}>
+                                        <input
+                                            type="text"
+                                            id="vat_number"
+                                            name="vat_number"
+                                            value={formData.vat_number}
+                                            onChange={handleInputChange}
+                                            className={styles.formInput}
+                                            placeholder={t('profile.vatNumber')}
+                                            autoComplete="off"
+                                        />
+                                    </div>
                                 </div>
-                            </>
+                            </div>
                         )}
 
                         {profileTab === 'Sign-in Info' && (
-                            <>
+                            <div className={styles.formContentFadeIn}>
                                 <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('profile.emailAddress')}</label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        className={styles.formInput}
-                                        placeholder={t('profile.emailAddress')}
-                                        disabled
-                                    />
+                                    <label htmlFor="signin_email" className={styles.formLabel}>{t('profile.emailAddress')}</label>
+                                    <div className={styles.inputWrapper}>
+                                        <input
+                                            type="email"
+                                            id="signin_email"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleInputChange}
+                                            className={styles.formInput}
+                                            placeholder={t('profile.emailAddress')}
+                                            autoComplete="email"
+                                            spellCheck={false}
+                                            disabled
+                                        />
+                                    </div>
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('profile.changePassword')}</label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleInputChange}
-                                        className={styles.formInput}
-                                        placeholder={t('profile.passwordPlaceholder')}
-                                    />
+                                    <label htmlFor="password" className={styles.formLabel}>{t('profile.changePassword')}</label>
+                                    <div className={styles.inputWrapper}>
+                                        <input
+                                            type="password"
+                                            id="password"
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleInputChange}
+                                            className={styles.formInput}
+                                            placeholder={t('profile.passwordPlaceholder')}
+                                            autoComplete="new-password"
+                                        />
+                                    </div>
                                 </div>
-                            </>
+                            </div>
                         )}
 
-                        <button type="submit" className={styles.editBtn} disabled={saving}>
-                            {saving ? t('profile.saving') : t('profile.save')}
-                        </button>
+                        <div className={styles.formActions}>
+                            <button type="submit" className={styles.submitBtn} disabled={saving}>
+                                {saving ? (
+                                    <>
+                                        <span className={styles.btnSpinner}></span>
+                                        {t('profile.saving')}
+                                    </>
+                                ) : t('profile.save')}
+                            </button>
+                        </div>
                     </form>
                 </div>
             );
@@ -1253,6 +1258,110 @@ const UserDashboard = () => {
             );
         }
 
+        if (activeSection === 'myRewards') {
+            const profileComplete = !!user?.profile_bonus_awarded;
+            return (
+                <div className={styles.quotationsContainer}>
+                    <div className={styles.sectionHeader}>
+                        <h2 className={styles.sectionTitle}>{t('rewards.earnPoints')}</h2>
+                    </div>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 280px))',
+                        gap: 16
+                    }}>
+                        <div style={{
+                            background: '#ffffff',
+                            border: '1px solid #94a3b8',
+                            borderRadius: 16,
+                            padding: '28px 22px 22px',
+                            textAlign: 'center',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                            opacity: profileComplete ? 0.85 : 1,
+                            maxWidth: 300
+                        }}>
+                            <div style={{
+                                width: 56,
+                                height: 56,
+                                borderRadius: 12,
+                                background: '#f0fdfa',
+                                color: '#0d9488',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 14px'
+                            }}>
+                                <User size={28} strokeWidth={2} />
+                            </div>
+
+                            <span style={{
+                                display: 'inline-block',
+                                background: '#fef9c3',
+                                color: '#92400e',
+                                padding: '6px 14px',
+                                borderRadius: 999,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                marginBottom: 14
+                            }}>
+                                {t('rewards.bonusChip', { points: 3000 })}
+                            </span>
+
+                            <h3 style={{
+                                fontSize: 16,
+                                fontWeight: 700,
+                                color: '#0f172a',
+                                margin: '0 0 8px',
+                                lineHeight: 1.3
+                            }}>
+                                {t('rewards.completeProfileTitle')}
+                            </h3>
+
+                            <p style={{
+                                fontSize: 13,
+                                color: '#64748b',
+                                lineHeight: 1.55,
+                                margin: '0 0 18px'
+                            }}>
+                                {t('rewards.completeProfileDesc')}
+                            </p>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (profileComplete) return;
+                                    setActiveSection('profileSecurity');
+                                    router.push('/profile?tab=profileSecurity', { scroll: false });
+                                }}
+                                disabled={profileComplete}
+                                aria-disabled={profileComplete}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    background: profileComplete ? '#dcfce7' : '#f1f5f9',
+                                    color: profileComplete ? '#166534' : '#0f172a',
+                                    border: profileComplete ? '1px solid #bbf7d0' : 'none',
+                                    padding: '10px 18px',
+                                    borderRadius: 10,
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    cursor: profileComplete ? 'not-allowed' : 'pointer',
+                                    pointerEvents: profileComplete ? 'none' : 'auto',
+                                    opacity: profileComplete ? 0.85 : 1
+                                }}
+                            >
+                                {profileComplete && <Check size={16} />}
+                                {profileComplete ? t('rewards.completed') : t('rewards.fillProfileCta')}
+                                {!profileComplete && <ArrowUpRight size={16} />}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         const currentNavItem = navItems.find(item => item.name === activeSection);
         const sectionDisplayName = currentNavItem ? currentNavItem.translationName : activeSection;
 
@@ -1343,10 +1452,14 @@ const UserDashboard = () => {
             <OtpVerifyModal
                 open={otpOpen}
                 onClose={() => setOtpOpen(false)}
-                onVerified={async () => {
+                onVerified={async (data) => {
                     await refreshUser();
                     setOtpOpen(false);
-                    showNotification(t('profile.verifySuccess') || 'Mobile number verified successfully!', 'success');
+                    // When the bonus fires, the Header reward toast covers it —
+                    // don't stack a second "verified" notification on top.
+                    if (!data?.bonus_awarded) {
+                        showNotification(t('profile.verifySuccess') || 'Mobile number verified successfully!', 'success');
+                    }
                 }}
                 phoneNumber={formData.phone_number}
             />
@@ -1357,10 +1470,12 @@ const UserDashboard = () => {
                 newEmail={pendingEmail}
                 onClose={() => setEmailOtpOpen(false)}
                 onChangeEmail={() => setEmailOtpOpen(false)}
-                onVerified={async () => {
+                onVerified={async (data) => {
                     await refreshUser();
                     setEmailOtpOpen(false);
-                    showNotification('Email verified successfully', 'success');
+                    if (!data?.bonus_awarded) {
+                        showNotification('Email verified successfully', 'success');
+                    }
                 }}
             />
         </div>

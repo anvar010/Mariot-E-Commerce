@@ -60,7 +60,7 @@
     width: 64px;
     height: 64px;
     margin: 0 auto 24px;
-    background: linear-gradient(135deg, #237073 0%, #1e5f62 100%);
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
     color: #ffffff;
     border-radius: 20px;
     display: flex;
@@ -115,7 +115,7 @@
 }
 
 .phoneInput:focus {
-    border-color: #237073;
+    border-color: #25D366;
     background: #ffffff;
     box-shadow: 0 4px 12px rgba(35, 112, 115, 0.05);
 }
@@ -148,7 +148,7 @@
 }
 
 .otpInput:focus {
-    border-color: #237073;
+    border-color: #25D366;
     background: #f0f9f9;
     box-shadow: 0 0 0 4px rgba(35, 112, 115, 0.1);
     transform: translateY(-2px);
@@ -175,7 +175,7 @@
 
 .primaryBtn {
     width: 100%;
-    background: #237073;
+    background: #25D366;
     color: #ffffff;
     border: none;
     padding: 16px;
@@ -188,8 +188,8 @@
 }
 
 .primaryBtn:hover:not(:disabled) {
-    background: #1e5f62;
-    box-shadow: 0 6px 16px rgba(35, 112, 115, 0.3);
+    background: #1ebe5a;
+    box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);
     transform: translateY(-1px);
 }
 
@@ -206,7 +206,7 @@
 .linkBtn {
     background: transparent;
     border: none;
-    color: #237073;
+    color: #25D366;
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
@@ -218,7 +218,7 @@
 
 .linkBtn:hover:not(:disabled) {
     background: #f0f9f9;
-    color: #1e5f62;
+    color: #128C7E;
 }
 
 .linkBtn:disabled {

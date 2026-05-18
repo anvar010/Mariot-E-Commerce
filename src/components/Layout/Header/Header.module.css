@@ -144,6 +144,9 @@
     gap: 40px;
     padding-inline-end: 40px;
     font-size: 13px;
+    /* Stop iOS Safari from auto-inflating small text on narrow viewports. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 @media (max-width: 768px) {
@@ -155,6 +158,22 @@
 
     .topBannerLeft {
         font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .tickerItem {
+        font-size: 10px;
+        gap: 14px;
+        padding-inline-end: 14px;
+    }
+
+    .tickerSeparator {
+        font-size: 11px;
+    }
+
+    .topBannerLeft {
+        font-size: 10px;
     }
 }
 
@@ -1588,11 +1607,15 @@
 .rewardPointsMobile {
     display: none;
     align-items: center;
+    justify-content: center;
     gap: 4px;
     background: #fff9e6;
-    padding: 4px 8px;
-    border-radius: 12px;
+    padding: 6px;
+    border-radius: 50%;
     text-decoration: none;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
@@ -1605,6 +1628,13 @@
     font-size: 13px;
     font-weight: 700;
     color: #a16207;
+}
+
+/* When points value is shown, make it a pill instead of a circle */
+.rewardPointsMobile:has(.mobilePointsValue) {
+    border-radius: 18px;
+    width: auto;
+    padding: 4px 10px 4px 6px;
 }
 
 @media (max-width: 576px) {

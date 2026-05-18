@@ -7,7 +7,8 @@ import FloatingActions from '@/components/shared/FloatingActions/FloatingActions
 
 const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://mariot-backend.onrender.com/api/v1';
 
-export async function generateMetadata({ params }: { params: { slug: string | string[], locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ slug: string | string[], locale: string }> }): Promise<Metadata> {
+    const params = await props.params;
     const slugArray = Array.isArray(params.slug) ? params.slug : [params.slug];
     const id = slugArray.map(s => decodeURIComponent(s)).join('/');
     const isArabic = params.locale === 'ar';
@@ -125,7 +126,8 @@ export async function generateMetadata({ params }: { params: { slug: string | st
     };
 }
 
-export default async function ProductPage({ params }: { params: { slug: string | string[], locale: string } }) {
+export default async function ProductPage(props: { params: Promise<{ slug: string | string[], locale: string }> }) {
+    const params = await props.params;
     // Handle both single slug and catch-all slug (array)
     // Decode each segment to properly handle slashes and special characters
     const slugArray = Array.isArray(params.slug) ? params.slug : [params.slug];

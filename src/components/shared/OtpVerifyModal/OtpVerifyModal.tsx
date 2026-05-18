@@ -8,7 +8,7 @@ import styles from './OtpVerifyModal.module.css';
 interface Props {
     open: boolean;
     onClose: () => void;
-    onVerified: () => void;
+    onVerified: (data?: any) => void;
     phoneNumber?: string;
     title?: string;
     description?: string;
@@ -128,7 +128,7 @@ const OtpVerifyModal: React.FC<Props> = ({ open, onClose, onVerified, phoneNumbe
                 setError(data.message || 'Invalid code');
                 return;
             }
-            onVerified();
+            onVerified(data);
         } catch {
             setError('Network error. Please try again.');
         } finally {

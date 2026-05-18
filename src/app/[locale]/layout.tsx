@@ -1,16 +1,10 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
-import dynamicImport from 'next/dynamic';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import Providers from './providers';
+import DeferredChrome from './DeferredChrome';
 import { Inter, Alexandria } from 'next/font/google';
-
-// Deferred — not needed for initial render, load after page is interactive
-const CartDrawer = dynamicImport(() => import('@/components/Layout/CartDrawer/CartDrawer'), { ssr: false });
-const MobileBottomNav = dynamicImport(() => import('@/components/Layout/MobileBottomNav/MobileBottomNav'), { ssr: false });
-const FloatingActions = dynamicImport(() => import('@/components/shared/FloatingActions/FloatingActions'), { ssr: false });
-const Promotions = dynamicImport(() => import('@/components/shared/Promotions/Promotions'), { ssr: false });
 
 const inter = Inter({
     subsets: ['latin'],
@@ -35,7 +29,13 @@ export const viewport: Viewport = {
     initialScale: 1,
 };
 
-export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const params = await props.params;
+
+    const {
+        locale
+    } = params;
+
     const isArabic = locale === 'ar';
 
     return {
@@ -65,13 +65,22 @@ export async function generateMetadata({ params: { locale } }: { params: { local
     };
 }
 
-export default async function LocaleLayout({
-    children,
-    params: { locale },
-}: Readonly<{
-    children: React.ReactNode;
-    params: { locale: string };
-}>) {
+export default async function LocaleLayout(
+    props: Readonly<{
+        children: React.ReactNode;
+        params: Promise<{ locale: string }>;
+    }>
+) {
+    const params = await props.params;
+
+    const {
+        locale
+    } = params;
+
+    const {
+        children
+    } = props;
+
     const messages = await getMessages();
     const isRTL = locale === 'ar';
 
@@ -88,10 +97,7 @@ export default async function LocaleLayout({
             <body suppressHydrationWarning>
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <Providers>
-                        <Promotions />
-                        <CartDrawer />
-                        <MobileBottomNav />
-                        <FloatingActions />
+                        <DeferredChrome />
                         {children}
                     </Providers>
                 </NextIntlClientProvider>

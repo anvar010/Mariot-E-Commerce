@@ -7,7 +7,13 @@ import styles from './page.module.css';
 import Image from "next/legacy/image";
 import { useTranslations } from 'next-intl';
 
-export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const params = await props.params;
+
+    const {
+        locale
+    } = params;
+
     const isArabic = locale === 'ar';
     return {
         title: isArabic ? 'من نحن | ماريوت - المورد الرائد لمعدات المطابخ' : 'About Us | Mariot Store - Leading Kitchen Equipment Supplier',

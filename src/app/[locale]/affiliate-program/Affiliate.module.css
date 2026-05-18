@@ -384,7 +384,7 @@
 
 .faqItemMinimal summary {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 16px;
     font-size: 1.1rem;
     font-weight: 700;
@@ -395,6 +395,13 @@
     padding: 12px 0;
 }
 
+.faqItemMinimal summary > span {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .faqItemMinimal summary::-webkit-details-marker {
     display: none;
 }
@@ -403,6 +410,7 @@
     color: var(--primary-teal);
     transition: transform 0.3s ease;
     flex-shrink: 0;
+    margin-top: 4px;
 }
 
 .faqItemMinimal[open] .chevronMinimal {
@@ -550,13 +558,23 @@
 @media (max-width: 900px) {
     .welcomeGrid {
         flex-direction: column;
-        gap: 40px;
+        gap: 30px;
     }
 
     .welcomeLeft,
     .welcomeRight {
         flex: none;
         width: 100%;
+    }
+
+    .waysGrid {
+        flex-direction: column;
+        gap: 40px;
+    }
+
+    .bonusesGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
     }
 }
 
@@ -567,22 +585,159 @@
 
     .stepsGrid {
         grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .bonusesGrid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .bonusIconCircle {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 10px;
+    }
+
+    .bonusIconCircle svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .bonusValue {
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+    }
+
+    .bonusLabel {
+        font-size: 0.78rem;
+        line-height: 1.3;
     }
 
     .splitGrid {
         flex-direction: column;
-        gap: 80px;
+        gap: 40px;
+    }
+
+    .faqContactSplit {
+        padding: 20px 0;
+    }
+
+    .faqColumn {
+        flex: 1 1 auto;
+        width: 100%;
+        text-align: left;
+        padding: 0;
+        margin: 0;
+    }
+
+    .splitGrid {
+        margin: 0;
+        padding: 0;
+    }
+
+    .splitTitle {
+        align-items: flex-start;
+        text-align: left;
+        margin-left: 0;
+        padding-left: 0;
+    }
+
+    .faqListMinimal {
+        margin-left: 0;
+        padding-left: 0;
+    }
+
+    .faqItemMinimal {
+        margin-left: 0;
+        padding-left: 0;
+    }
+
+    .faqListMinimal {
+        gap: 14px;
+    }
+
+    .faqItemMinimal summary {
+        font-size: 0.95rem;
+        gap: 8px;
+        padding: 8px 0;
+    }
+
+    .chevronMinimal {
+        margin-top: 2px;
+    }
+
+    .faqAnswerMinimal {
+        padding: 8px 0 8px 24px;
+        font-size: 0.9rem;
+    }
+
+    :global([dir="rtl"]) .faqAnswerMinimal {
+        padding: 8px 24px 8px 0;
     }
 
     .contactSticky {
         position: relative;
         top: 0;
     }
-}
 
-@media (max-width: 768px) {
     .registerBtn {
         align-self: stretch;
         text-align: center;
+    }
+
+    .howItWorksNew {
+        padding: 16px 0 24px;
+        margin: 0 12px;
+    }
+
+    .howTitle {
+        margin-bottom: 20px;
+        font-size: 2rem;
+    }
+
+    .stepImageWrapper {
+        height: 220px;
+        margin-bottom: 12px;
+    }
+
+    .titleDark,
+    .titleLight {
+        font-size: 1.8rem;
+    }
+
+    /* Tighter spacing for Welcome Section */
+    .welcomeSection {
+        padding: 24px 0;
+    }
+
+    .welcomeGrid {
+        gap: 15px;
+    }
+
+    .welcomeLeft h2 {
+        font-size: 1.5rem;
+    }
+
+    .welcomeRight {
+        gap: 10px;
+    }
+
+    .welcomeRight p {
+        font-size: 0.95rem;
+    }
+
+    .welcomeIconWrapper {
+        display: none;
+        /* Hide decorative icon to save vertical space */
+    }
+
+    .welcomeSubtitleLeft {
+        margin-top: 8px;
+        font-size: 0.95rem;
+    }
+
+    .registerBtn {
+        margin-top: 10px;
     }
 }

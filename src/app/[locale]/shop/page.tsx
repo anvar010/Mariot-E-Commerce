@@ -6,7 +6,13 @@ import Footer from '@/components/Layout/Footer/Footer';
 import ShopLayout from '@/components/Shop/ShopLayout';
 import Loader from '@/components/shared/Loader/Loader';
 
-export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const params = await props.params;
+
+    const {
+        locale
+    } = params;
+
     const isArabic = locale === 'ar';
     return {
         title: isArabic ? 'تسوق معدات المطابخ الفاخرة | ماريوت' : 'Shop Premium Kitchen Equipment | Mariot Store',
@@ -89,7 +95,16 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
     }
 }
 
-export default async function ShopPage({ params: { locale }, searchParams }: { params: { locale: string }, searchParams: { [key: string]: string | string[] | undefined } }) {
+export default async function ShopPage(
+    props: { params: Promise<{ locale: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }
+) {
+    const searchParams = await props.searchParams;
+    const params = await props.params;
+
+    const {
+        locale
+    } = params;
+
     const data = await getShopData(locale, searchParams);
 
     const search = searchParams.search as string | undefined;

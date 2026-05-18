@@ -26,6 +26,9 @@ body {
   /* clip allows sticky elements to work, hidden breaks them */
   position: relative;
   font-family: var(--font-inter), -apple-system, sans-serif;
+}
+
+body {
   padding-bottom: 65px;
 }
 
