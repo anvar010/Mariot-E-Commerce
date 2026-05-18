@@ -12,7 +12,7 @@ class User {
 
     static async findById(id) {
         const [rows] = await db.execute(
-            'SELECT u.id, u.name, u.email, u.email_verified, u.pending_email, u.phone_number, u.phone_verified, u.company_name, u.vat_number, u.reward_points, u.staff_permissions, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
+            'SELECT u.id, u.name, u.email, u.email_verified, u.pending_email, u.phone_number, u.phone_verified, u.company_name, u.vat_number, u.reward_points, u.profile_bonus_awarded, u.staff_permissions, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
             [id]
         );
         return rows[0];
@@ -69,6 +69,37 @@ class User {
             'UPDATE users SET email = ?, email_verified = 1, pending_email = NULL, email_otp_code = NULL, email_otp_expires_at = NULL WHERE id = ?',
             [email, userId]
         );
+    }
+
+    /**
+     * Mark an existing user's current email as verified, without changing the address.
+     * Used by Google login (Google attests the email is verified).
+     */
+    static async markCurrentEmailVerified(userId) {
+        await db.execute('UPDATE users SET email_verified = 1 WHERE id = ?', [userId]);
+    }
+
+    /**
+     * Atomic "award profile-completion bonus" check.
+     * Adds +3000 reward_points and sets profile_bonus_awarded = 1 ONLY when
+     * the user has name + verified email + verified phone AND hasn't been
+     * awarded before. The conditions live inside the UPDATE so two concurrent
+     * verifications can't double-award.
+     *
+     * @returns {Promise<boolean>} true when the bonus was just awarded.
+     */
+    static async awardProfileBonusIfEligible(userId, bonus = 3000) {
+        const [result] = await db.execute(
+            `UPDATE users
+                SET reward_points = reward_points + ?, profile_bonus_awarded = 1
+              WHERE id = ?
+                AND profile_bonus_awarded = 0
+                AND email_verified = 1
+                AND phone_verified = 1
+                AND name IS NOT NULL AND name <> ''`,
+            [bonus, userId]
+        );
+        return result.affectedRows > 0;
     }
 
     static async clearEmailOtp(userId) {

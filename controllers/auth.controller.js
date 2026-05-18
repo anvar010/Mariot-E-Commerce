@@ -72,6 +72,7 @@ exports.login = async (req, res, next) => {
             id: user.id,
             name: user.name,
             email: user.email,
+            email_verified: user.email_verified ? 1 : 0,
             role: user.role,
             phone_number: user.phone_number,
             phone_verified: user.phone_verified ? 1 : 0,
@@ -103,10 +104,16 @@ exports.googleLogin = async (req, res, next) => {
         if (!user) {
             const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
             const userId = await User.create({ name, email, password: randomPassword });
+            // Google has already verified the email — mark it so the user doesn't see an unnecessary verify prompt.
+            await User.markCurrentEmailVerified(userId);
             user = await User.findById(userId);
 
             // Send Welcome Email for new Google users
             sendWelcomeEmail(email, name).catch(err => console.error('Failed to send welcome email (Google):', err));
+        } else if (!user.email_verified) {
+            // Existing account signing in via Google for the first time — trust Google's email verification.
+            await User.markCurrentEmailVerified(user.id);
+            user.email_verified = 1;
         }
 
         // Check if user is suspended
@@ -118,16 +125,27 @@ exports.googleLogin = async (req, res, next) => {
             });
         }
 
+        // Email is now verified — try to award the profile-completion bonus
+        // (will only succeed when phone is also verified and name is set).
+        const bonusAwarded = await User.awardProfileBonusIfEligible(user.id);
+        if (bonusAwarded) {
+            const refreshed = await User.findById(user.id);
+            user.reward_points = refreshed.reward_points;
+        }
+
         sendTokenResponse({
             id: user.id,
             name: user.name,
             email: user.email,
+            email_verified: user.email_verified ? 1 : 0,
             role: user.role,
             phone_number: user.phone_number,
             phone_verified: user.phone_verified ? 1 : 0,
             company_name: user.company_name,
             vat_number: user.vat_number,
-            reward_points: user.reward_points
+            reward_points: user.reward_points,
+            bonus_awarded: bonusAwarded,
+            bonus_points: bonusAwarded ? 3000 : 0
         }, 200, res);
     } catch (error) {
         console.error('Google login error:', error);

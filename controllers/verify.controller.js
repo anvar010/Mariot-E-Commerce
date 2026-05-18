@@ -80,7 +80,16 @@ exports.checkOtp = async (req, res, next) => {
         // Mark as verified and clear OTP
         await User.setPhoneVerified(req.user.id, phone);
 
-        res.json({ success: true, message: 'Phone verified successfully', phone_verified: 1 });
+        // Possibly award the profile-completion bonus (atomic, idempotent).
+        const bonusAwarded = await User.awardProfileBonusIfEligible(req.user.id);
+
+        res.json({
+            success: true,
+            message: 'Phone verified successfully',
+            phone_verified: 1,
+            bonus_awarded: bonusAwarded,
+            bonus_points: bonusAwarded ? 3000 : 0
+        });
     } catch (err) {
         console.error('Check OTP Error:', err);
         next(err);
@@ -150,8 +159,15 @@ exports.verifyEmailOtpForProfile = async (req, res, next) => {
         }
 
         await User.setEmailVerified(req.user.id, row.pending_email);
+        const bonusAwarded = await User.awardProfileBonusIfEligible(req.user.id);
         const updated = await User.findById(req.user.id);
-        res.json({ success: true, message: 'Email verified successfully', data: updated });
+        res.json({
+            success: true,
+            message: 'Email verified successfully',
+            data: updated,
+            bonus_awarded: bonusAwarded,
+            bonus_points: bonusAwarded ? 3000 : 0
+        });
     } catch (err) {
         console.error('Verify Email OTP Error:', err);
         next(err);

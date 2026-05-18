@@ -366,6 +366,10 @@ const initDb = async () => {
                 await db.query("ALTER TABLE users ADD COLUMN email_otp_expires_at DATETIME NULL");
                 console.log('[DB] Migration: Added email_otp_expires_at column to users table');
             }
+            if (!colByName.profile_bonus_awarded) {
+                await db.query("ALTER TABLE users ADD COLUMN profile_bonus_awarded TINYINT(1) NOT NULL DEFAULT 0");
+                console.log('[DB] Migration: Added profile_bonus_awarded column to users table');
+            }
             const pn = colByName.phone_number;
             if (pn && /^varchar\((\d+)\)/i.test(pn.Type)) {
                 const len = parseInt(pn.Type.match(/\d+/)[0]);
