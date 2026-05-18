@@ -1,4 +1,9 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Render's network can't route IPv6 to Gmail (ENETUNREACH on 2607:f8b0:…).
+// Force Node to prefer IPv4 results so SMTP resolves to a reachable address.
+try { dns.setDefaultResultOrder('ipv4first'); } catch (_) { /* older Node — ignore */ }
 
 const createTransporter = () => {
     return nodemailer.createTransport({
@@ -6,6 +11,7 @@ const createTransporter = () => {
         port: 587,
         secure: false, // STARTTLS — more reliable on hosts that block 465 outbound (Render, etc.)
         requireTLS: true,
+        family: 4, // belt-and-suspenders: force IPv4 socket
         tls: {
             rejectUnauthorized: false
         },
