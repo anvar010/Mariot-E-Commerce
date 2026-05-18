@@ -1,30 +1,51 @@
 const nodemailer = require('nodemailer');
 const dns = require('dns');
+const dnsp = require('dns').promises;
 
 // Render's network can't route IPv6 to Gmail (ENETUNREACH on 2607:f8b0:…).
 // Force Node to prefer IPv4 results.
 try { dns.setDefaultResultOrder('ipv4first'); } catch (_) { /* older Node — ignore */ }
 
-// Custom lookup that forces IPv4 for any host nodemailer connects to.
-// Passed directly to the transport so SMTPConnection's internal socket
-// gets only IPv4 addresses, even when setDefaultResultOrder is ignored.
-const lookupIPv4 = (hostname, options, callback) => {
-    if (typeof options === 'function') {
-        callback = options;
-        options = {};
+// Belt-and-suspenders: pre-resolve smtp.gmail.com to an IPv4 address at startup
+// and connect to that IP directly. SMTPConnection's `family`/`lookup` options
+// are not always honored on Render, so we bypass runtime DNS entirely.
+let cachedSmtpHost = null;
+let smtpHostResolveAt = 0;
+const SMTP_HOST_TTL_MS = 30 * 60 * 1000; // re-resolve every 30 minutes
+async function getSmtpHost() {
+    const now = Date.now();
+    if (cachedSmtpHost && (now - smtpHostResolveAt) < SMTP_HOST_TTL_MS) return cachedSmtpHost;
+    try {
+        const ips = await dnsp.resolve4('smtp.gmail.com');
+        if (ips && ips.length) {
+            cachedSmtpHost = ips[Math.floor(Math.random() * ips.length)];
+            smtpHostResolveAt = now;
+            console.log(`[EMAIL] Resolved smtp.gmail.com → ${cachedSmtpHost} (IPv4)`);
+            return cachedSmtpHost;
+        }
+    } catch (e) {
+        console.error('[EMAIL] IPv4 resolve failed for smtp.gmail.com:', e.message);
     }
-    return dns.lookup(hostname, { ...(options || {}), family: 4 }, callback);
-};
+    return 'smtp.gmail.com';
+}
+
+// Kick off the initial resolution so the first send already has the IP cached.
+getSmtpHost().catch(() => {});
 
 const createTransporter = () => {
+    // Sync access to the most recently cached IP. Falls back to the hostname
+    // on the very first request before resolution completes (rare; the
+    // top-level getSmtpHost() call above usually resolves before any email).
+    const host = cachedSmtpHost || 'smtp.gmail.com';
     return nodemailer.createTransport({
-        host: 'smtp.gmail.com',
+        host,
         port: 587,
         secure: false, // STARTTLS — more reliable on hosts that block 465 outbound (Render, etc.)
         requireTLS: true,
         family: 4,
-        lookup: lookupIPv4,
         tls: {
+            // We're connecting by IP, so verify the cert against the real hostname
+            servername: 'smtp.gmail.com',
             rejectUnauthorized: false
         },
         auth: {
