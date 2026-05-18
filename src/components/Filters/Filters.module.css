@@ -144,6 +144,8 @@
     font-weight: 500;
     transition: color 0.2s;
     width: 100%;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .checkboxLabel span:not(.countBadge) {
@@ -171,7 +173,7 @@
 .checkboxLabel input {
     width: 16px;
     height: 16px;
-    accent-color: #337c7f;
+    accent-color: #16a1db;
     cursor: pointer;
 }
 

@@ -38,12 +38,15 @@ import { API_BASE_URL, BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import OtpVerifyModal from '@/components/shared/OtpVerifyModal/OtpVerifyModal';
+import EmailOtpModal from '@/components/shared/EmailOtpModal/EmailOtpModal';
 import { useSearchParams } from 'next/navigation';
 
 const UserDashboard = () => {
     const t = useTranslations('userDashboard');
     const { user, logout, updateUser, refreshUser, loading: authLoading } = useAuth();
     const [otpOpen, setOtpOpen] = useState(false);
+    const [emailOtpOpen, setEmailOtpOpen] = useState(false);
+    const [pendingEmail, setPendingEmail] = useState('');
     const { wishlistItems, removeFromWishlist } = useWishlist();
     const { addToCart, pointRate } = useCart();
     const { showNotification } = useNotification();
@@ -758,6 +761,44 @@ const UserDashboard = () => {
                                         )}
                                     </div>
                                 </div>
+                                <div className={styles.formGroup}>
+                                    <label className={styles.formLabel}>{t('profile.emailAddress')}</label>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleInputChange}
+                                            className={styles.formInput}
+                                            placeholder={t('profile.emailAddress')}
+                                            style={{ flex: 1 }}
+                                        />
+                                        {formData.email && user?.email === formData.email && user?.email_verified ? (
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '8px 12px', background: '#dcfce7', color: '#166534', borderRadius: 8, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                                <Check size={14} /> Verified
+                                            </span>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => { setPendingEmail(formData.email); setEmailOtpOpen(true); }}
+                                                disabled={!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)}
+                                                style={{
+                                                    padding: '8px 14px',
+                                                    background: (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) ? '#ccc' : '#16a1db',
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    borderRadius: 8,
+                                                    fontSize: 13,
+                                                    fontWeight: 600,
+                                                    cursor: (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) ? 'not-allowed' : 'pointer',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                            >
+                                                Verify
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
                             </>
                         )}
 
@@ -1308,6 +1349,19 @@ const UserDashboard = () => {
                     showNotification(t('profile.verifySuccess') || 'Mobile number verified successfully!', 'success');
                 }}
                 phoneNumber={formData.phone_number}
+            />
+
+            <EmailOtpModal
+                open={emailOtpOpen}
+                mode="profile-email"
+                newEmail={pendingEmail}
+                onClose={() => setEmailOtpOpen(false)}
+                onChangeEmail={() => setEmailOtpOpen(false)}
+                onVerified={async () => {
+                    await refreshUser();
+                    setEmailOtpOpen(false);
+                    showNotification('Email verified successfully', 'success');
+                }}
             />
         </div>
     );

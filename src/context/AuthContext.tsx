@@ -15,6 +15,7 @@ interface AuthContextType {
     logout: () => void;
     updateUser: (userData: any) => Promise<void>;
     refreshUser: () => Promise<void>;
+    completeSignupWithUser: (user: any, redirectTo?: string) => void;
     error: string | null;
     // Keep `token` as a derived boolean for backward compatibility
     // Components that check `if (token)` will still work
@@ -58,14 +59,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Update localStorage with latest user info for UI persistence
             localStorage.setItem('user', JSON.stringify(data.data));
         } catch (err: any) {
-            console.error('Failed to load user', err);
             if (err.status === 401) {
-                // Cookie is invalid or expired
+                // Not signed in (or cookie expired) — expected, not an error
                 setUser(null);
                 setIsAuthenticated(false);
                 localStorage.removeItem('user');
+            } else {
+                // Network/CORS/server error — keep cached user, log for visibility
+                console.error('Failed to load user', err);
             }
-            // For network/CORS errors, keep whatever we had from localStorage
         } finally {
             setLoading(false);
         }
@@ -147,6 +149,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    // Called by EmailOtpModal after a successful signup-OTP verification.
+    // Backend has already set the auth cookie; we just hydrate client state.
+    // Uses a hard navigation so the destination page mounts with the fresh
+    // auth context (router.push from signup-time can race with state updates
+    // and leave the form rendered).
+    const completeSignupWithUser = (newUser: any, redirectTo?: string) => {
+        setUser(newUser);
+        setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(newUser));
+        if (typeof window !== 'undefined') {
+            window.location.assign(redirectTo || '/');
+        } else {
+            router.push(redirectTo || '/');
+        }
+    };
+
     const logout = async () => {
         try {
             await fetch(`${API_BASE_URL}/auth/logout`, { credentials: "include" });
@@ -162,7 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = isAuthenticated ? 'cookie-auth' : null;
 
     return (
-        <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, googleLogin, register, logout, updateUser, refreshUser, error }}>
+        <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, googleLogin, register, logout, updateUser, refreshUser, completeSignupWithUser, error }}>
             {children}
         </AuthContext.Provider>
     );

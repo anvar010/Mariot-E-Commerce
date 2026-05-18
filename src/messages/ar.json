@@ -99,6 +99,8 @@
         "price": "السعر",
         "enterValidDimensions": "يرجى إدخال أبعاد صحيحة ضمن النطاقات المسموح بها",
         "outOfRange": "خارج النطاق",
+        "minValueIs": "الحد الأدنى للقيمة هو {min}",
+        "maxValueIs": "الحد الأقصى للقيمة هو {max}",
         "width": "العرض",
         "depth": "العمق",
         "height": "الارتفاع",

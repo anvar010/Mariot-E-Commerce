@@ -99,6 +99,8 @@
     "price": "Price",
     "enterValidDimensions": "Please enter valid dimensions within the allowed ranges",
     "outOfRange": "Out of range",
+    "minValueIs": "Minimum value is {min}",
+    "maxValueIs": "Maximum value is {max}",
     "width": "Width",
     "depth": "Depth",
     "height": "Height",

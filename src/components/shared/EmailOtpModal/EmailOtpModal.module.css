@@ -1,0 +1,306 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+    animation: fadeIn 0.25s ease-out;
+    overscroll-behavior: contain;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+    padding: 32px 28px 28px;
+    width: 100%;
+    max-width: 460px;
+    position: relative;
+    animation: modalPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.94) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.closeBtn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: #f1f5f9;
+    border: none;
+    color: #475569;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.heading {
+    text-align: center;
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 500;
+    margin: 4px 0 12px;
+}
+
+.emailLine {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 15px;
+    color: #0f172a;
+    font-weight: 600;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.envelope {
+    color: #16a1db;
+}
+
+.changeBtn {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.changeBtn:hover {
+    background: #bae6fd;
+}
+
+.otpContainer {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 0 0 22px;
+}
+
+.otpInput {
+    width: 46px;
+    height: 56px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.otpInput:focus {
+    border-color: #16a1db;
+    box-shadow: 0 0 0 3px rgba(22, 161, 219, 0.18);
+}
+
+.otpInput:disabled {
+    background: #f1f5f9;
+    cursor: not-allowed;
+}
+
+.otpInputError {
+    border-color: #ef4444;
+    color: #b91c1c;
+    background: #fef2f2;
+}
+
+.otpInputError:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.inlineError {
+    text-align: center;
+    color: #ef4444;
+    font-size: 13px;
+    font-weight: 500;
+    margin: -10px 0 18px;
+}
+
+.successWrap {
+    text-align: center;
+    padding: 20px 8px 12px;
+    animation: successFade 0.25s ease-out;
+}
+
+@keyframes successFade {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.successCircle {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #16a34a;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: successPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes successPop {
+    from { transform: scale(0.4); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.successTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px;
+}
+
+.successSub {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.resendWrap {
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+.resendLabel {
+    color: #475569;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.resendBtn {
+    background: transparent;
+    border: none;
+    color: #16a1db;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.resendBtn:disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.infoBanner {
+    background: #fef9c3;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #713f12;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.error {
+    font-size: 13px;
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.primaryBtn {
+    width: 100%;
+    background: #16a1db;
+    color: #ffffff;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: background 0.15s ease;
+}
+
+.primaryBtn:hover:not(:disabled) {
+    background: #1388b8;
+}
+
+.primaryBtn:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.emailInput {
+    width: 100%;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: #0f172a;
+    font-size: 15px;
+    outline: none;
+    margin-bottom: 16px;
+    transition: all 0.15s ease;
+}
+
+.emailInput:focus {
+    border-color: #16a1db;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(22, 161, 219, 0.15);
+}
+
+.label {
+    display: block;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 6px;
+}
+
+.loader {
+    width: 16px;
+    height: 16px;
+    border: 2.5px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

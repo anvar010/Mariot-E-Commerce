@@ -9,6 +9,8 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useNotification } from '@/context/NotificationContext';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import { API_BASE_URL } from '@/config';
+import EmailOtpModal from '@/components/shared/EmailOtpModal/EmailOtpModal';
 
 interface AuthFormProps {
     type: 'signin' | 'signup';
@@ -21,8 +23,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
     const [name, setName] = useState('');
     const [formError, setFormError] = useState<string | null>(null);
     const [isSuspended, setIsSuspended] = useState(false);
+    const [otpOpen, setOtpOpen] = useState(false);
+    const [sendingOtp, setSendingOtp] = useState(false);
 
-    const { login, googleLogin, register, loading, error: authError } = useAuth();
+    const { login, googleLogin, loading, error: authError, completeSignupWithUser } = useAuth();
     const { showNotification } = useNotification();
     const t = useTranslations('notifications');
     const tAuth = useTranslations('auth');
@@ -43,8 +47,18 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                 await login({ email, password }, redirectTo);
                 showNotification(t('authSuccess'), 'success', { title: t('success') });
             } else {
-                await register({ name, email, password }, redirectTo);
-                showNotification(t('authRegister'), 'success', { title: t('success') });
+                // Signup: request OTP first; account is only created after OTP verified
+                setSendingOtp(true);
+                const res = await fetch(`${API_BASE_URL}/verify/signup/send-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Failed to send verification code');
+                }
+                setOtpOpen(true);
             }
         } catch (err: any) {
             if (err.message?.includes('suspended')) {
@@ -55,6 +69,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                 setFormError(displayMsg);
                 showNotification(displayMsg, 'error', { title: t('error') });
             }
+        } finally {
+            setSendingOtp(false);
         }
     };
 
@@ -218,10 +234,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                         <button
                             type="submit"
                             className={styles.submitBtn}
-                            disabled={loading}
-                            style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+                            disabled={loading || sendingOtp}
+                            style={{ opacity: (loading || sendingOtp) ? 0.7 : 1, cursor: (loading || sendingOtp) ? 'not-allowed' : 'pointer' }}
                         >
-                            {loading ? t('loading') : (isSignIn ? tAuth('signIn') : tAuth('createAccount'))}
+                            {(loading || sendingOtp) ? t('loading') : (isSignIn ? tAuth('signIn') : tAuth('createAccount'))}
                         </button>
                     </form>
 
@@ -239,6 +255,21 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                     </button>
                 </div>
             </div>
+
+            {!isSignIn && (
+                <EmailOtpModal
+                    open={otpOpen}
+                    mode="signup"
+                    onClose={() => setOtpOpen(false)}
+                    signupData={{ name, email, password }}
+                    onChangeEmail={() => setOtpOpen(false)}
+                    onVerified={(data) => {
+                        setOtpOpen(false);
+                        completeSignupWithUser(data.user, redirectTo);
+                        showNotification(t('authRegister'), 'success', { title: t('success') });
+                    }}
+                />
+            )}
         </div>
     );
 };
