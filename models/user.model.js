@@ -12,7 +12,7 @@ class User {
 
     static async findById(id) {
         const [rows] = await db.execute(
-            'SELECT u.id, u.name, u.email, u.phone_number, u.phone_verified, u.company_name, u.vat_number, u.reward_points, u.staff_permissions, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
+            'SELECT u.id, u.name, u.email, u.email_verified, u.pending_email, u.phone_number, u.phone_verified, u.company_name, u.vat_number, u.reward_points, u.staff_permissions, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
             [id]
         );
         return rows[0];
@@ -45,6 +45,73 @@ class User {
             'UPDATE users SET otp_code = NULL, otp_expires_at = NULL WHERE id = ?',
             [userId]
         );
+    }
+
+    // --- Email OTP (profile email change) ---
+
+    static async saveEmailOtp(userId, pendingEmail, code, expiresAt) {
+        await db.execute(
+            'UPDATE users SET pending_email = ?, email_otp_code = ?, email_otp_expires_at = ? WHERE id = ?',
+            [pendingEmail, code, expiresAt, userId]
+        );
+    }
+
+    static async getEmailOtp(userId) {
+        const [rows] = await db.execute(
+            'SELECT pending_email, email_otp_code, email_otp_expires_at FROM users WHERE id = ?',
+            [userId]
+        );
+        return rows[0];
+    }
+
+    static async setEmailVerified(userId, email) {
+        await db.execute(
+            'UPDATE users SET email = ?, email_verified = 1, pending_email = NULL, email_otp_code = NULL, email_otp_expires_at = NULL WHERE id = ?',
+            [email, userId]
+        );
+    }
+
+    static async clearEmailOtp(userId) {
+        await db.execute(
+            'UPDATE users SET pending_email = NULL, email_otp_code = NULL, email_otp_expires_at = NULL WHERE id = ?',
+            [userId]
+        );
+    }
+
+    // --- Signup OTP (account created only after OTP verified) ---
+
+    static async signupOtpUpsert({ email, name, passwordHash, code, expiresAt }) {
+        await db.execute(
+            `INSERT INTO signup_otps (email, name, password_hash, otp_code, otp_expires_at, attempts, created_at)
+             VALUES (?, ?, ?, ?, ?, 0, NOW())
+             ON DUPLICATE KEY UPDATE name = VALUES(name), password_hash = VALUES(password_hash),
+               otp_code = VALUES(otp_code), otp_expires_at = VALUES(otp_expires_at), attempts = 0, created_at = NOW()`,
+            [email, name, passwordHash, code, expiresAt]
+        );
+    }
+
+    static async signupOtpFind(email) {
+        const [rows] = await db.execute(
+            'SELECT email, name, password_hash, otp_code, otp_expires_at, attempts FROM signup_otps WHERE email = ?',
+            [email]
+        );
+        return rows[0];
+    }
+
+    static async signupOtpIncrementAttempts(email) {
+        await db.execute('UPDATE signup_otps SET attempts = attempts + 1 WHERE email = ?', [email]);
+    }
+
+    static async signupOtpDelete(email) {
+        await db.execute('DELETE FROM signup_otps WHERE email = ?', [email]);
+    }
+
+    static async createWithHash({ name, email, passwordHash }) {
+        const [result] = await db.execute(
+            "INSERT INTO users (name, email, password, role_id, reward_points, email_verified) VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = 'user'), 1000, 1)",
+            [name, email, passwordHash]
+        );
+        return result.insertId;
     }
 
     static async update(id, data) {

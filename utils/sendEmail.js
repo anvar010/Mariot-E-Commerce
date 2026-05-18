@@ -1265,6 +1265,71 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
     }
 };
 
+/**
+ * Send an account verification OTP email.
+ * @param {string} toEmail - Recipient email
+ * @param {string} userName - User's display name (may be blank)
+ * @param {string} otp - 6-digit OTP code
+ * @param {object} [opts]
+ * @param {string} [opts.purpose] - "signup" | "email-change" (controls heading copy)
+ */
+const sendOtpEmail = async (toEmail, userName, otp, opts = {}) => {
+    const purpose = opts.purpose || 'signup';
+    const transporter = createTransporter();
+    const firstName = (userName || '').split(' ')[0] || '';
+    const heading = purpose === 'email-change' ? 'Verify your new email' : 'Account verification';
+    const subject = purpose === 'email-change'
+        ? `Mariot — Verify your new email (${otp})`
+        : `Mariot — Your verification code (${otp})`;
+    const digits = String(otp).split('');
+    const helpCentreUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/en/contact`;
+
+    const mailOptions = {
+        from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
+        to: toEmail,
+        subject,
+        text: `Hi${firstName ? ' ' + firstName : ''},\n\nYour Mariot one-time password (OTP) is: ${otp}\n\nThis code expires in 5 minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n— Team Mariot`,
+        html: `
+            <div style="background-color: #f4f4f4; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; color: #000000; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="margin-bottom: 24px;">
+                        <img src="https://mariotstore.com/wp-content/uploads/2024/10/kitchen-equipment-store.png" alt="MARIOT" style="width: 180px; height: auto;">
+                    </div>
+
+                    <h1 style="font-size: 32px; color: #0f172a; margin: 12px 0 28px; font-weight: 800; line-height: 1.15;">${heading}</h1>
+
+                    <p style="font-size: 15px; color: #0f172a; font-weight: 700; margin: 0 0 8px;">Hi${firstName ? ' ' + firstName : ''},</p>
+                    <p style="font-size: 14px; color: #1e293b; margin: 0 0 18px;">Your one time password (OTP) is</p>
+
+                    <div style="background-color: #fef9c3; border-radius: 8px; padding: 22px 16px; margin: 0 0 22px; text-align: center;">
+                        <div style="display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: 18px; padding-inline-start: 18px;">${digits.join('')}</div>
+                    </div>
+
+                    <p style="font-size: 13px; color: #334155; line-height: 1.6; margin: 0 0 14px;">
+                        Please note this is a temporary password and will expire in <strong>5 minutes</strong>. If there's been a mistake, please contact our customer support team at
+                        <a href="mailto:admin@mariotkitchen.com" style="color: #16a1db; text-decoration: underline;">admin@mariotkitchen.com</a>.
+                    </p>
+
+                    <p style="font-size: 13px; color: #334155; margin: 24px 0 0;">Thank you,</p>
+                    <p style="font-size: 13px; color: #0f172a; font-weight: 700; margin: 0;">Team Mariot</p>
+
+                    <div style="margin-top: 32px; padding-top: 18px; border-top: 1px solid #e5e7eb; text-align: center; color: #64748b; font-size: 12px;">
+                        Need more help? Visit our <a href="${helpCentreUrl}" style="color: #16a1db; text-decoration: underline;">Help Centre</a>.
+                    </div>
+                </div>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[EMAIL] ✅ OTP email sent to ${toEmail}`);
+    } catch (error) {
+        console.error(`[EMAIL] ❌ Failed to send OTP email to ${toEmail}:`, error.message);
+        throw error;
+    }
+};
+
 module.exports = {
     sendPasswordResetEmail,
     sendOrderConfirmationEmail,
@@ -1275,7 +1340,8 @@ module.exports = {
     sendQuotationEmail,
     sendEmail,
     sendOfferNotificationEmail,
-    sendInvoiceEmail
+    sendInvoiceEmail,
+    sendOtpEmail
 };
 
 

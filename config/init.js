@@ -350,6 +350,22 @@ const initDb = async () => {
                 await db.query("ALTER TABLE users ADD COLUMN otp_expires_at DATETIME NULL");
                 console.log('[DB] Migration: Added otp_expires_at column to users table');
             }
+            if (!colByName.email_verified) {
+                await db.query("ALTER TABLE users ADD COLUMN email_verified TINYINT(1) NOT NULL DEFAULT 0");
+                console.log('[DB] Migration: Added email_verified column to users table');
+            }
+            if (!colByName.pending_email) {
+                await db.query("ALTER TABLE users ADD COLUMN pending_email VARCHAR(255) NULL");
+                console.log('[DB] Migration: Added pending_email column to users table');
+            }
+            if (!colByName.email_otp_code) {
+                await db.query("ALTER TABLE users ADD COLUMN email_otp_code VARCHAR(10) NULL");
+                console.log('[DB] Migration: Added email_otp_code column to users table');
+            }
+            if (!colByName.email_otp_expires_at) {
+                await db.query("ALTER TABLE users ADD COLUMN email_otp_expires_at DATETIME NULL");
+                console.log('[DB] Migration: Added email_otp_expires_at column to users table');
+            }
             const pn = colByName.phone_number;
             if (pn && /^varchar\((\d+)\)/i.test(pn.Type)) {
                 const len = parseInt(pn.Type.match(/\d+/)[0]);
@@ -360,6 +376,25 @@ const initDb = async () => {
             }
         } catch (err) {
             console.error('[DB] Error migrating users OTP columns:', err.message);
+        }
+
+        // 6.7b signup_otps table — holds pending signups awaiting email OTP verification
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS signup_otps (
+                    email VARCHAR(255) NOT NULL,
+                    name VARCHAR(255) NOT NULL,
+                    password_hash VARCHAR(255) NOT NULL,
+                    otp_code VARCHAR(10) NOT NULL,
+                    otp_expires_at DATETIME NOT NULL,
+                    attempts INT NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (email)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            console.log('[DB] signup_otps table verified');
+        } catch (err) {
+            console.error('[DB] Error creating signup_otps table:', err.message);
         }
 
         // 6.8 Invoices table
