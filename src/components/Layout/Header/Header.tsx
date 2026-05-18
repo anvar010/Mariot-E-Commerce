@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Search, ShoppingCart, User, Coins, Menu, Globe, Phone, MessageCircle, HelpCircle, ChevronDown, ChevronRight, X, Shield, Heart, Trophy, LogOut, Flame, Utensils, Hammer, Shirt, Tag, Gift, Settings, BadgeCheck, UserPlus, Wallet } from 'lucide-react';
 import styles from './Header.module.css';
@@ -21,6 +22,7 @@ const Header = () => {
     const headerRef = React.useRef<HTMLDivElement>(null);
     const [headerHeight, setHeaderHeight] = useState(160);
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const router = useRouter();
     const locale = useLocale();
     const t = useTranslations('header');
@@ -45,10 +47,10 @@ const Header = () => {
 
     const isArabic = locale === 'ar';
 
-    // Clear the search-button spinner once navigation to the new page completes
+    // Clear the search-button spinner once navigation to the new page (or new search query) completes
     useEffect(() => {
         setIsSearching(false);
-    }, [pathname]);
+    }, [pathname, searchParams]);
 
     useEffect(() => {
         let cancelled = false;
