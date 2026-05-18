@@ -113,7 +113,9 @@ exports.sendEmailOtpForProfile = async (req, res, next) => {
         const otp = generateOtp();
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
         await User.saveEmailOtp(req.user.id, newEmail, otp, expiresAt);
-        await sendOtpEmail(newEmail, me.name, otp, { purpose: 'email-change' });
+        // Fire-and-forget — SMTP latency must not block the HTTP response.
+        sendOtpEmail(newEmail, me.name, otp, { purpose: 'email-change' })
+            .catch(err => console.error('[OTP] Failed to send email-change OTP:', err.message));
 
         res.json({ success: true, message: 'Verification code sent to your email', email: maskEmail(newEmail) });
     } catch (err) {
@@ -180,7 +182,9 @@ exports.sendSignupOtp = async (req, res, next) => {
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
         await User.signupOtpUpsert({ email, name, passwordHash, code: otp, expiresAt });
-        await sendOtpEmail(email, name, otp, { purpose: 'signup' });
+        // Fire-and-forget — SMTP latency must not block the HTTP response.
+        sendOtpEmail(email, name, otp, { purpose: 'signup' })
+            .catch(err => console.error('[OTP] Failed to send signup OTP:', err.message));
 
         res.json({ success: true, message: 'Verification code sent to your email', email: maskEmail(email) });
     } catch (err) {
