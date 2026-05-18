@@ -45,6 +45,11 @@ const Header = () => {
 
     const isArabic = locale === 'ar';
 
+    // Clear the search-button spinner once navigation to the new page completes
+    useEffect(() => {
+        setIsSearching(false);
+    }, [pathname]);
+
     useEffect(() => {
         let cancelled = false;
         (async () => {
@@ -287,7 +292,7 @@ const Header = () => {
         const trimmed = searchQuery.trim();
         if (trimmed) {
             skipNextFetchRef.current = true;
-            setIsSearching(false);
+            setIsSearching(true);
             // Close mobile keyboard: blur the input directly (more reliable than activeElement)
             searchInputRef.current?.blur();
             if (typeof document !== 'undefined') {
