@@ -193,12 +193,21 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                         </tr>
                     </thead>
                     <tbody>
-                        ${itemChunk.map((item: any, idx: number) => `
+                        ${itemChunk.map((item: any, idx: number) => {
+                            const dims = item.custom_dimensions && typeof item.custom_dimensions === 'object'
+                                ? Object.entries(item.custom_dimensions)
+                                    .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}cm`)
+                                    .join(' · ')
+                                : '';
+                            const variantLabel = item.variant_label || '';
+                            return `
                             <tr style="border-bottom: 1px solid #f1f5f9;">
                                 <td style="padding: 15px 10px; font-size: 11px;">#${item.id || 'N/A'}</td>
                                 <td style="padding: 15px 10px; font-size: 11px;">
                                     <div style="font-weight: bold; color: #1e293b;">${item.name}</div>
                                     <div style="color: #64748b; font-size: 10px;">Brand: ${item.brand || 'Standard'}</div>
+                                    ${variantLabel ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
+                                    ${dims ? `<div style="color: #334155; font-size: 10px; margin-top: 4px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${dims}</div>` : ''}
                                 </td>
                                 <td style="padding: 15px 10px; text-align: center;">
                                     <img src="${itemImageBase64s[chunkStartIndex + idx]}" style="height: 50px; width: 50px; object-fit: contain;">
@@ -207,7 +216,8 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                                 <td style="padding: 15px 10px; text-align: right; font-size: 12px;">${Number(item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 <td style="padding: 15px 10px; text-align: right; font-size: 12px; font-weight: bold;">${(Number(item.price) * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             </tr>
-                        `).join('')}
+                        `;
+                        }).join('')}
                     </tbody>
                 </table>
 

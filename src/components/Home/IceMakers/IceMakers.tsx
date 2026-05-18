@@ -51,7 +51,7 @@ const IceMakers = ({ initialProducts = [] }: IceMakersProps) => {
 
         const fetchIceMakers = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/products?search=ice%20makers`, { credentials: "include" });
+                const res = await fetch(`${API_BASE_URL}/products?category=ice-equipment`, { credentials: "include" });
                 const data = await res.json();
                 if (data.success) {
                     setProducts(data.data);
@@ -74,10 +74,10 @@ const IceMakers = ({ initialProducts = [] }: IceMakersProps) => {
             <div className={styles.container}>
                 <div className={styles.headerFlex}>
                     <div className={styles.titleGroup}>
-                        <h2 className={styles.title}>Ice Makers</h2>
+                        <h2 className={styles.title}>Ice Equipment</h2>
                     </div>
                     <div className={styles.headerActions}>
-                        <Link href="/shop?category=ice-makers" className={styles.viewAll}>
+                        <Link href="/shop?category=ice-equipment" className={styles.viewAll}>
                             VIEW ALL <span>{isRtl ? '←' : '→'}</span>
                         </Link>
                     </div>
@@ -85,10 +85,10 @@ const IceMakers = ({ initialProducts = [] }: IceMakersProps) => {
 
                 <div className={styles.sectionContent}>
                     <div className={styles.promoColumn}>
-                        <CategoryPromotionCard 
-                            title="Ice Makers" 
-                            image="/assets/images/promo/ice_makers_promo.png" 
-                            link="/shop?category=ice-makers" 
+                        <CategoryPromotionCard
+                            title="Ice Equipment"
+                            image="/assets/images/promo/ice_makers_promo.png"
+                            link="/shop?category=ice-equipment"
                         />
                     </div>
 
