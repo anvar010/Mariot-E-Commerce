@@ -21,9 +21,9 @@ const MobileBottomNav = () => {
 
     return (
         <div className={styles.bottomNav}>
-            <Link href="/today-offers" className={`${styles.navItem} ${isActive('/today-offers') ? styles.active : ''}`}>
-                <BadgePercent size={24} />
-                <span>{isRtl ? 'عروض' : 'Deals'}</span>
+            <Link href="/" className={`${styles.navItem} ${isActive('/') ? styles.active : ''}`}>
+                <Home size={30} />
+                <span>{isRtl ? 'الرئيسية' : 'Home'}</span>
             </Link>
 
             <Link href="/all-categories" className={`${styles.navItem} ${isActive('/all-categories') ? styles.active : ''}`}>
@@ -31,9 +31,9 @@ const MobileBottomNav = () => {
                 <span>{isRtl ? 'الفئات' : 'Categories'}</span>
             </Link>
 
-            <Link href="/" className={`${styles.navItem} ${isActive('/') ? styles.active : ''}`}>
-                <Home size={30} />
-                <span>{isRtl ? 'الرئيسية' : 'Home'}</span>
+            <Link href="/today-offers" className={`${styles.navItem} ${isActive('/today-offers') ? styles.active : ''}`}>
+                <BadgePercent size={24} />
+                <span>{isRtl ? 'عروض' : 'Deals'}</span>
             </Link>
 
             <Link href="/profile" className={`${styles.navItem} ${isActive('/profile') ? styles.active : ''}`}>

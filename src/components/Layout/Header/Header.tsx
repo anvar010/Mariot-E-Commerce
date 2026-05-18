@@ -34,6 +34,7 @@ const Header = () => {
     const [categorySlugToId, setCategorySlugToId] = useState<Record<string, number>>({});
     const [showSuggestions, setShowSuggestions] = useState(false);
     const skipNextFetchRef = React.useRef(false);
+    const searchInputRef = React.useRef<HTMLInputElement>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSticky, setIsSticky] = useState(false);
     const [isCategoriesHovered, setIsCategoriesHovered] = useState(false);
@@ -287,6 +288,8 @@ const Header = () => {
         if (trimmed) {
             skipNextFetchRef.current = true;
             setIsSearching(false);
+            // Close mobile keyboard: blur the input directly (more reliable than activeElement)
+            searchInputRef.current?.blur();
             if (typeof document !== 'undefined') {
                 const active = document.activeElement as HTMLElement | null;
                 if (active && typeof active.blur === 'function') active.blur();
@@ -401,7 +404,9 @@ const Header = () => {
                                         </div>
                                     )}
                                     <input
-                                        type="text"
+                                        ref={searchInputRef}
+                                        type="search"
+                                        enterKeyHint="search"
                                         placeholder=""
                                         value={searchQuery}
                                         onChange={(e) => {
