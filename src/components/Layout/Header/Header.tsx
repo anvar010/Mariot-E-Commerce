@@ -415,10 +415,17 @@ const Header = () => {
                                         }}
                                         onFocus={() => setShowSuggestions(true)}
                                         onClick={() => setShowSuggestions(true)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                searchInputRef.current?.blur();
+                                                handleSearch();
+                                            }
+                                        }}
                                         className={styles.searchInput}
                                         aria-label={t('searchPlaceholder')}
                                     />
-                                    <button type="submit" className={styles.searchButton} disabled={isSearching}>
+                                    <button type="submit" className={styles.searchButton}>
                                         {isSearching ? (
                                             <span className={styles.searchSpinner} aria-label="loading" />
                                         ) : (

@@ -22,7 +22,7 @@ const MobileBottomNav = () => {
     return (
         <div className={styles.bottomNav}>
             <Link href="/" className={`${styles.navItem} ${isActive('/') ? styles.active : ''}`}>
-                <Home size={30} />
+                <Home size={24} />
                 <span>{isRtl ? 'الرئيسية' : 'Home'}</span>
             </Link>
 
