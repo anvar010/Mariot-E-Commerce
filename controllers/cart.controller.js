@@ -40,7 +40,15 @@ async function resolveTarget(productId, variantId) {
 
 exports.addToCart = async (req, res, next) => {
     try {
-        const { product_id, quantity = 1, variant_id = null, custom_dimensions = null, custom_label = null } = req.body;
+        const {
+            product_id,
+            quantity = 1,
+            variant_id = null,
+            custom_dimensions = null,
+            custom_label = null,
+            is_free_gift = false,
+            bundle_parent_id = null
+        } = req.body;
         const target = await resolveTarget(product_id, variant_id);
         if (target.error) {
             return res.status(404).json({ success: false, message: target.error });
@@ -59,14 +67,25 @@ exports.addToCart = async (req, res, next) => {
             it => it.product_id === product_id
                 && (it.variant_id ?? null) === (variant_id ?? null)
                 && (it.custom_signature ?? null) === signature
+                && Boolean(it.is_free_gift) === Boolean(is_free_gift)
         );
         const currentQty = existingItem ? existingItem.quantity : 0;
 
-        if (target.tracksInventory && currentQty + quantity > target.stock) {
+        // Free-gift lines bypass stock checks (admin promotion item).
+        if (!is_free_gift && target.tracksInventory && currentQty + quantity > target.stock) {
             return res.status(400).json({ success: false, message: `Only ${target.stock} available in stock` });
         }
 
-        await Cart.addItem(req.user.id, product_id, quantity, variant_id, custom_dimensions, custom_label);
+        await Cart.addItem(
+            req.user.id,
+            product_id,
+            quantity,
+            variant_id,
+            custom_dimensions,
+            custom_label,
+            Boolean(is_free_gift),
+            bundle_parent_id
+        );
         res.json({ success: true, message: 'Item added to cart' });
     } catch (error) {
         next(error);

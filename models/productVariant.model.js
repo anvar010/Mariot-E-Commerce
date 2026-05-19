@@ -1,5 +1,30 @@
 const db = require('../config/db');
 
+let variantImageUrlsColEnsured = false;
+async function ensureVariantImageUrlsColumn() {
+    if (variantImageUrlsColEnsured) return;
+    const [cols] = await db.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'product_variants'
+           AND COLUMN_NAME = 'image_urls'`
+    );
+    if (cols.length === 0) {
+        await db.query(`ALTER TABLE product_variants ADD COLUMN image_urls JSON NULL`);
+    }
+    variantImageUrlsColEnsured = true;
+}
+
+function parseImageUrls(raw) {
+    if (!raw) return [];
+    try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed)) {
+            return parsed.map(s => String(s || '').trim()).filter(Boolean);
+        }
+    } catch (e) { /* ignore */ }
+    return [];
+}
+
 // Build a stable signature so we can look up a variant by its chosen option values
 // Format: "optionId:value|optionId:value" with option ids sorted ascending
 function buildSignature(variantOptions) {
@@ -12,6 +37,7 @@ function buildSignature(variantOptions) {
 class ProductVariant {
     // Returns { options, variants } for a product
     static async getByProductId(productId) {
+        await ensureVariantImageUrlsColumn();
         const [options] = await db.query(
             'SELECT id, name, name_ar, position, values_json FROM product_options WHERE product_id = ? ORDER BY position ASC, id ASC',
             [productId]
@@ -22,10 +48,15 @@ class ProductVariant {
         }
 
         const [variants] = await db.query(
-            `SELECT id, sku, price, offer_price, stock_quantity, image_url, use_primary_image, options_signature, is_active, is_default
+            `SELECT id, sku, price, offer_price, stock_quantity, image_url, image_urls, use_primary_image, options_signature, is_active, is_default
              FROM product_variants WHERE product_id = ? ORDER BY id ASC`,
             [productId]
         );
+        variants.forEach(v => {
+            const list = parseImageUrls(v.image_urls);
+            // Hydrate legacy rows that only had image_url: surface it as a single-entry list.
+            v.image_urls = list.length > 0 ? list : (v.image_url ? [v.image_url] : []);
+        });
 
         if (variants.length === 0) {
             return { options, variants: [] };
@@ -81,12 +112,18 @@ class ProductVariant {
     }
 
     static async findById(variantId) {
+        await ensureVariantImageUrlsColumn();
         const [rows] = await db.execute(
-            `SELECT id, product_id, sku, price, offer_price, stock_quantity, image_url, use_primary_image, is_active
+            `SELECT id, product_id, sku, price, offer_price, stock_quantity, image_url, image_urls, use_primary_image, is_active
              FROM product_variants WHERE id = ?`,
             [variantId]
         );
-        return rows[0] || null;
+        const row = rows[0] || null;
+        if (row) {
+            const list = parseImageUrls(row.image_urls);
+            row.image_urls = list.length > 0 ? list : (row.image_url ? [row.image_url] : []);
+        }
+        return row;
     }
 
     // Full-replace save inside a caller-provided transaction
@@ -95,6 +132,7 @@ class ProductVariant {
     // Note: variants[].options[].option_index points at the position in the options[] array above (not DB id),
     //       because new options don't have a DB id yet on create.
     static async saveForProduct(conn, productId, options, variants) {
+        await ensureVariantImageUrlsColumn();
         // Wipe existing variant data completely:
         // 1. product_variant_options are deleted by CASCADE from both sides
         // 2. product_variants must be deleted explicitly (they FK to products, not product_options)
@@ -143,15 +181,25 @@ class ProductVariant {
             const stock = Number.isFinite(Number(v.stock_quantity)) ? parseInt(v.stock_quantity) : 0;
             const sku = v.sku ? String(v.sku).trim() : null;
             const usePrimary = v.use_primary_image === false || v.use_primary_image === 0 || v.use_primary_image === '0' ? 0 : 1;
-            const imageUrl = usePrimary ? null : (v.image_url ? String(v.image_url) : null);
+            // Normalise image list. The first entry is the canonical variant image_url for legacy fallbacks.
+            const imageList = (() => {
+                if (usePrimary) return [];
+                if (Array.isArray(v.image_urls)) {
+                    return v.image_urls.map(s => String(s || '').trim()).filter(Boolean);
+                }
+                if (v.image_url) return [String(v.image_url)];
+                return [];
+            })();
+            const imageUrl = imageList[0] || null;
+            const imageUrlsJson = imageList.length > 0 ? JSON.stringify(imageList) : null;
             const isActive = v.is_active === false || v.is_active === 0 || v.is_active === '0' ? 0 : 1;
             const isDefault = v.is_default === true || v.is_default === 1 || v.is_default === '1' ? 1 : 0;
 
             const [res] = await conn.execute(
                 `INSERT INTO product_variants
-                 (product_id, sku, price, offer_price, stock_quantity, image_url, use_primary_image, options_signature, is_active, is_default)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [productId, sku, price, offerPrice, stock, imageUrl, usePrimary, signature, isActive, isDefault]
+                 (product_id, sku, price, offer_price, stock_quantity, image_url, image_urls, use_primary_image, options_signature, is_active, is_default)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [productId, sku, price, offerPrice, stock, imageUrl, imageUrlsJson, usePrimary, signature, isActive, isDefault]
             );
             const variantId = res.insertId;
 

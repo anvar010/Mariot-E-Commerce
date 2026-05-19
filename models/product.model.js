@@ -3,6 +3,34 @@ const slugify = require('slugify');
 const ProductVariant = require('./productVariant.model');
 const ProductSizeTier = require('./productSizeTier.model');
 
+let freeGiftColEnsured = false;
+async function ensureFreeGiftColumn() {
+    if (freeGiftColEnsured) return;
+    const [cols] = await db.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
+           AND COLUMN_NAME = 'free_gift_product_ids'`
+    );
+    if (cols.length === 0) {
+        await db.query(`ALTER TABLE products ADD COLUMN free_gift_product_ids TEXT NULL`);
+    }
+    freeGiftColEnsured = true;
+}
+
+let compareConfigColEnsured = false;
+async function ensureCompareConfigColumn() {
+    if (compareConfigColEnsured) return;
+    const [cols] = await db.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
+           AND COLUMN_NAME = 'compare_config'`
+    );
+    if (cols.length === 0) {
+        await db.query(`ALTER TABLE products ADD COLUMN compare_config TEXT NULL`);
+    }
+    compareConfigColEnsured = true;
+}
+
 class Product {
     static async findAll({ category, brand, seller, minPrice, maxPrice, search, sort, limit, offset, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, is_best_seller, status, stockStatus }) {
         let query = `
@@ -404,6 +432,8 @@ class Product {
     }
 
     static async findById(id) {
+        await ensureFreeGiftColumn();
+        await ensureCompareConfigColumn();
         const [rows] = await db.execute(`
             SELECT p.*, 
             c.name as category_name, c.slug as category_slug,
@@ -446,6 +476,55 @@ class Product {
                 product.frequently_bought_together_products = fbtRows;
             } else {
                 product.frequently_bought_together_products = [];
+            }
+
+            // Parse admin-curated compare_config + enrich its slot product ids with names/images/prices.
+            let compareConfig = null;
+            if (product.compare_config) {
+                try {
+                    compareConfig = typeof product.compare_config === 'string'
+                        ? JSON.parse(product.compare_config)
+                        : product.compare_config;
+                } catch (e) { compareConfig = null; }
+            }
+            product.compare_config = compareConfig;
+            if (compareConfig && Array.isArray(compareConfig.slots) && compareConfig.slots.length > 0) {
+                const slotIds = compareConfig.slots.filter(Boolean);
+                if (slotIds.length > 0) {
+                    const placeholders = slotIds.map(() => '?').join(',');
+                    const [slotRows] = await db.query(
+                        `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+                         (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
+                         FROM products p WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
+                        slotIds
+                    );
+                    // Preserve admin-defined slot ordering.
+                    product.compare_slot_products = slotIds.map(id => slotRows.find(r => r.id === id) || null);
+                } else {
+                    product.compare_slot_products = [];
+                }
+            } else {
+                product.compare_slot_products = [];
+            }
+
+            // Enrich free_gift_product_ids with product data
+            let giftIds = [];
+            if (product.free_gift_product_ids) {
+                try {
+                    giftIds = JSON.parse(product.free_gift_product_ids);
+                } catch (e) { giftIds = []; }
+            }
+            if (Array.isArray(giftIds) && giftIds.length > 0) {
+                const placeholders = giftIds.map(() => '?').join(',');
+                const [giftRows] = await db.query(
+                    `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+                     (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
+                     FROM products p WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
+                    giftIds
+                );
+                product.free_gift_products = giftRows;
+            } else {
+                product.free_gift_products = [];
             }
 
             // Enrich you_may_also_need IDs with product data
@@ -541,6 +620,8 @@ class Product {
         try {
             // Ensure customizable schema exists before INSERT (lazy migration)
             await ProductSizeTier.ensureSchema();
+            await ensureFreeGiftColumn();
+            await ensureCompareConfigColumn();
             const name = String(data.name || '');
             const model = data.model ? String(data.model) : null;
             const youtube_video_link = data.youtube_video_link ? String(data.youtube_video_link) : null;
@@ -611,13 +692,15 @@ class Product {
                 offer_start, offer_end,
                 data.frequently_bought_together ? String(data.frequently_bought_together) : null,
                 data.you_may_also_need ? String(data.you_may_also_need) : null,
+                data.free_gift_product_ids ? String(data.free_gift_product_ids) : null,
+                data.compare_config ? String(data.compare_config) : null,
                 (data.warranty !== undefined && data.warranty !== '' && data.warranty !== null) ? parseInt(data.warranty) : null,
                 (data.warranty_ar !== undefined && data.warranty_ar !== '' && data.warranty_ar !== null) ? parseInt(data.warranty_ar) : null,
                 is_customizable, custom_dimensions, base_dimensions
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -677,6 +760,8 @@ class Product {
     static async update(id, data) {
         // Ensure customizable schema exists before UPDATE references the new columns
         await ProductSizeTier.ensureSchema();
+        await ensureFreeGiftColumn();
+        await ensureCompareConfigColumn();
         const allowedColumns = [
             'name', 'name_ar', 'description', 'description_ar', 'short_description', 'short_description_ar',
             'specifications', 'price', 'discount_percentage', 'offer_price', 'stock_quantity',
@@ -684,7 +769,7 @@ class Product {
             'seller_id', 'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer',
             'is_best_seller', 'status', 'product_group', 'sub_category', 'model',
             'youtube_video_link', 'resources', 'offer_start', 'offer_end',
-            'frequently_bought_together', 'you_may_also_need', 'warranty', 'warranty_ar',
+            'frequently_bought_together', 'you_may_also_need', 'free_gift_product_ids', 'compare_config', 'warranty', 'warranty_ar',
             'is_customizable', 'custom_dimensions', 'base_dimensions'
         ];
 

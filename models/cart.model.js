@@ -7,7 +7,7 @@ async function ensureCartCustomColumns() {
     const [cols] = await db.query(
         `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cart_items'
-           AND COLUMN_NAME IN ('custom_dimensions','custom_label','custom_signature')`
+           AND COLUMN_NAME IN ('custom_dimensions','custom_label','custom_signature','is_free_gift','bundle_parent_id')`
     );
     const have = new Set(cols.map(r => r.COLUMN_NAME));
     if (!have.has('custom_dimensions')) {
@@ -18,6 +18,12 @@ async function ensureCartCustomColumns() {
     }
     if (!have.has('custom_signature')) {
         await db.query(`ALTER TABLE cart_items ADD COLUMN custom_signature VARCHAR(255) NULL`);
+    }
+    if (!have.has('is_free_gift')) {
+        await db.query(`ALTER TABLE cart_items ADD COLUMN is_free_gift TINYINT(1) NOT NULL DEFAULT 0`);
+    }
+    if (!have.has('bundle_parent_id')) {
+        await db.query(`ALTER TABLE cart_items ADD COLUMN bundle_parent_id INT NULL`);
     }
     cartCustomColsEnsured = true;
 }
@@ -48,6 +54,21 @@ class Cart {
     static async getCartItems(userId) {
         await ensureCartCustomColumns();
         const cartId = await this.getOrCreateCart(userId);
+
+        // Prune orphan free-gift lines: a gift can only exist while its bundle parent is still in the cart.
+        // Without this sweep, removing the parent on one device/tab can leave dangling gifts on another.
+        await db.execute(
+            `DELETE FROM cart_items
+             WHERE cart_id = ? AND is_free_gift = 1
+               AND (bundle_parent_id IS NULL
+                    OR bundle_parent_id NOT IN (
+                        SELECT product_id FROM (
+                            SELECT product_id FROM cart_items
+                            WHERE cart_id = ? AND (is_free_gift = 0 OR is_free_gift IS NULL)
+                        ) AS parents
+                    ))`,
+            [cartId, cartId]
+        );
         const [items] = await db.execute(`
             SELECT
                 ci.product_id,
@@ -56,6 +77,8 @@ class Cart {
                 ci.custom_dimensions,
                 ci.custom_label,
                 ci.custom_signature,
+                ci.is_free_gift,
+                ci.bundle_parent_id,
                 p.name, p.name_ar, p.price, p.offer_price, p.slug, p.stock_quantity, p.track_inventory,
                 b.name as brand_name,
                 (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
@@ -99,6 +122,7 @@ class Cart {
         return items.map(it => {
             const hasVariant = it.variant_id != null;
             const usePrimary = hasVariant && Number(it.variant_use_primary) === 1;
+            const isFreeGift = Number(it.is_free_gift) === 1;
             let parsedDims = null;
             if (it.custom_dimensions) {
                 try { parsedDims = typeof it.custom_dimensions === 'string' ? JSON.parse(it.custom_dimensions) : it.custom_dimensions; }
@@ -114,11 +138,19 @@ class Cart {
                 brand_name: it.brand_name,
                 // Variant lines always honor stock, regardless of product-level track_inventory
                 track_inventory: hasVariant ? 1 : it.track_inventory,
-                // Price: variant wins when present
-                price: hasVariant ? Number(it.variant_price) : Number(it.price),
-                offer_price: hasVariant
-                    ? (it.variant_offer_price !== null ? Number(it.variant_offer_price) : null)
-                    : (it.offer_price !== null ? Number(it.offer_price) : null),
+                // Price: variant wins when present; free-gift lines always price 0
+                price: isFreeGift ? 0 : (hasVariant ? Number(it.variant_price) : Number(it.price)),
+                offer_price: isFreeGift
+                    ? 0
+                    : (hasVariant
+                        ? (it.variant_offer_price !== null ? Number(it.variant_offer_price) : null)
+                        : (it.offer_price !== null ? Number(it.offer_price) : null)),
+                // Original catalog price preserved for free-gift lines so the UI can show a strikethrough next to FREE.
+                original_price: isFreeGift
+                    ? (hasVariant ? Number(it.variant_price) : Number(it.price))
+                    : null,
+                is_free_gift: isFreeGift,
+                bundle_parent_id: it.bundle_parent_id !== null && it.bundle_parent_id !== undefined ? Number(it.bundle_parent_id) : null,
                 stock_quantity: hasVariant ? Number(it.variant_stock) : Number(it.stock_quantity),
                 image: (hasVariant && !usePrimary && it.variant_image) ? it.variant_image : it.primary_image,
                 variant_sku: it.variant_sku,
@@ -130,16 +162,18 @@ class Cart {
         });
     }
 
-    static async addItem(userId, productId, quantity, variantId = null, customDimensions = null, customLabel = null) {
+    static async addItem(userId, productId, quantity, variantId = null, customDimensions = null, customLabel = null, isFreeGift = false, bundleParentId = null) {
         await ensureCartCustomColumns();
         const cartId = await this.getOrCreateCart(userId);
         const customSignature = buildCustomSignature(customDimensions);
         const customDimsStr = customDimensions ? JSON.stringify(customDimensions) : null;
+        const giftFlag = isFreeGift ? 1 : 0;
+        const parentId = bundleParentId !== null && bundleParentId !== undefined ? Number(bundleParentId) : null;
 
-        // Match on (cart, product, variant, custom_signature) — NULL compared with <=> (null-safe equal)
+        // Match on (cart, product, variant, custom_signature, is_free_gift) — keep gift lines separate from regular ones
         const [existing] = await db.execute(
-            'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id <=> ? AND custom_signature <=> ?',
-            [cartId, productId, variantId, customSignature]
+            'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id <=> ? AND custom_signature <=> ? AND is_free_gift = ?',
+            [cartId, productId, variantId, customSignature, giftFlag]
         );
 
         if (existing.length > 0) {
@@ -149,8 +183,8 @@ class Cart {
             );
         } else {
             await db.execute(
-                'INSERT INTO cart_items (cart_id, product_id, variant_id, quantity, custom_dimensions, custom_label, custom_signature) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [cartId, productId, variantId, quantity, customDimsStr, customLabel, customSignature]
+                'INSERT INTO cart_items (cart_id, product_id, variant_id, quantity, custom_dimensions, custom_label, custom_signature, is_free_gift, bundle_parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [cartId, productId, variantId, quantity, customDimsStr, customLabel, customSignature, giftFlag, parentId]
             );
         }
     }
@@ -173,6 +207,11 @@ class Cart {
         await db.execute(
             'DELETE FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id <=> ? AND custom_signature <=> ?',
             [cartId, productId, variantId, customSignature]
+        );
+        // Cascade: any free-gift line that was bundled with this parent must go too.
+        await db.execute(
+            'DELETE FROM cart_items WHERE cart_id = ? AND is_free_gift = 1 AND bundle_parent_id = ?',
+            [cartId, productId]
         );
     }
 
