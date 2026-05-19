@@ -863,6 +863,12 @@
     "mockPaymentSuccess": "Payment successful (Mock Dev Mode)",
     "loading": "Loading..."
   },
+  "completeProfilePrompt": {
+    "pointsBadge": "+{points} pts",
+    "body": "Complete your business profile and Earn <highlight>{points} Reward Points</highlight> and redeem your points for discount vouchers",
+    "cta": "Complete Your Business Profile",
+    "close": "Close"
+  },
   "cartToast": {
     "title": "Item added to your cart",
     "qtyLabel": "Qty",

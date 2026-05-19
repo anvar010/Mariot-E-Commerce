@@ -763,7 +763,651 @@
 
 /* Extra Services Section */
 .extraServicesSection {
+    margin-top: 16px;
     margin-bottom: 15px;
+}
+
+/* Compare with similar products — full bleed across the page */
+.compareSection {
+    margin-top: 32px;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+.compareSection .sectionTitle {
+    padding: 12px 4px 12px;
+    margin-bottom: 0;
+    justify-content: flex-start;
+    text-align: start;
+    /* Inherit the standard 2px #8e959c divider from the global .sectionTitle
+       rule so this section matches the rest of the page (Reviews, Related, FBT). */
+}
+
+.compareSection .sectionTitle h2 {
+    text-align: start;
+    width: 100%;
+}
+
+.compareTableWrapper {
+    width: 100%;
+    overflow-x: auto;
+    background: #ffffff;
+}
+
+.compareTable {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 13px;
+    min-width: 100%;
+}
+
+.compareTable colgroup col:first-child {
+    width: 260px;
+}
+
+.compareTable thead th {
+    padding: 24px 20px;
+    vertical-align: top;
+    background: #ffffff;
+    font-weight: 500;
+    text-align: center;
+    border: none;
+}
+
+.compareTable thead th:first-child {
+    background: transparent;
+}
+
+.compareTable tbody td {
+    padding: 16px 20px;
+    color: #1f2937;
+    vertical-align: middle;
+    border: 1px solid #cbd5e1;
+}
+
+.compareTable tbody tr:nth-child(odd) td {
+    background: #f4f7fa;
+}
+
+.compareRowLabel {
+    font-weight: 500;
+    color: #475569;
+    background: inherit !important;
+    text-align: start;
+}
+
+.compareCell {
+    color: #1f2937;
+}
+
+.compareHeadCell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.compareHeadImg {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+}
+
+.compareEmptyTile {
+    width: 120px;
+    height: 120px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #cbd5e1;
+    font-size: 32px;
+}
+
+.compareHeadName {
+    font-weight: 600;
+    color: #1f2937;
+    line-height: 1.4;
+    font-size: 14px;
+    text-align: center;
+}
+
+.compareThisProduct {
+    color: #6b7280;
+    font-style: italic;
+    font-size: 13px;
+    padding-top: 2px;
+}
+
+.compareChangeBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.compareChangeBtn::before {
+    content: '✎';
+    color: #64748b;
+    font-size: 14px;
+}
+
+.compareChangeBtn:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+
+@media (max-width: 768px) {
+
+    /* Fit the entire 3-column table to viewport width — no horizontal scroll. */
+    .compareTableWrapper {
+        overflow-x: hidden;
+    }
+
+    .compareTable {
+        min-width: 0;
+        width: 100%;
+        font-size: 12px;
+        table-layout: fixed;
+    }
+
+    /* Hide the 3rd product column entirely — only label + "This Product" + ONE
+       other are shown. Users swap the visible 2nd product via "Change Product". */
+    .compareTable colgroup col:nth-child(4) {
+        display: none;
+    }
+
+    .compareTable thead th:nth-child(4),
+    .compareTable tbody td:nth-child(4) {
+        display: none;
+    }
+
+    .compareTable colgroup col:first-child {
+        width: 34%;
+    }
+
+    .compareTable thead th {
+        padding: 12px 4px;
+    }
+
+    .compareTable tbody td {
+        padding: 10px 8px;
+        word-break: break-word;
+    }
+
+    .compareHeadCell {
+        gap: 6px;
+    }
+
+    .compareHeadImg,
+    .compareEmptyTile {
+        width: 80px;
+        height: 80px;
+    }
+
+    .compareEmptyTile {
+        font-size: 24px;
+    }
+
+    .compareHeadName {
+        font-size: 12px;
+        line-height: 1.3;
+        /* All-caps SKUs ("PAINTED DOUGH SHEETER ON BASE") would otherwise spill out
+           of the narrow column. Allow anywhere-break and clamp to 3 visual lines. */
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        hyphens: auto;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+    .compareThisProduct {
+        font-size: 11px;
+    }
+
+    .compareChangeBtn {
+        padding: 4px 8px;
+        font-size: 11px;
+        gap: 4px;
+        white-space: nowrap;
+        max-width: 100%;
+        border-radius: 8px;
+    }
+
+    /* Hide the pencil glyph on mobile — it adds ~18px to a tight column. */
+    .compareChangeBtn::before {
+        display: none;
+    }
+
+    .compareRowLabel {
+        font-size: 12px;
+    }
+}
+
+/* Extra-narrow phones (iPhone SE, smaller Androids) need a tighter button still. */
+@media (max-width: 380px) {
+    .compareChangeBtn {
+        padding: 4px 6px;
+        font-size: 10px;
+        letter-spacing: -0.01em;
+    }
+
+    .compareHeadName {
+        font-size: 11px;
+    }
+}
+
+/* Compare Drawer */
+.compareDrawerOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    z-index: 30050;
+}
+
+.compareDrawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    inset-inline-end: 0;
+    width: 420px;
+    max-width: 100vw;
+    background: #ffffff;
+    z-index: 30051;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.1);
+}
+
+.compareDrawerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.compareDrawerHeader h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.compareDrawerClose {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    display: flex;
+    padding: 4px;
+}
+
+.compareDrawerSearchWrap {
+    padding: 14px 20px;
+}
+
+.compareDrawerSearch {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #ffffff;
+    outline: none;
+}
+
+.compareDrawerSearch:focus {
+    border-color: #1f2937;
+    box-shadow: 0 0 0 3px rgba(31, 41, 55, 0.12);
+}
+
+.compareDrawerList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px 24px;
+}
+
+.compareDrawerEmpty {
+    padding: 24px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.compareDrawerRow {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 14px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: start;
+    cursor: pointer;
+    color: #1f2937;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.compareDrawerRow:hover:not(:disabled) {
+    background: #f8fafc;
+}
+
+.compareDrawerRow:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.compareDrawerRowImg {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.compareDrawerRowMeta {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.compareDrawerRowName {
+    color: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compareDrawerRowPrice {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.compareDrawerRowOn .compareDrawerRowName {
+    font-weight: 700;
+}
+
+.compareDrawerRadio {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    background: #ffffff;
+    position: relative;
+    transition: border-color 0.15s ease;
+}
+
+.compareDrawerRadioOn {
+    border-color: #1f2937;
+}
+
+.compareDrawerRadioOn::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: #1f2937;
+}
+
+@media (max-width: 540px) {
+    .compareDrawer {
+        width: 100vw;
+    }
+}
+
+/* Bundle / Free Gift Promo */
+.bundleCard {
+    margin-top: 8px;
+    padding: 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    margin-bottom: 16px;
+}
+
+.bundleHeader {
+    font-size: 14px;
+    color: #1e293b;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.bundleHeader strong {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.bundleList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.bundleItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #ffffff;
+    border: 1px solid #14b8a6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    outline: none;
+}
+
+.bundleItemSelected {
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.15);
+}
+
+.bundleItemUnselected {
+    border-color: #cbd5e1;
+}
+
+.bundleItemUnselected:hover {
+    border-color: #94a3b8;
+}
+
+.bundleRadio {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    background: #ffffff;
+    position: relative;
+    transition: border-color 0.15s ease;
+}
+
+.bundleRadioOn {
+    border-color: #14b8a6;
+}
+
+.bundleRadioOn::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: #14b8a6;
+}
+
+.bundleItemImg {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.bundleItemInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.bundleItemName {
+    font-size: 13px;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.bundleItemFree {
+    font-size: 12px;
+    font-weight: 800;
+    color: #16a34a;
+    letter-spacing: 0.02em;
+}
+
+.bundleItemPriceRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+    flex-wrap: wrap;
+}
+
+.bundleItemOldPrice {
+    font-size: 12px;
+    color: #94a3b8;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+}
+
+.bundleAddBtn {
+    width: 100%;
+    padding: 14px 16px;
+    background: #fcd34d;
+    color: #b45309;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.bundleAddBtn:hover:not(:disabled) {
+    background: #fbbf24;
+}
+
+.bundleAddBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Bundle Upsell Modal */
+.bundleModalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 30010;
+    padding: 16px;
+}
+
+.bundleModal {
+    width: 100%;
+    max-width: 520px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.bundleModalHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.bundleModalTitle {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 4px 0;
+}
+
+.bundleModalSub {
+    font-size: 14px;
+    color: #475569;
+    margin: 0;
+}
+
+.bundleModalClose {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    padding: 4px;
+    display: flex;
+}
+
+.bundleModalActions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bundleModalAddBtn {
+    width: 100%;
+    padding: 14px 16px;
+    background: #f59e0b;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.bundleModalAddBtn:hover {
+    background: #d97706;
+}
+
+.bundleModalSkipBtn {
+    width: 100%;
+    padding: 14px 16px;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.bundleModalSkipBtn:hover {
+    background: #e2e8f0;
 }
 
 .extraServicesTitle {
@@ -1356,11 +2000,6 @@
 
 .stickyVideoWrapper {
     position: relative;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 @media (min-width: 1024px) {
@@ -3268,6 +3907,43 @@
     flex-direction: column;
 }
 
+.specsTable {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 0;
+    table-layout: fixed;
+    border: 1.5px solid #94a3b8;
+}
+
+.specsTable tr:nth-child(odd) td {
+    background: #ffffff;
+}
+
+.specsTable tr:nth-child(even) td {
+    background: #ffffff;
+}
+
+.specsTable td {
+    padding: 14px 16px;
+    border: none;
+    border-bottom: 1.5px solid #94a3b8;
+    vertical-align: middle;
+    word-break: break-word;
+}
+
+.specsTable td.specLabel {
+    border-inline-end: 1.5px solid #94a3b8;
+}
+
+.specsTable td.specLabel {
+    width: 35%;
+    min-width: 150px;
+}
+
+.specsTable td.specValue {
+    text-align: left;
+}
+
 .specItem {
     display: flex;
     align-items: center;
@@ -3343,6 +4019,16 @@
     .specItemSingle {
         padding: 12px 16px;
         font-size: 13px;
+    }
+
+    .specsTable td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .specsTable td.specLabel {
+        width: 40%;
+        min-width: 0;
     }
 }
 

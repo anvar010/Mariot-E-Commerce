@@ -863,6 +863,12 @@
         "mockPaymentSuccess": "تمت عملية الدفع بنجاح (وضع المطور)",
         "loading": "جاري التحميل..."
     },
+    "completeProfilePrompt": {
+        "pointsBadge": "+{points} نقطة",
+        "body": "أكمل ملفك التجاري واحصل على <highlight>{points} نقطة مكافأة</highlight> واستبدل نقاطك بقسائم خصم",
+        "cta": "أكمل ملفك التجاري",
+        "close": "إغلاق"
+    },
     "cartToast": {
         "title": "تم إضافة المنتج إلى السلة",
         "qtyLabel": "الكمية",

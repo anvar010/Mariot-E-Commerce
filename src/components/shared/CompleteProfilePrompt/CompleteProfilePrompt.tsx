@@ -2,9 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { X, Star, MousePointerClick } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import styles from './CompleteProfilePrompt.module.css';
+
+const POINTS = 3000;
 
 const JUST_LOGGED_IN_KEY = 'mariot.justLoggedIn';
 
@@ -12,6 +15,7 @@ const CompleteProfilePrompt: React.FC = () => {
     const { user, loading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const t = useTranslations('completeProfilePrompt');
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
@@ -53,7 +57,7 @@ const CompleteProfilePrompt: React.FC = () => {
     return (
         <div className={styles.overlay} onClick={() => setOpen(false)}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
-                <button className={styles.closeBtn} onClick={() => setOpen(false)} aria-label="Close">
+                <button className={styles.closeBtn} onClick={() => setOpen(false)} aria-label={t('close')}>
                     <X size={18} />
                 </button>
 
@@ -61,20 +65,21 @@ const CompleteProfilePrompt: React.FC = () => {
                     <span className={styles.badgeStar}>
                         <Star size={20} fill="#fde68a" color="#fde68a" />
                     </span>
-                    <span className={styles.badgeText}>+3000 pts</span>
+                    <span className={styles.badgeText}>{t('pointsBadge', { points: POINTS })}</span>
                     <span className={styles.cursorArt}>
                         <MousePointerClick size={28} strokeWidth={2.5} />
                     </span>
                 </div>
 
                 <p className={styles.copy}>
-                    Complete your business profile and Earn{' '}
-                    <span className={styles.highlight}>3000 Reward Points</span>{' '}
-                    and redeem your points for discount vouchers
+                    {t.rich('body', {
+                        points: POINTS,
+                        highlight: (chunks) => <span className={styles.highlight}>{chunks}</span>
+                    })}
                 </p>
 
                 <button type="button" className={styles.cta} onClick={handleGo}>
-                    Complete Your Business Profile
+                    {t('cta')}
                 </button>
             </div>
         </div>

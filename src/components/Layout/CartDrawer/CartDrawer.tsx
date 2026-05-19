@@ -71,6 +71,25 @@ const CartDrawer = () => {
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
 
+    // Gift-trim modal: when a bundle parent's qty drops below the number of free
+    // gifts attached, force the user to pick which gifts to drop.
+    type GiftKey = { id: string | number; variant_id: number | null; custom_signature: string | null };
+    type GiftTrim = {
+        parentId: string | number;
+        parentVariantId: number | null;
+        parentCustomSig: string | null;
+        newQty: number;
+        excess: number;
+        gifts: Array<any>;
+        selected: GiftKey[];
+    };
+    const [giftTrim, setGiftTrim] = useState<GiftTrim | null>(null);
+
+    const giftKeyEq = (a: GiftKey, b: GiftKey) =>
+        String(a.id) === String(b.id)
+        && (a.variant_id ?? null) === (b.variant_id ?? null)
+        && (a.custom_signature ?? null) === (b.custom_signature ?? null);
+
     // Quotation States
     const [showQuotationPopup, setShowQuotationPopup] = useState(false);
     const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
@@ -273,53 +292,196 @@ const CartDrawer = () => {
                             )}
 
                             <div className={styles.itemsList}>
-                                {cartItems.map((item) => (
-                                    <div key={`${item.id}-${item.variant_id ?? 'base'}-${item.custom_signature ?? ''}`} className={styles.cartItem}>
-                                        <div className={styles.itemImg} onClick={() => { setIsDrawerOpen(false); router.push(`/product/${item.slug}`); }}>
-                                            <img
-                                                src={item.image || '/assets/mariot-logo2.webp'}
-                                                alt={item.name}
-                                            />
-                                            <span className={styles.itemCountBadge}>{item.quantity}</span>
-                                        </div>
-                                        <div className={styles.itemDetails}>
-                                            <div className={styles.itemNameRow}>
-                                                <div className={styles.itemNameMain}>
-                                                    <h4 className={styles.itemName}>{item.name}</h4>
-                                                    {item.variant_label && (
-                                                        <p className={styles.itemVariant}>{item.variant_label}</p>
-                                                    )}
-                                                    {item.custom_dimensions && (
-                                                        <div className={styles.itemDimensions}>
-                                                            {Object.entries(item.custom_dimensions).map(([key, val]) => (
-                                                                <span key={key}>{key.charAt(0).toUpperCase() + key.slice(1)}: {val}cm</span>
-                                                            ))}
+                                {(() => {
+                                    // Build groups: each parent is shown with its bundled gifts in a single container.
+                                    const parents = cartItems.filter((it: any) => !it.is_free_gift);
+                                    const gifts = cartItems.filter((it: any) => it.is_free_gift);
+                                    const groups: Array<{ parent: any; gifts: any[] }> = parents.map(p => ({
+                                        parent: p,
+                                        gifts: gifts.filter(g => g.bundle_parent_id != null && Number(g.bundle_parent_id) === Number(p.id))
+                                    }));
+                                    // Orphan gifts (parent removed elsewhere) rendered standalone with no parent.
+                                    const orphans = gifts.filter(g => !parents.some(p => Number(p.id) === Number(g.bundle_parent_id)));
+                                    orphans.forEach(o => groups.push({ parent: o, gifts: [] }));
+                                    return groups;
+                                })().map(({ parent, gifts: bundleGifts }) => {
+                                    const isBundle = bundleGifts.length > 0;
+                                    const groupKey = `${parent.id}-${parent.variant_id ?? 'base'}-${parent.custom_signature ?? ''}-${parent.is_free_gift ? 'gift' : 'main'}`;
+
+                                    const renderRow = (item: any, opts: { compact?: boolean } = {}) => {
+                                        const isGift = Boolean(item.is_free_gift);
+                                        return (
+                                            <div
+                                                key={`row-${item.id}-${isGift ? 'g' : 'm'}`}
+                                                className={styles.cartItem}
+                                                style={opts.compact ? { borderBottom: 'none', paddingBottom: 0 } : undefined}
+                                            >
+                                                <div className={styles.itemImg} onClick={() => { setIsDrawerOpen(false); router.push(`/product/${item.slug}`); }}>
+                                                    <img src={item.image || '/assets/mariot-logo2.webp'} alt={item.name} />
+                                                    {!isGift && <span className={styles.itemCountBadge}>{item.quantity}</span>}
+                                                </div>
+                                                <div className={styles.itemDetails}>
+                                                    <div className={styles.itemNameRow}>
+                                                        <div className={styles.itemNameMain}>
+                                                            <h4 className={styles.itemName}>{item.name}</h4>
+                                                            {item.variant_label && (
+                                                                <p className={styles.itemVariant}>{item.variant_label}</p>
+                                                            )}
+                                                            {item.custom_dimensions && (
+                                                                <div className={styles.itemDimensions}>
+                                                                    {Object.entries(item.custom_dimensions).map(([key, val]) => (
+                                                                        <span key={key}>{key.charAt(0).toUpperCase() + key.slice(1)}: {String(val)}cm</span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {item.brand && <p className={styles.itemBrand}>{item.brand}</p>}
+                                                    <div className={styles.itemPrice}>
+                                                        {isGift ? (
+                                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                                                {Number(item.original_price) > 0 && (
+                                                                    <span style={{ color: '#94a3b8', textDecoration: 'line-through', fontSize: 12 }}>
+                                                                        <CurrencyPrice amount={Number(item.original_price)} />
+                                                                    </span>
+                                                                )}
+                                                                <span style={{ color: '#16a34a', fontWeight: 700 }}>{isArabic ? 'مجاناً' : 'FREE'}</span>
+                                                            </span>
+                                                        ) : (
+                                                            <span><CurrencyPrice amount={Number(item.price)} /></span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    };
+
+                                    if (!isBundle) {
+                                        // Standalone item — keep original layout with per-row qty + trash.
+                                        const item = parent;
+                                        const isGift = Boolean(item.is_free_gift);
+                                        return (
+                                            <div key={groupKey} className={styles.cartItem}>
+                                                <div className={styles.itemImg} onClick={() => { setIsDrawerOpen(false); router.push(`/product/${item.slug}`); }}>
+                                                    <img src={item.image || '/assets/mariot-logo2.webp'} alt={item.name} />
+                                                    <span className={styles.itemCountBadge}>{item.quantity}</span>
+                                                </div>
+                                                <div className={styles.itemDetails}>
+                                                    <div className={styles.itemNameRow}>
+                                                        <div className={styles.itemNameMain}>
+                                                            <h4 className={styles.itemName}>{item.name}</h4>
+                                                            {item.variant_label && (
+                                                                <p className={styles.itemVariant}>{item.variant_label}</p>
+                                                            )}
+                                                            {item.custom_dimensions && (
+                                                                <div className={styles.itemDimensions}>
+                                                                    {Object.entries(item.custom_dimensions).map(([key, val]) => (
+                                                                        <span key={key}>{key.charAt(0).toUpperCase() + key.slice(1)}: {String(val)}cm</span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {!isGift && (
+                                                            <button className={styles.removeBtn} onClick={() => removeFromCart(item.id, item.variant_id ?? null, item.custom_signature ?? null)}>
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    {item.brand && <p className={styles.itemBrand}>{item.brand}</p>}
+                                                    <div className={styles.itemPrice}>
+                                                        {isGift ? (
+                                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                                                {Number(item.original_price) > 0 && (
+                                                                    <span style={{ color: '#94a3b8', textDecoration: 'line-through', fontSize: 12 }}>
+                                                                        <CurrencyPrice amount={Number(item.original_price)} />
+                                                                    </span>
+                                                                )}
+                                                                <span style={{ color: '#16a34a', fontWeight: 700 }}>{isArabic ? 'مجاناً' : 'FREE'}</span>
+                                                            </span>
+                                                        ) : (
+                                                            <span><CurrencyPrice amount={Number(item.price)} /></span>
+                                                        )}
+                                                    </div>
+                                                    {!isGift && (
+                                                        <div className={styles.qtySelectRow}>
+                                                            <span className={styles.qtyLabel}>{t('qty')}</span>
+                                                            <select
+                                                                value={item.quantity}
+                                                                onChange={(e) => updateQuantity(item.id, parseInt(e.target.value), item.variant_id ?? null, item.custom_signature ?? null)}
+                                                                className={styles.qtySelect}
+                                                            >
+                                                                {[...Array(10)].map((_, i) => (
+                                                                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                                                                ))}
+                                                            </select>
                                                         </div>
                                                     )}
                                                 </div>
-                                                <button className={styles.removeBtn} onClick={() => removeFromCart(item.id, item.variant_id ?? null, item.custom_signature ?? null)}>
-                                                    <Trash2 size={18} />
-                                                </button>
                                             </div>
-                                            {item.brand && <p className={styles.itemBrand}>{item.brand}</p>}
-                                            <div className={styles.itemPrice}>
-                                                <span><CurrencyPrice amount={Number(item.price)} /></span>
-                                            </div>
-                                            <div className={styles.qtySelectRow}>
-                                                <span className={styles.qtyLabel}>{t('qty')}</span>
-                                                <select
-                                                    value={item.quantity}
-                                                    onChange={(e) => updateQuantity(item.id, parseInt(e.target.value), item.variant_id ?? null, item.custom_signature ?? null)}
-                                                    className={styles.qtySelect}
-                                                >
-                                                    {[...Array(10)].map((_, i) => (
-                                                        <option key={i + 1} value={i + 1}>{i + 1}</option>
-                                                    ))}
-                                                </select>
+                                        );
+                                    }
+
+                                    // Bundle: parent + gifts in one bordered container with shared footer.
+                                    const bundleTotal = Number(parent.price) * Number(parent.quantity);
+                                    return (
+                                        <div key={groupKey} className={styles.bundleGroup}>
+                                            {renderRow(parent)}
+                                            {bundleGifts.map(g => (
+                                                <React.Fragment key={`gift-${g.id}`}>
+                                                    <div className={styles.bundleDivider} />
+                                                    {renderRow(g, { compact: true })}
+                                                </React.Fragment>
+                                            ))}
+                                            <div className={styles.bundleDivider} />
+                                            <div className={styles.bundleFooter}>
+                                                <div className={styles.bundleFooterTotal}>
+                                                    <span>{isArabic ? 'إجمالي الحزمة' : 'Bundle Total'}</span>
+                                                    <strong><CurrencyPrice amount={bundleTotal} /></strong>
+                                                </div>
+                                                <div className={styles.bundleFooterActions}>
+                                                    <div className={styles.bundleQtyBox}>
+                                                        <span className={styles.qtyLabel}>{t('qty')}</span>
+                                                        <select
+                                                            value={parent.quantity}
+                                                            onChange={(e) => {
+                                                                const newQty = parseInt(e.target.value);
+                                                                // Site rule: at most one free gift per main-product unit.
+                                                                // If the user drops parent qty below the number of attached gifts,
+                                                                // ask them which gifts to remove before applying the qty change.
+                                                                const excess = bundleGifts.length - newQty;
+                                                                if (excess > 0) {
+                                                                    setGiftTrim({
+                                                                        parentId: parent.id,
+                                                                        parentVariantId: parent.variant_id ?? null,
+                                                                        parentCustomSig: parent.custom_signature ?? null,
+                                                                        newQty,
+                                                                        excess,
+                                                                        gifts: bundleGifts,
+                                                                        selected: []
+                                                                    });
+                                                                    return;
+                                                                }
+                                                                updateQuantity(parent.id, newQty, parent.variant_id ?? null, parent.custom_signature ?? null);
+                                                            }}
+                                                            className={styles.qtySelect}
+                                                        >
+                                                            {[...Array(10)].map((_, i) => (
+                                                                <option key={i + 1} value={i + 1}>{i + 1}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <button
+                                                        className={styles.bundleRemoveBtn}
+                                                        onClick={() => removeFromCart(parent.id, parent.variant_id ?? null, parent.custom_signature ?? null)}
+                                                        aria-label="Remove bundle"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* Coupons Section */}
@@ -525,6 +687,77 @@ const CartDrawer = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Gift-trim modal — fires when the user reduces a bundle's parent qty
+                below the number of attached free gifts. User must pick which gifts to drop. */}
+            {giftTrim && (
+                <div className={styles.giftTrimOverlay} onClick={() => setGiftTrim(null)}>
+                    <div className={styles.giftTrimModal} onClick={(e) => e.stopPropagation()}>
+                        <button className={styles.giftTrimClose} onClick={() => setGiftTrim(null)} aria-label="Close">
+                            <X size={18} />
+                        </button>
+                        <h3 className={styles.giftTrimTitle}>
+                            {isArabic ? 'تم تغيير الكمية' : 'Quantity changed'}
+                        </h3>
+                        <p className={styles.giftTrimText}>
+                            {isArabic
+                                ? `قمت بتقليل الكمية إلى ${giftTrim.newQty}. لا يمكن الاحتفاظ إلا بهدية مجانية واحدة لكل قطعة. الرجاء اختيار ${giftTrim.excess} هدية لإزالتها:`
+                                : `You reduced the quantity to ${giftTrim.newQty}. Only one free gift is allowed per unit. Please choose ${giftTrim.excess} gift${giftTrim.excess > 1 ? 's' : ''} to remove:`}
+                        </p>
+                        <div className={styles.giftTrimList}>
+                            {giftTrim.gifts.map(g => {
+                                const key: GiftKey = { id: g.id, variant_id: g.variant_id ?? null, custom_signature: g.custom_signature ?? null };
+                                const isChecked = giftTrim.selected.some(s => giftKeyEq(s, key));
+                                const canCheckMore = giftTrim.selected.length < giftTrim.excess;
+                                return (
+                                    <label
+                                        key={`${g.id}-${g.variant_id ?? 'base'}-${g.custom_signature ?? ''}`}
+                                        className={`${styles.giftTrimRow} ${isChecked ? styles.giftTrimRowOn : ''}`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            disabled={!isChecked && !canCheckMore}
+                                            onChange={() => {
+                                                setGiftTrim(prev => {
+                                                    if (!prev) return prev;
+                                                    const exists = prev.selected.some(s => giftKeyEq(s, key));
+                                                    const nextSelected = exists
+                                                        ? prev.selected.filter(s => !giftKeyEq(s, key))
+                                                        : (prev.selected.length < prev.excess ? [...prev.selected, key] : prev.selected);
+                                                    return { ...prev, selected: nextSelected };
+                                                });
+                                            }}
+                                        />
+                                        <img className={styles.giftTrimImg} src={g.image || '/assets/mariot-logo2.webp'} alt={g.name} />
+                                        <span className={styles.giftTrimName}>{g.name}</span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                        <div className={styles.giftTrimActions}>
+                            <button className={styles.giftTrimCancel} onClick={() => setGiftTrim(null)}>
+                                {isArabic ? 'إلغاء' : 'Cancel'}
+                            </button>
+                            <button
+                                className={styles.giftTrimConfirm}
+                                disabled={giftTrim.selected.length !== giftTrim.excess}
+                                onClick={async () => {
+                                    const trim = giftTrim;
+                                    setGiftTrim(null);
+                                    // Remove the chosen gifts first, then apply the new parent qty.
+                                    for (const k of trim.selected) {
+                                        await removeFromCart(k.id, k.variant_id, k.custom_signature, true);
+                                    }
+                                    updateQuantity(trim.parentId, trim.newQty, trim.parentVariantId, trim.parentCustomSig);
+                                }}
+                            >
+                                {isArabic ? 'تأكيد' : 'Confirm'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Quotation Popup Modal */}
             <div

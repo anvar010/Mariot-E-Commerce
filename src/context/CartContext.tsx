@@ -22,6 +22,9 @@ interface CartItem {
     track_inventory?: number | boolean;
     custom_dimensions?: Record<string, number | string> | null;
     custom_signature?: string | null;
+    is_free_gift?: boolean;
+    bundle_parent_id?: number | null;
+    original_price?: number | null;
 }
 
 // Build a stable signature from a custom-dimensions object. Used to treat
@@ -40,15 +43,16 @@ const buildCustomSignature = (dims: any): string | null => {
 };
 
 // Matches two cart items as "the same line"
-const sameLine = (a: { id: any; variant_id?: any; custom_signature?: any }, b: { id: any; variant_id?: any; custom_signature?: any }) =>
+const sameLine = (a: { id: any; variant_id?: any; custom_signature?: any; is_free_gift?: any }, b: { id: any; variant_id?: any; custom_signature?: any; is_free_gift?: any }) =>
     a.id === b.id &&
     (a.variant_id ?? null) === (b.variant_id ?? null) &&
-    (a.custom_signature ?? null) === (b.custom_signature ?? null);
+    (a.custom_signature ?? null) === (b.custom_signature ?? null) &&
+    Boolean(a.is_free_gift) === Boolean(b.is_free_gift);
 
 interface CartContextType {
     cartItems: CartItem[];
     addToCart: (product: any, options?: { silent?: boolean }) => Promise<boolean>;
-    removeFromCart: (productId: string | number, variantId?: number | null, customSignature?: string | null) => void;
+    removeFromCart: (productId: string | number, variantId?: number | null, customSignature?: string | null, isFreeGift?: boolean) => void;
     updateQuantity: (productId: string | number, quantity: number, variantId?: number | null, customSignature?: string | null) => void;
     clearCart: () => void;
     cartCount: number;
@@ -123,7 +127,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                     body: JSON.stringify({
                                         product_id: item.id,
                                         quantity: item.quantity,
-                                        variant_id: item.variant_id || null
+                                        variant_id: item.variant_id || null,
+                                        is_free_gift: Boolean(item.is_free_gift),
+                                        bundle_parent_id: item.bundle_parent_id ?? null
                                     })
                                 })
                             ));
@@ -186,6 +192,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, [cartItems, token]);
 
+    // Prune orphan free-gift lines: a gift can only exist while its bundle parent is in the cart.
+    useEffect(() => {
+        const parentIds = new Set(cartItems.filter(i => !i.is_free_gift).map(i => Number(i.id)));
+        const orphans = cartItems.filter(i => i.is_free_gift && !parentIds.has(Number(i.bundle_parent_id)));
+        if (orphans.length === 0) return;
+        setCartItems(prev => prev.filter(i => {
+            if (!i.is_free_gift) return true;
+            return parentIds.has(Number(i.bundle_parent_id));
+        }));
+    }, [cartItems]);
+
     const fetchUserCart = async () => {
         if (!token) return;
         try {
@@ -215,7 +232,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined,
                         track_inventory: item.track_inventory,
                         custom_dimensions: item.custom_dimensions || null,
-                        custom_signature: item.custom_signature || null
+                        custom_signature: item.custom_signature || null,
+                        is_free_gift: Boolean(item.is_free_gift),
+                        bundle_parent_id: item.bundle_parent_id ?? null,
+                        original_price: item.original_price != null ? Number(item.original_price) : null
                     };
                 });
                 setCartItems(items);
@@ -227,15 +247,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const addToCart = async (product: any, options?: { silent?: boolean }): Promise<boolean> => {
         const productQuantity = Number(product.quantity || 1);
-        const displayPrice = Number(product.offer_price) > 0 ? Number(product.offer_price) : Number(product.price || 0);
+        const isFreeGift = Boolean(product.is_free_gift);
+        const displayPrice = isFreeGift
+            ? 0
+            : (Number(product.offer_price) > 0 ? Number(product.offer_price) : Number(product.price || 0));
         const stockLimit = product.stock_quantity !== undefined ? Number(product.stock_quantity) : undefined;
         const variantId: number | null = product.variant_id ?? null;
         const customSignature = buildCustomSignature(product.custom_dimensions);
-        const lineKey = { id: product.id, variant_id: variantId, custom_signature: customSignature };
+        const lineKey = { id: product.id, variant_id: variantId, custom_signature: customSignature, is_free_gift: isFreeGift };
 
         // Validation against current state
         const existingItem = cartItems.find(item => sameLine(item, lineKey));
-        const isInventoryTracked = product.track_inventory === 1 || String(product.track_inventory) === '1' || product.track_inventory === true;
+        const isInventoryTracked = !isFreeGift && (product.track_inventory === 1 || String(product.track_inventory) === '1' || product.track_inventory === true);
 
         let quantityToAdd = productQuantity;
 
@@ -277,7 +300,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 stock_quantity: stockLimit,
                 track_inventory: product.track_inventory,
                 custom_dimensions: product.custom_dimensions || null,
-                custom_signature: customSignature
+                custom_signature: customSignature,
+                is_free_gift: isFreeGift,
+                bundle_parent_id: product.bundle_parent_id ?? null,
+                original_price: isFreeGift
+                    ? (product.original_price != null
+                        ? Number(product.original_price)
+                        : (Number(product.offer_price) > 0 ? Number(product.offer_price) : Number(product.price || 0)))
+                    : null
             }];
         });
 
@@ -323,7 +353,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         quantity: quantityToAdd,
                         variant_id: variantId,
                         custom_dimensions: product.custom_dimensions || null,
-                        custom_label: product.variant_label || null
+                        custom_label: product.variant_label || null,
+                        is_free_gift: isFreeGift,
+                        bundle_parent_id: product.bundle_parent_id ?? null
                     })
                 });
             } catch (error) {
@@ -333,10 +365,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
     };
 
-    const removeFromCart = async (productId: string | number, variantId: number | null = null, customSignature: string | null = null) => {
-        const lineKey = { id: productId, variant_id: variantId, custom_signature: customSignature };
+    const removeFromCart = async (productId: string | number, variantId: number | null = null, customSignature: string | null = null, isFreeGift: boolean = false) => {
+        // is_free_gift is part of the line identity (a parent and its bundled gift can share id+variant).
+        // Callers removing a free-gift line must pass isFreeGift=true; otherwise sameLine will miss it.
+        const lineKey = { id: productId, variant_id: variantId, custom_signature: customSignature, is_free_gift: isFreeGift };
         const itemToRemove = cartItems.find(i => sameLine(i, lineKey));
-        setCartItems(prevItems => prevItems.filter(item => !sameLine(item, lineKey)));
+        // Cascade: removing a bundle parent also removes its free-gift children.
+        const isParent = itemToRemove && !itemToRemove.is_free_gift;
+        const childGifts = isParent
+            ? cartItems.filter(i => i.is_free_gift && Number(i.bundle_parent_id) === Number(productId))
+            : [];
+        setCartItems(prevItems => prevItems.filter(item => {
+            if (sameLine(item, lineKey)) return false;
+            if (isParent && item.is_free_gift && Number(item.bundle_parent_id) === Number(productId)) return false;
+            return true;
+        }));
 
         if (itemToRemove) {
             showNotification(t('cartRemove', { name: itemToRemove.name }), 'error', { title: t('itemRemoved') });
@@ -353,6 +396,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     credentials: "include",
                     headers: getAuthHeaders()
                 });
+                // Also delete cascaded gift children server-side
+                for (const g of childGifts) {
+                    await fetch(`${API_BASE_URL}/cart/${g.id}`, {
+                        method: 'DELETE',
+                        credentials: "include",
+                        headers: getAuthHeaders()
+                    });
+                }
             } catch (error) {
                 console.error('Failed to remove from cart backend', error);
             }

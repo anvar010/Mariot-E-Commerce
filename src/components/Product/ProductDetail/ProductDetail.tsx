@@ -438,6 +438,28 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         );
     };
 
+    // Compare-with-similar-products states
+    const [compareSlots, setCompareSlots] = useState<Array<any | null>>([null, null]);
+    const [compareCandidates, setCompareCandidates] = useState<any[]>([]);
+    const [compareDrawerSlot, setCompareDrawerSlot] = useState<number | null>(null);
+    const [compareSearch, setCompareSearch] = useState('');
+    const [compareSearchResults, setCompareSearchResults] = useState<any[]>([]);
+    // When the admin curated a pool of products, these are the pool indexes shown
+    // in slots 1 & 2 on the page (so the rest are available to swap via the drawer).
+    const [compareVisiblePoolIdx, setCompareVisiblePoolIdx] = useState<[number, number]>([0, 1]);
+    // The compare table hides its 3rd product column ≤768px (see ProductDetail.module.css).
+    // We mirror that breakpoint in JS so the picker drawer can skip the "already taken by
+    // the other visible slot" lock — that lock is meaningless when slot 2 isn't on screen.
+    const [isCompareMobile, setIsCompareMobile] = useState(false);
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const mq = window.matchMedia('(max-width: 768px)');
+        const update = () => setIsCompareMobile(mq.matches);
+        update();
+        mq.addEventListener('change', update);
+        return () => mq.removeEventListener('change', update);
+    }, []);
+
     // Related & Reviews states
     const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
     const [reviews, setReviews] = useState<any[]>([]);
@@ -449,6 +471,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
     const [reviewError, setReviewError] = useState('');
     const [cartAdded, setCartAdded] = useState(false);
+    const [showBundleModal, setShowBundleModal] = useState(false);
+    const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -527,12 +551,33 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         ].filter(Boolean);
                         fetchRelated(categoriesToTry, data.data.id);
                     }
+                    // Compare pool: prefer the most specific category the product belongs to.
+                    fetchCompareCandidates(
+                        data.data.sub_sub_category_id || data.data.sub_category_id || data.data.category_id || data.data.category_slug,
+                        data.data.id
+                    );
                     fetchReviews(data.data.id);
                 }
             } catch (err) {
                 console.error("Error fetching product:", err);
             } finally {
                 setLoading(false);
+            }
+        };
+
+        const fetchCompareCandidates = async (category: string | number | null, currentProductId: number) => {
+            if (!category) return;
+            try {
+                const res = await fetch(`${API_BASE_URL}/products?category=${category}&limit=40`, { credentials: 'include' });
+                const data = await res.json();
+                if (data.success) {
+                    const filtered = (data.data || []).filter((p: any) => p.id !== currentProductId);
+                    setCompareCandidates(filtered);
+                    // Seed the two adjacent slots with the first two same-category products.
+                    setCompareSlots([filtered[0] || null, filtered[1] || null]);
+                }
+            } catch (err) {
+                console.error('Error fetching compare candidates:', err);
             }
         };
 
@@ -593,6 +638,33 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             window.removeEventListener('resize', checkHeight);
         };
     }, [product, locale]);
+
+    // Whenever the user picks a different option combo (e.g. another color),
+    // restart the gallery at the first image — declared up here so it always runs,
+    // ahead of any `if (!product) return` early-out below.
+    useEffect(() => {
+        setCurrentImageIndex(0);
+    }, [selectedValues]);
+
+    // Reset the visible compare slots (admin-curated mode) whenever the product changes.
+    useEffect(() => {
+        setCompareVisiblePoolIdx([0, 1]);
+    }, [product?.id]);
+
+    // Compare drawer search — filter the already-loaded same-category pool client-side
+    // (avoids a server roundtrip per keystroke; the pool is small, scoped to one category).
+    useEffect(() => {
+        const q = compareSearch.trim().toLowerCase();
+        if (!q) { setCompareSearchResults(compareCandidates); return; }
+        setCompareSearchResults(
+            compareCandidates.filter((p: any) => {
+                const name = String(p.name || '').toLowerCase();
+                const nameAr = String(p.name_ar || '').toLowerCase();
+                const model = String(p.model || '').toLowerCase();
+                return name.includes(q) || nameAr.includes(q) || model.includes(q);
+            })
+        );
+    }, [compareSearch, compareCandidates]);
 
     // Publish current product to the chatbot's page-context channel
     useEffect(() => {
@@ -920,8 +992,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const baseImages: string[] = product.images?.length > 0
         ? product.images.map((img: any) => resolveUrl(img.image_url))
         : ['/assets/placeholder-image.webp'];
-    const images: string[] = (selectedVariant && !selectedVariant.use_primary_image && selectedVariant.image_url)
-        ? [resolveUrl(selectedVariant.image_url), ...baseImages]
+    // When a variant is selected with its own gallery, show ONLY that variant's images.
+    const variantImageUrls: string[] = (selectedVariant && !selectedVariant.use_primary_image)
+        ? (Array.isArray(selectedVariant.image_urls) && selectedVariant.image_urls.length > 0
+            ? selectedVariant.image_urls
+            : (selectedVariant.image_url ? [selectedVariant.image_url] : []))
+        : [];
+    const images: string[] = variantImageUrls.length > 0
+        ? variantImageUrls.map((u: string) => resolveUrl(u))
         : baseImages;
 
     const variantLabel = selectedVariant
@@ -951,14 +1029,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     };
 
 
-    const handleAddToCart = async () => {
+    const freeGifts: any[] = Array.isArray((product as any)?.free_gift_products) ? (product as any).free_gift_products : [];
+    const hasFreeGifts = freeGifts.length > 0;
+    const activeGiftId = selectedGiftId !== null && freeGifts.some(g => g.id === selectedGiftId)
+        ? selectedGiftId
+        : (freeGifts[0]?.id ?? null);
+    const activeGift = freeGifts.find(g => g.id === activeGiftId) || null;
+
+    const performAddToCart = async (withGifts: boolean) => {
         if (hasVariants && !selectedVariant) {
             showNotification(t('selectOptionsFirst', { defaultValue: 'Please select all options first' }), 'error');
-            return;
+            return false;
         }
         if (isCustomizable && !customAllValid) {
             showNotification(t('enterValidDimensions', { defaultValue: 'Please enter valid dimensions within the allowed ranges' }), 'error');
-            return;
+            return false;
         }
         const customLabel = isCustomizable
             ? customDimensionList.map(d => `${d.charAt(0).toUpperCase() + d.slice(1)}: ${customDims[d]}cm`).join(' / ')
@@ -979,10 +1064,49 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             custom_dimensions: isCustomizable ? { ...customDims } : undefined
         });
 
+        if (success && withGifts && activeGift) {
+            // Add the selected free gift as a separate cart line at price 0, tied to the parent product.
+            const giftCatalogPrice = Number(activeGift.offer_price) > 0
+                ? Number(activeGift.offer_price)
+                : Number(activeGift.price || 0);
+            await addToCart({
+                id: activeGift.id,
+                variant_id: null,
+                name: activeGift.name,
+                price: 0,
+                original_price: giftCatalogPrice,
+                image: activeGift.primary_image,
+                brand: activeGift.brand_name || '',
+                slug: activeGift.slug,
+                quantity: 1,
+                is_free_gift: true,
+                bundle_parent_id: product.id
+            }, { silent: true });
+        }
+
         if (success) {
             setCartAdded(true);
             setTimeout(() => setCartAdded(false), 2000);
         }
+        return success;
+    };
+
+    const handleAddToCart = async () => {
+        // If this product has free-gift bundles, offer them via the modal first.
+        if (hasFreeGifts) {
+            // Still validate selection before opening the modal so the user fixes it now.
+            if (hasVariants && !selectedVariant) {
+                showNotification(t('selectOptionsFirst', { defaultValue: 'Please select all options first' }), 'error');
+                return;
+            }
+            if (isCustomizable && !customAllValid) {
+                showNotification(t('enterValidDimensions', { defaultValue: 'Please enter valid dimensions within the allowed ranges' }), 'error');
+                return;
+            }
+            setShowBundleModal(true);
+            return;
+        }
+        await performAddToCart(false);
     };
 
     const toggleAccordion = (key: string) => {
@@ -1443,18 +1567,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     <div id="TabbyPromo"></div>
                                 </div>
 
-                                {/* Extra Services */}
-                                <div className={styles.extraServicesSection}>
-                                    <div className={styles.priceMatchCard} onClick={() => setShowPriceMatchModal(true)}>
-                                        <Tag className={styles.priceMatchIcon} size={24} fill="currentColor" />
-                                        <div className={styles.priceMatchInfo}>
-                                            <span className={styles.priceMatchMain}>{t('getPriceMatch') || 'Get A Price Match'}</span>
-                                            <span className={styles.priceMatchSub}>{t('priceMatchSub') || '+ 5% Store Credit'}</span>
-                                        </div>
-                                        <ChevronRight size={20} className={styles.chevronIcon} />
-                                    </div>
-                                </div>
-
                                 {isCustomizable && customDimensionList.length > 0 && (
                                     <div className={styles.customSizingCard}>
                                         <div className={styles.customSizingHeader}>
@@ -1652,6 +1764,70 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             ? t('selectOptions', { defaultValue: 'Select options' })
                                             : (effectiveStock > 0 ? t('addToCart') : t('outOfStock')))}
                                 </button>
+
+                                {/* Extra Services — placed after Add to Cart */}
+                                <div className={styles.extraServicesSection}>
+                                    <div className={styles.priceMatchCard} onClick={() => setShowPriceMatchModal(true)}>
+                                        <Tag className={styles.priceMatchIcon} size={24} fill="currentColor" />
+                                        <div className={styles.priceMatchInfo}>
+                                            <span className={styles.priceMatchMain}>{t('getPriceMatch') || 'Get A Price Match'}</span>
+                                            <span className={styles.priceMatchSub}>{t('priceMatchSub') || '+ 5% Store Credit'}</span>
+                                        </div>
+                                        <ChevronRight size={20} className={styles.chevronIcon} />
+                                    </div>
+                                </div>
+
+                                {/* Bundle Promo — inline card; customer picks ONE free gift */}
+                                {hasFreeGifts && (
+                                    <div className={styles.bundleCard}>
+                                        <div className={styles.bundleHeader}>
+                                            <strong>{isArabic ? 'إنشاء حزمة' : 'Create a bundle'}</strong>
+                                            <span> — {isArabic
+                                                ? 'اختر أحد المنتجات أدناه'
+                                                : 'select one of the products below'}</span>
+                                        </div>
+                                        <div className={styles.bundleList} role="radiogroup">
+                                            {freeGifts.map((g: any) => {
+                                                const isSelected = g.id === activeGiftId;
+                                                return (
+                                                    <div
+                                                        key={g.id}
+                                                        role="radio"
+                                                        aria-checked={isSelected}
+                                                        tabIndex={0}
+                                                        onClick={() => setSelectedGiftId(g.id)}
+                                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedGiftId(g.id); } }}
+                                                        className={`${styles.bundleItem} ${isSelected ? styles.bundleItemSelected : styles.bundleItemUnselected}`}
+                                                    >
+                                                        <span className={`${styles.bundleRadio} ${isSelected ? styles.bundleRadioOn : ''}`} aria-hidden="true" />
+                                                        {g.primary_image && (
+                                                            <img src={g.primary_image} alt={g.name} className={styles.bundleItemImg} />
+                                                        )}
+                                                        <div className={styles.bundleItemInfo}>
+                                                            <div className={styles.bundleItemName}>{isArabic ? (g.name_ar || g.name) : g.name}</div>
+                                                            <div className={styles.bundleItemPriceRow}>
+                                                                {Number(g.price) > 0 && (
+                                                                    <span className={styles.bundleItemOldPrice}>
+                                                                        <CurrencyPrice amount={Number(g.price)} />
+                                                                    </span>
+                                                                )}
+                                                                <span className={styles.bundleItemFree}>{isArabic ? 'مجاناً' : 'FREE'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className={styles.bundleAddBtn}
+                                            onClick={() => performAddToCart(true)}
+                                            disabled={effectiveStock === 0 || (hasVariants && !selectedVariant) || (isCustomizable && !customAllValid) || !activeGift}
+                                        >
+                                            {isArabic ? 'إضافة المنتج + الهدية إلى السلة' : 'Add product + gift to cart'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -1731,22 +1907,41 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                                             if (lines.length > 1) {
                                                 return (
-                                                    <ul className={styles.specsList}>
-                                                        {lines.map((line, idx) => {
-                                                            const parts = line.split(':');
-                                                            if (parts.length >= 2) {
-                                                                const label = parts[0].trim();
-                                                                const value = parts.slice(1).join(':').trim();
+                                                    <table className={styles.specsTable}>
+                                                        <tbody>
+                                                            {lines.map((line, idx) => {
+                                                                const trimmed = line.trim();
+                                                                // Prefer "Label: value" split. If no colon, fall back to first-whitespace
+                                                                // split so plain rows like "CAPICETY 12 TRAY" still render as a key/value pair.
+                                                                let label = '';
+                                                                let value = '';
+                                                                const colonIdx = trimmed.indexOf(':');
+                                                                if (colonIdx > 0) {
+                                                                    label = trimmed.slice(0, colonIdx).trim();
+                                                                    value = trimmed.slice(colonIdx + 1).trim();
+                                                                } else {
+                                                                    const wsIdx = trimmed.search(/\s/);
+                                                                    if (wsIdx > 0) {
+                                                                        label = trimmed.slice(0, wsIdx).trim();
+                                                                        value = trimmed.slice(wsIdx + 1).trim();
+                                                                    }
+                                                                }
+                                                                if (label && value) {
+                                                                    return (
+                                                                        <tr key={idx}>
+                                                                            <td className={styles.specLabel}>{label}</td>
+                                                                            <td className={styles.specValue}>{value}</td>
+                                                                        </tr>
+                                                                    );
+                                                                }
                                                                 return (
-                                                                    <li key={idx} className={styles.specItem}>
-                                                                        <span className={styles.specLabel}>{label}</span>
-                                                                        <span className={styles.specValue}>{value}</span>
-                                                                    </li>
+                                                                    <tr key={idx}>
+                                                                        <td className={styles.specItemSingle} colSpan={2}>{trimmed}</td>
+                                                                    </tr>
                                                                 );
-                                                            }
-                                                            return <li key={idx} className={styles.specItemSingle}>{line.trim()}</li>;
-                                                        })}
-                                                    </ul>
+                                                            })}
+                                                        </tbody>
+                                                    </table>
                                                 );
                                             }
                                             return <div className={styles.descriptionText} dangerouslySetInnerHTML={{ __html: cleaned }} />;
@@ -1902,12 +2097,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                                 return (
                                     <div className={styles.stickyVideoWrapper}>
-                                        <div className={styles.videoHeader}>
-                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="#e31e24">
-                                                <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z" />
-                                            </svg>
-                                            <h3>{t('featuredVideo') || 'Featured Video'}</h3>
-                                        </div>
                                         <div className={styles.videoContainer}>
                                             <iframe
                                                 src={getEmbedUrl(featuredUrl)}
@@ -1947,6 +2136,203 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
 
                 {/* --- New Sections (Bottom) --- */}
+
+                {/* Compare with similar products */}
+                {(() => {
+                    const adminCfg = (product as any)?.compare_config;
+                    const adminEnabled = !!adminCfg?.enabled;
+                    const adminSlotProducts: any[] = Array.isArray((product as any)?.compare_slot_products)
+                        ? (product as any).compare_slot_products
+                        : [];
+                    // When admin curation is on, ignore the auto-fetched category pool.
+                    if (!adminEnabled && compareCandidates.length === 0) return null;
+                    if (adminEnabled && adminSlotProducts.length === 0 && (!adminCfg.rows || adminCfg.rows.length === 0)) return null;
+                    const slot0 = product;
+                    // When admin curation is on, the two visible slots come from the curated pool
+                    // via compareVisiblePoolIdx; remaining pool entries are drawer-swappable.
+                    const visibleIdx = compareVisiblePoolIdx;
+                    const slotProducts: any[] = adminEnabled
+                        ? [slot0, adminSlotProducts[visibleIdx[0]] || null, adminSlotProducts[visibleIdx[1]] || null]
+                        : [slot0, compareSlots[0], compareSlots[1]];
+
+                    // Common UTF-8 → Latin-1 mojibake fixes (e.g. "â€¢" → "•") so spec rows
+                    // imported with the wrong encoding still display cleanly.
+                    const fixMojibake = (s: string) => s
+                        .replace(/â€¢/g, '•')
+                        .replace(/â€"/g, '—')
+                        .replace(/â€"/g, '–')
+                        .replace(/â€˜/g, '‘')
+                        .replace(/â€™/g, '’')
+                        .replace(/â€œ/g, '“')
+                        .replace(/â€/g, '”')
+                        .replace(/Â°/g, '°')
+                        .replace(/Â/g, '');
+
+                    // Spec rows to never show in the compare table (case-insensitive label match).
+                    const compareLabelDenylist = new Set([
+                        'plate dim',
+                        'container for liquid fat',
+                        'standard features (heg)'
+                    ]);
+
+                    const parseSpecs = (raw: string | null | undefined): Map<string, string> => {
+                        const m = new Map<string, string>();
+                        if (!raw) return m;
+                        const cleaned = fixMojibake(cleanShortcodes(String(raw)))
+                            .replace(/<[^>]*>/g, '\n')
+                            .replace(/^[•\s✳️✅\-â€¢]+\s*/gm, '');
+                        const lines = cleaned.split(/\n/).filter(l => l.trim() !== '');
+                        for (const line of lines) {
+                            const parts = line.split(':');
+                            if (parts.length >= 2) {
+                                const label = parts[0].trim();
+                                const value = parts.slice(1).join(':').trim();
+                                if (!label || !value) continue;
+                                if (compareLabelDenylist.has(label.toLowerCase())) continue;
+                                if (!m.has(label)) m.set(label, value);
+                            }
+                        }
+                        return m;
+                    };
+
+                    const specMaps = slotProducts.map(p => parseSpecs(p?.specifications));
+
+                    // Build the union of attribute labels, preserving the order they first appear (left → right).
+                    const seen = new Set<string>();
+                    const allLabels: string[] = [];
+                    specMaps.forEach(m => {
+                        m.forEach((_, label) => {
+                            if (!seen.has(label)) { seen.add(label); allLabels.push(label); }
+                        });
+                    });
+
+                    // Admin-curated rows take precedence over auto-parsed labels.
+                    const adminRows: Array<{ label: string; label_ar?: string; values: string[]; values_ar?: string[] }> = adminEnabled && Array.isArray(adminCfg?.rows)
+                        ? adminCfg.rows
+                        : [];
+
+                    const priceOf = (p: any) => {
+                        if (!p) return null;
+                        const o = Number(p.offer_price);
+                        return o > 0 ? o : Number(p.price);
+                    };
+
+                    return (
+                        <div className={`${styles.extraSection} ${styles.compareSection}`}>
+                            <div className={styles.sectionTitle}>
+                                <h2>{isArabic ? 'قارن مع منتجات مماثلة' : 'Compare with similar products'}</h2>
+                            </div>
+
+                            <div className={styles.compareTableWrapper}>
+                                <table className={styles.compareTable}>
+                                    <colgroup>
+                                        <col />
+                                        <col />
+                                        <col />
+                                        <col />
+                                    </colgroup>
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            {slotProducts.map((p, idx) => (
+                                                <th key={idx}>
+                                                    {p ? (
+                                                        <div className={styles.compareHeadCell}>
+                                                            <img
+                                                                src={resolveUrl(p.primary_image || p.images?.[0]?.image_url) || '/assets/placeholder-image.webp'}
+                                                                alt={p.name}
+                                                                className={styles.compareHeadImg}
+                                                            />
+                                                            <div className={styles.compareHeadName}>
+                                                                {isArabic ? (p.name_ar || p.name) : p.name}
+                                                            </div>
+                                                            {idx === 0 ? (
+                                                                <div className={styles.compareThisProduct}>{isArabic ? 'هذا المنتج' : 'This Product'}</div>
+                                                            ) : (
+                                                                // In admin mode, only offer the swap button when the curated pool has
+                                                                // at least one extra product beyond what's already on screen.
+                                                                (!adminEnabled || adminSlotProducts.length > 2) && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className={styles.compareChangeBtn}
+                                                                        onClick={() => { setCompareSearch(''); setCompareDrawerSlot(idx - 1); }}
+                                                                    >
+                                                                        {isArabic ? 'تغيير المنتج' : 'Change Product'}
+                                                                    </button>
+                                                                )
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className={styles.compareHeadCell}>
+                                                            <div className={styles.compareEmptyTile}>—</div>
+                                                            {!adminEnabled && (
+                                                                <button
+                                                                    type="button"
+                                                                    className={styles.compareChangeBtn}
+                                                                    onClick={() => { setCompareSearch(''); setCompareDrawerSlot(idx - 1); }}
+                                                                >
+                                                                    {isArabic ? 'اختر منتج' : 'Pick a product'}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td className={styles.compareRowLabel}>{isArabic ? 'السعر' : 'Price'}</td>
+                                            {slotProducts.map((p, idx) => {
+                                                const price = priceOf(p);
+                                                return (
+                                                    <td key={idx} className={styles.compareCell}>
+                                                        {price !== null ? <CurrencyPrice amount={Number(price)} /> : '—'}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                        {adminRows.length > 0
+                                            ? adminRows.map((row, ri) => {
+                                                // values[0] is "this product"; values[1 + poolIdx] maps to the curated product at that pool position.
+                                                // In Arabic locale, prefer the *_ar variants but fall back to EN when empty.
+                                                const pickCell = (idx: number) => {
+                                                    const en = row.values?.[idx] || '';
+                                                    const ar = row.values_ar?.[idx] || '';
+                                                    return isArabic ? (ar || en) : en;
+                                                };
+                                                const cellValues = [
+                                                    pickCell(0),
+                                                    pickCell(1 + visibleIdx[0]),
+                                                    pickCell(1 + visibleIdx[1])
+                                                ];
+                                                const rowLabel = isArabic ? (row.label_ar || row.label) : row.label;
+                                                return (
+                                                    <tr key={`admin-${ri}-${rowLabel}`}>
+                                                        <td className={styles.compareRowLabel}>{rowLabel}</td>
+                                                        {cellValues.map((v, ci) => (
+                                                            <td key={ci} className={styles.compareCell}>
+                                                                {v && v.trim() ? v : '—'}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                );
+                                            })
+                                            : allLabels.map(label => (
+                                                <tr key={label}>
+                                                    <td className={styles.compareRowLabel}>{label}</td>
+                                                    {specMaps.map((m, idx) => (
+                                                        <td key={idx} className={styles.compareCell}>{m.get(label) || '—'}</td>
+                                                    ))}
+                                                </tr>
+                                            ))
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    );
+                })()}
 
                 {/* You may also need */}
                 {
@@ -2333,6 +2719,222 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         </div>
                     )
                 }
+
+                {/* Compare Drawer — auto mode searches same-category pool; admin mode lists curated picks */}
+                {compareDrawerSlot !== null && (() => {
+                    const adminCfg = (product as any)?.compare_config;
+                    const adminEnabled = !!adminCfg?.enabled;
+                    const adminPool: any[] = Array.isArray((product as any)?.compare_slot_products)
+                        ? (product as any).compare_slot_products
+                        : [];
+                    const getPrice = (p: any) => Number(p?.offer_price && Number(p.offer_price) > 0 ? p.offer_price : p?.price) || 0;
+                    const getImg = (p: any) => resolveUrl(p?.primary_image || (p?.images && p.images[0]?.image_url)) || '/assets/placeholder-image.webp';
+
+                    // In admin mode, attach a poolIdx to each option so picking can update
+                    // the visible-pool index instead of replacing the product directly.
+                    const adminListRows = adminEnabled
+                        ? adminPool
+                            .map((p: any, poolIdx: number) => ({ p, poolIdx }))
+                            .filter(({ p }) => p)
+                            .filter(({ p }) => {
+                                const q = compareSearch.trim().toLowerCase();
+                                if (!q) return true;
+                                return String(p.name || '').toLowerCase().includes(q)
+                                    || String(p.name_ar || '').toLowerCase().includes(q);
+                            })
+                        : null;
+
+                    return (
+                        <>
+                            <div className={styles.compareDrawerOverlay} onClick={() => setCompareDrawerSlot(null)} />
+                            <div className={styles.compareDrawer}>
+                                <div className={styles.compareDrawerHeader}>
+                                    <h3>{isArabic ? 'مقارنة' : 'Comparison'}</h3>
+                                    <button className={styles.compareDrawerClose} onClick={() => setCompareDrawerSlot(null)} aria-label="Close">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                                <div className={styles.compareDrawerSearchWrap}>
+                                    <input
+                                        type="text"
+                                        className={styles.compareDrawerSearch}
+                                        placeholder={isArabic ? 'ابحث عن منتج' : 'Search for a product'}
+                                        value={compareSearch}
+                                        onChange={(e) => setCompareSearch(e.target.value)}
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className={styles.compareDrawerList}>
+                                    {adminEnabled ? (
+                                        (adminListRows || []).length === 0 ? (
+                                            <div className={styles.compareDrawerEmpty}>
+                                                {isArabic ? 'لم يتم العثور على منتجات' : 'No products found'}
+                                            </div>
+                                        ) : (
+                                            (adminListRows || []).map(({ p, poolIdx }) => {
+                                                const visibleIdx = compareVisiblePoolIdx;
+                                                const otherSlotIdx = compareDrawerSlot === 0 ? 1 : 0;
+                                                const isSelected = visibleIdx[compareDrawerSlot] === poolIdx;
+                                                // On mobile, slot 2 is hidden so its "ownership" of a product
+                                                // shouldn't block selection. We instead swap it on pick (below).
+                                                const disabled = !isCompareMobile && visibleIdx[otherSlotIdx] === poolIdx;
+                                                const rowPrice = getPrice(p);
+                                                return (
+                                                    <button
+                                                        key={p.id}
+                                                        type="button"
+                                                        disabled={disabled}
+                                                        className={`${styles.compareDrawerRow} ${isSelected ? styles.compareDrawerRowOn : ''}`}
+                                                        onClick={() => {
+                                                            setCompareVisiblePoolIdx(prev => {
+                                                                const next: [number, number] = [...prev] as [number, number];
+                                                                // If the picked product is currently in the (hidden) other slot,
+                                                                // swap so the hidden slot inherits this slot's previous pick.
+                                                                // Avoids both visible columns showing the same product when the
+                                                                // viewport widens back to desktop.
+                                                                if (prev[otherSlotIdx] === poolIdx) {
+                                                                    next[otherSlotIdx] = prev[compareDrawerSlot as number];
+                                                                }
+                                                                next[compareDrawerSlot as number] = poolIdx;
+                                                                return next;
+                                                            });
+                                                            setCompareDrawerSlot(null);
+                                                        }}
+                                                    >
+                                                        <img className={styles.compareDrawerRowImg} src={getImg(p)} alt="" />
+                                                        <span className={styles.compareDrawerRowMeta}>
+                                                            <span className={styles.compareDrawerRowName}>
+                                                                {isArabic ? (p.name_ar || p.name) : p.name}
+                                                            </span>
+                                                            {rowPrice > 0 && (
+                                                                <span className={styles.compareDrawerRowPrice}>
+                                                                    <CurrencyPrice amount={rowPrice} />
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                        <span className={`${styles.compareDrawerRadio} ${isSelected ? styles.compareDrawerRadioOn : ''}`} aria-hidden="true" />
+                                                    </button>
+                                                );
+                                            })
+                                        )
+                                    ) : (
+                                        compareSearchResults.length === 0 ? (
+                                            <div className={styles.compareDrawerEmpty}>
+                                                {isArabic ? 'لم يتم العثور على منتجات' : 'No products found'}
+                                            </div>
+                                        ) : (
+                                            compareSearchResults.map((p: any) => {
+                                                const otherSlotIdx = compareDrawerSlot === 0 ? 1 : 0;
+                                                const otherPick = compareSlots[otherSlotIdx];
+                                                const currentPick = compareSlots[compareDrawerSlot];
+                                                const isSelected = currentPick && currentPick.id === p.id;
+                                                const disabled = otherPick && otherPick.id === p.id;
+                                                const rowPrice = getPrice(p);
+                                                return (
+                                                    <button
+                                                        key={p.id}
+                                                        type="button"
+                                                        disabled={!!disabled}
+                                                        className={`${styles.compareDrawerRow} ${isSelected ? styles.compareDrawerRowOn : ''}`}
+                                                        onClick={() => {
+                                                            setCompareSlots(prev => {
+                                                                const next = [...prev];
+                                                                next[compareDrawerSlot] = p;
+                                                                return next;
+                                                            });
+                                                            setCompareDrawerSlot(null);
+                                                        }}
+                                                    >
+                                                        <img className={styles.compareDrawerRowImg} src={getImg(p)} alt="" />
+                                                        <span className={styles.compareDrawerRowMeta}>
+                                                            <span className={styles.compareDrawerRowName}>
+                                                                {isArabic ? (p.name_ar || p.name) : p.name}
+                                                            </span>
+                                                            {rowPrice > 0 && (
+                                                                <span className={styles.compareDrawerRowPrice}>
+                                                                    <CurrencyPrice amount={rowPrice} />
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                        <span className={`${styles.compareDrawerRadio} ${isSelected ? styles.compareDrawerRadioOn : ''}`} aria-hidden="true" />
+                                                    </button>
+                                                );
+                                            })
+                                        )
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    );
+                })()}
+
+                {/* Bundle Upsell Modal — appears when user clicks the main Add to Cart */}
+                {showBundleModal && hasFreeGifts && (
+                    <div className={styles.bundleModalOverlay} onClick={() => setShowBundleModal(false)}>
+                        <div className={styles.bundleModal} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.bundleModalHeader}>
+                                <div>
+                                    <h3 className={styles.bundleModalTitle}>{isArabic ? 'إنشاء حزمة' : 'Create a bundle'}</h3>
+                                    <p className={styles.bundleModalSub}>
+                                        {isArabic
+                                            ? 'يمكنك إضافة منتج إضافي إلى سلتك بسعر مميز'
+                                            : 'You can add an extra product to your cart at a special price'}
+                                    </p>
+                                </div>
+                                <button className={styles.bundleModalClose} onClick={() => setShowBundleModal(false)} aria-label="Close">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className={styles.bundleList} role="radiogroup">
+                                {freeGifts.map((g: any) => {
+                                    const isSelected = g.id === activeGiftId;
+                                    return (
+                                        <div
+                                            key={g.id}
+                                            role="radio"
+                                            aria-checked={isSelected}
+                                            tabIndex={0}
+                                            onClick={() => setSelectedGiftId(g.id)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedGiftId(g.id); } }}
+                                            className={`${styles.bundleItem} ${isSelected ? styles.bundleItemSelected : styles.bundleItemUnselected}`}
+                                        >
+                                            <span className={`${styles.bundleRadio} ${isSelected ? styles.bundleRadioOn : ''}`} aria-hidden="true" />
+                                            {g.primary_image && (
+                                                <img src={g.primary_image} alt={g.name} className={styles.bundleItemImg} />
+                                            )}
+                                            <div className={styles.bundleItemInfo}>
+                                                <div className={styles.bundleItemName}>{isArabic ? (g.name_ar || g.name) : g.name}</div>
+                                                <div className={styles.bundleItemFree}>{isArabic ? 'مجاناً' : 'FREE'}</div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className={styles.bundleModalActions}>
+                                <button
+                                    className={styles.bundleModalAddBtn}
+                                    onClick={async () => {
+                                        setShowBundleModal(false);
+                                        await performAddToCart(true);
+                                    }}
+                                >
+                                    {isArabic ? 'إضافة منتج إضافي إلى السلة' : 'Add extra product to the cart'}
+                                </button>
+                                <button
+                                    className={styles.bundleModalSkipBtn}
+                                    onClick={async () => {
+                                        setShowBundleModal(false);
+                                        await performAddToCart(false);
+                                    }}
+                                >
+                                    {isArabic ? 'تخطي' : 'Skip'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div >
             {/* Fullscreen Image Overlay */}
             {

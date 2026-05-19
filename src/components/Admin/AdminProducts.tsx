@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminProducts.module.css';
-import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag, Ruler, MoveHorizontal, MoveVertical } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag, Ruler, MoveHorizontal, MoveVertical, Scale } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
@@ -60,10 +60,10 @@ const t = (key: string, params?: Record<string, any>): string => {
         'modal.editTitle': 'Edit Product',
         'modal.addTitle': 'Add Product',
         'modal.tabs.basic': 'Basic Info',
-        'modal.tabs.content': 'Content',
-        'modal.tabs.logic': 'Logic',
-        'modal.tabs.deals': 'Deals',
-        'modal.tabs.visual': 'Visual',
+        'modal.tabs.content': 'Description & Specs',
+        'modal.tabs.logic': 'Pricing & Stock',
+        'modal.tabs.deals': 'Category & Brand',
+        'modal.tabs.visual': 'Images',
         'modal.fields.name': 'Product Name',
         'modal.fields.namePlaceholder': 'Enter product name',
         'modal.fields.nameAr': 'Product Name (Arabic)',
@@ -78,7 +78,8 @@ const t = (key: string, params?: Record<string, any>): string => {
         'modal.fields.shortDesc': 'Short Description',
         'modal.fields.shortDescAr': 'Short Description (Arabic)',
         'modal.fields.specs': 'Specifications',
-        'modal.fields.logicSubtitle': 'Set pricing, category, and inventory details',
+        'modal.fields.logicSubtitle': 'Set price, discount, offer, and stock',
+        'modal.fields.dealsSubtitle': 'Choose category, sub-category, and brand',
         'modal.fields.price': 'Price (AED)',
         'modal.fields.discount': 'Discount %',
         'modal.fields.offerPrice': 'Offer Price',
@@ -121,6 +122,45 @@ const t = (key: string, params?: Record<string, any>): string => {
         'footer.save': 'Save Product',
     };
     return map[key] ?? key;
+};
+
+// Parse a product's free-form specifications string into ordered label/value pairs.
+// Accepts:  "Capacity: 12 trays"  →  { label: "Capacity", value: "12 trays" }
+// Falls back to first-whitespace split: "DIM 20X40X60" → { label: "DIM", value: "20X40X60" }.
+const parseSpecLines = (raw: string | null | undefined): Array<{ label: string; value: string }> => {
+    if (!raw) return [];
+    const cleaned = String(raw)
+        .replace(/<[^>]*>/g, '\n')
+        .replace(/^[•\s✳️✅\-]+/gm, '')
+        .trim();
+    const out: Array<{ label: string; value: string }> = [];
+    const seen = new Set<string>();
+    for (const line of cleaned.split(/\n+/)) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        let label = '';
+        let value = '';
+        const colonIdx = trimmed.indexOf(':');
+        if (colonIdx > 0) {
+            label = trimmed.slice(0, colonIdx).trim();
+            value = trimmed.slice(colonIdx + 1).trim();
+        } else {
+            const wsIdx = trimmed.search(/\s/);
+            if (wsIdx > 0) {
+                label = trimmed.slice(0, wsIdx).trim();
+                value = trimmed.slice(wsIdx + 1).trim();
+            } else {
+                label = trimmed;
+                value = '';
+            }
+        }
+        if (!label || !value) continue;
+        const key = label.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({ label, value });
+    }
+    return out;
 };
 
 // Searchable Select Component
@@ -218,6 +258,22 @@ const AdminProducts = () => {
     const [ymanResults, setYmanResults] = useState<any[]>([]);
     const [ymanLoading, setYmanLoading] = useState(false);
     const [ymanSelectedItems, setYmanSelectedItems] = useState<{ id: number; name: string }[]>([]);
+
+    // Free Gift Products picker (bundle / create-a-bundle promo)
+    const [giftSearch, setGiftSearch] = useState('');
+    const [giftResults, setGiftResults] = useState<any[]>([]);
+    const [giftLoading, setGiftLoading] = useState(false);
+    const [giftSelectedItems, setGiftSelectedItems] = useState<{ id: number; name: string }[]>([]);
+
+    // Admin-curated Compare table — slots grow dynamically (admin can add as many as they want)
+    const [compareEnabled, setCompareEnabled] = useState(false);
+    const [compareSlots, setCompareSlots] = useState<Array<{ id: number; name: string }>>([]);
+    const [compareRows, setCompareRows] = useState<Array<{ label: string; label_ar: string; values: string[]; values_ar: string[] }>>([]);
+    const [compareSearch, setCompareSearch] = useState('');
+    const [compareResults, setCompareResults] = useState<any[]>([]);
+    const [compareLoading, setCompareLoading] = useState(false);
+    // null = picker closed; -1 = picker open for a NEW slot; >=0 = swap an existing slot
+    const [compareSlotPicker, setCompareSlotPicker] = useState<number | null>(null);
 
     // Variants state
     const [variantsEnabled, setVariantsEnabled] = useState(false);
@@ -568,6 +624,50 @@ const AdminProducts = () => {
         }, 300);
         return () => clearTimeout(timer);
     }, [ymanSearch, editingId]);
+
+    useEffect(() => {
+        if (!giftSearch.trim()) { setGiftResults([]); return; }
+        const timer = setTimeout(async () => {
+            setGiftLoading(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/products?search=${encodeURIComponent(giftSearch)}&limit=8&page=1&status=all`, {
+                    credentials: 'include',
+                    headers: getAuthHeaders()
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setGiftResults(data.data.filter((p: any) => p.id !== editingId));
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setGiftLoading(false);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [giftSearch, editingId]);
+
+    useEffect(() => {
+        if (!compareSearch.trim()) { setCompareResults([]); return; }
+        const timer = setTimeout(async () => {
+            setCompareLoading(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/products?search=${encodeURIComponent(compareSearch)}&limit=8&page=1&status=all`, {
+                    credentials: 'include',
+                    headers: getAuthHeaders()
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setCompareResults(data.data.filter((p: any) => p.id !== editingId));
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setCompareLoading(false);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [compareSearch, editingId]);
 
     useEffect(() => {
         fetchProducts();
@@ -1007,6 +1107,53 @@ const AdminProducts = () => {
         setYmanSearch('');
         setYmanResults([]);
 
+        let giftItems: { id: number; name: string }[] = [];
+        if (Array.isArray(product.free_gift_products) && product.free_gift_products.length > 0) {
+            giftItems = product.free_gift_products.map((p: any) => ({ id: p.id, name: p.name }));
+        } else if (product.free_gift_product_ids) {
+            try {
+                const ids: number[] = JSON.parse(product.free_gift_product_ids);
+                giftItems = ids.map(id => ({
+                    id,
+                    name: products.find((p: any) => p.id === id)?.name || `Product #${id}`
+                }));
+            } catch (e) { }
+        }
+        setGiftSelectedItems(giftItems);
+        setGiftSearch('');
+        setGiftResults([]);
+
+        // Hydrate admin Compare config
+        let cmpCfg: any = product.compare_config;
+        if (typeof cmpCfg === 'string') {
+            try { cmpCfg = JSON.parse(cmpCfg); } catch (e) { cmpCfg = null; }
+        }
+        const slotProducts: any[] = Array.isArray(product.compare_slot_products) ? product.compare_slot_products : [];
+        const slotIds: any[] = (cmpCfg && Array.isArray(cmpCfg.slots)) ? cmpCfg.slots : [];
+        const loadedSlots: Array<{ id: number; name: string }> = [];
+        for (let i = 0; i < slotIds.length; i++) {
+            const id = slotIds[i];
+            if (!id) continue;
+            const fromEnriched = slotProducts[i];
+            const name = fromEnriched?.name || products.find((p: any) => p.id === id)?.name || `Product #${id}`;
+            loadedSlots.push({ id, name });
+        }
+        setCompareEnabled(!!cmpCfg?.enabled);
+        setCompareSlots(loadedSlots);
+        // Row values must be exactly 1 + slots.length long ("This product" plus one per slot).
+        const targetLen = 1 + loadedSlots.length;
+        setCompareRows(Array.isArray(cmpCfg?.rows) ? cmpCfg.rows.map((r: any) => {
+            const raw = Array.isArray(r?.values) ? r.values.map((v: any) => String(v ?? '')) : [];
+            const rawAr = Array.isArray(r?.values_ar) ? r.values_ar.map((v: any) => String(v ?? '')) : [];
+            const values: string[] = [];
+            const values_ar: string[] = [];
+            for (let i = 0; i < targetLen; i++) { values.push(raw[i] ?? ''); values_ar.push(rawAr[i] ?? ''); }
+            return { label: String(r?.label || ''), label_ar: String(r?.label_ar || ''), values, values_ar };
+        }) : []);
+        setCompareSearch('');
+        setCompareResults([]);
+        setCompareSlotPicker(null);
+
         // Variants
         const hasVariants = Number(product.has_variants) === 1 && Array.isArray(product.options) && product.options.length > 0;
         if (hasVariants) {
@@ -1032,6 +1179,9 @@ const AdminProducts = () => {
                     stock_quantity: v.stock_quantity != null ? String(v.stock_quantity) : '0',
                     use_primary_image: Number(v.use_primary_image) === 1,
                     image_url: v.image_url || '',
+                    image_urls: Array.isArray(v.image_urls) && v.image_urls.length > 0
+                        ? v.image_urls.map((s: any) => String(s)).filter(Boolean)
+                        : (v.image_url ? [v.image_url] : []),
                     is_active: Number(v.is_active) === 1,
                     is_default: Number(v.is_default) === 1
                 };
@@ -1135,6 +1285,15 @@ const AdminProducts = () => {
         setYmanSelectedItems([]);
         setYmanSearch('');
         setYmanResults([]);
+        setGiftSelectedItems([]);
+        setGiftSearch('');
+        setGiftResults([]);
+        setCompareEnabled(false);
+        setCompareSlots([]);
+        setCompareRows([]);
+        setCompareSearch('');
+        setCompareResults([]);
+        setCompareSlotPicker(null);
         setVariantsEnabled(false);
         setVariantOptions([]);
         setVariantRows([]);
@@ -1194,6 +1353,23 @@ const AdminProducts = () => {
                 you_may_also_need: ymanSelectedItems.length > 0
                     ? JSON.stringify(ymanSelectedItems.map(p => p.id))
                     : null,
+                free_gift_product_ids: giftSelectedItems.length > 0
+                    ? JSON.stringify(giftSelectedItems.map(p => p.id))
+                    : null,
+                compare_config: compareEnabled
+                    ? JSON.stringify({
+                        enabled: true,
+                        slots: compareSlots.map(s => s.id),
+                        rows: compareRows
+                            .map(r => ({
+                                label: r.label.trim(),
+                                label_ar: (r.label_ar || '').trim(),
+                                values: Array.from({ length: 1 + compareSlots.length }, (_, i) => r.values[i] || ''),
+                                values_ar: Array.from({ length: 1 + compareSlots.length }, (_, i) => r.values_ar[i] || '')
+                            }))
+                            .filter(r => r.label !== '' || r.label_ar !== '')
+                    })
+                    : null,
                 // Variants payload — only send when enabled; an empty array clears them server-side
                 options: variantsEnabled
                     ? variantOptions.map(o => ({
@@ -1212,7 +1388,8 @@ const AdminProducts = () => {
                         price: v.price === '' ? 0 : Number(v.price),
                         offer_price: v.offer_price === '' ? null : Number(v.offer_price),
                         stock_quantity: v.stock_quantity === '' ? 0 : Number(v.stock_quantity),
-                        image_url: v.image_url || null,
+                        image_url: (Array.isArray(v.image_urls) && v.image_urls.length > 0) ? v.image_urls[0] : (v.image_url || null),
+                        image_urls: Array.isArray(v.image_urls) ? v.image_urls : (v.image_url ? [v.image_url] : []),
                         use_primary_image: v.use_primary_image,
                         is_active: v.is_active,
                         is_default: v.is_default,
@@ -2007,6 +2184,14 @@ const AdminProducts = () => {
                                     <Ruler size={18} />
                                     <span>Customization</span>
                                 </button>
+                                <button
+                                    className={`${styles.navItem} ${activeTab === 'compare' ? styles.activeNav : ''}`}
+                                    onClick={() => setActiveTab('compare')}
+                                    type="button"
+                                >
+                                    <Scale size={18} />
+                                    <span>Compare</span>
+                                </button>
                             </div>
 
                             {/* Main Content Area */}
@@ -2312,7 +2497,7 @@ const AdminProducts = () => {
                                         <div className={styles.tabPane}>
                                             <div className={styles.paneHeader}>
                                                 <h3>{t('modal.tabs.deals')}</h3>
-                                                <p>{t('modal.fields.logicSubtitle')}</p>
+                                                <p>{t('modal.fields.dealsSubtitle')}</p>
                                             </div>
                                             <div className={styles.formGrid}>
                                                 <SearchableSelect label={t('filters.category')} name="category_id" options={categories.filter(c => c.type === 'main_category')} value={formData.category_id} onChange={(e: any) => { handleInputChange(e); setFormData(prev => ({ ...prev, sub_category_id: '', sub_sub_category_id: '', product_group: '', sub_category: '' })); }} />
@@ -2609,6 +2794,128 @@ const AdminProducts = () => {
                                                     </div>
                                                 )}
                                             </div>
+
+                                            {/* Free Gift Products */}
+                                            <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #e2e8f0' }}>
+                                                <div className={styles.paneHeader} style={{ marginBottom: '16px' }}>
+                                                    <h3>Free Gift Products (Bundle)</h3>
+                                                    <p>
+                                                        Pick products to give away free with this item. The product page will show a "Create a bundle" card, and clicking the main Add to Cart will offer the bundle as an upsell. Each selected product is added to the cart at AED 0.
+                                                    </p>
+                                                </div>
+                                                {giftSelectedItems.length > 0 && (
+                                                    <div style={{
+                                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                                        padding: '8px 12px', background: '#fef9c3', border: '1px solid #fde68a',
+                                                        borderRadius: '8px', marginBottom: '12px', fontSize: '12px', color: '#a16207'
+                                                    }}>
+                                                        <Check size={14} />
+                                                        <span>{giftSelectedItems.length} free gift{giftSelectedItems.length !== 1 ? 's' : ''} attached — customers see a bundle offer</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setGiftSelectedItems([])}
+                                                            style={{ marginInlineStart: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#a16207', fontSize: '12px', textDecoration: 'underline', padding: 0 }}
+                                                        >
+                                                            Remove all
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                <div className={styles.formGroup} style={{ maxWidth: '100%' }}>
+                                                    <label>Search & Add Free Gifts</label>
+                                                    <div style={{ position: 'relative', width: '100%' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={giftSearch}
+                                                            onChange={(e) => setGiftSearch(e.target.value)}
+                                                            placeholder="Type a product name..."
+                                                            autoComplete="off"
+                                                            style={{ width: '100%', paddingInlineEnd: '36px' }}
+                                                        />
+                                                        {giftSearch && (
+                                                            <button
+                                                                type="button"
+                                                                onMouseDown={(e) => { e.preventDefault(); setGiftSearch(''); setGiftResults([]); }}
+                                                                style={{
+                                                                    position: 'absolute', insetInlineEnd: '10px', top: '50%',
+                                                                    transform: 'translateY(-50%)', background: 'none', border: 'none',
+                                                                    cursor: 'pointer', color: '#ef4444', display: 'flex', padding: 2
+                                                                }}
+                                                            >
+                                                                <X size={16} />
+                                                            </button>
+                                                        )}
+                                                        {giftSearch.trim() && (giftResults.length > 0 || giftLoading) && (
+                                                            <div style={{
+                                                                position: 'absolute', top: '100%', left: 0, right: 0,
+                                                                background: 'white', border: '1px solid #e5e7eb',
+                                                                borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                                zIndex: 200, maxHeight: '280px', overflowY: 'auto', marginTop: '4px'
+                                                            }}>
+                                                                {giftLoading ? (
+                                                                    <div style={{ padding: '10px 14px', fontSize: '13px', color: '#64748b' }}>Searching...</div>
+                                                                ) : (
+                                                                    giftResults.map(p => {
+                                                                        const alreadyAdded = giftSelectedItems.some(s => s.id === p.id);
+                                                                        return (
+                                                                            <div
+                                                                                key={p.id}
+                                                                                style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px', background: alreadyAdded ? '#fef9c3' : 'white', cursor: 'pointer' }}
+                                                                                onMouseDown={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (alreadyAdded) {
+                                                                                        setGiftSelectedItems(prev => prev.filter(s => s.id !== p.id));
+                                                                                    } else {
+                                                                                        setGiftSelectedItems(prev => [...prev, { id: p.id, name: p.name }]);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                {p.primary_image && <img src={p.primary_image} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
+                                                                                <span style={{ flex: 1, color: alreadyAdded ? '#a16207' : 'inherit' }}>{p.name}</span>
+                                                                                <div
+                                                                                    style={{
+                                                                                        flexShrink: 0, width: 28, height: 28,
+                                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                                        borderRadius: '50%',
+                                                                                        background: alreadyAdded ? '#a16207' : '#3b82f6', color: 'white'
+                                                                                    }}
+                                                                                >
+                                                                                    {alreadyAdded ? <Check size={14} /> : <Plus size={14} />}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {giftSelectedItems.length === 0 ? (
+                                                    <div style={{ textAlign: 'center', padding: '24px 20px', color: '#94a3b8', fontSize: '13px', background: '#fafafa', borderRadius: '8px', border: '1px dashed #e2e8f0' }}>
+                                                        <p style={{ margin: 0 }}>No free gifts attached — leave empty to disable the bundle promo.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                                                        {giftSelectedItems.map((item, idx) => (
+                                                            <div key={item.id} style={{
+                                                                display: 'flex', alignItems: 'center', gap: '10px',
+                                                                padding: '10px 14px', background: '#fffbeb',
+                                                                border: '1px solid #fde68a', borderRadius: '10px'
+                                                            }}>
+                                                                <span style={{ fontSize: '12px', color: '#a16207', width: 20, textAlign: 'center', fontWeight: 700 }}>{idx + 1}</span>
+                                                                <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{item.name}</span>
+                                                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a' }}>FREE</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setGiftSelectedItems(prev => prev.filter(p => p.id !== item.id))}
+                                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 4 }}
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
 
@@ -2827,6 +3134,349 @@ const AdminProducts = () => {
                                                 onVariantsChange={setVariantRows}
                                                 primaryImage={formData.image_url}
                                             />
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'compare' && (
+                                        <div className={styles.tabPane}>
+                                            <div className={styles.paneHeader}>
+                                                <h3>Compare with Similar Products</h3>
+                                                <p>
+                                                    Curate which 2 products appear next to this one in the &ldquo;Compare with similar products&rdquo; table on the product page, and write the row labels / values you want shown. Price is always added automatically.
+                                                </p>
+                                            </div>
+
+                                            <div
+                                                className={`${styles.featureToggleCard} ${compareEnabled ? styles.active : ''}`}
+                                                onClick={() => setCompareEnabled(!compareEnabled)}
+                                            >
+                                                <div className={styles.switch}>
+                                                    <input type="checkbox" checked={compareEnabled} readOnly />
+                                                    <span className={styles.slider}></span>
+                                                </div>
+                                                <div className={styles.featureToggleContent}>
+                                                    <span className={styles.featureToggleTitle}>Enable curated compare table</span>
+                                                    <span className={styles.featureToggleDesc}>When on, the product page uses this manually-defined table instead of auto-parsing specifications.</span>
+                                                </div>
+                                            </div>
+
+                                            {compareEnabled && (
+                                                <>
+                                                    {/* Slot pickers — dynamic; admin can add as many products as they want */}
+                                                    <div style={{ marginTop: 24 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                                            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#475569' }}>
+                                                                Products to compare ({compareSlots.length})
+                                                            </h4>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => { setCompareSlotPicker(-1); setCompareSearch(''); setCompareResults([]); }}
+                                                                style={{
+                                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                                    background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe',
+                                                                    borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                <Plus size={14} /> Add product
+                                                            </button>
+                                                        </div>
+                                                        {compareSlots.length === 0 ? (
+                                                            <div style={{ padding: 24, textAlign: 'center', background: '#f8fafc', border: '1px dashed #e2e8f0', borderRadius: 10, color: '#94a3b8', fontSize: 13 }}>
+                                                                No products selected yet. Click <strong>Add product</strong> to pick one.
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+                                                                {compareSlots.map((slot, slotIdx) => (
+                                                                    <div key={slot.id} style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: 14, background: '#f8fafc' }}>
+                                                                        <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                                                                            Product {slotIdx + 1}
+                                                                        </div>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
+                                                                            <span style={{ fontSize: 13, fontWeight: 500, color: '#0f172a', flex: 1 }}>{slot.name}</span>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    // Remove this slot AND drop the corresponding value column from every row.
+                                                                                    setCompareSlots(prev => prev.filter((_, i) => i !== slotIdx));
+                                                                                    setCompareRows(prev => prev.map(r => ({
+                                                                                        ...r,
+                                                                                        values: r.values.filter((_, i) => i !== slotIdx + 1),
+                                                                                        values_ar: r.values_ar.filter((_, i) => i !== slotIdx + 1)
+                                                                                    })));
+                                                                                }}
+                                                                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 4, display: 'flex' }}
+                                                                                title="Remove"
+                                                                            >
+                                                                                <X size={14} />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {compareSlotPicker !== null && (
+                                                            <div style={{ marginTop: 12, padding: 14, border: '1px solid #e2e8f0', borderRadius: 10 }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>
+                                                                        {compareSlotPicker === -1 ? 'Search to add a product' : `Search to replace product ${compareSlotPicker + 1}`}
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setCompareSlotPicker(null)}
+                                                                        style={{ marginInlineStart: 'auto', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 2 }}
+                                                                    >
+                                                                        <X size={14} />
+                                                                    </button>
+                                                                </div>
+                                                                <input
+                                                                    type="text"
+                                                                    value={compareSearch}
+                                                                    onChange={(e) => setCompareSearch(e.target.value)}
+                                                                    placeholder="Type a product name..."
+                                                                    autoComplete="off"
+                                                                    style={{ width: '100%', padding: '8px 10px', fontSize: 13, border: '1px solid #e2e8f0', borderRadius: 8 }}
+                                                                />
+                                                                {compareSearch.trim() && (compareResults.length > 0 || compareLoading) && (
+                                                                    <div style={{ marginTop: 8, maxHeight: 240, overflowY: 'auto' }}>
+                                                                        {compareLoading ? (
+                                                                            <div style={{ padding: '10px 14px', fontSize: 13, color: '#64748b' }}>Searching...</div>
+                                                                        ) : (
+                                                                            compareResults.map(p => {
+                                                                                // Can't pick the same product twice; allow re-picking the current slot's own product.
+                                                                                const alreadyPicked = compareSlots.some((s, i) => s.id === p.id && i !== compareSlotPicker);
+                                                                                return (
+                                                                                    <button
+                                                                                        key={p.id}
+                                                                                        type="button"
+                                                                                        disabled={alreadyPicked}
+                                                                                        onClick={async () => {
+                                                                                            const isAppend = compareSlotPicker === -1;
+                                                                                            // Index in the values[] array that will hold this product's specs.
+                                                                                            // values[0] = "this product", values[1+slotIdx] = each curated slot.
+                                                                                            const targetCol = isAppend ? (1 + compareSlots.length) : (1 + (compareSlotPicker as number));
+
+                                                                                            if (isAppend) {
+                                                                                                setCompareSlots(prev => [...prev, { id: p.id, name: p.name }]);
+                                                                                                setCompareRows(prev => prev.map(r => ({ ...r, values: [...r.values, ''], values_ar: [...r.values_ar, ''] })));
+                                                                                            } else {
+                                                                                                setCompareSlots(prev => prev.map((s, i) => i === compareSlotPicker ? { id: p.id, name: p.name } : s));
+                                                                                            }
+                                                                                            setCompareSlotPicker(null);
+                                                                                            setCompareSearch('');
+                                                                                            setCompareResults([]);
+
+                                                                                            // Fetch the picked product's full record to access `specifications`
+                                                                                            // (search results may not include it), then merge into the compare rows:
+                                                                                            // existing labels get their cell filled, new labels become new rows.
+                                                                                            try {
+                                                                                                const res = await fetch(`${API_BASE_URL}/products/${p.id}`, { credentials: 'include', headers: getAuthHeaders() });
+                                                                                                const data = await res.json();
+                                                                                                const full = data?.data || data?.product || data;
+                                                                                                const pickedSpecs = parseSpecLines(full?.specifications);
+                                                                                                const pickedSpecsAr = parseSpecLines(full?.specifications_ar);
+                                                                                                // Also pull the *current* product's specs once so values[0] gets filled.
+                                                                                                const ownSpecs = parseSpecLines(formData.specifications);
+                                                                                                const ownSpecsAr = parseSpecLines((formData as any).specifications_ar);
+                                                                                                if (pickedSpecs.length === 0 && pickedSpecsAr.length === 0 && ownSpecs.length === 0 && ownSpecsAr.length === 0) return;
+
+                                                                                                setCompareRows(prev => {
+                                                                                                    // After the slot mutation above, every row's values length equals 1 + compareSlots.length (post-append) or unchanged (swap).
+                                                                                                    const colCount = isAppend ? (2 + compareSlots.length) : (1 + compareSlots.length);
+                                                                                                    const pad = (arr: string[]) => Array.from({ length: colCount }, (_, i) => arr[i] || '');
+                                                                                                    const rows = prev.map(r => ({ ...r, values: pad(r.values), values_ar: pad(r.values_ar) }));
+
+                                                                                                    const findIdx = (label: string) => rows.findIndex(r =>
+                                                                                                        r.label.trim().toLowerCase() === label.trim().toLowerCase()
+                                                                                                        || r.label_ar.trim().toLowerCase() === label.trim().toLowerCase()
+                                                                                                    );
+                                                                                                    const setCell = (rowIdx: number, col: number, value: string, ar: boolean) => {
+                                                                                                        if (ar) rows[rowIdx].values_ar[col] = rows[rowIdx].values_ar[col] || value;
+                                                                                                        else rows[rowIdx].values[col] = rows[rowIdx].values[col] || value;
+                                                                                                    };
+                                                                                                    const upsert = (label: string, value: string, col: number, opts: { ar?: boolean } = {}) => {
+                                                                                                        if (!label || !value) return;
+                                                                                                        let idx = findIdx(label);
+                                                                                                        if (idx === -1) {
+                                                                                                            const blanks = Array.from({ length: colCount }, () => '');
+                                                                                                            rows.push({ label: opts.ar ? '' : label, label_ar: opts.ar ? label : '', values: [...blanks], values_ar: [...blanks] });
+                                                                                                            idx = rows.length - 1;
+                                                                                                        } else if (opts.ar && !rows[idx].label_ar) {
+                                                                                                            rows[idx].label_ar = label;
+                                                                                                        } else if (!opts.ar && !rows[idx].label) {
+                                                                                                            rows[idx].label = label;
+                                                                                                        }
+                                                                                                        setCell(idx, col, value, !!opts.ar);
+                                                                                                    };
+
+                                                                                                    // 1. Current product → column 0.
+                                                                                                    ownSpecs.forEach(({ label, value }) => upsert(label, value, 0));
+                                                                                                    ownSpecsAr.forEach(({ label, value }) => upsert(label, value, 0, { ar: true }));
+                                                                                                    // 2. Picked product → targetCol.
+                                                                                                    pickedSpecs.forEach(({ label, value }) => upsert(label, value, targetCol));
+                                                                                                    pickedSpecsAr.forEach(({ label, value }) => upsert(label, value, targetCol, { ar: true }));
+
+                                                                                                    return rows;
+                                                                                                });
+                                                                                            } catch (err) {
+                                                                                                console.error('Failed to fetch product specs for compare:', err);
+                                                                                            }
+                                                                                        }}
+                                                                                        style={{
+                                                                                            width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                                                                                            padding: '8px 12px', background: 'white', border: '1px solid #f1f5f9',
+                                                                                            borderRadius: 8, cursor: alreadyPicked ? 'not-allowed' : 'pointer',
+                                                                                            opacity: alreadyPicked ? 0.4 : 1, marginBottom: 6, textAlign: 'start'
+                                                                                        }}
+                                                                                    >
+                                                                                        {p.primary_image && <img src={p.primary_image} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4 }} />}
+                                                                                        <span style={{ flex: 1, fontSize: 13 }}>{p.name}</span>
+                                                                                    </button>
+                                                                                );
+                                                                            })
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Row editor */}
+                                                    <div style={{ marginTop: 28 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                                            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#475569' }}>
+                                                                Comparison Rows
+                                                            </h4>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    // New row always carries 1 + slots.length empty cells so the table is consistent.
+                                                                    const empty = Array.from({ length: 1 + compareSlots.length }, () => '');
+                                                                    setCompareRows(prev => [...prev, { label: '', label_ar: '', values: empty, values_ar: [...empty] }]);
+                                                                }}
+                                                                style={{
+                                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                                    background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe',
+                                                                    borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                <Plus size={14} /> Add row
+                                                            </button>
+                                                        </div>
+
+                                                        {compareRows.length === 0 ? (
+                                                            <div style={{ padding: 24, textAlign: 'center', background: '#f8fafc', border: '1px dashed #e2e8f0', borderRadius: 10, color: '#94a3b8', fontSize: 13 }}>
+                                                                No rows yet. Add a row like &ldquo;Layout&rdquo; with the value for each product.
+                                                            </div>
+                                                        ) : (
+                                                            // Card-per-row layout: each row gets its own panel with a label header and
+                                                            // a 2-column grid of "Product → value" pairs. Stays readable with many products.
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                                                {compareRows.map((row, rIdx) => {
+                                                                    const productLabels: string[] = [
+                                                                        'This product',
+                                                                        ...compareSlots.map((s, i) => s.name || `Product ${i + 1}`)
+                                                                    ];
+                                                                    return (
+                                                                        <div
+                                                                            key={rIdx}
+                                                                            style={{
+                                                                                border: '1px solid #e2e8f0', borderRadius: 10,
+                                                                                background: '#ffffff', overflow: 'hidden'
+                                                                            }}
+                                                                        >
+                                                                            <div style={{
+                                                                                display: 'flex', alignItems: 'center', gap: 10,
+                                                                                padding: '10px 12px', background: '#f8fafc',
+                                                                                borderBottom: '1px solid #e2e8f0'
+                                                                            }}>
+                                                                                <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.04em' }}>
+                                                                                    ROW {rIdx + 1}
+                                                                                </span>
+                                                                                <input
+                                                                                    type="text"
+                                                                                    value={row.label}
+                                                                                    onChange={(e) => setCompareRows(prev => prev.map((r, i) => i === rIdx ? { ...r, label: e.target.value } : r))}
+                                                                                    placeholder="Row label EN (e.g. Height)"
+                                                                                    style={{ flex: 1, padding: '6px 10px', fontSize: 13, fontWeight: 600, border: '1px solid #e2e8f0', borderRadius: 6, background: 'white' }}
+                                                                                />
+                                                                                <input
+                                                                                    type="text"
+                                                                                    dir="rtl"
+                                                                                    value={row.label_ar}
+                                                                                    onChange={(e) => setCompareRows(prev => prev.map((r, i) => i === rIdx ? { ...r, label_ar: e.target.value } : r))}
+                                                                                    placeholder="تسمية الصف بالعربية"
+                                                                                    style={{ flex: 1, padding: '6px 10px', fontSize: 13, fontWeight: 600, border: '1px solid #e2e8f0', borderRadius: 6, background: 'white' }}
+                                                                                />
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => setCompareRows(prev => prev.filter((_, i) => i !== rIdx))}
+                                                                                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 4, display: 'inline-flex' }}
+                                                                                    title="Remove row"
+                                                                                >
+                                                                                    <Trash2 size={14} />
+                                                                                </button>
+                                                                            </div>
+                                                                            <div style={{
+                                                                                display: 'grid',
+                                                                                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                                                                                gap: 10,
+                                                                                padding: 12
+                                                                            }}>
+                                                                                {productLabels.map((plabel, cIdx) => (
+                                                                                    <label
+                                                                                        key={cIdx}
+                                                                                        style={{
+                                                                                            display: 'flex', flexDirection: 'column', gap: 4,
+                                                                                            fontSize: 11, color: '#64748b'
+                                                                                        }}
+                                                                                    >
+                                                                                        <span style={{ fontWeight: 600, color: '#475569' }}>{plabel}</span>
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            value={row.values[cIdx] || ''}
+                                                                                            onChange={(e) => setCompareRows(prev => prev.map((r, i) => i === rIdx
+                                                                                                ? {
+                                                                                                    ...r,
+                                                                                                    values: Array.from({ length: 1 + compareSlots.length }, (_, j) => j === cIdx ? e.target.value : (r.values[j] || ''))
+                                                                                                }
+                                                                                                : r))}
+                                                                                            placeholder="EN value"
+                                                                                            style={{ width: '100%', padding: '6px 8px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6, background: '#ffffff' }}
+                                                                                        />
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            dir="rtl"
+                                                                                            value={row.values_ar[cIdx] || ''}
+                                                                                            onChange={(e) => setCompareRows(prev => prev.map((r, i) => i === rIdx
+                                                                                                ? {
+                                                                                                    ...r,
+                                                                                                    values_ar: Array.from({ length: 1 + compareSlots.length }, (_, j) => j === cIdx ? e.target.value : (r.values_ar[j] || ''))
+                                                                                                }
+                                                                                                : r))}
+                                                                                            placeholder="القيمة بالعربية"
+                                                                                            style={{ width: '100%', padding: '6px 8px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6, background: '#ffffff' }}
+                                                                                        />
+                                                                                    </label>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+
+                                                        <div className={styles.infoBox} style={{ marginTop: 12 }}>
+                                                            <div style={{ display: 'flex', gap: 10 }}>
+                                                                <CheckCircle2 size={18} style={{ flexShrink: 0, marginTop: 2, color: '#3b82f6' }} />
+                                                                <div>
+                                                                    <strong>Tip:</strong> Leave a cell empty to show &ldquo;—&rdquo; in that column. Price is rendered automatically as the first row; you don&apos;t need to add it here.
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     )}
 

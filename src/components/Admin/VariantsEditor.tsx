@@ -26,7 +26,8 @@ export interface VariantRow {
     offer_price: string;
     stock_quantity: string;
     use_primary_image: boolean;
-    image_url: string;
+    image_url: string;         // first entry of image_urls — kept for backward compat
+    image_urls: string[];      // multi-image gallery for this variant
     is_active: boolean;
     is_default: boolean;
 }
@@ -51,6 +52,7 @@ const rowFromCombo = (combo: string[]): VariantRow => ({
     stock_quantity: '0',
     use_primary_image: true,
     image_url: '',
+    image_urls: [],
     is_active: true,
     is_default: false
 });
@@ -181,21 +183,43 @@ const VariantsEditor: React.FC<Props> = ({
         onVariantsChange(variants.map((v, i) => i === idx ? { ...v, ...patch } : v));
     };
 
-    const handleImageUpload = async (idx: number, file: File) => {
+    const handleImageUpload = async (idx: number, files: FileList) => {
+        if (!files || files.length === 0) return;
         setUploadingIdx(idx);
-        const fd = new FormData();
-        fd.append('image', file);
         try {
-            const res = await fetch(`${API_BASE_URL}/upload/image`, {
-                credentials: 'include', method: 'POST',
-                headers: getAuthHeaders(), body: fd
-            });
-            const data = await res.json();
-            if (data.success) {
-                updateVariant(idx, { image_url: data.data, use_primary_image: false });
+            const uploaded: string[] = [];
+            for (const f of Array.from(files)) {
+                const fd = new FormData();
+                fd.append('image', f);
+                const res = await fetch(`${API_BASE_URL}/upload/image`, {
+                    credentials: 'include', method: 'POST',
+                    headers: getAuthHeaders(), body: fd
+                });
+                const data = await res.json();
+                if (data.success && data.data) uploaded.push(data.data);
+            }
+            if (uploaded.length > 0) {
+                const existing = Array.isArray(variants[idx]?.image_urls) ? variants[idx].image_urls : [];
+                const merged = [...existing, ...uploaded];
+                updateVariant(idx, { image_urls: merged, image_url: merged[0] || '', use_primary_image: false });
             }
         } catch (e) { console.error(e); }
         finally { setUploadingIdx(null); }
+    };
+
+    const removeVariantImage = (idx: number, imgIdx: number) => {
+        const existing = Array.isArray(variants[idx]?.image_urls) ? [...variants[idx].image_urls] : [];
+        existing.splice(imgIdx, 1);
+        updateVariant(idx, { image_urls: existing, image_url: existing[0] || '' });
+    };
+
+    const moveVariantImage = (idx: number, from: number, to: number) => {
+        if (from === to) return;
+        const existing = Array.isArray(variants[idx]?.image_urls) ? [...variants[idx].image_urls] : [];
+        if (from < 0 || from >= existing.length || to < 0 || to >= existing.length) return;
+        const [moved] = existing.splice(from, 1);
+        existing.splice(to, 0, moved);
+        updateVariant(idx, { image_urls: existing, image_url: existing[0] || '' });
     };
 
     const combosOutOfSync = useMemo(() => {
@@ -490,22 +514,9 @@ const VariantsEditor: React.FC<Props> = ({
                                                         onChange={(e) => updateVariant(idx, { stock_quantity: e.target.value })}
                                                         style={{ width: 70, padding: '6px 8px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6 }} />
                                                 </td>
-                                                <td style={{ padding: 6 }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                        <div style={{
-                                                            width: 36, height: 36, borderRadius: 6, overflow: 'hidden',
-                                                            background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                            flexShrink: 0
-                                                        }}>
-                                                            {(() => {
-                                                                const src = v.use_primary_image ? primaryImage : v.image_url;
-                                                                const resolved = resolveUrl(src);
-                                                                return resolved
-                                                                    ? <img src={resolved} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = '/assets/placeholder-image.webp'; }} />
-                                                                    : <img src="/assets/placeholder-image.webp" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
-                                                            })()}
-                                                        </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                <td style={{ padding: 6, minWidth: 260 }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                                             <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#475569', cursor: 'pointer' }}>
                                                                 <input type="radio" checked={v.use_primary_image}
                                                                     onChange={() => updateVariant(idx, { use_primary_image: true })} />
@@ -514,22 +525,91 @@ const VariantsEditor: React.FC<Props> = ({
                                                             <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#475569', cursor: 'pointer' }}>
                                                                 <input type="radio" checked={!v.use_primary_image}
                                                                     onChange={() => updateVariant(idx, { use_primary_image: false })} />
-                                                                Custom
+                                                                Custom gallery
                                                             </label>
                                                         </div>
-                                                        {!v.use_primary_image && (
-                                                            <label style={{
-                                                                display: 'flex', alignItems: 'center', gap: 4,
-                                                                cursor: 'pointer', padding: '4px 8px',
-                                                                background: '#f8fafc', border: '1px solid #e2e8f0',
-                                                                borderRadius: 6, fontSize: 11, color: '#475569'
+
+                                                        {v.use_primary_image ? (
+                                                            <div style={{
+                                                                width: 48, height: 48, borderRadius: 6, overflow: 'hidden',
+                                                                background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                             }}>
-                                                                {uploadingIdx === idx ? <Loader2 size={12} className="spin" /> : <Upload size={12} />}
-                                                                <span>{uploadingIdx === idx ? '...' : 'Upload'}</span>
-                                                                <input type="file" accept="image/*"
-                                                                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(idx, f); e.target.value = ''; }}
-                                                                    style={{ display: 'none' }} />
-                                                            </label>
+                                                                {(() => {
+                                                                    const resolved = resolveUrl(primaryImage);
+                                                                    return resolved
+                                                                        ? <img src={resolved} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = '/assets/placeholder-image.webp'; }} />
+                                                                        : <img src="/assets/placeholder-image.webp" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+                                                                })()}
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                                                {(v.image_urls || []).map((url, imgIdx) => {
+                                                                    const resolved = resolveUrl(url);
+                                                                    const isMain = imgIdx === 0;
+                                                                    return (
+                                                                        <div key={`${url}-${imgIdx}`} style={{
+                                                                            position: 'relative', width: 56, height: 56, borderRadius: 6,
+                                                                            border: isMain ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                                                                            overflow: 'hidden', background: '#f8fafc'
+                                                                        }} title={isMain ? 'Main (shown in listings)' : 'Gallery image'}>
+                                                                            <img src={resolved || '/assets/placeholder-image.webp'} alt=""
+                                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                                onError={(e) => { (e.target as HTMLImageElement).src = '/assets/placeholder-image.webp'; }} />
+                                                                            <button type="button"
+                                                                                onClick={() => removeVariantImage(idx, imgIdx)}
+                                                                                title="Remove"
+                                                                                style={{
+                                                                                    position: 'absolute', top: 2, right: 2,
+                                                                                    width: 18, height: 18, borderRadius: '50%',
+                                                                                    background: 'rgba(15,23,42,0.7)', color: 'white',
+                                                                                    border: 'none', cursor: 'pointer',
+                                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0
+                                                                                }}>
+                                                                                <X size={12} />
+                                                                            </button>
+                                                                            {(v.image_urls?.length || 0) > 1 && (
+                                                                                <div style={{
+                                                                                    position: 'absolute', bottom: 2, left: 2, right: 2,
+                                                                                    display: 'flex', gap: 2, justifyContent: 'space-between'
+                                                                                }}>
+                                                                                    <button type="button"
+                                                                                        onClick={() => moveVariantImage(idx, imgIdx, imgIdx - 1)}
+                                                                                        disabled={imgIdx === 0}
+                                                                                        title="Move left"
+                                                                                        style={{
+                                                                                            width: 16, height: 16, borderRadius: 3, border: 'none',
+                                                                                            background: 'rgba(15,23,42,0.7)', color: 'white',
+                                                                                            cursor: imgIdx === 0 ? 'default' : 'pointer',
+                                                                                            opacity: imgIdx === 0 ? 0.4 : 1, fontSize: 9, padding: 0
+                                                                                        }}>‹</button>
+                                                                                    <button type="button"
+                                                                                        onClick={() => moveVariantImage(idx, imgIdx, imgIdx + 1)}
+                                                                                        disabled={imgIdx >= (v.image_urls?.length || 0) - 1}
+                                                                                        title="Move right"
+                                                                                        style={{
+                                                                                            width: 16, height: 16, borderRadius: 3, border: 'none',
+                                                                                            background: 'rgba(15,23,42,0.7)', color: 'white',
+                                                                                            cursor: imgIdx >= (v.image_urls?.length || 0) - 1 ? 'default' : 'pointer',
+                                                                                            opacity: imgIdx >= (v.image_urls?.length || 0) - 1 ? 0.4 : 1, fontSize: 9, padding: 0
+                                                                                        }}>›</button>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                                <label style={{
+                                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                                                    width: 56, height: 56, borderRadius: 6,
+                                                                    border: '1px dashed #cbd5e1', cursor: 'pointer',
+                                                                    background: '#f8fafc', color: '#64748b', fontSize: 10
+                                                                }}>
+                                                                    {uploadingIdx === idx ? <Loader2 size={16} className="spin" /> : <Upload size={16} />}
+                                                                    <span>{uploadingIdx === idx ? '...' : 'Add'}</span>
+                                                                    <input type="file" accept="image/*" multiple
+                                                                        onChange={(e) => { if (e.target.files && e.target.files.length > 0) handleImageUpload(idx, e.target.files); e.target.value = ''; }}
+                                                                        style={{ display: 'none' }} />
+                                                                </label>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </td>
