@@ -14,13 +14,14 @@ const stripe = process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.i
 exports.createOrder = async (req, res, next) => {
     try {
         const buyer = await User.findById(req.user.id);
-        if (!buyer || !buyer.phone_verified) {
-            return res.status(403).json({
-                success: false,
-                type: 'PHONE_NOT_VERIFIED',
-                message: 'Your mobile number is not verified. Please verify to continue.'
-            });
-        }
+        // DISABLED: Phone Verification check
+        // if (!buyer || !buyer.phone_verified) {
+        //     return res.status(403).json({
+        //         success: false,
+        //         type: 'PHONE_NOT_VERIFIED',
+        //         message: 'Your mobile number is not verified. Please verify to continue.'
+        //     });
+        // }
 
         const items = await Cart.getCartItems(req.user.id);
         if (items.length === 0) {
@@ -146,9 +147,9 @@ exports.createOrder = async (req, res, next) => {
         const pointsDiscount = validatedPointsToUse * aedPerPoint;
         const totalDiscount = calculatedCouponDiscount + pointsDiscount;
         const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
-        // VAT is already included in the price, so we calculate the breakdown
-        const finalAmount = discountedSubtotal;
-        const vatAmount = finalAmount - (finalAmount / 1.05);
+        // Prices are VAT-exclusive: add 5% VAT on top of the (discounted) subtotal.
+        const vatAmount = discountedSubtotal * 0.05;
+        const finalAmount = discountedSubtotal + vatAmount;
 
         const orderData = {
             items,
@@ -169,29 +170,30 @@ exports.createOrder = async (req, res, next) => {
         // We send this immediately so both User and Admin are notified of the new order
         // regardless of payment status.
         (async () => {
-            try {
-                // 1. Email to Customer (Order Confirmation / Pending)
-                await sendOrderConfirmationEmail(
-                    billing_details?.email || req.user.email,
-                    billing_details?.name || req.user.name,
-                    orderId,
-                    finalAmount,
-                    items,
-                    orderData
-                );
+            const customerEmail = billing_details?.email || req.user?.email;
+            const customerName = billing_details?.name || req.user?.name || 'Customer';
+            const adminEmail = process.env.RECEIVER_EMAIL || 'anvarshaknavas588@gmail.com';
+            // Customer's language from the request that placed the order.
+            const custLocale = String(req.body?.locale || req.headers?.['x-locale'] || req.cookies?.NEXT_LOCALE || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
 
-                // 2. Email to Admin (New Order Alert)
-                const adminEmail = process.env.RECEIVER_EMAIL || 'anvarshaknavas588@gmail.com';
-                await sendOrderConfirmationEmail(
-                    adminEmail,
-                    billing_details?.name || req.user.name,
-                    orderId,
-                    finalAmount,
-                    items,
-                    { ...orderData, is_admin_copy: true }
-                );
+            // 1. Email to Customer — isolated so a failure here can't block the admin alert.
+            if (customerEmail) {
+                try {
+                    await sendOrderConfirmationEmail(customerEmail, customerName, orderId, finalAmount, items, orderData, custLocale);
+                    console.log(`[ORDER] Confirmation email sent to customer ${customerEmail} (order #${orderId})`);
+                } catch (err) {
+                    console.error(`[ORDER] ❌ Customer confirmation failed (order #${orderId}):`, err.message);
+                }
+            } else {
+                console.error(`[ORDER] ❌ No customer email resolved for order #${orderId} — confirmation skipped`);
+            }
+
+            // 2. Email to Admin (New Order Alert) — always English for the back office.
+            try {
+                await sendOrderConfirmationEmail(adminEmail, customerName, orderId, finalAmount, items, { ...orderData, is_admin_copy: true }, 'en');
+                console.log(`[ORDER] New-order alert sent to ${adminEmail} (order #${orderId})`);
             } catch (err) {
-                console.error('[Email Service Error] Initial order notifications failed:', err.message);
+                console.error(`[ORDER] ❌ Admin order alert failed (order #${orderId}):`, err.message);
             }
         })();
 
@@ -478,13 +480,15 @@ exports.tabbyWebhook = async (req, res) => {
             try {
                 const order = await Order.findById(orderId);
                 if (order) {
+                    const oLocale = await User.getPreferredLocale(order.user_id);
                     await sendOrderConfirmationEmail(
                         order.billing_email || order.user_email,
                         order.billing_name || order.user_name,
                         orderId,
                         order.final_amount,
                         order.items,
-                        { ...order, payment_status: 'paid' }
+                        { ...order, payment_status: 'paid' },
+                        oLocale
                     );
                 }
             } catch (emailErr) {
@@ -549,22 +553,28 @@ exports.updateOrderStatus = async (req, res, next) => {
 
         if (status) {
             await Order.updateStatus(req.params.id, status);
-            
-            // Trigger status update email
-            try {
-                const order = await Order.findById(req.params.id);
-                if (order) {
-                    const { sendOrderStatusUpdateEmail } = require('../utils/sendEmail');
-                    await sendOrderStatusUpdateEmail(
-                        order.billing_email || order.user_email || order.email,
-                        order.billing_name || order.user_name || order.name,
-                        req.params.id,
-                        status,
-                        order
-                    );
+
+            // Trigger status update email — EXCEPT for 'delivered'. Delivery is done via
+            // the "Delivered + Invoice" flow which sends the invoice email (already says
+            // "order delivered" + invoice button), so a status mail here would duplicate it.
+            if (status !== 'delivered') {
+                try {
+                    const order = await Order.findById(req.params.id);
+                    if (order) {
+                        const { sendOrderStatusUpdateEmail } = require('../utils/sendEmail');
+                        const sLocale = await User.getPreferredLocale(order.user_id);
+                        await sendOrderStatusUpdateEmail(
+                            order.billing_email || order.user_email || order.email,
+                            order.billing_name || order.user_name || order.name,
+                            req.params.id,
+                            status,
+                            order,
+                            sLocale
+                        );
+                    }
+                } catch (emailErr) {
+                    console.error('[Admin Update] Failed to send status update email:', emailErr.message);
                 }
-            } catch (emailErr) {
-                console.error('[Admin Update] Failed to send status update email:', emailErr.message);
             }
         }
 
@@ -577,13 +587,15 @@ exports.updateOrderStatus = async (req, res, next) => {
                     const order = await Order.findById(req.params.id);
                     if (order) {
                         const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
+                        const pLocale = await User.getPreferredLocale(order.user_id);
                         await sendOrderConfirmationEmail(
                             order.billing_email || order.user_email || order.email,
                             order.billing_name || order.user_name || order.name,
                             req.params.id,
                             order.final_amount,
                             order.items,
-                            { ...order, payment_status: 'paid' }
+                            { ...order, payment_status: 'paid' },
+                            pLocale
                         );
                     }
                 } catch (emailErr) {

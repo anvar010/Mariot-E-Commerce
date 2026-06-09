@@ -9,7 +9,7 @@ async function ensureCustomColumns(connection) {
     const [cols] = await conn.query(
         `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'order_items'
-           AND COLUMN_NAME IN ('custom_dimensions','custom_label')`
+           AND COLUMN_NAME IN ('custom_dimensions','custom_label','is_free_gift','bundle_parent_product_id')`
     );
     const have = new Set(cols.map(r => r.COLUMN_NAME));
     if (!have.has('custom_dimensions')) {
@@ -17,6 +17,12 @@ async function ensureCustomColumns(connection) {
     }
     if (!have.has('custom_label')) {
         await conn.query(`ALTER TABLE order_items ADD COLUMN custom_label VARCHAR(255) NULL`);
+    }
+    if (!have.has('is_free_gift')) {
+        await conn.query(`ALTER TABLE order_items ADD COLUMN is_free_gift TINYINT(1) NOT NULL DEFAULT 0`);
+    }
+    if (!have.has('bundle_parent_product_id')) {
+        await conn.query(`ALTER TABLE order_items ADD COLUMN bundle_parent_product_id INT NULL`);
     }
     customColsEnsured = true;
 }
@@ -55,20 +61,32 @@ class Order {
             const [settingRows] = await connection.execute('SELECT `value` FROM settings WHERE `key` = \'aed_per_point\'');
             const aedPerPoint = settingRows[0] ? parseFloat(settingRows[0].value) : 0.01;
 
+            // points_discount is recorded for the order, but NOT subtracted again here:
+            // the controller already deducts points from the (pre-VAT) subtotal before
+            // computing final_amount, so subtracting once more would double-count them.
             const pointsDiscount = points_to_use * aedPerPoint;
-            const adjustedFinalAmount = Math.max(0, final_amount - pointsDiscount);
+            const adjustedFinalAmount = Math.max(0, final_amount);
 
             const initialPaymentStatus = 'pending';
 
+            // Receiver (who will be at the door) — comes from the checkout form.
+            const receiverName = (billing_details?.name || '').trim() || null;
+            const receiverPhone = (billing_details?.phone || '').trim() || null;
+
             // 1. Create order
             const [orderResult] = await connection.execute(
-                `INSERT INTO orders (user_id, total_amount, vat_amount, final_amount, shipping_address_id, payment_method, payment_status, points_used, points_discount, coupon_id, discount_amount) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [userId, total_amount, vat_amount, adjustedFinalAmount, finalAddressId, payment_method, initialPaymentStatus, points_to_use, pointsDiscount, coupon_id, discount_amount]
+                `INSERT INTO orders (user_id, total_amount, vat_amount, final_amount, shipping_address_id, receiver_name, receiver_phone, payment_method, payment_status, points_used, points_discount, coupon_id, discount_amount)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [userId, total_amount, vat_amount, adjustedFinalAmount, finalAddressId, receiverName, receiverPhone, payment_method, initialPaymentStatus, points_to_use, pointsDiscount, coupon_id, discount_amount]
             );
             const orderId = orderResult.insertId;
 
             // 2. Create order items (No stock deduction yet)
+            // Build cart_item_id -> product_id map so bundle linkage survives checkout.
+            const cartItemToProduct = {};
+            for (const it of items) {
+                if (it.cart_item_id != null) cartItemToProduct[Number(it.cart_item_id)] = Number(it.product_id);
+            }
             for (const item of items) {
                 const customDims = (() => {
                     if (!item.custom_dimensions) return null;
@@ -76,10 +94,14 @@ class Order {
                     try { return JSON.stringify(item.custom_dimensions); } catch (e) { return null; }
                 })();
                 const customLabel = item.custom_label ? String(item.custom_label).slice(0, 255) : null;
+                const isFreeGift = item.is_free_gift ? 1 : 0;
+                const bundleParentProductId = item.bundle_parent_id != null
+                    ? (cartItemToProduct[Number(item.bundle_parent_id)] || null)
+                    : null;
                 await connection.execute(
-                    `INSERT INTO order_items (order_id, product_id, variant_id, quantity, price_at_purchase, custom_dimensions, custom_label)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                    [orderId, item.product_id, item.variant_id || null, item.quantity, item.price, customDims, customLabel]
+                    `INSERT INTO order_items (order_id, product_id, variant_id, quantity, price_at_purchase, custom_dimensions, custom_label, is_free_gift, bundle_parent_product_id)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [orderId, item.product_id, item.variant_id || null, item.quantity, item.price, customDims, customLabel, isFreeGift, bundleParentProductId]
                 );
             }
 
@@ -182,11 +204,23 @@ class Order {
         if (rows.length === 0) return null;
 
         const [items] = await db.execute(`
-            SELECT oi.*, p.name, p.name_ar, p.slug, (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1) as image
+            SELECT oi.*,
+                   p.name, p.name_ar, p.slug, p.model AS product_model,
+                   pv.sku AS variant_sku,
+                   pp.name AS bundle_parent_name, pp.name_ar AS bundle_parent_name_ar,
+                   (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1) as image
             FROM order_items oi
             JOIN products p ON oi.product_id = p.id
+            LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+            LEFT JOIN products pp ON pp.id = oi.bundle_parent_product_id
             WHERE oi.order_id = ?
         `, [id]);
+
+        // Surface the model number admins/PDFs should show: the selected variant's
+        // SKU when present, otherwise the parent product's model.
+        for (const it of items) {
+            it.model_number = it.variant_sku || it.product_model || null;
+        }
 
         // Parse stored JSON for custom_dimensions so consumers get an object
         for (const it of items) {
@@ -194,6 +228,14 @@ class Order {
                 try { it.custom_dimensions = JSON.parse(it.custom_dimensions); } catch (e) { it.custom_dimensions = null; }
             }
         }
+
+        // Points credited for this order (earned entries live in the ledger,
+        // not on the orders row). points_used (redeemed) is already on rows[0].
+        const [[pe]] = await db.execute(
+            "SELECT COALESCE(SUM(points), 0) AS points_earned FROM reward_points_history WHERE order_id = ? AND transaction_type = 'earned'",
+            [id]
+        );
+        rows[0].points_earned = pe.points_earned;
 
         rows[0].items = items;
         return rows[0];

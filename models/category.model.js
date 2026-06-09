@@ -112,8 +112,9 @@ class Category {
     }
 
     static async findByBrand(brandSlug) {
-        const [rows] = await db.execute(`
-            SELECT DISTINCT c.id, c.name, c.name_ar, c.slug, c.type, c.is_active, c.parent_id,
+        // Categories that directly hold this brand's products (may be main OR sub).
+        const [leafRows] = await db.execute(`
+            SELECT DISTINCT c.id, c.name, c.name_ar, c.slug, c.type, c.is_active, c.parent_id, c.image_url,
                    COUNT(p.id) as product_count
             FROM categories c
             JOIN products p ON p.category_id = c.id
@@ -122,7 +123,33 @@ class Category {
             GROUP BY c.id
             ORDER BY c.name ASC
         `, [brandSlug]);
-        return rows;
+
+        const byId = new Map(leafRows.map(r => [r.id, { ...r, product_count: Number(r.product_count) || 0 }]));
+
+        // Subcategories may have products while their parent main category does not.
+        // Pull in those parent mains so the brand page can show main + sub together.
+        const missingParentIds = [...new Set(leafRows.filter(r => r.parent_id).map(r => r.parent_id))]
+            .filter(pid => !byId.has(pid));
+        if (missingParentIds.length > 0) {
+            const placeholders = missingParentIds.map(() => '?').join(',');
+            const [parentRows] = await db.execute(
+                `SELECT id, name, name_ar, slug, type, is_active, parent_id, image_url
+                 FROM categories WHERE id IN (${placeholders}) AND is_active = 1`,
+                missingParentIds
+            );
+            for (const p of parentRows) {
+                if (!byId.has(p.id)) byId.set(p.id, { ...p, product_count: 0 });
+            }
+        }
+
+        // Roll up subcategory counts into their parent main for display.
+        for (const row of byId.values()) {
+            if (row.parent_id && byId.has(row.parent_id)) {
+                byId.get(row.parent_id).product_count += row.product_count;
+            }
+        }
+
+        return [...byId.values()].sort((a, b) => String(a.name).localeCompare(String(b.name)));
     }
 
     static async findBySlug(slug) {
@@ -140,7 +167,7 @@ class Category {
         };
     }
 
-    static async create({ name, name_ar = null, slug, image_url = null, banner_url = null, description = null, description_ar = null, is_active = 1, parent_id = null, type = 'main_category', brands = [] }) {
+    static async create({ name, name_ar = null, slug, image_url = null, banner_url = null, image_url_ar = null, banner_url_ar = null, description = null, description_ar = null, is_active = 1, parent_id = null, type = 'main_category', brands = [], order_index = 0 }) {
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
@@ -154,8 +181,8 @@ class Category {
             const brandNamesStr = brandNames.join(', ');
 
             const [result] = await conn.execute(
-                'INSERT INTO categories (name, name_ar, slug, image_url, banner_url, description, description_ar, is_active, parent_id, type, brand_names) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [name, name_ar, slug, image_url, banner_url, description, description_ar, is_active, parent_id, type, brandNamesStr]
+                'INSERT INTO categories (name, name_ar, slug, image_url, banner_url, image_url_ar, banner_url_ar, description, description_ar, is_active, parent_id, type, brand_names, order_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [name, name_ar, slug, image_url, banner_url, image_url_ar, banner_url_ar, description, description_ar, is_active, parent_id, type, brandNamesStr, order_index]
             );
             const categoryId = result.insertId;
 

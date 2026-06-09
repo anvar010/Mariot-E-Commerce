@@ -10,6 +10,18 @@ const generateToken = (id) => {
     });
 };
 
+// Resolve the user's UI language from the request so emails match the site language.
+// Priority: explicit body.locale → x-locale header → NEXT_LOCALE cookie → Accept-Language.
+const getReqLocale = (req) => {
+    const raw =
+        req.body?.locale ||
+        req.headers?.['x-locale'] ||
+        req.cookies?.NEXT_LOCALE ||
+        req.headers?.['accept-language'] ||
+        'en';
+    return String(raw).toLowerCase().startsWith('ar') ? 'ar' : 'en';
+};
+
 const sendTokenResponse = (user, statusCode, res) => {
     const token = generateToken(user.id);
     const isProduction = process.env.NODE_ENV === 'production';
@@ -41,8 +53,11 @@ exports.register = async (req, res, next) => {
         const userId = await User.create({ name, email, password });
         const user = { id: userId, name, email, role: 'user', reward_points: 1000 };
 
-        // Send Welcome Email
-        sendWelcomeEmail(email, name).catch(err => console.error('Failed to send welcome email:', err));
+        const locale = getReqLocale(req);
+        User.updatePreferredLocale(userId, locale).catch(() => {});
+
+        // Send Welcome Email in the user's language
+        sendWelcomeEmail(email, name, locale).catch(err => console.error('Failed to send welcome email:', err));
 
         sendTokenResponse(user, 201, res);
     } catch (error) {
@@ -78,7 +93,8 @@ exports.login = async (req, res, next) => {
             phone_verified: user.phone_verified ? 1 : 0,
             company_name: user.company_name,
             vat_number: user.vat_number,
-            reward_points: user.reward_points
+            reward_points: user.reward_points,
+            staff_permissions: user.staff_permissions ?? null
         }, 200, res);
     } catch (error) {
         next(error);
@@ -108,8 +124,10 @@ exports.googleLogin = async (req, res, next) => {
             await User.markCurrentEmailVerified(userId);
             user = await User.findById(userId);
 
-            // Send Welcome Email for new Google users
-            sendWelcomeEmail(email, name).catch(err => console.error('Failed to send welcome email (Google):', err));
+            // Send Welcome Email for new Google users in their language
+            const gLocale = getReqLocale(req);
+            User.updatePreferredLocale(userId, gLocale).catch(() => {});
+            sendWelcomeEmail(email, name, gLocale).catch(err => console.error('Failed to send welcome email (Google):', err));
         } else if (!user.email_verified) {
             // Existing account signing in via Google for the first time — trust Google's email verification.
             await User.markCurrentEmailVerified(user.id);
@@ -144,6 +162,7 @@ exports.googleLogin = async (req, res, next) => {
             company_name: user.company_name,
             vat_number: user.vat_number,
             reward_points: user.reward_points,
+            staff_permissions: user.staff_permissions ?? null,
             bonus_awarded: bonusAwarded,
             bonus_points: bonusAwarded ? 3000 : 0
         }, 200, res);
@@ -217,12 +236,24 @@ exports.forgotPassword = async (req, res, next) => {
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
         const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
-        // Send email
-        await sendPasswordResetEmail(user.email, user.name, resetUrl);
+        // Send email in the user's preferred language (fall back to request locale)
+        const resetLocale = user.preferred_locale || getReqLocale(req);
+        await sendPasswordResetEmail(user.email, user.name, resetUrl, resetLocale);
 
         res.json({ success: true, message: 'Password reset link sent to your email' });
     } catch (error) {
         console.error('Forgot password error:', error);
+        next(error);
+    }
+};
+
+// Persist the logged-in user's email language preference (called when they toggle EN/AR).
+exports.updateLocale = async (req, res, next) => {
+    try {
+        const locale = String(req.body?.locale || '').toLowerCase().startsWith('ar') ? 'ar' : 'en';
+        await User.updatePreferredLocale(req.user.id, locale);
+        res.json({ success: true, locale });
+    } catch (error) {
         next(error);
     }
 };

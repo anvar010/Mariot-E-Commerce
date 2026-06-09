@@ -142,7 +142,15 @@ class User {
             "INSERT INTO users (name, email, password, role_id, reward_points, email_verified) VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = 'user'), 1000, 1)",
             [name, email, passwordHash]
         );
-        return result.insertId;
+        const userId = result.insertId;
+        // Log the 1000 welcome points so they appear in the rewards statement. Non-fatal.
+        try {
+            await db.execute(
+                "INSERT INTO reward_points_history (user_id, points, transaction_type, description) VALUES (?, 1000, 'earned', 'Welcome bonus')",
+                [userId]
+            );
+        } catch (e) { console.error('[Rewards] welcome-bonus history insert failed:', e.message); }
+        return userId;
     }
 
     static async update(id, data) {
@@ -188,7 +196,28 @@ class User {
             "INSERT INTO users (name, email, password, role_id, reward_points) VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = 'user'), 1000)",
             [name, email, hashedPassword]
         );
-        return result.insertId;
+        const userId = result.insertId;
+        // Log the 1000 welcome points so they appear in the rewards statement. Non-fatal.
+        try {
+            await db.execute(
+                "INSERT INTO reward_points_history (user_id, points, transaction_type, description) VALUES (?, 1000, 'earned', 'Welcome bonus')",
+                [userId]
+            );
+        } catch (e) { console.error('[Rewards] welcome-bonus history insert failed:', e.message); }
+        return userId;
+    }
+
+    // Preferred email language ('en' | 'ar'). Used to localize outgoing emails.
+    static async updatePreferredLocale(userId, locale) {
+        const loc = String(locale).startsWith('ar') ? 'ar' : 'en';
+        await db.execute('UPDATE users SET preferred_locale = ? WHERE id = ?', [loc, userId]);
+    }
+
+    static async getPreferredLocale(userId) {
+        try {
+            const [rows] = await db.execute('SELECT preferred_locale FROM users WHERE id = ?', [userId]);
+            return rows[0]?.preferred_locale || 'en';
+        } catch (_) { return 'en'; }
     }
 
     static async createByAdmin({ name, email, password, role_id }) {

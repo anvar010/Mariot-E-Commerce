@@ -71,6 +71,7 @@ class Cart {
         );
         const [items] = await db.execute(`
             SELECT
+                ci.id AS cart_item_id,
                 ci.product_id,
                 ci.variant_id,
                 ci.quantity,
@@ -129,6 +130,7 @@ class Cart {
                 catch (e) { parsedDims = null; }
             }
             return {
+                cart_item_id: Number(it.cart_item_id),
                 product_id: it.product_id,
                 variant_id: it.variant_id,
                 quantity: it.quantity,

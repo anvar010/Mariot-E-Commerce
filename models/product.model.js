@@ -31,14 +31,28 @@ async function ensureCompareConfigColumn() {
     compareConfigColEnsured = true;
 }
 
+let specificationsArColEnsured = false;
+async function ensureSpecificationsArColumn() {
+    if (specificationsArColEnsured) return;
+    const [cols] = await db.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
+           AND COLUMN_NAME = 'specifications_ar'`
+    );
+    if (cols.length === 0) {
+        await db.query(`ALTER TABLE products ADD COLUMN specifications_ar TEXT NULL`);
+    }
+    specificationsArColEnsured = true;
+}
+
 class Product {
     static async findAll({ category, brand, seller, minPrice, maxPrice, search, sort, limit, offset, is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, is_best_seller, status, stockStatus }) {
         let query = `
-            SELECT p.*, 
-            c.name as category_name, c.slug as category_slug,
-            sc.name as sub_category_name,
-            ssc.name as sub_sub_category_name,
-            b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image, 
+            SELECT p.*,
+            c.name as category_name, c.name_ar as category_name_ar, c.slug as category_slug,
+            sc.name as sub_category_name, sc.name_ar as sub_category_name_ar, sc.slug as sub_category_slug,
+            ssc.name as sub_sub_category_name, ssc.name_ar as sub_sub_category_name_ar, ssc.slug as sub_sub_category_slug,
+            b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image,
             s.name as seller_name, s.company_name as seller_company, s.id as seller_id,
             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
             COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = p.id), 0) as average_rating,
@@ -233,7 +247,7 @@ class Product {
                 const variantProductIds = rows.filter(p => Number(p.has_variants) === 1).map(p => p.id);
                 if (variantProductIds.length > 0) {
                     const [variantRows] = await db.query(
-                        `SELECT product_id, price, offer_price, stock_quantity, image_url, use_primary_image, is_default, id
+                        `SELECT product_id, price, offer_price, stock_quantity, image_url, image_urls, use_primary_image, is_default, id
                          FROM product_variants
                          WHERE product_id IN (${variantProductIds.join(',')})
                          ORDER BY is_default DESC, id ASC`
@@ -292,7 +306,7 @@ class Product {
                         const colorOptionIds = Object.values(colorOptionByProduct).map(r => r.id);
                         if (colorOptionIds.length > 0) {
                             const [imgRows] = await db.query(
-                                `SELECT pvo.option_id, pvo.value, pv.product_id, pv.image_url, pv.use_primary_image
+                                `SELECT pvo.option_id, pvo.value, pv.product_id, pv.image_url, pv.image_urls, pv.use_primary_image, pv.price, pv.offer_price
                                  FROM product_variant_options pvo
                                  JOIN product_variants pv ON pv.id = pvo.variant_id
                                  WHERE pvo.option_id IN (${colorOptionIds.join(',')})
@@ -304,7 +318,19 @@ class Product {
                                 const key = `${ir.product_id}::${(ir.value || '').trim()}`;
                                 const hasCustom = !Number(ir.use_primary_image) && ir.image_url;
                                 if (!bestByPidValue[key] || (hasCustom && !bestByPidValue[key].hasCustom)) {
-                                    bestByPidValue[key] = { image: hasCustom ? ir.image_url : null, hasCustom };
+                                    // Full image list for this color variant (fall back to the single image).
+                                    let imgs = [];
+                                    if (hasCustom && ir.image_urls) { try { imgs = JSON.parse(ir.image_urls); } catch (e) { imgs = []; } }
+                                    if (!Array.isArray(imgs) || imgs.length === 0) imgs = hasCustom ? [ir.image_url] : [];
+                                    // Capture the representative variant's price so cards can update
+                                    // the displayed price when this color swatch is selected.
+                                    bestByPidValue[key] = {
+                                        image: hasCustom ? ir.image_url : null,
+                                        images: imgs,
+                                        hasCustom,
+                                        price: (ir.price !== null && ir.price !== undefined) ? Number(ir.price) : null,
+                                        offer_price: (ir.offer_price !== null && ir.offer_price !== undefined && Number(ir.offer_price) > 0) ? Number(ir.offer_price) : null
+                                    };
                                 }
                             }
                             for (const r of optRows) {
@@ -319,7 +345,10 @@ class Product {
                                         return {
                                             color: String(v.swatch_color).trim(),
                                             value: String(v.value || '').trim(),
-                                            image: bestByPidValue[key]?.image || null
+                                            image: bestByPidValue[key]?.image || null,
+                                            images: bestByPidValue[key]?.images || [],
+                                            price: bestByPidValue[key]?.price ?? null,
+                                            offer_price: bestByPidValue[key]?.offer_price ?? null
                                         };
                                     });
                                 if (list.length > 0) swatchOptionsByProduct[r.product_id] = list;
@@ -351,6 +380,14 @@ class Product {
                         // when the variant is flagged use_primary_image or has no image.
                         if (!Number(v.use_primary_image) && v.image_url) {
                             p.primary_image = v.image_url;
+                        }
+                        // Expose the chosen (default) variant's full image gallery so cards
+                        // can carousel through all of that variant's images, not just one.
+                        if (!Number(v.use_primary_image)) {
+                            let vImgs = [];
+                            if (v.image_urls) { try { vImgs = JSON.parse(v.image_urls); } catch (e) { vImgs = []; } }
+                            if (Array.isArray(vImgs) && vImgs.length > 0) p.variant_gallery = vImgs;
+                            else if (v.image_url) p.variant_gallery = [v.image_url];
                         }
                     });
                 }
@@ -434,11 +471,12 @@ class Product {
     static async findById(id) {
         await ensureFreeGiftColumn();
         await ensureCompareConfigColumn();
+        await ensureSpecificationsArColumn();
         const [rows] = await db.execute(`
-            SELECT p.*, 
-            c.name as category_name, c.slug as category_slug,
-            sc.name as sub_category_name,
-            ssc.name as sub_sub_category_name,
+            SELECT p.*,
+            c.name as category_name, c.name_ar as category_name_ar, c.slug as category_slug,
+            sc.name as sub_category_name, sc.name_ar as sub_category_name_ar, sc.slug as sub_category_slug,
+            ssc.name as sub_sub_category_name, ssc.name_ar as sub_sub_category_name_ar, ssc.slug as sub_sub_category_slug,
             b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image, b.description as brand_description, b.description_ar as brand_description_ar,
             s.name as seller_name, s.company_name as seller_company, s.id as seller_id,
             COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = p.id), 0) as average_rating,
@@ -622,6 +660,7 @@ class Product {
             await ProductSizeTier.ensureSchema();
             await ensureFreeGiftColumn();
             await ensureCompareConfigColumn();
+            await ensureSpecificationsArColumn();
             const name = String(data.name || '');
             const model = data.model ? String(data.model) : null;
             const youtube_video_link = data.youtube_video_link ? String(data.youtube_video_link) : null;
@@ -633,6 +672,7 @@ class Product {
             const short_description = data.short_description ? String(data.short_description) : null;
             const short_description_ar = data.short_description_ar ? String(data.short_description_ar) : null;
             const specifications = data.specifications ? String(data.specifications) : null;
+            const specifications_ar = data.specifications_ar ? String(data.specifications_ar) : null;
             const price = parseFloat(data.price) || 0;
             const discount_percentage = parseFloat(data.discount_percentage) || 0;
             const offer_price = data.offer_price ? parseFloat(data.offer_price) : (discount_percentage > 0 ? price - (price * discount_percentage / 100) : null);
@@ -685,7 +725,7 @@ class Product {
 
             const params = [
                 name, name_ar, slug, description, description_ar, short_description, short_description_ar,
-                specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory,
+                specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory,
                 category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id,
                 is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller,
                 status, product_group, sub_category, model, youtube_video_link, resources,
@@ -700,7 +740,7 @@ class Product {
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -762,9 +802,10 @@ class Product {
         await ProductSizeTier.ensureSchema();
         await ensureFreeGiftColumn();
         await ensureCompareConfigColumn();
+        await ensureSpecificationsArColumn();
         const allowedColumns = [
             'name', 'name_ar', 'description', 'description_ar', 'short_description', 'short_description_ar',
-            'specifications', 'price', 'discount_percentage', 'offer_price', 'stock_quantity',
+            'specifications', 'specifications_ar', 'price', 'discount_percentage', 'offer_price', 'stock_quantity',
             'track_inventory', 'category_id', 'sub_category_id', 'sub_sub_category_id', 'brand_id',
             'seller_id', 'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer',
             'is_best_seller', 'status', 'product_group', 'sub_category', 'model',
@@ -780,15 +821,24 @@ class Product {
 
         const cleanData = {};
 
-        if (data.name) {
-            const newSlug = await this.generateUniqueSlug(data.name, productId);
-            const [currentRows] = await db.execute('SELECT slug FROM products WHERE id = ?', [productId]);
-
-            if (currentRows.length > 0 && currentRows[0].slug === newSlug) {
-                console.log(`SLUG_UPDATE_SKIP: Slug "${newSlug}" matches current. Skipping update.`);
-            } else {
-                cleanData.slug = newSlug;
+        // Slug (URL) rules:
+        //  • Admin sends an explicit `slug` → use it.
+        //  • The product NAME changed → regenerate the slug from the new name
+        //    (so renaming, e.g. removing an accidental "Black", updates the URL).
+        //  • The product has no slug yet (legacy rows) → generate one.
+        //  • Otherwise (name unchanged — e.g. just adding an image / editing price)
+        //    → leave the existing slug untouched so the URL stays stable.
+        if (data.slug) {
+            cleanData.slug = await this.generateUniqueSlug(data.slug, productId);
+        } else if (data.name) {
+            const [currentRows] = await db.execute('SELECT name, slug FROM products WHERE id = ?', [productId]);
+            const currentName = currentRows.length > 0 ? currentRows[0].name : null;
+            const currentSlug = currentRows.length > 0 ? currentRows[0].slug : null;
+            const nameChanged = String(data.name).trim() !== String(currentName || '').trim();
+            if (!currentSlug || nameChanged) {
+                cleanData.slug = await this.generateUniqueSlug(data.name, productId);
             }
+            // else: name unchanged → keep the existing slug
         }
 
         Object.keys(data).forEach(key => {

@@ -1,10 +1,28 @@
 const User = require('../models/user.model');
 const Address = require('../models/address.model');
+const db = require('../config/db');
 
 exports.getProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id);
         res.json({ success: true, data: user });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Points statement for the logged-in user: earned / redeemed / expired entries.
+exports.getRewardHistory = async (req, res, next) => {
+    try {
+        const [rows] = await db.query(
+            `SELECT id, points, transaction_type, order_id, description, created_at
+             FROM reward_points_history
+             WHERE user_id = ?
+             ORDER BY created_at DESC, id DESC
+             LIMIT 100`,
+            [req.user.id]
+        );
+        res.json({ success: true, data: rows });
     } catch (error) {
         next(error);
     }

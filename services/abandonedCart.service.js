@@ -36,10 +36,11 @@ const processAbandonedCarts = async () => {
 
         // ─── Reminder #1: Cart items older than 1 hour, no order in last 2 hours ───
         const [reminder1Users] = await db.query(`
-            SELECT 
+            SELECT
                 c.user_id,
                 u.name AS user_name,
-                u.email
+                u.email,
+                u.preferred_locale
             FROM carts c
             JOIN cart_items ci ON ci.cart_id = c.id
             JOIN users u ON u.id = c.user_id
@@ -57,10 +58,11 @@ const processAbandonedCarts = async () => {
 
         // ─── Reminder #2: Cart items older than 24 hours, already got reminder #1 ───
         const [reminder2Users] = await db.query(`
-            SELECT 
+            SELECT
                 c.user_id,
                 u.name AS user_name,
-                u.email
+                u.email,
+                u.preferred_locale
             FROM carts c
             JOIN cart_items ci ON ci.cart_id = c.id
             JOIN users u ON u.id = c.user_id
@@ -87,7 +89,7 @@ const processAbandonedCarts = async () => {
                 const cartItems = await getCartItemsForEmail(user.user_id);
                 if (cartItems.length === 0) continue;
 
-                await sendAbandonedCartEmail(user.email, user.user_name, cartItems, 1);
+                await sendAbandonedCartEmail(user.email, user.user_name, cartItems, 1, user.preferred_locale || 'en');
 
                 await db.query(
                     `INSERT INTO cart_abandonment_log (user_id, reminder_number) VALUES (?, 1)
@@ -106,7 +108,7 @@ const processAbandonedCarts = async () => {
                 const cartItems = await getCartItemsForEmail(user.user_id);
                 if (cartItems.length === 0) continue;
 
-                await sendAbandonedCartEmail(user.email, user.user_name, cartItems, 2);
+                await sendAbandonedCartEmail(user.email, user.user_name, cartItems, 2, user.preferred_locale || 'en');
 
                 await db.query(
                     `INSERT INTO cart_abandonment_log (user_id, reminder_number) VALUES (?, 2)

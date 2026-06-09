@@ -44,7 +44,7 @@ class Brand {
      */
     static async findActiveBrands(filters = {}) {
         const { category, search, is_featured, is_limited_offer, is_weekly_deal, is_daily_offer, seller, minPrice, maxPrice } = filters;
-        
+
         let catIds = null;
         if (category) {
             const [catRows] = await db.execute(
@@ -91,7 +91,7 @@ class Brand {
         if (is_limited_offer) query += ' AND p.is_limited_offer = 1 AND p.is_weekly_deal = 0 AND p.offer_end IS NOT NULL AND p.offer_end > NOW()';
         if (is_weekly_deal) query += ' AND p.is_weekly_deal = 1 AND p.is_limited_offer = 0 AND p.offer_end IS NOT NULL AND p.offer_end > NOW()';
         if (is_daily_offer) query += ' AND p.is_daily_offer = 1 AND p.offer_end IS NOT NULL AND p.offer_end > NOW()';
-        
+
         if (seller) {
             query += ' AND (p.seller_id = ? OR p.seller_name = ?)';
             params.push(seller, seller);
@@ -116,10 +116,10 @@ class Brand {
         return rows[0];
     }
 
-    static async create({ name, name_ar = null, slug, image_url = null, priority = 0 }) {
+    static async create({ name, name_ar = null, slug, image_url = null, image_url_ar = null, banner_url_ar = null, priority = 0 }) {
         const [result] = await db.execute(
-            'INSERT INTO brands (name, name_ar, slug, image_url, priority) VALUES (?, ?, ?, ?, ?)',
-            [name, name_ar, slug, image_url, priority]
+            'INSERT INTO brands (name, name_ar, slug, image_url, image_url_ar, banner_url_ar, priority) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [name, name_ar, slug, image_url, image_url_ar, banner_url_ar, priority]
         );
         return result.insertId;
     }

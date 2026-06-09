@@ -101,8 +101,12 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://192.168.0.100:3000',
-    process.env.FRONTEND_URL
-];
+    'https://uae.mariotstore.com',
+    'https://mariotstore.com',
+    'https://www.mariotstore.com',
+    'https://api.mariotstore.com',
+    ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(s => s.trim()) : [])
+].filter(Boolean);
 
 app.use(cors({
     origin: (origin, callback) => {

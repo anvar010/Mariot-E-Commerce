@@ -336,6 +336,18 @@ exports.adjustUserPoints = async (req, res, next) => {
 
         await db.query('UPDATE users SET reward_points = ? WHERE id = ?', [newBalance, req.params.id]);
 
+        // Log the adjustment so it shows in the user's rewards statement.
+        // 'remove' uses the real delta (current − newBalance) so a clamp at 0 is reflected. Non-fatal.
+        try {
+            const delta = action === 'add' ? amount : (current - newBalance);
+            if (delta > 0) {
+                await db.query(
+                    "INSERT INTO reward_points_history (user_id, points, transaction_type, description) VALUES (?, ?, ?, ?)",
+                    [req.params.id, delta, action === 'add' ? 'earned' : 'redeemed', action === 'add' ? 'Adjusted by admin (added)' : 'Adjusted by admin (removed)']
+                );
+            }
+        } catch (e) { console.error('[Rewards] admin-adjust history insert failed:', e.message); }
+
         res.json({
             success: true,
             message: action === 'add' ? `Added ${amount} points` : `Removed ${amount} points`,

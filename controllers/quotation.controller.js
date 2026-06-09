@@ -32,6 +32,7 @@ exports.createQuotation = async (req, res, next) => {
         };
 
         // --- ASYNC QUOTATION EMAIL ---
+        const qLocale = String(req.body?.locale || req.headers?.['x-locale'] || req.cookies?.NEXT_LOCALE || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
         (async () => {
             try {
                 await sendQuotationEmail(
@@ -39,7 +40,8 @@ exports.createQuotation = async (req, res, next) => {
                     customer_name,
                     quotation_ref,
                     total_amount,
-                    items
+                    items,
+                    qLocale
                 );
             } catch (err) {
                 console.error('[Email Service Error] Failed to send quotation email:', err.message);

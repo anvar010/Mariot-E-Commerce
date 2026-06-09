@@ -66,7 +66,8 @@ const initDb = async () => {
                 { name: 'vat_number', definition: "VARCHAR(100)" },
                 { name: 'reset_password_token', definition: "VARCHAR(255)" },
                 { name: 'reset_password_expires', definition: "DATETIME" },
-                { name: 'staff_permissions', definition: "JSON NULL" }
+                { name: 'staff_permissions', definition: "JSON NULL" },
+                { name: 'preferred_locale', definition: "VARCHAR(5) DEFAULT 'en'" }
             ];
             for (const col of userColumns) {
                 if (!columnNames.includes(col.name)) {
@@ -84,10 +85,12 @@ const initDb = async () => {
             const columnNames = columns.map(c => c.Field);
 
             const addressColumns = [
+                { name: 'address_type', definition: "ENUM('home','work','other') NOT NULL DEFAULT 'other' AFTER user_id" },
                 { name: 'first_name', definition: "VARCHAR(255) AFTER user_id" },
                 { name: 'last_name', definition: "VARCHAR(255) AFTER first_name" },
                 { name: 'company_name', definition: "VARCHAR(255) AFTER last_name" },
-                { name: 'email', definition: "VARCHAR(255) AFTER company_name" }
+                { name: 'email', definition: "VARCHAR(255) AFTER company_name" },
+                { name: 'address_label', definition: "VARCHAR(100) NULL AFTER address_type" }
             ];
 
             for (const col of addressColumns) {
@@ -111,7 +114,9 @@ const initDb = async () => {
                 { name: 'points_used', definition: "INT DEFAULT 0" },
                 { name: 'points_discount', definition: "DECIMAL(10, 2) DEFAULT 0.00" },
                 { name: 'coupon_id', definition: "INT" },
-                { name: 'discount_amount', definition: "DECIMAL(10, 2) DEFAULT 0.00" }
+                { name: 'discount_amount', definition: "DECIMAL(10, 2) DEFAULT 0.00" },
+                { name: 'receiver_name', definition: "VARCHAR(255) AFTER shipping_address_id" },
+                { name: 'receiver_phone', definition: "VARCHAR(50) AFTER receiver_name" }
             ];
 
             for (const col of orderColumns) {
@@ -176,7 +181,9 @@ const initDb = async () => {
                 { name: 'name_ar', definition: "VARCHAR(255)" },
                 { name: 'description_ar', definition: "TEXT NULL" },
                 { name: 'brand_names', definition: "TEXT" },
-                { name: 'banner_url', definition: "VARCHAR(500) NULL" }
+                { name: 'banner_url', definition: "VARCHAR(500) NULL" },
+                { name: 'image_url_ar', definition: "VARCHAR(500) NULL" },
+                { name: 'banner_url_ar', definition: "VARCHAR(500) NULL" }
             ];
 
             for (const col of categoryColumns) {
@@ -215,6 +222,26 @@ const initDb = async () => {
             }
         } catch (err) {
             console.error('[DB] Error migrating coupons table:', err.message);
+        }
+
+        // 6.6 Brands missing Arabic media columns migration
+        try {
+            const [columns] = await db.query("SHOW COLUMNS FROM brands");
+            const columnNames = columns.map(c => c.Field);
+
+            const brandColumns = [
+                { name: 'image_url_ar', definition: "VARCHAR(500) NULL" },
+                { name: 'banner_url_ar', definition: "VARCHAR(500) NULL" }
+            ];
+
+            for (const col of brandColumns) {
+                if (!columnNames.includes(col.name)) {
+                    await db.query(`ALTER TABLE brands ADD COLUMN ${col.name} ${col.definition}`);
+                    console.log(`[DB] Migration: Added ${col.name} column to brands table`);
+                }
+            }
+        } catch (err) {
+            console.error('[DB] Error migrating brands table:', err.message);
         }
 
         // 6.7 Product Variants Tables

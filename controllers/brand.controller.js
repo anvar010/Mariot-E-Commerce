@@ -50,7 +50,12 @@ const checkPriorityUnique = async (priority, excludeId = 0) => {
 exports.getBrands = async (req, res, next) => {
     try {
         await ensurePriorityColumn();
-        const { category, is_daily_offer, search, is_featured, is_limited, is_weekly, seller, minPrice, maxPrice } = req.query;
+        const { category, is_daily_offer, search, is_featured, is_limited, is_weekly, seller, minPrice, maxPrice, all } = req.query;
+
+        if (all === '1' || all === 'true') {
+            const brands = await Brand.findAll();
+            return res.json({ success: true, data: brands });
+        }
 
         const brands = await Brand.findActiveBrands({
             category,
@@ -93,6 +98,8 @@ exports.createBrand = async (req, res, next) => {
             name_ar: req.body.name_ar || null,
             slug,
             image_url: req.body.image_url || null,
+            image_url_ar: req.body.image_url_ar || null,
+            banner_url_ar: req.body.banner_url_ar || null,
             priority
         };
         const id = await Brand.create(data);

@@ -243,7 +243,9 @@ exports.verifySignupOtp = async (req, res, next) => {
         const userId = await User.createWithHash({ name: pending.name, email, passwordHash: pending.password_hash });
         await User.signupOtpDelete(email);
 
-        sendWelcomeEmail(email, pending.name).catch(err => console.error('Failed to send welcome email:', err));
+        const wLocale = String(req.body?.locale || req.headers?.['x-locale'] || req.cookies?.NEXT_LOCALE || req.headers?.['accept-language'] || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
+        User.updatePreferredLocale(userId, wLocale).catch(() => {});
+        sendWelcomeEmail(email, pending.name, wLocale).catch(err => console.error('Failed to send welcome email:', err));
 
         const user = { id: userId, name: pending.name, email, role: 'user', reward_points: 1000, email_verified: 1 };
         const token = sendAuthCookie(user, res);

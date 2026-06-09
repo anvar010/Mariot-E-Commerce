@@ -497,8 +497,8 @@ const fetchTrendingProductsData = async (limit = 8) => {
         SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
                p.stock_quantity, p.track_inventory,
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
-               c.id as category_id, c.name as category_name, c.slug as category_slug,
-               sc.id as sub_category_id, sc.name as sub_category_name, sc.slug as sub_category_slug,
+               c.id as category_id, c.name as category_name, c.name_ar as category_name_ar, c.slug as category_slug,
+               sc.id as sub_category_id, sc.name as sub_category_name, sc.name_ar as sub_category_name_ar, sc.slug as sub_category_slug,
                b.id as brand_id, b.name as brand_name, b.name_ar as brand_name_ar, b.slug as brand_slug, b.image_url as brand_image,
                tp.position
         FROM trending_products tp
@@ -535,10 +535,11 @@ const deriveRelatedFromTrending = (trending) => {
         // Prefer sub-category; fall back to main category
         const id = p.sub_category_id || p.category_id;
         const name = p.sub_category_name || p.category_name;
+        const name_ar = p.sub_category_id ? p.sub_category_name_ar : p.category_name_ar;
         const slug = p.sub_category_slug || p.category_slug;
         if (id && name && !seenCats.has(id)) {
             seenCats.add(id);
-            categories.push({ id, name, slug });
+            categories.push({ id, name, name_ar, slug });
             if (categories.length >= 5) break;
         }
     }

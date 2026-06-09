@@ -1,6 +1,12 @@
 const dotenv = require('dotenv');
-// Load env vars FIRST (override shell env so .env wins)
-dotenv.config({ override: true });
+// Load .env values, but do NOT override platform-injected env vars (Hostinger/Render/etc).
+// Production hosts inject vars at process start; in dev, .env fills in the gaps.
+dotenv.config();
+
+console.log('[BOOT] cwd =', process.cwd());
+console.log('[BOOT] DB_USER =', JSON.stringify(process.env.DB_USER));
+console.log('[BOOT] DB_PASSWORD present =', !!process.env.DB_PASSWORD);
+console.log('[BOOT] DB_NAME =', JSON.stringify(process.env.DB_NAME));
 
 const app = require('./app');
 
