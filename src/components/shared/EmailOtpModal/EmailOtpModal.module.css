@@ -36,7 +36,7 @@
 .closeBtn {
     position: absolute;
     top: 14px;
-    right: 14px;
+    inset-inline-end: 14px;
     background: #f1f5f9;
     border: none;
     color: #475569;
@@ -297,7 +297,7 @@
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     display: inline-block;
-    margin-right: 8px;
+    margin-inline-end: 8px;
     vertical-align: middle;
 }
 

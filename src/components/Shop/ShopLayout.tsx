@@ -374,9 +374,14 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
 
     return (
         <div className={styles.shopLayout}>
-            {brandParam && activeBrandInfo?.banner_url && (
+            {brandParam && (isArabic && activeBrandInfo?.banner_url_ar ? activeBrandInfo.banner_url_ar : activeBrandInfo?.banner_url) && (
                 <div className={styles.brandBanner}>
-                    <img src={resolveUrl(activeBrandInfo.banner_url)} alt={getBrandDisplayName() || ""} className={styles.brandBannerImg} />
+                    <img src={resolveUrl(isArabic && activeBrandInfo?.banner_url_ar ? activeBrandInfo.banner_url_ar : activeBrandInfo.banner_url)} alt={getBrandDisplayName() || ""} className={styles.brandBannerImg} />
+                </div>
+            )}
+            {!brandParam && activeCategory && (isArabic && matchedCategoryForGrid?.banner_url_ar ? matchedCategoryForGrid.banner_url_ar : matchedCategoryForGrid?.banner_url) && (
+                <div className={styles.categoryBanner}>
+                    <img src={resolveUrl(isArabic && matchedCategoryForGrid?.banner_url_ar ? matchedCategoryForGrid.banner_url_ar : matchedCategoryForGrid.banner_url)} alt={formattedCategoryName} className={styles.categoryBannerImg} />
                 </div>
             )}
             <div className={styles.topInfo}>
@@ -411,30 +416,39 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 {isMobileFilterOpen && <div className={styles.filterOverlay} onClick={() => setIsMobileFilterOpen(false)} />}
 
                 <main className={styles.content}>
-                    {brandParam && !activeCategory && brandCategories.some((c: any) => c.type === 'main_category') && (
+                    {brandParam && !activeCategory && brandCategories.length > 0 && (
                         <div className={styles.brandCatRow}>
-                            {brandCategories.filter((c: any) => c.type === 'main_category').map((cat: any, idx: number) => {
-                                const catName = isArabic && cat.name_ar ? cat.name_ar : cat.name;
-                                const slug = cat.slug || cat.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
-                                const imgSrc = cat.image_url ? resolveUrl(cat.image_url) : '/assets/mariot-logo2.webp';
-                                return (
-                                    <Link
-                                        key={idx}
-                                        href={`/shop?brand=${brandParam}&category=${slug}`}
-                                        className={styles.brandCatItem}
-                                    >
-                                        <div className={styles.brandCatCircle}>
-                                            <img
-                                                src={imgSrc}
-                                                alt={catName}
-                                                className={styles.brandCatImg}
-                                                onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
-                                            />
-                                        </div>
-                                        <span className={styles.brandCatName}>{catName}</span>
-                                    </Link>
-                                );
-                            })}
+                            {[...brandCategories]
+                                .sort((a: any, b: any) => {
+                                    // Main categories first, then each main's subcategories grouped after it
+                                    const aRoot = a.parent_id ? a.parent_id : a.id;
+                                    const bRoot = b.parent_id ? b.parent_id : b.id;
+                                    if (aRoot !== bRoot) return aRoot - bRoot;
+                                    return (a.parent_id ? 1 : 0) - (b.parent_id ? 1 : 0);
+                                })
+                                .map((cat: any, idx: number) => {
+                                    const catName = isArabic && cat.name_ar ? cat.name_ar : cat.name;
+                                    const slug = cat.slug || cat.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                                    const catImg = isArabic && cat.image_url_ar ? cat.image_url_ar : cat.image_url;
+                                    const imgSrc = catImg ? resolveUrl(catImg) : '/assets/mariot-logo2.webp';
+                                    return (
+                                        <Link
+                                            key={cat.id ?? idx}
+                                            href={`/shop?brand=${brandParam}&category=${slug}`}
+                                            className={styles.brandCatItem}
+                                        >
+                                            <div className={styles.brandCatCircle}>
+                                                <img
+                                                    src={imgSrc}
+                                                    alt={catName}
+                                                    className={styles.brandCatImg}
+                                                    onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                                />
+                                            </div>
+                                            <span className={styles.brandCatName}>{catName}</span>
+                                        </Link>
+                                    );
+                                })}
                         </div>
                     )}
                     {!hideCategoryGrid && !brandParam && (!searchParams.get('category') || subCategoriesToShow.length > 0) && <CategoryGrid subCategoriesToShow={subCategoriesToShow} t={t} tc={tc} brandParam={brandParam} />}

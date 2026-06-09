@@ -31,18 +31,24 @@ import {
     ListChecks,
     Ruler,
     MoveHorizontal,
-    MoveVertical
+    MoveVertical,
+    BellRing,
+    Scale
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import { resolveUrl } from '@/utils/resolveUrl';
 import { getAuthHeaders } from '@/utils/authHeaders';
-import { useCart } from '@/context/CartContext';
+import { useCartActions } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
 import { useNotification } from '@/context/NotificationContext';
 import Loader from '@/components/shared/Loader/Loader';
+import dynamic from 'next/dynamic';
+// Interaction-gated: only loaded when the user opens the "notify me" modal,
+// so its JS stays out of the product page's initial bundle.
+const NotifyMeModal = dynamic(() => import('@/components/shared/NotifyMeModal/NotifyMeModal'), { ssr: false });
 import ProductCardPromotion from '@/components/shared/ProductCardPromotion/ProductCardPromotion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -60,6 +66,11 @@ import 'swiper/css/pagination';
 interface ProductDetailProps {
     id: string;
 }
+
+// Shown whenever a product has no usable image (empty slot, missing/broken
+// primary image). Matches the fallback used by ProductCard so the site logo
+// appears consistently instead of a blank/placeholder tile.
+const LOGO_FALLBACK = '/assets/mariot-logo2.webp';
 
 const TrustItem = ({ icon, title, text }: any) => (
     <div className={styles.trustItem}>
@@ -145,7 +156,7 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
 
     const getName = (p: any) => (isArabic && p.name_ar) ? p.name_ar : p.name;
     const getPrice = (p: any) => Number(p.offer_price && Number(p.offer_price) > 0 ? p.offer_price : p.price) || 0;
-    const getImg = (p: any) => resolveUrl(p.primary_image || (p.images && p.images[0]?.image_url)) || '/assets/placeholder-image.webp';
+    const getImg = (p: any) => resolveUrl(p.primary_image || (p.images && p.images[0]?.image_url)) || LOGO_FALLBACK;
 
     const handleAddAll = async () => {
         if (selectedItems.length === 0) return;
@@ -157,6 +168,7 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
                 variant_id: p.variantDetails?.id || null,
                 variant_label: p.variantDetails?.label || undefined,
                 name: p.name,
+                name_ar: p.name_ar,
                 price: getPrice(p),
                 image: getImg(p),
                 brand: p.brand_name || '',
@@ -222,6 +234,7 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
                                                     src={getImg(p)}
                                                     alt={getName(p)}
                                                     className={styles.fbtImage}
+                                                    onError={(e) => { e.currentTarget.src = LOGO_FALLBACK; }}
                                                 />
 
                                                 <div className={styles.fbtInfo}>
@@ -275,12 +288,19 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
 const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [product, setProduct] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    // notFound = genuine 404 from the API; loadError = transient failure
+    // (network/5xx/timeout) after retries. Kept separate so a temporary backend
+    // hiccup doesn't masquerade as a permanent "Product not found".
+    const [notFound, setNotFound] = useState(false);
+    const [loadError, setLoadError] = useState(false);
+    const [reloadKey, setReloadKey] = useState(0);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [qty, setQty] = useState<number | string>(1);
     const [selectedValues, setSelectedValues] = useState<Record<number, string>>({});
     const [customDims, setCustomDims] = useState<Record<'width' | 'depth' | 'height', string>>({ width: '', depth: '', height: '' });
     const [showTabbyModal, setShowTabbyModal] = useState(false);
     const [showPriceMatchModal, setShowPriceMatchModal] = useState(false);
+    const [notifyOpen, setNotifyOpen] = useState(false);
     const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({
         specs: true,
         description: true
@@ -373,7 +393,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         }
     };
 
-    const { addToCart } = useCart();
+    const { addToCart } = useCartActions();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const { user, token } = useAuth();
     const { showNotification } = useNotification();
@@ -381,6 +401,20 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const locale = useLocale();
     const t = useTranslations('product');
     const isArabic = locale === 'ar';
+
+    // Prefill price-match contact info from the logged-in user (don't overwrite typing).
+    useEffect(() => {
+        if (!showPriceMatchModal || !user) return;
+        const localPhone = String(user.phone || '')
+            .replace(/\D/g, '')      // digits only
+            .replace(/^971/, '')     // drop UAE country code
+            .replace(/^0+/, '');     // drop leading zero
+        setPmForm(prev => ({
+            ...prev,
+            email: prev.email || user.email || '',
+            phone: prev.phone || localPhone
+        }));
+    }, [showPriceMatchModal, user]);
 
     const [relatedEmblaRef, relatedEmblaApi] = useEmblaCarousel({
         loop: false,
@@ -475,11 +509,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
 
     useEffect(() => {
-        const fetchProduct = async () => {
-            try {
-                const res = await fetch(`${API_BASE_URL}/products/${encodeURIComponent(id)}`, { credentials: "include" });
-                const data = await res.json();
-                if (data.success) {
+        let cancelled = false;
+
+        const applyProductData = (data: any) => {
                     setProduct(data.data);
                     // Auto-select default variant; fall back to first value of each option
                     if (data.data.has_variants === 1 && Array.isArray(data.data.options) && Array.isArray(data.data.variants)) {
@@ -557,12 +589,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         data.data.id
                     );
                     fetchReviews(data.data.id);
-                }
-            } catch (err) {
-                console.error("Error fetching product:", err);
-            } finally {
-                setLoading(false);
-            }
         };
 
         const fetchCompareCandidates = async (category: string | number | null, currentProductId: number) => {
@@ -616,8 +642,52 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 console.error("Error fetching reviews:", err);
             }
         };
+
+        const fetchProduct = async () => {
+            setLoading(true);
+            setNotFound(false);
+            setLoadError(false);
+            const maxAttempts = 3;
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/products/${encodeURIComponent(id)}`, { credentials: "include" });
+                    // Genuine 404 — the product really doesn't exist. Don't retry.
+                    if (res.status === 404) {
+                        if (!cancelled) { setNotFound(true); setLoading(false); }
+                        return;
+                    }
+                    // Server error — fall through to retry.
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    if (cancelled) return;
+                    if (data.success && data.data) {
+                        applyProductData(data);
+                        setLoading(false);
+                        return;
+                    }
+                    // OK response but no product payload — treat as not found.
+                    setNotFound(true);
+                    setLoading(false);
+                    return;
+                } catch (err) {
+                    if (cancelled) return;
+                    console.error(`Error fetching product (attempt ${attempt}/${maxAttempts}):`, err);
+                    if (attempt < maxAttempts) {
+                        // Brief backoff, then retry — a transient backend hiccup
+                        // (e.g. load spike during an image upload) shouldn't show
+                        // a permanent "Product not found".
+                        await new Promise(r => setTimeout(r, attempt * 600));
+                        continue;
+                    }
+                    setLoadError(true);
+                    setLoading(false);
+                }
+            }
+        };
+
         fetchProduct();
-    }, [id, locale]);
+        return () => { cancelled = true; };
+    }, [id, locale, reloadKey]);
 
     useEffect(() => {
         const checkHeight = () => {
@@ -808,6 +878,28 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     };
 
     if (loading) return <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>;
+    // Transient load failure (network/5xx/timeout) — offer a retry instead of
+    // the permanent "Product not found" screen.
+    if (loadError) {
+        return (
+            <div className={styles.productDetail} style={{ padding: 0 }}>
+                <div className={styles.notFoundSection}>
+                    <div className={styles.notFoundIcon}>
+                        <Search size={100} strokeWidth={1} />
+                    </div>
+                    <h1>{isArabic ? 'تعذّر تحميل المنتج' : "Couldn't load product"}</h1>
+                    <p>
+                        {isArabic
+                            ? 'حدثت مشكلة مؤقتة في تحميل هذا المنتج. يرجى التحقق من اتصالك والمحاولة مرة أخرى.'
+                            : "We hit a temporary problem loading this product. Please check your connection and try again."}
+                    </p>
+                    <button onClick={() => setReloadKey(k => k + 1)} className={styles.backHomeBtn} style={{ cursor: 'pointer', border: 'none' }}>
+                        {isArabic ? 'إعادة المحاولة' : 'Try Again'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
     if (!product) {
         return (
             <div className={styles.productDetail} style={{ padding: 0 }}>
@@ -828,8 +920,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 <div className={styles.supportBanner}>
                     <div className={styles.supportContainer}>
                         <div className={styles.supportTextSide}>
-                            <h2>We're always ready to help</h2>
-                            <p>Reach out to us through any of these support channels</p>
+                            <h2>{t('supportReady')}</h2>
+                            <p>{t('supportSubtitle')}</p>
                         </div>
                         <div className={styles.supportActionsSide}>
                             <div className={styles.supportItem}>
@@ -837,7 +929,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     <Phone size={24} fill="currentColor" color="white" />
                                 </div>
                                 <div className={styles.supportInfo}>
-                                    <h4>Phone Support</h4>
+                                    <h4>{t('phoneSupport')}</h4>
                                     <p>+971 4 288 2777</p>
                                 </div>
                             </div>
@@ -846,7 +938,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     <Mail size={24} fill="currentColor" color="white" />
                                 </div>
                                 <div className={styles.supportInfo}>
-                                    <h4>Info Email</h4>
+                                    <h4>{t('infoEmail')}</h4>
                                     <p>info@mariot-group.com</p>
                                 </div>
                             </div>
@@ -855,7 +947,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     <Headset size={24} color="white" />
                                 </div>
                                 <div className={styles.supportInfo}>
-                                    <h4>Help Center</h4>
+                                    <h4>{t('helpCenter')}</h4>
                                     <p>help@mariot-group.com</p>
                                 </div>
                             </div>
@@ -989,9 +1081,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         ? (selectedVariant ? Number(selectedVariant.stock_quantity) : variantsTotalStock)
         : Number(product.stock_quantity || 0);
 
+    // "Always in stock" products (track_inventory = 0) are never out of stock, even when
+    // stock_quantity is 0. Variant products always honor variant stock (the backend forces
+    // track_inventory = 1 for variant lines), so they remain inventory-tracked.
+    const tracksInventory = hasVariants ? true : Number(product.track_inventory) === 1;
+    const outOfStock = tracksInventory && effectiveStock <= 0;
+    // Units the user may pick. Untracked products aren't capped by stock_quantity.
+    const maxQty = tracksInventory ? effectiveStock : 99;
+
     const baseImages: string[] = product.images?.length > 0
         ? product.images.map((img: any) => resolveUrl(img.image_url))
-        : ['/assets/placeholder-image.webp'];
+        : [LOGO_FALLBACK];
     // When a variant is selected with its own gallery, show ONLY that variant's images.
     const variantImageUrls: string[] = (selectedVariant && !selectedVariant.use_primary_image)
         ? (Array.isArray(selectedVariant.image_urls) && selectedVariant.image_urls.length > 0
@@ -1053,6 +1153,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             variant_id: selectedVariant?.id || null,
             variant_label: variantLabel || customLabel || undefined,
             name: product.name,
+            name_ar: product.name_ar,
+            // Selected variant's SKU (model number) so cart/quotation/order show it
+            model: (selectedVariant && selectedVariant.sku) ? selectedVariant.sku : product.model,
             price: displayPrice,
             image: images[0],
             brand: product.brand_name,
@@ -1061,7 +1164,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             track_inventory: hasVariants ? 1 : product.track_inventory,
             quantity: Number(qty) || 1,
             oldPrice: oldPrice,
-            custom_dimensions: isCustomizable ? { ...customDims } : undefined
+            // Only persist dimensions the admin actually enabled AND the user filled —
+            // avoids leaking empty keys (e.g. "Depth: cm") into cart/order/notifications.
+            custom_dimensions: isCustomizable
+                ? customDimensionList.reduce((acc, d) => {
+                    if (customDims[d] !== '' && customDims[d] != null) acc[d] = customDims[d];
+                    return acc;
+                }, {} as Record<string, string>)
+                : undefined
         });
 
         if (success && withGifts && activeGift) {
@@ -1073,6 +1183,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 id: activeGift.id,
                 variant_id: null,
                 name: activeGift.name,
+                name_ar: activeGift.name_ar,
                 price: 0,
                 original_price: giftCatalogPrice,
                 image: activeGift.primary_image,
@@ -1190,7 +1301,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         <>
                             <span className={styles.breadcrumbSeparator}>/</span>
                             <Link
-                                href={`/${locale}/shop?category=${product.sub_sub_category_name}`}
+                                href={`/${locale}/shop?category=${product.sub_sub_category_slug}`}
                                 className={styles.breadcrumbLink}
                             >
                                 {isArabic && product.sub_sub_category_name_ar ? product.sub_sub_category_name_ar : product.sub_sub_category_name}
@@ -1211,9 +1322,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             <div className={styles.gallerySection}>
                                 <div
                                     className={styles.stockBadge}
-                                    style={{ backgroundColor: effectiveStock > 0 ? '#62d972' : '#ff4d4f' }}
+                                    style={{ backgroundColor: !outOfStock ? '#62d972' : '#ff4d4f' }}
                                 >
-                                    {effectiveStock > 0 ? t('inStock') : t('outOfStock')}
+                                    {!outOfStock ? t('inStock') : t('outOfStock')}
                                 </div>
                                 <button className={styles.wishlistBtn} onClick={toggleWishlist}>
                                     <Heart size={20} fill={isFav ? "#e31e24" : "none"} color={isFav ? "#e31e24" : "#999"} />
@@ -1373,7 +1484,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         </span>
                                     </div>
                                 </div>
-                                <div className={styles.modelNumber}>{t('modelLabel')} : {product.model || product.slug?.toUpperCase() || product.id}</div>
+                                <div className={styles.modelNumber}>{t('modelLabel')} : {(selectedVariant && selectedVariant.sku) ? selectedVariant.sku : (product.model || product.slug?.toUpperCase() || product.id)}</div>
 
                                 {hasVariants && (
                                     <div className={styles.variantOptionsWrapper}>
@@ -1393,7 +1504,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                                             const primaryFallback = product.images?.[0]
                                                 ? resolveUrl(product.images[0].image_url)
-                                                : '/assets/placeholder-image.webp';
+                                                : LOGO_FALLBACK;
 
                                             return (
                                                 <div key={opt.id} className={styles.variantOption}>
@@ -1690,10 +1801,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         <div
                                             className={`${styles.qtyCustomSelect} ${isQtyOpen ? styles.open : ''}`}
                                             onClick={() => setIsQtyOpen(!isQtyOpen)}
-                                            style={{ opacity: effectiveStock === 0 ? 0.6 : 1, pointerEvents: effectiveStock === 0 ? 'none' : 'auto' }}
+                                            style={{ opacity: outOfStock ? 0.6 : 1, pointerEvents: outOfStock ? 'none' : 'auto' }}
                                         >
                                             <span className={styles.qtyCustomSelectText}>
-                                                {effectiveStock > 0 ? (
+                                                {!outOfStock ? (
                                                     <div className={styles.manualInputWrapper}>
                                                         <span className={styles.qtyPrefix}>{t('qty')}</span>
                                                         <input
@@ -1703,9 +1814,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                             onChange={(e) => {
                                                                 const val = parseInt(e.target.value);
                                                                 if (!isNaN(val)) {
-                                                                    if (val > effectiveStock) {
-                                                                        setQty(effectiveStock);
-                                                                        showNotification(t('maxStockReached', { count: effectiveStock }) || `Maximum stock available is ${effectiveStock}`, 'info');
+                                                                    if (val > maxQty) {
+                                                                        setQty(maxQty);
+                                                                        showNotification(t('maxStockReached', { count: maxQty }) || `Maximum stock available is ${maxQty}`, 'info');
                                                                     } else {
                                                                         setQty(Math.max(1, val));
                                                                     }
@@ -1726,9 +1837,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             )}
                                         </div>
 
-                                        {isQtyOpen && effectiveStock > 0 && (
+                                        {isQtyOpen && !outOfStock && (
                                             <div className={styles.qtyCustomOptions}>
-                                                {Array.from({ length: Math.min(effectiveStock, 10) }, (_, i) => i + 1).map(n => (
+                                                {Array.from({ length: Math.min(maxQty, 10) }, (_, i) => i + 1).map(n => (
                                                     <div
                                                         key={n}
                                                         className={`${styles.qtyCustomOption} ${n === qty ? styles.selected : ''}`}
@@ -1745,25 +1856,39 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </div>
                                 </div>
 
-                                <button
-                                    className={styles.addToCartBtn}
-                                    onClick={handleAddToCart}
-                                    disabled={effectiveStock === 0 || cartAdded || (hasVariants && !selectedVariant) || (isCustomizable && !customAllValid)}
-                                    style={{
-                                        opacity: effectiveStock === 0 ? 0.6 : 1,
-                                        cursor: effectiveStock === 0 ? 'not-allowed' : 'pointer',
-                                        backgroundColor: cartAdded ? '#28a745' : '',
-                                        width: '100%',
-                                        flex: '0 0 56px'
-                                    }}
-                                >
-                                    {cartAdded ? null : <ShoppingCart size={24} />}
-                                    {cartAdded
-                                        ? t('added')
-                                        : (hasVariants && !selectedVariant
-                                            ? t('selectOptions', { defaultValue: 'Select options' })
-                                            : (effectiveStock > 0 ? t('addToCart') : t('outOfStock')))}
-                                </button>
+                                {outOfStock ? (
+                                    <button
+                                        type="button"
+                                        className={styles.addToCartBtn}
+                                        onClick={() => setNotifyOpen(true)}
+                                        style={{
+                                            backgroundColor: '#1e293b',
+                                            width: '100%',
+                                            flex: '0 0 56px'
+                                        }}
+                                    >
+                                        <BellRing size={22} />
+                                        {isArabic ? 'أعلمني عند التوفر' : 'Notify Me'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        className={styles.addToCartBtn}
+                                        onClick={handleAddToCart}
+                                        disabled={cartAdded || (hasVariants && !selectedVariant) || (isCustomizable && !customAllValid)}
+                                        style={{
+                                            backgroundColor: cartAdded ? '#28a745' : '',
+                                            width: '100%',
+                                            flex: '0 0 56px'
+                                        }}
+                                    >
+                                        {cartAdded ? null : <ShoppingCart size={24} />}
+                                        {cartAdded
+                                            ? t('added')
+                                            : (hasVariants && !selectedVariant
+                                                ? t('selectOptions', { defaultValue: 'Select options' })
+                                                : t('addToCart'))}
+                                    </button>
+                                )}
 
                                 {/* Extra Services — placed after Add to Cart */}
                                 <div className={styles.extraServicesSection}>
@@ -1822,7 +1947,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             type="button"
                                             className={styles.bundleAddBtn}
                                             onClick={() => performAddToCart(true)}
-                                            disabled={effectiveStock === 0 || (hasVariants && !selectedVariant) || (isCustomizable && !customAllValid) || !activeGift}
+                                            disabled={outOfStock || (hasVariants && !selectedVariant) || (isCustomizable && !customAllValid) || !activeGift}
                                         >
                                             {isArabic ? 'إضافة المنتج + الهدية إلى السلة' : 'Add product + gift to cart'}
                                         </button>
@@ -1897,10 +2022,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 isOpen={!!expandedAccordions['specs']}
                                 onToggle={() => toggleAccordion('specs')}
                             >
-                                {product.specifications ? (
+                                {getLocalizedField('specifications', 'specifications_ar') ? (
                                     <div className={styles.specsGrid}>
                                         {(() => {
-                                            const cleaned = cleanShortcodes(product.specifications)
+                                            const cleaned = cleanShortcodes(getLocalizedField('specifications', 'specifications_ar'))
                                                 .replace(/<[^>]*>/g, '\n') // Replace HTML tags with newlines
                                                 .replace(/^[•\s✳️✅-]\s*/gm, ''); // Remove bullet points at start of lines
                                             const lines = cleaned.split(/\n/).filter(l => l.trim() !== '');
@@ -1959,9 +2084,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             >
                                 <div className={styles.aboutBrandContainer}>
                                     {product.brand_image && (
-                                        <div className={styles.aboutBrandLogoBox}>
+                                        <Link 
+                                            href={`/${locale}/shop?brand=${encodeURIComponent(product.brand_slug || (product.brand_name ? product.brand_name.toLowerCase().replace(/ /g, '-') : ''))}`} 
+                                            className={styles.aboutBrandLogoBox}
+                                        >
                                             <img src={resolveUrl(product.brand_image)} alt={getLocalizedField('brand_name', 'brand_name_ar')} className={styles.aboutBrandLogoImg} />
-                                        </div>
+                                        </Link>
                                     )}
                                     <p>{getLocalizedField('brand_description', 'brand_description_ar') || `${t('aboutBrand')} : ${getLocalizedField('brand_name', 'brand_name_ar') || 'Mariot'}`}</p>
                                 </div>
@@ -2003,7 +2131,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                         </div>
                                                         <div className={styles.resourceTextInfo}>
                                                             <span className={styles.resourceName}>{res.name || 'Download'}</span>
-                                                            <span className={styles.resourceFormat}>PDF Document</span>
+                                                            <span className={styles.resourceFormat}>{t('pdfDocument')}</span>
                                                         </div>
                                                     </div>
                                                     <div className={styles.downloadAction}>
@@ -2195,7 +2323,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         return m;
                     };
 
-                    const specMaps = slotProducts.map(p => parseSpecs(p?.specifications));
+                    const specMaps = slotProducts.map(p => parseSpecs(isArabic && p?.specifications_ar ? p.specifications_ar : p?.specifications));
 
                     // Build the union of attribute labels, preserving the order they first appear (left → right).
                     const seen = new Set<string>();
@@ -2233,19 +2361,50 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </colgroup>
                                     <thead>
                                         <tr>
-                                            <th></th>
+                                            <th>
+                                                <div className={styles.compareCornerCell}>
+                                                    <div className={styles.compareCornerIcon}>
+                                                        <Scale size={44} strokeWidth={1.5} />
+                                                    </div>
+                                                    <span className={styles.compareCornerLabel}>{isArabic ? 'قارن' : 'Compare'}</span>
+                                                </div>
+                                            </th>
                                             {slotProducts.map((p, idx) => (
                                                 <th key={idx}>
                                                     {p ? (
                                                         <div className={styles.compareHeadCell}>
-                                                            <img
-                                                                src={resolveUrl(p.primary_image || p.images?.[0]?.image_url) || '/assets/placeholder-image.webp'}
-                                                                alt={p.name}
-                                                                className={styles.compareHeadImg}
-                                                            />
-                                                            <div className={styles.compareHeadName}>
-                                                                {isArabic ? (p.name_ar || p.name) : p.name}
-                                                            </div>
+                                                            {idx === 0 ? (
+                                                                // Current product — not a link (you're already here).
+                                                                // Mirror the main gallery's image source (images[0]) so the
+                                                                // header always shows the same picture the user is viewing,
+                                                                // even when the DB `primary_image` field is stale/wrong.
+                                                                <>
+                                                                    <img
+                                                                        src={images[0] || resolveUrl(p.primary_image) || LOGO_FALLBACK}
+                                                                        alt={p.name}
+                                                                        className={styles.compareHeadImg}
+                                                                        onError={(e) => { e.currentTarget.src = LOGO_FALLBACK; }}
+                                                                    />
+                                                                    <div className={styles.compareHeadName}>
+                                                                        {isArabic ? (p.name_ar || p.name) : p.name}
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <Link
+                                                                    href={`/${locale}/product/${p.slug || p.id}`}
+                                                                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer', display: 'block' }}
+                                                                >
+                                                                    <img
+                                                                        src={resolveUrl(p.primary_image || p.images?.[0]?.image_url) || LOGO_FALLBACK}
+                                                                        alt={p.name}
+                                                                        className={styles.compareHeadImg}
+                                                                        onError={(e) => { e.currentTarget.src = LOGO_FALLBACK; }}
+                                                                    />
+                                                                    <div className={styles.compareHeadName}>
+                                                                        {isArabic ? (p.name_ar || p.name) : p.name}
+                                                                    </div>
+                                                                </Link>
+                                                            )}
                                                             {idx === 0 ? (
                                                                 <div className={styles.compareThisProduct}>{isArabic ? 'هذا المنتج' : 'This Product'}</div>
                                                             ) : (
@@ -2264,7 +2423,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                         </div>
                                                     ) : (
                                                         <div className={styles.compareHeadCell}>
-                                                            <div className={styles.compareEmptyTile}>—</div>
+                                                            <img
+                                                                src={LOGO_FALLBACK}
+                                                                alt="Mariot"
+                                                                className={`${styles.compareHeadImg} ${styles.compareEmptyImg}`}
+                                                            />
                                                             {!adminEnabled && (
                                                                 <button
                                                                     type="button"
@@ -2284,10 +2447,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         <tr>
                                             <td className={styles.compareRowLabel}>{isArabic ? 'السعر' : 'Price'}</td>
                                             {slotProducts.map((p, idx) => {
-                                                const price = priceOf(p);
+                                                // Current product (idx 0) mirrors the main price the user sees —
+                                                // `displayPrice` already reflects the selected variant's offer/price.
+                                                const price = idx === 0 ? displayPrice : priceOf(p);
                                                 return (
                                                     <td key={idx} className={styles.compareCell}>
-                                                        {price !== null ? <CurrencyPrice amount={Number(price)} /> : '—'}
+                                                        {price !== null && price !== undefined ? <CurrencyPrice amount={Number(price)} /> : '—'}
                                                     </td>
                                                 );
                                             })}
@@ -2441,7 +2606,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         <div className={styles.reviewsListSide}>
                             {reviews.length === 0 ? (
                                 <div className={styles.noReviews}>
-                                    <ShieldCheck size={24} color="#5bb377" />
+                                    <div className={styles.noReviewsIcon}>
+                                        <ShieldCheck size={28} color="#5bb377" />
+                                    </div>
                                     <p>{t('noReviewsYet')}</p>
                                 </div>
                             ) : (
@@ -2541,8 +2708,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             <p>{t('expertDescription')}</p>
                         </div>
                         <div className={styles.askActions}>
-                            <button className={styles.premiumBtn}>
-                                <Phone size={18} />
+                            <button
+                                type="button"
+                                className={styles.premiumBtn}
+                                onClick={() => {
+                                    const productUrl = typeof window !== 'undefined' ? window.location.href : '';
+                                    const msg = encodeURIComponent(t('whatsappMessage', {
+                                        url: productUrl,
+                                        name: getLocalizedField('name', 'name_ar'),
+                                        price: displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                        model: product.model || product.slug?.toUpperCase() || product.id
+                                    }));
+                                    window.open(`https://wa.me/97142882777?text=${msg}`, '_blank');
+                                }}
+                            >
+                                <MessageSquare size={18} />
                                 {t('speakWithExpert')}
                             </button>
                             <span style={{ fontSize: '13px', color: '#64748b', textAlign: 'center' }}>{t('availableMonSat')}</span>
@@ -2728,7 +2908,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         ? (product as any).compare_slot_products
                         : [];
                     const getPrice = (p: any) => Number(p?.offer_price && Number(p.offer_price) > 0 ? p.offer_price : p?.price) || 0;
-                    const getImg = (p: any) => resolveUrl(p?.primary_image || (p?.images && p.images[0]?.image_url)) || '/assets/placeholder-image.webp';
+                    const getImg = (p: any) => resolveUrl(p?.primary_image || (p?.images && p.images[0]?.image_url)) || LOGO_FALLBACK;
 
                     // In admin mode, attach a poolIdx to each option so picking can update
                     // the visible-pool index instead of replacing the product directly.
@@ -2755,14 +2935,23 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </button>
                                 </div>
                                 <div className={styles.compareDrawerSearchWrap}>
-                                    <input
-                                        type="text"
-                                        className={styles.compareDrawerSearch}
-                                        placeholder={isArabic ? 'ابحث عن منتج' : 'Search for a product'}
-                                        value={compareSearch}
-                                        onChange={(e) => setCompareSearch(e.target.value)}
-                                        autoFocus
-                                    />
+                                    <form
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            (e.currentTarget.querySelector('input') as HTMLInputElement | null)?.blur();
+                                        }}
+                                    >
+                                        <input
+                                            type="search"
+                                            enterKeyHint="search"
+                                            dir={isArabic ? 'rtl' : 'ltr'}
+                                            className={styles.compareDrawerSearch}
+                                            placeholder={isArabic ? 'ابحث عن منتج' : 'Search for a product'}
+                                            value={compareSearch}
+                                            onChange={(e) => setCompareSearch(e.target.value)}
+                                            autoFocus
+                                        />
+                                    </form>
                                 </div>
                                 <div className={styles.compareDrawerList}>
                                     {adminEnabled ? (
@@ -2801,7 +2990,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                             setCompareDrawerSlot(null);
                                                         }}
                                                     >
-                                                        <img className={styles.compareDrawerRowImg} src={getImg(p)} alt="" />
+                                                        <img className={styles.compareDrawerRowImg} src={getImg(p)} alt="" onError={(e) => { e.currentTarget.src = LOGO_FALLBACK; }} />
                                                         <span className={styles.compareDrawerRowMeta}>
                                                             <span className={styles.compareDrawerRowName}>
                                                                 {isArabic ? (p.name_ar || p.name) : p.name}
@@ -2845,7 +3034,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                             setCompareDrawerSlot(null);
                                                         }}
                                                     >
-                                                        <img className={styles.compareDrawerRowImg} src={getImg(p)} alt="" />
+                                                        <img className={styles.compareDrawerRowImg} src={getImg(p)} alt="" onError={(e) => { e.currentTarget.src = LOGO_FALLBACK; }} />
                                                         <span className={styles.compareDrawerRowMeta}>
                                                             <span className={styles.compareDrawerRowName}>
                                                                 {isArabic ? (p.name_ar || p.name) : p.name}
@@ -2953,6 +3142,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                     </div>
                 )
             }
+
+            {notifyOpen && (
+                <NotifyMeModal
+                    open={notifyOpen}
+                    onClose={() => setNotifyOpen(false)}
+                    productId={product.id}
+                    productName={getLocalizedField('name', 'name_ar')}
+                    variantLabel={variantLabel || ''}
+                />
+            )}
         </div >
     );
 };

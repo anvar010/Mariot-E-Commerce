@@ -198,16 +198,16 @@
 .arrowUp {
     width: 0;
     height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
+    border-inline-start: 6px solid transparent;
+    border-inline-end: 6px solid transparent;
     border-bottom: 10px solid #1e293b;
 }
 
 .arrowDown {
     width: 0;
     height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
+    border-inline-start: 6px solid transparent;
+    border-inline-end: 6px solid transparent;
     border-top: 10px solid #16a1db;
 }
 
@@ -626,7 +626,7 @@
     .faqColumn {
         flex: 1 1 auto;
         width: 100%;
-        text-align: left;
+        text-align: start;
         padding: 0;
         margin: 0;
     }
@@ -638,19 +638,19 @@
 
     .splitTitle {
         align-items: flex-start;
-        text-align: left;
-        margin-left: 0;
-        padding-left: 0;
+        text-align: start;
+        margin-inline-start: 0;
+        padding-inline-start: 0;
     }
 
     .faqListMinimal {
-        margin-left: 0;
-        padding-left: 0;
+        margin-inline-start: 0;
+        padding-inline-start: 0;
     }
 
     .faqItemMinimal {
-        margin-left: 0;
-        padding-left: 0;
+        margin-inline-start: 0;
+        padding-inline-start: 0;
     }
 
     .faqListMinimal {

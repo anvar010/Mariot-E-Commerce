@@ -15,10 +15,6 @@
     .container {
         padding: 0 20px;
     }
-
-    .breadcrumbs {
-        padding: 0 20px;
-    }
 }
 
 .breadcrumbs {
@@ -29,7 +25,8 @@
     font-size: 13px;
     color: #64748b;
     flex-wrap: wrap;
-    padding: 0 40px;
+    /* No horizontal padding here — the parent `.container` already provides it.
+       Adding it again double-indented the breadcrumbs vs. the content below. */
 }
 
 .breadcrumbLink {
@@ -155,8 +152,8 @@
         position: relative;
         left: 50%;
         right: 50%;
-        margin-left: -50vw;
-        margin-right: -50vw;
+        margin-inline-start: -50vw;
+        margin-inline-end: -50vw;
         width: 100vw;
         overflow: visible;
     }
@@ -220,10 +217,18 @@
 }
 
 .mainImage {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+    /* Use auto dimensions capped to the box so the image always keeps its
+       natural aspect ratio — even before Swiper initializes / the box height
+       resolves. Forcing width/height to 100% and relying on object-fit caused
+       a brief "stretched" frame on first load/refresh.
+       `margin: auto` centers it on both axes inside the flex slide. */
+    display: block;
+    margin: auto;
+    width: auto;
+    height: auto;
+    max-width: 100%;
     max-height: 100%;
+    object-fit: contain;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -351,12 +356,17 @@
 
 .title {
     font-size: 26px;
-    font-weight: 800;
+    font-weight: 500;
     color: #222;
     line-height: 1.3;
     margin-bottom: 0;
     letter-spacing: -0.5px;
     flex: 1;
+}
+
+/* letter-spacing is a Latin-typography tweak — drop it for Arabic script. */
+:global([dir="rtl"]) .title {
+    letter-spacing: normal;
 }
 
 @media (max-width: 768px) {
@@ -823,7 +833,7 @@
 
 .compareTable tbody td {
     padding: 16px 20px;
-    color: #1f2937;
+    color: #0f172a;
     vertical-align: middle;
     border: 1px solid #cbd5e1;
 }
@@ -833,14 +843,40 @@
 }
 
 .compareRowLabel {
-    font-weight: 500;
-    color: #475569;
+    font-weight: 600;
+    color: #1e293b;
     background: inherit !important;
     text-align: start;
 }
 
 .compareCell {
+    color: #0f172a;
+    font-weight: 500;
+}
+
+.compareCornerCell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+}
+
+.compareCornerIcon {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+}
+
+.compareCornerLabel {
+    font-weight: 600;
+    font-size: 14px;
     color: #1f2937;
+    letter-spacing: 0.02em;
 }
 
 .compareHeadCell {
@@ -849,6 +885,7 @@
     align-items: center;
     gap: 10px;
     width: 100%;
+    height: 100%;
 }
 
 .compareHeadImg {
@@ -869,12 +906,25 @@
     font-size: 32px;
 }
 
+/* Logo placeholder shown in an empty compare slot — muted so it reads as a
+   "no product yet" state rather than a real product image. */
+.compareEmptyImg {
+    opacity: 0.4;
+    padding: 12px;
+}
+
 .compareHeadName {
     font-weight: 600;
     color: #1f2937;
     line-height: 1.4;
     font-size: 14px;
     text-align: center;
+    /* Reserve two lines so 1-line and 2-line names occupy equal height,
+       keeping the "Change Product" buttons aligned on the same row. */
+    min-height: 2.8em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .compareThisProduct {
@@ -885,6 +935,7 @@
 }
 
 .compareChangeBtn {
+    margin-top: auto;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -953,9 +1004,19 @@
     }
 
     .compareHeadImg,
-    .compareEmptyTile {
+    .compareEmptyTile,
+    .compareCornerIcon {
         width: 80px;
         height: 80px;
+    }
+
+    .compareCornerIcon svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .compareCornerLabel {
+        font-size: 12px;
     }
 
     .compareEmptyTile {
@@ -1068,7 +1129,8 @@
     padding: 10px 14px;
     border: 1px solid #cbd5e1;
     border-radius: 10px;
-    font-size: 14px;
+    /* 16px prevents iOS Safari from auto-zooming on focus. */
+    font-size: 16px;
     background: #ffffff;
     outline: none;
 }
@@ -1076,6 +1138,13 @@
 .compareDrawerSearch:focus {
     border-color: #1f2937;
     box-shadow: 0 0 0 3px rgba(31, 41, 55, 0.12);
+}
+
+/* Global `html[dir="rtl"] input { text-align: end }` resolves to LEFT in RTL.
+   Force the compare search to start at the right edge in Arabic. */
+:global(html[dir="rtl"]) .compareDrawerSearch {
+    text-align: right;
+    direction: rtl;
 }
 
 .compareDrawerList {
@@ -1437,7 +1506,7 @@
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
+    inset-inline-start: 0;
     width: 4px;
     height: 100%;
     background: #334155;
@@ -1641,7 +1710,7 @@
 .qtyCustomOptions {
     position: absolute;
     top: calc(100% + 8px);
-    left: 0;
+    inset-inline-start: 0;
     width: 100%;
     background-color: #ffffff;
     border: none;
@@ -2144,20 +2213,24 @@
 }
 
 .aboutBrandLogoBox {
-    background: #fbfbfd;
-    border: 1px solid #eaeaea;
-    border-radius: 12px;
-    padding: 20px;
-    display: inline-flex;
+    width: 190px;
+    height: 110px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    max-width: fit-content;
+    padding: 4px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .aboutBrandLogoImg {
-    max-height: 50px;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
-    max-width: 200px;
+    transform: scale(1.45);
 }
 
 /* Accordion styles moved up or handled by shared class */
@@ -2631,6 +2704,12 @@
 .pmContent {
     padding: 32px;
     overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.pmContent::-webkit-scrollbar {
+    display: none;
 }
 
 .pmFormGroup {
@@ -2726,7 +2805,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    left: 16px;
+    inset-inline-start: 16px;
     font-size: 15px;
     font-weight: 600;
     color: #64748b;
@@ -2734,7 +2813,7 @@
 }
 
 .pmPhoneInput {
-    padding-left: 58px !important;
+    padding-inline-start: 58px !important;
 }
 
 .pmCheckboxGroup {
@@ -2984,8 +3063,8 @@
         margin-top: 32px;
         border-radius: 0;
         width: calc(100% + 40px);
-        margin-left: -20px;
-        margin-right: -20px;
+        margin-inline-start: -20px;
+        margin-inline-end: -20px;
         box-shadow: none;
         border-top: 1px solid #f1f5f9;
         border-bottom: 1px solid #f1f5f9;
@@ -3015,8 +3094,8 @@
     .sectionTitle {
         margin-bottom: 16px;
         padding-bottom: 8px;
-        margin-left: 16px;
-        margin-right: 16px;
+        margin-inline-start: 16px;
+        margin-inline-end: 16px;
     }
 
     .sectionTitle h2 {
@@ -3046,11 +3125,11 @@
 }
 
 .prevArrow {
-    left: -22px;
+    inset-inline-start: -22px;
 }
 
 .nextArrow {
-    right: -22px;
+    inset-inline-end: -22px;
 }
 
 @media (hover: hover) {
@@ -3099,7 +3178,7 @@
 .relatedSlide {
     flex: 0 0 220px;
     width: 220px;
-    padding-right: 2px;
+    padding-inline-end: 2px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -3133,25 +3212,25 @@
         position: relative;
         left: 50%;
         right: 50%;
-        margin-left: -50vw;
-        margin-right: -50vw;
+        margin-inline-start: -50vw;
+        margin-inline-end: -50vw;
         width: 100vw;
-        border-left: none;
-        border-right: none;
+        border-inline-start: none;
+        border-inline-end: none;
         background: #eff6ff;
         border: 1px solid #d1d9e6;
     }
 
     .relatedSection .sectionTitle {
-        margin-left: 0;
-        margin-right: auto;
+        margin-inline-start: 0;
+        margin-inline-end: auto;
         justify-content: flex-start;
-        text-align: left;
+        text-align: start;
     }
 
     .relatedSection .sectionTitle h2 {
-        text-align: left;
-        margin-left: 0;
+        text-align: start;
+        margin-inline-start: 0;
     }
 
     .relatedGrid {
@@ -3162,12 +3241,12 @@
     .relatedSlide {
         flex: 0 0 50%;
         width: 50%;
-        padding-right: 0;
-        border-right: 1px solid #f0f0f0;
+        padding-inline-end: 0;
+        border-inline-end: 1px solid #f0f0f0;
     }
 
     .relatedSlide:last-child {
-        border-right: none;
+        border-inline-end: none;
     }
 }
 
@@ -3243,6 +3322,57 @@
     transition: all 0.3s ease;
 }
 
+.noReviews {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 16px;
+    width: 100%;
+    padding: 52px 24px;
+    background: #f8fafc;
+    border: 1px dashed #d4dde8;
+    border-radius: 12px;
+}
+
+.noReviewsIcon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #eaf6ee;
+    border: 1px solid #cdead6;
+    flex-shrink: 0;
+}
+
+.noReviews p {
+    margin: 0;
+    max-width: 380px;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.55;
+    color: #475569;
+}
+
+@media (max-width: 768px) {
+    .noReviews {
+        gap: 14px;
+        padding: 40px 18px;
+    }
+
+    .noReviewsIcon {
+        width: 54px;
+        height: 54px;
+    }
+
+    .noReviews p {
+        font-size: 14px;
+    }
+}
+
 @media (max-width: 1024px) {
     .reviewsContent {
         padding: 0;
@@ -3257,11 +3387,11 @@
         border-radius: 0;
         margin-bottom: 2px;
         width: auto !important;
-        border-left: none;
-        border-right: none;
+        border-inline-start: none;
+        border-inline-end: none;
         background: #f8fafc;
-        margin-left: 10px;
-        margin-right: 10px;
+        margin-inline-start: 10px;
+        margin-inline-end: 10px;
         display: block;
     }
 }
@@ -3476,8 +3606,8 @@
         position: relative;
         left: 50%;
         right: 50%;
-        margin-left: -50vw;
-        margin-right: -50vw;
+        margin-inline-start: -50vw;
+        margin-inline-end: -50vw;
         width: 100vw;
         box-shadow: none;
         background: transparent;
@@ -3486,11 +3616,11 @@
     .askExpertCard {
         flex-direction: column;
         gap: 20px;
-        text-align: left;
+        text-align: start;
         padding: 30px 20px;
         border-radius: 0;
-        border-left: none;
-        border-right: none;
+        border-inline-start: none;
+        border-inline-end: none;
         align-items: flex-start;
     }
 
@@ -3748,8 +3878,8 @@
         position: relative;
         left: 50%;
         right: 50%;
-        margin-left: -50vw;
-        margin-right: -50vw;
+        margin-inline-start: -50vw;
+        margin-inline-end: -50vw;
         background: #fff;
         border: none;
         border-top: 1px solid #ebebeb;
@@ -3941,7 +4071,7 @@
 }
 
 .specsTable td.specValue {
-    text-align: left;
+    text-align: start;
 }
 
 .specItem {
@@ -3978,7 +4108,7 @@
     font-size: 15px;
     font-weight: 700;
     flex: 1;
-    text-align: left;
+    text-align: start;
 }
 
 .specItemSingle {
@@ -4013,7 +4143,7 @@
     .specValue {
         width: 100%;
         font-size: 14px;
-        text-align: left;
+        text-align: start;
     }
 
     .specItemSingle {
@@ -4322,7 +4452,7 @@
     align-items: center;
     position: absolute;
     bottom: -20px;
-    left: 0;
+    inset-inline-start: 0;
     z-index: 10;
 }
 
@@ -4336,7 +4466,7 @@
     border-bottom: none !important;
     padding-bottom: 0 !important;
     margin-bottom: 24px;
-    text-align: left;
+    text-align: start;
     justify-content: flex-start !important;
 }
 
@@ -4452,7 +4582,7 @@
 .fbtBadge {
     position: absolute;
     top: 0px;
-    left: 0px;
+    inset-inline-start: 0px;
     z-index: 2;
     width: 20px;
     height: 20px;
@@ -4604,11 +4734,11 @@
 }
 
 .prevArrow {
-    left: -16px;
+    inset-inline-start: -16px;
 }
 
 .nextArrow {
-    right: -16px;
+    inset-inline-end: -16px;
 }
 
 .arrowHidden {
@@ -4630,14 +4760,14 @@
         display: block;
         width: 100%;
         margin-bottom: 8px;
-        text-align: left;
+        text-align: start;
     }
 
     .fbtSectionRoot .sectionTitle h2 {
         font-size: 20px;
         font-weight: 600;
         color: #1e293b;
-        text-align: left;
+        text-align: start;
     }
 
     .sliderWrapper {
@@ -4678,9 +4808,9 @@
         padding: 0 16px 12px 16px;
         border-bottom: none;
         margin-bottom: 0;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        text-align: left !important;
+        margin-inline-start: 0 !important;
+        margin-inline-end: 0 !important;
+        text-align: start !important;
         justify-content: flex-start !important;
         display: flex !important;
     }
@@ -4689,7 +4819,7 @@
         font-size: 20px;
         font-weight: 600;
         color: #1e293b;
-        text-align: left !important;
+        text-align: start !important;
         margin: 0 !important;
         text-transform: none !important;
     }
@@ -4754,8 +4884,8 @@
     }
 
     .fbtViewport {
-        padding-left: 16px;
-        padding-right: 16px;
+        padding-inline-start: 16px;
+        padding-inline-end: 16px;
     }
 }
 

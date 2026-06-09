@@ -70,7 +70,9 @@ html[dir="rtl"] .fa {
 html[dir="rtl"] input,
 html[dir="rtl"] textarea,
 html[dir="rtl"] select {
-  text-align: end;
+  /* `start` = right in RTL (correct). `end` resolved to LEFT and broke every
+     search/text field's typed-text alignment in Arabic. */
+  text-align: start;
 }
 
 html[dir="rtl"] input[type="search"],
@@ -92,4 +94,13 @@ button {
 
 ul {
   list-style: none;
+}
+
+/* Prevent iOS Safari from auto-zooming form fields with font-size < 16px on focus */
+@supports (-webkit-touch-callout: none) {
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }

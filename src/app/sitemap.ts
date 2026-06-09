@@ -3,6 +3,11 @@ import { MetadataRoute } from 'next';
 const BASE_URL = 'https://mariotstore.com'; // Replace with your production domain
 const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
+// Regenerate the sitemap at most once an hour instead of on every crawl. The
+// product list rarely changes minute-to-minute, and `no-store` forced a 5000-row
+// fetch on every bot request (and made the route fully dynamic).
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const defaultLastMod = new Date();
     const locales = ['en', 'ar'];
@@ -38,9 +43,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }
     }
 
-    // Fetch dynamic products
+    // Fetch dynamic products (ISR-cached via `revalidate` above; abort if the
+    // backend is slow/unreachable so a bad upstream can't stall the build/request)
     try {
-        const res = await fetch(`${API_BASE_URL_SERVER}/products?limit=5000`, { cache: 'no-store' });
+        const res = await fetch(`${API_BASE_URL_SERVER}/products?limit=5000`, {
+            next: { revalidate: 3600 },
+            signal: AbortSignal.timeout(8000),
+        });
         const data = await res.json();
 
         if (data.success && data.data && Array.isArray(data.data)) {

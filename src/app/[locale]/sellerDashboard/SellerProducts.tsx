@@ -155,7 +155,7 @@ const SellerProducts = () => {
 
     const fetchBrands = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include" });
+            const res = await fetch(`${API_BASE_URL}/brands?all=1`, { credentials: "include" });
             const data = await res.json();
             if (data.success) setBrands(data.data);
         } catch (error) {

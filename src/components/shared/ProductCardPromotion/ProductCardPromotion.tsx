@@ -6,7 +6,7 @@ import NotifyMeModal from '@/components/shared/NotifyMeModal/NotifyMeModal';
 import { Link } from '@/i18n/navigation';
 import Image from "next/legacy/image";
 import NextImage from 'next/image';
-import { useCart } from '@/context/CartContext';
+import { useCartActions } from '@/context/CartContext';
 import { getBrandLogo } from '@/utils/brandLogos';
 import { useLocale, useTranslations } from 'next-intl';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -46,16 +46,13 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     const localBrandLogo = getBrandLogo(displayBrand);
 
     const displayBrandImage = resolveUrl(localBrandLogo ?? product.brand_image ?? (product as any)?.brand_logo);
-    const swatchOptions: Array<{ color: string; image: string | null; value: string }> =
+    const swatchOptions: Array<{ color: string; image: string | null; value: string; images?: string[]; price?: number | null; offer_price?: number | null }> =
         Array.isArray((product as any).swatch_options) ? (product as any).swatch_options : [];
     const [selectedSwatchIdx, setSelectedSwatchIdx] = useState<number | null>(null);
-    const swatchOverrideImage = selectedSwatchIdx !== null ? swatchOptions[selectedSwatchIdx]?.image : null;
-    const baseImage = resolveUrl(swatchOverrideImage || product.primary_image) || '/assets/mariot-logo2.webp';
-    const displayImage = baseImage;
     const formatTime = (num: number) => num.toString().padStart(2, '0');
     const isInventoryTracked = product.track_inventory === 1 || product.track_inventory === '1' || product.track_inventory === true;
     const isInStock = !isInventoryTracked || product.stock_quantity === undefined || product.stock_quantity > 0;
-    const { addToCart } = useCart();
+    const { addToCart } = useCartActions();
     const isBestSeller = product.is_best_seller === 1 || product.is_best_seller === true;
 
     const countdown = useCountdownTimer(product?.offer_end);
@@ -91,9 +88,23 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     const isOfferActive =
         (!product.offer_start || new Date(product.offer_start).getTime() <= nowTs) &&
         (!product.offer_end || new Date(product.offer_end).getTime() > nowTs);
-    const hasOffer = isOfferActive && !!(product.offer_price && Number(product.offer_price) > 0);
-    const displayPrice = hasOffer ? Number(product.offer_price) : Number(product.price || 0);
-    const displayOldPrice = Number(product.old_price) || (hasOffer ? Number(product.price) : 0);
+    const productHasOffer = isOfferActive && !!(product.offer_price && Number(product.offer_price) > 0);
+
+    // When a color swatch carries its own pricing, the selected swatch overrides the
+    // product-level price so the card reflects the chosen variant (matches the detail page).
+    const selSwatch = selectedSwatchIdx !== null ? swatchOptions[selectedSwatchIdx] : null;
+    const swatchPrice = selSwatch && selSwatch.price != null && Number(selSwatch.price) > 0 ? Number(selSwatch.price) : null;
+    const swatchOfferPrice = swatchPrice != null && selSwatch!.offer_price != null && Number(selSwatch!.offer_price) > 0 ? Number(selSwatch!.offer_price) : null;
+    const useSwatchPrice = swatchPrice != null;
+    const swatchHasOffer = useSwatchPrice && isOfferActive && swatchOfferPrice != null && swatchOfferPrice < swatchPrice!;
+
+    const hasOffer = useSwatchPrice ? swatchHasOffer : productHasOffer;
+    const displayPrice = useSwatchPrice
+        ? (swatchHasOffer ? swatchOfferPrice! : swatchPrice!)
+        : (productHasOffer ? Number(product.offer_price) : Number(product.price || 0));
+    const displayOldPrice = useSwatchPrice
+        ? (swatchHasOffer ? swatchPrice! : 0)
+        : (Number(product.old_price) || (productHasOffer ? Number(product.price) : 0));
 
     const handleAddToCart = () => {
         if (isInStock) {
@@ -111,7 +122,10 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
 
             addToCart({
                 id: product.id,
-                name: (isArabic && product.name_ar) ? product.name_ar : product.name,
+                // Store both languages so the cart/checkout can localize dynamically
+                // based on the active locale (not whichever was active at add time).
+                name: product.name,
+                name_ar: product.name_ar,
                 price: displayPrice,
                 image: resolveUrl(product.primary_image),
                 brand: product.brand_name,
@@ -127,15 +141,35 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     const [logoError, setLogoError] = React.useState(false);
     const [failedImages, setFailedImages] = React.useState<Set<number>>(new Set());
 
-    let allImages = [displayImage];
-    if (product.images && Array.isArray(product.images)) {
-        const addImages = product.images.map((img: any) => resolveUrl(img.image_url || img.image || img)).filter(Boolean);
-        allImages = [...allImages, ...addImages];
-    } else if (product.gallery && Array.isArray(product.gallery)) {
-        const addImages = product.gallery.map((img: any) => resolveUrl(img.image_url || img.image || img)).filter(Boolean);
-        allImages = [...allImages, ...addImages];
+    // Images shown in the card carousel:
+    //  • A color swatch is selected → ONLY that color variant's image(s).
+    //  • Nothing selected → the default variant's full gallery if the backend
+    //    provided one, otherwise the product primary image + gallery.
+    const selectedSwatch = selectedSwatchIdx !== null ? swatchOptions[selectedSwatchIdx] : null;
+    const selectedSwatchImages: string[] = selectedSwatch
+        ? ((Array.isArray(selectedSwatch.images) && selectedSwatch.images.length > 0)
+            ? selectedSwatch.images
+            : (selectedSwatch.image ? [selectedSwatch.image] : []))
+        : [];
+    const variantGallery: string[] = Array.isArray((product as any).variant_gallery) ? (product as any).variant_gallery : [];
+
+    let allImages: string[];
+    if (selectedSwatchImages.length > 0) {
+        allImages = Array.from(new Set(selectedSwatchImages.map((u: string) => resolveUrl(u)).filter(Boolean)));
+    } else if (variantGallery.length > 0) {
+        allImages = Array.from(new Set(variantGallery.map((u: string) => resolveUrl(u)).filter(Boolean)));
+    } else {
+        allImages = [resolveUrl(product.primary_image) || '/assets/mariot-logo2.webp'];
+        if (product.images && Array.isArray(product.images)) {
+            const addImages = product.images.map((img: any) => resolveUrl(img.image_url || img.image || img)).filter(Boolean);
+            allImages = [...allImages, ...addImages];
+        } else if (product.gallery && Array.isArray(product.gallery)) {
+            const addImages = product.gallery.map((img: any) => resolveUrl(img.image_url || img.image || img)).filter(Boolean);
+            allImages = [...allImages, ...addImages];
+        }
+        allImages = Array.from(new Set(allImages));
     }
-    allImages = Array.from(new Set(allImages));
+    if (allImages.length === 0) allImages = ['/assets/mariot-logo2.webp'];
 
     const [isHovered, setIsHovered] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -178,6 +212,15 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
             emblaApi.off('select', onSelect);
         };
     }, [emblaApi]);
+
+    // When the image set changes (a color swatch was selected/cleared), re-init
+    // Embla so it picks up the new slide count and resets to the first image.
+    useEffect(() => {
+        if (!emblaApi) return;
+        emblaApi.reInit();
+        emblaApi.scrollTo(0, true);
+        setActiveImageIndex(0);
+    }, [emblaApi, selectedSwatchIdx, allImages.length]);
 
     const handleNextImage = (e: React.MouseEvent) => {
         e.preventDefault();

@@ -133,7 +133,7 @@ KNOWLEDGE (Business Info):
 - Contact: Phone/WhatsApp +971 4 288 2777 | Email: info@mariot-group.com
 - Website: mariotstore.com
 - Shipping: Free shipping on orders over AED 1,500 across the UAE. Standard delivery is 4-7 working days.
-- VAT: 5% UAE VAT is included in listed prices.
+- VAT: Listed prices are exclusive of VAT; 5% UAE VAT is added at checkout.
 - Payments: Credit/Debit Cards (Stripe), Bank Transfer, and Tabby (Split in 4 interest-free payments).
 - Target Audience: Restaurants, hotels, cafes, bakeries, and catering businesses across the UAE and GCC.
 

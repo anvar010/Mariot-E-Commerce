@@ -9,6 +9,7 @@ import styles from './CategoryLanding.module.css';
 import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
 import { useLocale, useTranslations } from 'next-intl';
 import Loader from '@/components/shared/Loader/Loader';
+import { sortByOrderIndex } from '@/utils/sortByOrderIndex';
 
 interface CategoryLandingProps {
   categorySlug: string;
@@ -40,16 +41,77 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
 
         if (catData.success) {
           const allCats = catData.data;
+
+          // Virtual "Kitchen Equipments" page (no DB category): aggregate every
+          // MAIN category as a heading section, minus the non-kitchen departments.
+          if (categorySlug === 'kitchen-equipment') {
+            const EXCLUDE = new Set(['kitchen-equipment', 'stainless-steel-fabrications', 'supermarket', 'laundry']);
+            setCategory({
+              name: 'Kitchen Equipments',
+              name_ar: 'معدات المطبخ',
+              description: 'Explore our full range of commercial kitchen equipment — from coffee machines and refrigeration to cooking lines, ovens, and food preparation. Browse every category below.',
+              description_ar: 'استكشف مجموعتنا الكاملة من معدات المطابخ التجارية — من ماكينات القهوة والتبريد إلى خطوط الطهي والأفران وتحضير الطعام. تصفّح جميع الفئات أدناه.'
+            });
+
+            const mains = sortByOrderIndex(
+              allCats.filter((c: any) => !c.parent_id && c.is_active && !EXCLUDE.has(c.slug))
+            ).map((main: any) => {
+              // sub-categories, each carrying its own sub-sub-categories
+              const subs = sortByOrderIndex(
+                allCats.filter((sub: any) => sub.parent_id === main.id && sub.is_active)
+              ).map((sub: any) => ({
+                ...sub,
+                subCategories: sortByOrderIndex(
+                  allCats.filter((ss: any) => ss.parent_id === sub.id && ss.is_active)
+                )
+              }));
+              return { ...main, subCategories: subs };
+            });
+
+            // Fetch each main's products (a main slug also covers its sub /
+            // sub-sub products) — gives counts AND a pool to build the promo +
+            // "Top products" rail strictly from the listed categories.
+            const mainsWithProducts = await Promise.all(mains.map(async (m: any) => {
+              try {
+                const mSlug = m.slug || m.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+                const pRes = await fetch(`${API_BASE_URL}/products?category=${mSlug}&limit=5&sort=price_desc`);
+                const pData = await pRes.json();
+                return { ...m, products_count: pData.total || 0, _products: pData.data || [] };
+              } catch (err) {
+                return { ...m, products_count: 0, _products: [] };
+              }
+            }));
+
+            setSubCategories(mainsWithProducts.map(({ _products, ...m }: any) => m));
+
+            // Pool products across the listed categories, dedupe, take top by price.
+            const seen = new Set<number>();
+            const pool: any[] = [];
+            for (const m of mainsWithProducts) {
+              for (const p of m._products) {
+                if (!seen.has(p.id)) { seen.add(p.id); pool.push(p); }
+              }
+            }
+            pool.sort((a, b) => Number(b.offer_price || b.price) - Number(a.offer_price || a.price));
+            if (pool.length > 0) {
+              setPromoProduct(pool[0]);
+              setTopProducts(pool.slice(1, 5));
+            }
+            return;
+          }
+
           const activeCat = allCats.find((c: any) => c.slug === categorySlug);
 
           if (activeCat) {
             setCategory(activeCat);
 
-            // 2. Build sub-categories tree
-            const subs = allCats
-              .filter((c: any) => c.parent_id === activeCat.id && c.is_active)
-              .map((sub: any) => {
-                const subSubs = allCats.filter((ss: any) => ss.parent_id === sub.id && ss.is_active);
+            // 2. Build sub-categories tree, sorted by order_index (slot-based)
+            const subs = sortByOrderIndex(
+              allCats.filter((c: any) => c.parent_id === activeCat.id && c.is_active)
+            ).map((sub: any) => {
+                const subSubs = sortByOrderIndex(
+                  allCats.filter((ss: any) => ss.parent_id === sub.id && ss.is_active)
+                );
                 return { ...sub, subCategories: subSubs };
               });
 
@@ -70,7 +132,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
             // 3. Fetch top products and brands in parallel
             const [prodRes, brandRes] = await Promise.all([
               fetch(`${API_BASE_URL}/products?category=${categorySlug}&limit=5&sort=price_desc`),
-              fetch(`${API_BASE_URL}/brands`)
+              fetch(`${API_BASE_URL}/brands?all=1`)
             ]);
 
             const prodData = await prodRes.json();
@@ -177,13 +239,16 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
   };
 
   const categoryName = isArabic && category.name_ar ? category.name_ar : category.name;
+  // Prefer the Arabic-specific media when the site is in Arabic, fall back to the default.
+  const pickMedia = (en?: string, ar?: string): string | null => (isArabic && ar ? ar : en) || null;
+  const categoryBanner = pickMedia(category.banner_url, category.banner_url_ar);
 
   return (
     <div className={styles.landingPage}>
-      {category.banner_url && (
+      {categoryBanner && (
         <div className={styles.categoryBanner}>
           <img
-            src={resolveImage(category.banner_url)}
+            src={resolveImage(categoryBanner)}
             alt={categoryName}
             className={styles.categoryBannerImg}
           />
@@ -207,7 +272,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
               <>
                 <main className={`${styles.mainArea} ${styles.cookingMainArea}`}>
                   <header className={styles.headerSection}>
-                    <div className={styles.offerBadge}>UP TO 20% OFF</div>
+                    <div className={styles.offerBadge}>{isArabic ? 'خصم حتى 20%' : 'UP TO 20% OFF'}</div>
                     <h1 className={styles.title}>{categoryName}</h1>
                     <div className={styles.descriptionWrapper}>
                       <p className={styles.description}>
@@ -254,7 +319,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                                 <Link key={ss.id} href={`/shop?category=${ssSlug}`} className={styles.cookingCard}>
                                   <div className={styles.cookingImageWrapper}>
                                     <Image
-                                      src={resolveImage(ss.image_url)}
+                                      src={resolveImage(pickMedia(ss.image_url, ss.image_url_ar))}
                                       alt={ss.name}
                                       width={150}
                                       height={150}
@@ -278,7 +343,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
             ) : (
               <main className={styles.mainArea}>
                 <header className={styles.headerSection}>
-                  <div className={styles.offerBadge}>UP TO 20% OFF</div>
+                  <div className={styles.offerBadge}>{isArabic ? 'خصم حتى 20%' : 'UP TO 20% OFF'}</div>
                   <h1 className={styles.title}>{categoryName}</h1>
                   <div className={styles.descriptionWrapper}>
                     <p className={styles.description}>
@@ -293,7 +358,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                       <div key={sub.id} className={styles.categoryCard}>
                         <Link href={`/shop?category=${subSlug}`} className={styles.imageWrapper}>
                           <Image
-                            src={resolveImage(sub.image_url)}
+                            src={resolveImage(pickMedia(sub.image_url, sub.image_url_ar))}
                             alt={sub.name}
                             width={250}
                             height={250}
@@ -347,9 +412,9 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                       className={styles.brandCard}
                     >
                       <div className={styles.brandLogoWrapper}>
-                        {brand.image_url ? (
+                        {pickMedia(brand.image_url, brand.image_url_ar) ? (
                           <img
-                            src={brand.image_url}
+                            src={pickMedia(brand.image_url, brand.image_url_ar) || ''}
                             alt={isArabic && brand.name_ar ? brand.name_ar : brand.name}
                             className={styles.brandLogo}
                           />
@@ -377,20 +442,20 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                 <Headphones size={22} />
               </div>
               <div className={styles.expertInfo}>
-                <span className={styles.expertLabel}>Not sure what you need?</span>
-                <span className={styles.expertAction}>Talk to an expert now</span>
+                <span className={styles.expertLabel}>{isArabic ? 'لست متأكداً مما تحتاج؟' : 'Not sure what you need?'}</span>
+                <span className={styles.expertAction}>{isArabic ? 'تحدث مع خبير الآن' : 'Talk to an expert now'}</span>
               </div>
             </a>
 
             {/* Promo Card */}
             {promoProduct && (
               <Link href={`/product/${promoProduct.slug}`} className={styles.promoCard} style={{ textDecoration: 'none' }}>
-                <div className={styles.promoHeader}>Featured Solution</div>
+                <div className={styles.promoHeader}>{isArabic ? 'حل مميز' : 'Featured Solution'}</div>
                 <div className={styles.promoContent}>
-                  <img src={resolveImage(promoProduct.primary_image)} alt={promoProduct.name} className={styles.promoImage} onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo.webp'; }} />
+                  <img src={resolveImage(promoProduct.primary_image)} alt={isArabic && promoProduct.name_ar ? promoProduct.name_ar : promoProduct.name} className={styles.promoImage} onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo.webp'; }} />
                   <div className={styles.promoText}>
-                    <span className={styles.promoTitle}>{promoProduct.name}</span>
-                    <span style={{ fontSize: '13px', color: '#64748b' }}>Technical precision and reliability.</span>
+                    <span className={styles.promoTitle}>{isArabic && promoProduct.name_ar ? promoProduct.name_ar : promoProduct.name}</span>
+                    <span style={{ fontSize: '13px', color: '#64748b' }}>{isArabic ? 'دقة تقنية وموثوقية.' : 'Technical precision and reliability.'}</span>
                   </div>
                 </div>
               </Link>
@@ -399,7 +464,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
             {/* Top Products */}
             {topProducts.length > 0 && (
               <div className={styles.topProducts}>
-                <h3 className={styles.sectionTitle}>Top products</h3>
+                <h3 className={styles.sectionTitle}>{isArabic ? 'أفضل المنتجات' : 'Top products'}</h3>
                 <div className={styles.productList}>
                   {topProducts.map((prod) => (
                     <Link key={prod.id} href={`/product/${prod.slug}`} className={styles.productMini}>
@@ -407,7 +472,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
                         <img src={resolveImage(prod.primary_image)} alt={prod.name} className={styles.miniImg} onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo.webp'; }} />
                       </div>
                       <div className={styles.miniDetails}>
-                        <span className={styles.miniName}>{prod.name}</span>
+                        <span className={styles.miniName}>{isArabic && prod.name_ar ? prod.name_ar : prod.name}</span>
                         <span className={styles.miniPrice}><CurrencyPrice amount={Number(prod.offer_price || prod.price)} /></span>
                       </div>
                     </Link>

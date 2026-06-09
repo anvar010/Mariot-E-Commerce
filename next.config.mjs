@@ -7,7 +7,16 @@ const nextConfig = {
     transpilePackages: ['next-intl'],
     trailingSlash: false,
     poweredByHeader: false,
+    // Tree-shake large icon/util barrels so only the icons actually used are
+    // bundled (Header alone imports ~35 lucide icons). No behavioural change.
+    experimental: {
+        optimizePackageImports: ['lucide-react'],
+    },
     images: {
+        // Serve AVIF/WebP when the browser supports it (smaller than JPEG/PNG),
+        // and keep optimized images cached at the edge for a day.
+        formats: ['image/avif', 'image/webp'],
+        minimumCacheTTL: 86400,
         remotePatterns: [
             {
                 protocol: 'https',
@@ -32,6 +41,11 @@ const nextConfig = {
             {
                 protocol: 'https',
                 hostname: 'mariotstore.com',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'api.mariotstore.com',
                 pathname: '/**',
             },
             {
@@ -87,6 +101,13 @@ const nextConfig = {
             }
         ],
     },
+    // Silence the benign webpack persistent-cache warning emitted while parsing
+    // next-intl's ESM dynamic import (`import(t)`). It's an infrastructure-level
+    // log, not a build error — real errors/warnings are unaffected.
+    webpack: (config) => {
+        config.infrastructureLogging = { ...config.infrastructureLogging, level: 'error' };
+        return config;
+    },
     async rewrites() {
         return [
             {
@@ -134,9 +155,9 @@ const nextConfig = {
                             "default-src 'self'",
                             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.tabby.ai https://cdn.jsdelivr.net https://accounts.google.com https://www.youtube.com https://s.ytimg.com",
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.tabby.ai",
-                            "img-src 'self' data: blob: https://ui-avatars.com https://flagcdn.com https://images.unsplash.com https://plus.unsplash.com https://via.placeholder.com https://www.rational-online.com https://mariotstore.com https://mariotgroup.com https://mariot-backend.onrender.com http://localhost:5000 https://www.gstatic.com https://*.googleusercontent.com https://*.tabby.ai https://*.pinterest.com https://*.pinimg.com https://i.ytimg.com https://img.youtube.com",
+                            "img-src 'self' data: blob: https://ui-avatars.com https://flagcdn.com https://images.unsplash.com https://plus.unsplash.com https://via.placeholder.com https://www.rational-online.com https://mariotstore.com https://api.mariotstore.com https://mariotgroup.com https://mariot-backend.onrender.com http://localhost:5000 https://www.gstatic.com https://*.googleusercontent.com https://*.tabby.ai https://*.pinterest.com https://*.pinimg.com https://i.ytimg.com https://img.youtube.com",
                             "font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com https://*.tabby.ai",
-                            "connect-src 'self' https://mariot-backend.onrender.com http://localhost:5000 https://api.stripe.com https://*.tabby.ai https://generativelanguage.googleapis.com https://accounts.google.com https://oauth2.googleapis.com",
+                            "connect-src 'self' https://mariot-backend.onrender.com https://api.mariotstore.com http://localhost:5000 https://api.stripe.com https://*.tabby.ai https://generativelanguage.googleapis.com https://accounts.google.com https://oauth2.googleapis.com",
                             "frame-src 'self' https://js.stripe.com https://*.tabby.ai https://accounts.google.com https://www.youtube.com https://youtube.com https://www.google.com https://maps.google.com",
                             "object-src 'none'",
                             "base-uri 'self'",

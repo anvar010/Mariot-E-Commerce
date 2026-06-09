@@ -184,8 +184,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // so components checking `if (token)` still work correctly.
     const token = isAuthenticated ? 'cookie-auth' : null;
 
+    // Stable value identity: only changes when auth state actually changes, so
+    // consumers don't re-render on unrelated parent re-renders. The handlers are
+    // stateless closures (they read args + stable setters/router), so it's safe
+    // to keep them out of the dependency list.
+    const value = React.useMemo(
+        () => ({ user, token, isAuthenticated, loading, login, googleLogin, register, logout, updateUser, refreshUser, completeSignupWithUser, error }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [user, token, isAuthenticated, loading, error]
+    );
+
     return (
-        <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, googleLogin, register, logout, updateUser, refreshUser, completeSignupWithUser, error }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

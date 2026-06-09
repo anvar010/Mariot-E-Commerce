@@ -83,11 +83,11 @@
 }
 
 .prevBtn {
-    margin-left: -20px;
+    margin-inline-start: -20px;
 }
 
 .nextBtn {
-    margin-right: -20px;
+    margin-inline-end: -20px;
 }
 
 @media (max-width: 576px) {
@@ -115,7 +115,7 @@
     flex: 0 0 220px;
     width: 220px;
     height: 100%;
-    padding-right: 2px;
+    padding-inline-end: 2px;
 }
 
 @media (max-width: 576px) {
@@ -155,7 +155,7 @@
     .productWrapper {
         flex: 0 0 50%;
         width: 50%;
-        padding-right: 0;
+        padding-inline-end: 0;
     }
 }
 

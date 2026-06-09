@@ -14,6 +14,7 @@ const AdminBrands = () => {
     const [brands, setBrands] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +23,10 @@ const AdminBrands = () => {
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [bannerFile, setBannerFile] = useState<File | null>(null);
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+    const [logoArFile, setLogoArFile] = useState<File | null>(null);
+    const [logoArPreview, setLogoArPreview] = useState<string | null>(null);
+    const [bannerArFile, setBannerArFile] = useState<File | null>(null);
+    const [bannerArPreview, setBannerArPreview] = useState<string | null>(null);
     const [priorityError, setPriorityError] = useState('');
     const { showNotification } = useNotification();
 
@@ -37,6 +42,8 @@ const AdminBrands = () => {
         description_ar: '',
         image_url: '',
         banner_url: '',
+        image_url_ar: '',
+        banner_url_ar: '',
         website_url: '',
         is_active: true,
         brand_type: '',
@@ -69,7 +76,7 @@ const AdminBrands = () => {
     const fetchBrands = async () => {
         try {
             setLoading(true);
-            const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include", headers: getAuthHeaders() });
+            const res = await fetch(`${API_BASE_URL}/brands?all=1`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) {
                 setBrands(data.data);
@@ -109,6 +116,26 @@ const AdminBrands = () => {
         }
     };
 
+    const handleLogoArChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setLogoArFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setLogoArPreview(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleBannerArChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setBannerArFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setBannerArPreview(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleEditClick = (brand: any) => {
         setEditingId(brand.id);
         setFormData({
@@ -118,6 +145,8 @@ const AdminBrands = () => {
             description_ar: brand.description_ar || '',
             image_url: brand.image_url || '',
             banner_url: brand.banner_url || '',
+            image_url_ar: brand.image_url_ar || '',
+            banner_url_ar: brand.banner_url_ar || '',
             website_url: brand.website_url || '',
             is_active: Boolean(brand.is_active),
             brand_type: brand.brand_type || '',
@@ -127,6 +156,10 @@ const AdminBrands = () => {
         setLogoFile(null);
         setBannerPreview(brand.banner_url || null);
         setBannerFile(null);
+        setLogoArPreview(brand.image_url_ar || null);
+        setLogoArFile(null);
+        setBannerArPreview(brand.banner_url_ar || null);
+        setBannerArFile(null);
         setIsModalOpen(true);
     };
 
@@ -140,6 +173,8 @@ const AdminBrands = () => {
             description_ar: '',
             image_url: '',
             banner_url: '',
+            image_url_ar: '',
+            banner_url_ar: '',
             website_url: '',
             is_active: true,
             brand_type: '',
@@ -149,6 +184,10 @@ const AdminBrands = () => {
         setLogoFile(null);
         setBannerPreview(null);
         setBannerFile(null);
+        setLogoArPreview(null);
+        setLogoArFile(null);
+        setBannerArPreview(null);
+        setBannerArFile(null);
         setPriorityError('');
     };
 
@@ -164,6 +203,7 @@ const AdminBrands = () => {
 
     const handleSaveBrand = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSaving) return;
         try {
             setPriorityError('');
             if (formData.priority !== '') {
@@ -173,9 +213,11 @@ const AdminBrands = () => {
                     return;
                 }
             }
-            setLoading(true);
+            setIsSaving(true);
             let currentImageUrl = formData.image_url;
             let currentBannerUrl = formData.banner_url;
+            let currentImageUrlAr = formData.image_url_ar;
+            let currentBannerUrlAr = formData.banner_url_ar;
 
             const uploadImage = async (file: File) => {
                 const fd = new FormData();
@@ -192,7 +234,7 @@ const AdminBrands = () => {
                     currentImageUrl = uploadData.data;
                 } else {
                     showNotification(uploadData.message || 'Logo upload failed', 'error');
-                    setLoading(false);
+                    setIsSaving(false);
                     return;
                 }
             }
@@ -203,7 +245,29 @@ const AdminBrands = () => {
                     currentBannerUrl = uploadData.data;
                 } else {
                     showNotification(uploadData.message || 'Banner upload failed', 'error');
-                    setLoading(false);
+                    setIsSaving(false);
+                    return;
+                }
+            }
+
+            if (logoArFile) {
+                const uploadData = await uploadImage(logoArFile);
+                if (uploadData.success) {
+                    currentImageUrlAr = uploadData.data;
+                } else {
+                    showNotification(uploadData.message || 'Arabic logo upload failed', 'error');
+                    setIsSaving(false);
+                    return;
+                }
+            }
+
+            if (bannerArFile) {
+                const uploadData = await uploadImage(bannerArFile);
+                if (uploadData.success) {
+                    currentBannerUrlAr = uploadData.data;
+                } else {
+                    showNotification(uploadData.message || 'Arabic banner upload failed', 'error');
+                    setIsSaving(false);
                     return;
                 }
             }
@@ -224,6 +288,8 @@ const AdminBrands = () => {
                     ...formData,
                     image_url: currentImageUrl,
                     banner_url: currentBannerUrl,
+                    image_url_ar: currentImageUrlAr,
+                    banner_url_ar: currentBannerUrlAr,
                     is_active: formData.is_active ? 1 : 0,
                     priority: formData.priority !== '' ? Number(formData.priority) : ''
                 })
@@ -240,11 +306,11 @@ const AdminBrands = () => {
             } else {
                 showNotification(data.message || 'Operation failed', 'error');
             }
-            setLoading(false);
         } catch (error) {
             console.error(error);
             showNotification('An error occurred', 'error');
-            setLoading(false);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -666,6 +732,58 @@ const AdminBrands = () => {
                                     </div>
                                 </div>
 
+                                <div className={styles.imageUploadsRow}>
+                                    <div className={styles.formGroup}>
+                                        <label>Brand Logo (Arabic)</label>
+                                        <div className={styles.fileUploadWrapper}>
+                                            {logoArPreview ? (
+                                                <div className={styles.previewContainer}>
+                                                    <img src={resolveUrl(logoArPreview)} alt="Arabic Logo Preview" className={styles.previewImage} />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setLogoArPreview(null); setLogoArFile(null); setFormData(prev => ({ ...prev, image_url_ar: '' })); }}
+                                                        className={styles.removeFileBtn}
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <label className={styles.fileLabel}>
+                                                    <Plus size={24} />
+                                                    <span>Click to upload Arabic logo</span>
+                                                    <span className={styles.uploadHint}>Shown when language is Arabic</span>
+                                                    <input type="file" accept="image/*" onChange={handleLogoArChange} hidden />
+                                                </label>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label>Brand Banner (Arabic)</label>
+                                        <div className={`${styles.fileUploadWrapper} ${styles.bannerUploadWrapper}`}>
+                                            {bannerArPreview ? (
+                                                <div className={styles.bannerPreviewContainer}>
+                                                    <img src={resolveUrl(bannerArPreview)} alt="Arabic Banner Preview" className={styles.bannerPreviewImage} />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setBannerArPreview(null); setBannerArFile(null); setFormData(prev => ({ ...prev, banner_url_ar: '' })); }}
+                                                        className={styles.bannerRemoveBtn}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <label className={styles.fileLabel}>
+                                                    <Plus size={24} />
+                                                    <span>Click to upload Arabic banner</span>
+                                                    <span className={styles.uploadHint}>Recommended: 1920 × 576 px · shown when language is Arabic</span>
+                                                    <input type="file" accept="image/*" onChange={handleBannerArChange} hidden />
+                                                </label>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className={styles.formGroup}>
                                     <label>Website URL</label>
                                     <input
@@ -739,12 +857,13 @@ const AdminBrands = () => {
                             <button
                                 type="button"
                                 className={styles.submitBtn}
+                                disabled={isSaving}
                                 onClick={(e) => {
                                     e.preventDefault();
                                     handleSaveBrand(e as any);
                                 }}
                             >
-                                {editingId ? 'Update Brand' : 'Create Brand'}
+                                {isSaving ? (editingId ? 'Updating...' : 'Creating...') : (editingId ? 'Update Brand' : 'Create Brand')}
                             </button>
                         </div>
                     </div>

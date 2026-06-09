@@ -2,11 +2,11 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { resolveUrl } from '@/utils/resolveUrl';
 import { stripHtml } from '@/utils/formatters';
-import { useCart } from '@/context/CartContext';
+import { useCartActions } from '@/context/CartContext';
 import { useNotification } from '@/context/NotificationContext';
 import { Minus, Plus, ShoppingCart } from 'lucide-react';
 import styles from './SearchDropdown.module.css';
@@ -58,9 +58,15 @@ interface Props {
 const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onClose }) => {
     const t = useTranslations('header');
     const tp = useTranslations('product');
-    const { addToCart } = useCart();
+    const locale = useLocale();
+    const isArabic = locale === 'ar';
+    const { addToCart } = useCartActions();
     const { showNotification } = useNotification();
     const [qtyMap, setQtyMap] = React.useState<Record<number, number>>({});
+
+    // Show the Arabic name when the site is in Arabic and one exists; fall back to English.
+    const localized = (item: { name: string; name_ar?: string | null }) =>
+        isArabic && item.name_ar && item.name_ar.trim() ? item.name_ar : item.name;
 
     const hasQuery = query.trim().length >= 2;
     const hasLeftResults =
@@ -94,6 +100,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
         await addToCart({
             id: p.id,
             name: stripHtml(p.name),
+            name_ar: (p as any).name_ar ? stripHtml((p as any).name_ar) : undefined,
             slug: p.slug,
             price: p.price,
             offer_price: p.offer_price,
@@ -108,18 +115,18 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
     // When user is typing, right column mirrors the search results with full
     // product cards (image + price + Add to Cart). When idle, it shows the
     // admin-curated trending list.
-    const rightTitle = hasQuery ? 'Top Matches' : 'Trending Products';
+    const rightTitle = hasQuery ? t('searchTopMatches') : t('searchTrending');
     const rightProducts = hasQuery ? data.products : data.trending;
 
     return (
-        <div className={styles.dropdown}>
+        <div className={styles.dropdown} dir={isArabic ? 'rtl' : 'ltr'}>
             <div className={styles.grid}>
                 {/* LEFT column — dynamic match results */}
                 <div className={styles.leftCol}>
                     {hasQuery && loading ? (
                         <>
                             <div className={styles.section}>
-                                <h4 className={styles.sectionTitle}>Products Suggestions</h4>
+                                <h4 className={styles.sectionTitle}>{t('searchProductsSuggestions')}</h4>
                                 {[1, 2, 3, 4].map(i => (
                                     <div key={`sp-${i}`} className={styles.skeletonRow}>
                                         <div className={styles.shimmer} />
@@ -127,7 +134,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                                 ))}
                             </div>
                             <div className={styles.section}>
-                                <h4 className={styles.sectionTitle}>Categories</h4>
+                                <h4 className={styles.sectionTitle}>{t('searchCategories')}</h4>
                                 {[1, 2].map(i => (
                                     <div key={`sc-${i}`} className={styles.skeletonRow}>
                                         <div className={styles.shimmer} />
@@ -135,7 +142,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                                 ))}
                             </div>
                             <div className={styles.section}>
-                                <h4 className={styles.sectionTitle}>Brands</h4>
+                                <h4 className={styles.sectionTitle}>{t('searchBrands')}</h4>
                                 {[1, 2, 3].map(i => (
                                     <div key={`sb-${i}`} className={styles.skeletonRow}>
                                         <div className={styles.shimmer} />
@@ -146,18 +153,18 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                     ) : !hasQuery && !showLeftSections ? (
                         <div className={styles.emptyHint}>
                             <span>{t('searchPlaceholder')}</span>
-                            <small>Start typing to see suggestions, categories, and brands</small>
+                            <small>{t('searchStartTyping')}</small>
                         </div>
                     ) : hasQuery && !hasLeftResults ? (
                         <div className={styles.emptyHint}>
-                            <span>No matches found</span>
-                            <small>Try a different keyword</small>
+                            <span>{t('searchNoMatches')}</span>
+                            <small>{t('searchTryDifferent')}</small>
                         </div>
                     ) : (
                         <>
                             {data.products.length > 0 && (
                                 <div className={styles.section}>
-                                    <h4 className={styles.sectionTitle}>Products Suggestions</h4>
+                                    <h4 className={styles.sectionTitle}>{t('searchProductsSuggestions')}</h4>
                                     <ul className={styles.linkList}>
                                         {data.products.map(p => (
                                             <li key={`p-${p.id}`}>
@@ -169,7 +176,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                                                         onClose();
                                                     }}
                                                 >
-                                                    {stripHtml(p.name)}
+                                                    {stripHtml(localized(p))}
                                                     {p.model && <span className={styles.linkMeta}> ({stripHtml(p.model)})</span>}
                                                 </button>
                                             </li>
@@ -180,7 +187,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
 
                             {data.categories.length > 0 && (
                                 <div className={styles.section}>
-                                    <h4 className={styles.sectionTitle}>Categories</h4>
+                                    <h4 className={styles.sectionTitle}>{t('searchCategories')}</h4>
                                     <ul className={styles.linkList}>
                                         {data.categories.map(c => (
                                             <li key={`c-${c.id}`}>
@@ -192,7 +199,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                                                         onClose();
                                                     }}
                                                 >
-                                                    {c.name}
+                                                    {localized(c)}
                                                 </button>
                                             </li>
                                         ))}
@@ -202,7 +209,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
 
                             {data.brands.length > 0 && (
                                 <div className={styles.section}>
-                                    <h4 className={styles.sectionTitle}>Brands</h4>
+                                    <h4 className={styles.sectionTitle}>{t('searchBrands')}</h4>
                                     <div className={styles.brandsGrid}>
                                         {data.brands.map(b => (
                                             <button
@@ -213,19 +220,19 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                                                     onNavigate(`/shop?brand=${b.slug}`);
                                                     onClose();
                                                 }}
-                                                title={b.name}
+                                                title={localized(b)}
                                             >
                                                 <div className={styles.brandLogoWrap}>
                                                     {b.image_url ? (
                                                         <Image
                                                             src={resolveUrl(b.image_url)}
-                                                            alt={b.name}
+                                                            alt={localized(b)}
                                                             width={200}
                                                             height={90}
                                                             className={styles.brandLogo}
                                                         />
                                                     ) : (
-                                                        <span className={styles.brandLogoFallback}>{b.name.charAt(0)}</span>
+                                                        <span className={styles.brandLogoFallback}>{localized(b).charAt(0)}</span>
                                                     )}
                                                 </div>
                                             </button>
@@ -263,7 +270,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                         </ul>
                     ) : rightProducts.length === 0 ? (
                         <div className={styles.emptyTrending}>
-                            {hasQuery ? 'No matching products' : 'No trending products yet'}
+                            {hasQuery ? t('searchNoMatchingProducts') : t('searchNoTrending')}
                         </div>
                     ) : (
                         <ul className={styles.trendingList}>
@@ -282,8 +289,8 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                                         >
                                             <div className={styles.trendingThumb}>
                                                 <Image
-                                                    src={resolveUrl(p.primary_image || '/assets/placeholder-image.webp')}
-                                                    alt={stripHtml(p.name)}
+                                                    src={resolveUrl(p.primary_image || undefined) || '/assets/mariot-logo2.webp'}
+                                                    alt={stripHtml(localized(p))}
                                                     width={72}
                                                     height={72}
                                                     className={styles.trendingImage}
@@ -300,7 +307,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                                                     onClose();
                                                 }}
                                             >
-                                                {stripHtml(p.name)}
+                                                {stripHtml(localized(p))}
                                             </button>
 
                                             {(p.price || p.offer_price) && (
@@ -358,7 +365,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                                                     onClick={() => handleAdd(p)}
                                                 >
                                                     <ShoppingCart size={14} />
-                                                    <span>Add To Cart</span>
+                                                    <span>{t('searchAddToCart')}</span>
                                                 </button>
                                             </div>
                                         </div>

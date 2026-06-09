@@ -107,11 +107,11 @@
 }
 
 .prevBtn {
-    margin-left: -20px;
+    margin-inline-start: -20px;
 }
 
 .nextBtn {
-    margin-right: -20px;
+    margin-inline-end: -20px;
 }
 
 .emblaViewport {
@@ -133,7 +133,7 @@
     flex: 0 0 220px;
     width: 220px;
     height: 100%;
-    padding-right: 2px;
+    padding-inline-end: 2px;
     /* Replaces the gap */
 }
 
@@ -189,7 +189,7 @@
         flex: 0 0 50%;
         /* Shows 2 items correctly on mobile */
         width: 50%;
-        padding-right: 0;
+        padding-inline-end: 0;
     }
 }
 

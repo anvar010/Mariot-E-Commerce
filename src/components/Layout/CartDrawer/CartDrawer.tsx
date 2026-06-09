@@ -168,9 +168,9 @@ const CartDrawer = () => {
 
         setIsGeneratingQuote(true);
         try {
-            // Calculate correct values to match UI inclusive logic
-            const finalTaxable = cartTotal / 1.05;
-            const finalVat = cartTotal - finalTaxable;
+            // Prices are VAT-exclusive — add 5% VAT on top of the discounted total.
+            const finalTaxable = cartTotal;
+            const finalVat = cartTotal * 0.05;
 
             // 1. Save quotation to database first
             const res = await fetch(`${API_BASE_URL}/quotations`, {
@@ -188,7 +188,7 @@ const CartDrawer = () => {
                     items: cartItems,
                     subtotal: Number(finalTaxable.toFixed(2)),
                     tax_amount: Number(finalVat.toFixed(2)),
-                    total_amount: Number(cartTotal.toFixed(2))
+                    total_amount: Number((finalTaxable + finalVat).toFixed(2))
                 })
             });
 
@@ -323,14 +323,11 @@ const CartDrawer = () => {
                                                 <div className={styles.itemDetails}>
                                                     <div className={styles.itemNameRow}>
                                                         <div className={styles.itemNameMain}>
-                                                            <h4 className={styles.itemName}>{item.name}</h4>
+                                                            <h4 className={styles.itemName}>{isArabic && item.name_ar ? item.name_ar : item.name}</h4>
                                                             {item.variant_label && (
-                                                                <p className={styles.itemVariant}>{item.variant_label}</p>
-                                                            )}
-                                                            {item.custom_dimensions && (
-                                                                <div className={styles.itemDimensions}>
-                                                                    {Object.entries(item.custom_dimensions).map(([key, val]) => (
-                                                                        <span key={key}>{key.charAt(0).toUpperCase() + key.slice(1)}: {String(val)}cm</span>
+                                                                <div className={styles.itemVariantList}>
+                                                                    {item.variant_label.split(' / ').map((part: string, i: number) => (
+                                                                        <span key={i} className={styles.itemVariant}>{part}</span>
                                                                     ))}
                                                                 </div>
                                                             )}
@@ -369,14 +366,11 @@ const CartDrawer = () => {
                                                 <div className={styles.itemDetails}>
                                                     <div className={styles.itemNameRow}>
                                                         <div className={styles.itemNameMain}>
-                                                            <h4 className={styles.itemName}>{item.name}</h4>
+                                                            <h4 className={styles.itemName}>{isArabic && item.name_ar ? item.name_ar : item.name}</h4>
                                                             {item.variant_label && (
-                                                                <p className={styles.itemVariant}>{item.variant_label}</p>
-                                                            )}
-                                                            {item.custom_dimensions && (
-                                                                <div className={styles.itemDimensions}>
-                                                                    {Object.entries(item.custom_dimensions).map(([key, val]) => (
-                                                                        <span key={key}>{key.charAt(0).toUpperCase() + key.slice(1)}: {String(val)}cm</span>
+                                                                <div className={styles.itemVariantList}>
+                                                                    {item.variant_label.split(' / ').map((part: string, i: number) => (
+                                                                        <span key={i} className={styles.itemVariant}>{part}</span>
                                                                     ))}
                                                                 </div>
                                                             )}
@@ -578,14 +572,14 @@ const CartDrawer = () => {
                                 )}
                                 <div className={styles.totalRow}>
                                     <span>{t('taxableAmount')} (Excl. VAT)</span>
-                                    <span><CurrencyPrice amount={cartTotal / 1.05} /></span>
+                                    <span><CurrencyPrice amount={cartTotal} /></span>
                                 </div>
                                 <div className={styles.totalRow}>
                                     <span>{t('vatAmount')} (5%)</span>
-                                    <span><CurrencyPrice amount={cartTotal - (cartTotal / 1.05)} /></span>
+                                    <span><CurrencyPrice amount={cartTotal * 0.05} /></span>
                                 </div>
                                 <div className={styles.finalTotal}>
-                                    <CurrencyPrice amount={cartTotal} />
+                                    <CurrencyPrice amount={cartTotal * 1.05} />
                                 </div>
 
                                 {/* Tabby Promo in Cart

@@ -138,7 +138,12 @@
 .formSelect,
 .formTextarea {
     width: 100%;
-    padding: 11px 12px 11px 42px;
+    /* Logical padding so the 42px reserved for the icon stays on the same side
+       as the icon (.inputIcon uses inset-inline-start), which flips correctly
+       in RTL/Arabic. Physical padding-left left the icon overlapping the value. */
+    padding-block: 11px;
+    padding-inline-start: 42px;
+    padding-inline-end: 12px;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     font-size: 13px;
@@ -844,7 +849,7 @@
     font-weight: 700;
     color: #0f172a;
     flex-shrink: 0;
-    text-align: right;
+    text-align: end;
     min-width: 100px;
     /* Ensure enough space for large amounts */
 }
@@ -1674,7 +1679,7 @@
     }
 
     .itemPrice {
-        text-align: left;
+        text-align: start;
         min-width: 0;
     }
 
@@ -1682,4 +1687,517 @@
         gap: 8px;
         /* Tighter gap on small phones to keep one row */
     }
+}
+/* ===== Saved-address card selector (checkout) ===== */
+.addrSelectWrap {
+    margin-bottom: 24px;
+}
+
+.addrAddNew {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 15px;
+    border: 1.5px dashed #16a1db;
+    border-radius: 12px;
+    background: #f0f9fd;
+    color: #16a1db;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.addrAddNew:hover {
+    background: #e0f2fb;
+    border-color: #1487bb;
+}
+
+.savedAddrLabel {
+    display: block;
+    margin: 22px 0 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.addrCardList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.addrSelectCard {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.addrSelectCard:hover {
+    border-color: #cbd5e1;
+}
+
+.addrSelectCardActive {
+    border-color: #16a1db;
+    box-shadow: 0 0 0 3px rgba(22, 161, 219, 0.12);
+}
+
+.addrSelectIcon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.addrSelectBody {
+    flex: 1;
+    min-width: 0;
+}
+
+.addrSelectTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.addrSelectType {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.addrSelectMenu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.addrSelectMenu:hover {
+    background: #f1f5f9;
+}
+
+.addrSelectLine {
+    margin: 6px 0 0;
+    font-size: 13.5px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.addrSelectContact {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin: 8px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.addrSelectVerified {
+    color: #22c55e;
+    margin-inline-start: 6px;
+}
+
+.checkoutNotesBox {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkoutNotesBox label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+}
+
+/* ===== "Deliver to" top banner ===== */
+.deliverBanner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.deliverIcon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.deliverText {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.deliverTitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.deliverAddr {
+    font-size: 13px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.deliverEdit {
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: #16a1db;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.deliverEdit:hover {
+    text-decoration: underline;
+}
+
+/* ===== "Who will receive this order?" card ===== */
+.receiverCard {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.receiverHeading {
+    margin: 0 0 14px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.receiverRow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.receiverIcon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #eef2f7;
+    color: #334155;
+}
+
+.receiverInfo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.receiverName {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.receiverPhone {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.receiverChange {
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: #16a1db;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.receiverChange:hover {
+    text-decoration: underline;
+}
+
+/* Edit form */
+.receiverForm {
+    display: flex;
+    flex-direction: column;
+}
+
+.receiverFormTitle {
+    margin: 0 0 16px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.receiverFieldLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+.receiverNameInput,
+.receiverNumberInput,
+.receiverCodeSelect {
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.receiverNameInput {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.receiverNameInput:focus,
+.receiverNumberInput:focus,
+.receiverCodeSelect:focus {
+    outline: none;
+    border-color: #16a1db;
+    box-shadow: 0 0 0 3px rgba(22, 161, 219, 0.15);
+}
+
+.receiverPhoneRow {
+    display: flex;
+    gap: 10px;
+}
+
+.receiverCodeSelect {
+    flex-shrink: 0;
+    width: 100px;
+    cursor: pointer;
+}
+
+.receiverNumberWrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.receiverNumberInput {
+    width: 100%;
+    padding-inline-end: 38px;
+}
+
+.receiverClear {
+    position: absolute;
+    inset-inline-end: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #475569;
+    cursor: pointer;
+}
+
+.receiverClear:hover {
+    background: #cbd5e1;
+}
+
+/* Custom dial-code dropdown */
+.receiverCodeWrap {
+    position: relative;
+    flex-shrink: 0;
+    width: 108px;
+}
+
+.receiverCodeBtn {
+    box-sizing: border-box;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 12px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.receiverCodeBtn:hover {
+    border-color: #94a3b8;
+}
+
+.codeChevronOpen {
+    transform: rotate(180deg);
+    transition: transform 0.15s ease;
+}
+
+.codeBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+}
+
+.codeMenu {
+    position: absolute;
+    top: calc(100% + 6px);
+    inset-inline-start: 0;
+    z-index: 41;
+    width: 240px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 14px 38px rgba(15, 23, 42, 0.16);
+    padding: 6px;
+    animation: codeMenuIn 0.16s ease;
+}
+
+@keyframes codeMenuIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.codeItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    text-align: start;
+    transition: background 0.12s ease;
+}
+
+.codeItem:hover {
+    background: #f1f5f9;
+}
+
+.codeItemActive {
+    background: #eef9fd;
+}
+
+.codeItemCode {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    min-width: 46px;
+}
+
+.codeItemLabel {
+    flex: 1;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.codeItemCheck {
+    color: #16a1db;
+}
+
+/* Cancel / Save actions */
+.receiverActions {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.receiverCancelBtn {
+    flex: 1;
+    padding: 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    color: #475569;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.receiverCancelBtn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.receiverSaveBtn {
+    flex: 1;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: #16a1db;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.receiverSaveBtn:hover {
+    background: #1487bb;
 }

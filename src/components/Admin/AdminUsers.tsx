@@ -142,6 +142,7 @@ const AdminUsers = () => {
     const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role_id: '' });
     const [createPerms, setCreatePerms] = useState<string[]>([]);
     const [isCreating, setIsCreating] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     // --- Points form (inside edit modal) ---
     const [pointsForm, setPointsForm] = useState<{ amount: string; action: 'add' | 'remove' }>({ amount: '', action: 'add' });
@@ -228,6 +229,8 @@ const AdminUsers = () => {
 
     const handleUpdateUser = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isUpdating) return;
+        setIsUpdating(true);
         try {
             const payload: any = { ...formData };
             if (isStaffRole(formData.role_id)) {
@@ -250,6 +253,7 @@ const AdminUsers = () => {
                 showNotification(data.message || t('notifications.updateError'), 'error');
             }
         } catch { showNotification(t('notifications.genericError'), 'error'); }
+        finally { setIsUpdating(false); }
     };
 
     // ---------- Status / Points / Delete ----------
@@ -694,7 +698,7 @@ const AdminUsers = () => {
                                 <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>
                                     {t('modals.cancel')}
                                 </button>
-                                <button type="submit" className={styles.submitBtn}>{t('modals.save')}</button>
+                                <button type="submit" className={styles.submitBtn} disabled={isUpdating}>{isUpdating ? (t('modals.saving') || 'Saving...') : t('modals.save')}</button>
                             </div>
                         </form>
                     </div>

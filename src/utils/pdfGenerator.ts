@@ -205,6 +205,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                                 <td style="padding: 15px 10px; font-size: 11px;">#${item.id || 'N/A'}</td>
                                 <td style="padding: 15px 10px; font-size: 11px;">
                                     <div style="font-weight: bold; color: #1e293b;">${item.name}</div>
+                                    ${item.model ? `<div style="color: #64748b; font-size: 10px;">Model: ${item.model}</div>` : ''}
                                     <div style="color: #64748b; font-size: 10px;">Brand: ${item.brand || 'Standard'}</div>
                                     ${variantLabel ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
                                     ${dims ? `<div style="color: #334155; font-size: 10px; margin-top: 4px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${dims}</div>` : ''}
@@ -369,8 +370,18 @@ const INVOICE_BRAND_LOGOS = [
  */
 export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> => {
     const invoiceDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const subtotalExVat = Number(data.final_amount) / 1.05;
-    const vatAmount = Number(data.final_amount) - subtotalExVat;
+    // Prices are VAT-exclusive. final_amount already includes 5% VAT on the (discounted) net.
+    const grandTotal = Number(data.final_amount);
+    const netExVat = grandTotal / 1.05;                 // post-discount taxable value
+    const vatAmount = grandTotal - netExVat;            // 5% VAT
+    // Sum of item line totals = pre-discount, ex-VAT subtotal (matches the rows above).
+    const itemsSubtotal = (data.items || []).reduce((sum: number, it: any) => {
+        if (Number(it.is_free_gift) === 1) return sum;
+        const unit = Number(it.price_at_purchase || it.price || 0);
+        return sum + unit * (it.quantity || 1);
+    }, 0);
+    // Any coupon/points discount is the gap between the item subtotal and the taxable net.
+    const discountTotal = Math.max(0, itemsSubtotal - netExVat);
 
     // Fetch logo + brand images in parallel
     const [mariotLogoEnB64, mariotLogoArB64, faviconB64, isoB64, icvB64, qaB64, ...brandLogosB64] = await Promise.all([
@@ -425,15 +436,23 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
                 <td style="border-bottom:${btmBorder};"></td>
             </tr>`;
 
-            const unitPrice = Number(item.price_at_purchase || item.price || 0);
+            const isFree = Number((item as any).is_free_gift) === 1;
+            const unitPrice = isFree ? 0 : Number(item.price_at_purchase || item.price || 0);
             const lineTotal = unitPrice * (item.quantity || 1);
+            const parentName = (item as any).bundle_parent_name || '';
+            const modelLine = (item as any).model_number || (item as any).model || '';
+            const nameCell = isFree
+                ? `${item.name || ''} <span style="display:inline-block;margin-left:4px;padding:1px 5px;background:#10b981;color:#fff;font-size:9px;font-weight:700;border-radius:3px;letter-spacing:0.3px;">FREE</span>${parentName ? `<div style="font-size:10px;font-weight:500;color:#64748b;margin-top:2px;">Free gift with ${parentName}</div>` : ''}`
+                : (item.name || '');
+            const priceCell = isFree ? 'FREE' : unitPrice.toFixed(2);
+            const totalCell = isFree ? 'FREE' : lineTotal.toFixed(2);
             return `
             <tr style="height:27px; color:#111;">
                 <td style="border-right:1px solid #1565c0;border-bottom:${btmBorder};font-size:12px;font-weight:700;text-align:center;">${(pageIndex * ITEMS_PER_PAGE) + idx + 1}</td>
-                <td style="border-right:1px solid #1565c0;border-bottom:${btmBorder};padding:0 10px;font-size:12px;font-weight:700;">${item.name || ''}</td>
+                <td style="border-right:1px solid #1565c0;border-bottom:${btmBorder};padding:0 10px;font-size:12px;font-weight:700;">${nameCell}${modelLine ? `<div style="font-size:10px;font-weight:500;color:#64748b;">Model: ${modelLine}</div>` : ''}</td>
                 <td style="border-right:1px solid #1565c0;border-bottom:${btmBorder};font-size:12px;font-weight:700;text-align:center;">${item.quantity || 1}</td>
-                <td style="border-right:1px solid #1565c0;border-bottom:${btmBorder};padding:0 10px;font-size:12px;font-weight:700;text-align:center;">${unitPrice.toFixed(2)}</td>
-                <td style="border-bottom:${btmBorder};padding:0 10px;font-size:13px;font-weight:800;text-align:center;">${lineTotal.toFixed(2)}</td>
+                <td style="border-right:1px solid #1565c0;border-bottom:${btmBorder};padding:0 10px;font-size:12px;font-weight:700;text-align:center;${isFree ? 'color:#10b981;' : ''}">${priceCell}</td>
+                <td style="border-bottom:${btmBorder};padding:0 10px;font-size:13px;font-weight:800;text-align:center;${isFree ? 'color:#10b981;' : ''}">${totalCell}</td>
             </tr>`;
         }).join('');
 
@@ -516,22 +535,34 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
                             ${isLastPage ? `
                             <tfoot>
                                 <tr>
-                                    <td colspan="3" style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:10px 14px;">
+                                    <td colspan="3" rowspan="${discountTotal > 0 ? 4 : 3}" style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:10px 14px;vertical-align:top;">
                                         <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:bold;color:#111;">
-                                            <span>Total Dollar</span><span style="flex:1;border-bottom:1px dotted #555;margin:0 10px;"></span><span style="direction:rtl;font-size:13px;">إجمالي دولار</span>
+                                            <span>Total (AED)</span><span style="flex:1;border-bottom:1px dotted #555;margin:0 10px;"></span><span style="direction:rtl;font-size:13px;">الإجمالي (درهم)</span>
                                         </div>
                                     </td>
-                                    <td style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:8px 4px;text-align:center;vertical-align:middle;">
-                                        <div style="font-size:12px;font-weight:900;color:#111;">المجموع</div><div style="font-size:11px;font-weight:900;color:#111;">TOTAL</div>
+                                    <td style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:6px 4px;text-align:center;vertical-align:middle;">
+                                        <div style="font-size:11px;font-weight:900;color:#111;">الإجمالي (غير شامل الضريبة)</div><div style="font-size:10px;font-weight:900;color:#111;">Subtotal (Excl. VAT)</div>
                                     </td>
-                                    <td style="border-top:1px solid #1565c0;padding:8px 10px;font-size:16px;font-weight:800;text-align:center;color:#111;">${Number(data.final_amount).toFixed(2)}</td>
+                                    <td style="border-top:1px solid #1565c0;padding:6px 10px;font-size:13px;font-weight:800;text-align:center;color:#111;">${itemsSubtotal.toFixed(2)}</td>
+                                </tr>
+                                ${discountTotal > 0 ? `
+                                <tr>
+                                    <td style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:6px 4px;text-align:center;vertical-align:middle;">
+                                        <div style="font-size:11px;font-weight:900;color:#111;">الخصم</div><div style="font-size:10px;font-weight:900;color:#111;">Discount</div>
+                                    </td>
+                                    <td style="border-top:1px solid #1565c0;padding:6px 10px;font-size:13px;font-weight:800;text-align:center;color:#111;">-${discountTotal.toFixed(2)}</td>
+                                </tr>` : ``}
+                                <tr>
+                                    <td style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:6px 4px;text-align:center;vertical-align:middle;">
+                                        <div style="font-size:11px;font-weight:900;color:#111;">ضريبة القيمة المضافة (5٪)</div><div style="font-size:10px;font-weight:900;color:#111;">VAT (5%)</div>
+                                    </td>
+                                    <td style="border-top:1px solid #1565c0;padding:6px 10px;font-size:13px;font-weight:800;text-align:center;color:#111;">${vatAmount.toFixed(2)}</td>
                                 </tr>
                                 <tr>
-                                    <td colspan="3" style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:10px 14px;"></td>
                                     <td style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:8px 4px;text-align:center;vertical-align:middle;">
                                         <div style="font-size:12px;font-weight:900;color:#111;">المجموع الإجمالي</div><div style="font-size:11px;font-weight:900;color:#111;">GRAND TOTAL</div>
                                     </td>
-                                    <td style="border-top:1px solid #1565c0;padding:8px 10px;font-size:18px;font-weight:900;text-align:center;color:#111;">${Number(data.final_amount).toFixed(2)}</td>
+                                    <td style="border-top:1px solid #1565c0;padding:8px 10px;font-size:18px;font-weight:900;text-align:center;color:#111;">${grandTotal.toFixed(2)}</td>
                                 </tr>
                             </tfoot>` : ``}
                         </table>

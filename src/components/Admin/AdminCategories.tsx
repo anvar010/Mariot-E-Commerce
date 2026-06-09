@@ -25,6 +25,9 @@ const AdminCategories = () => {
     const [expandedMains, setExpandedMains] = useState<number[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadingBanner, setUploadingBanner] = useState(false);
+    const [uploadingAr, setUploadingAr] = useState(false);
+    const [uploadingBannerAr, setUploadingBannerAr] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const { showNotification } = useNotification();
 
     // Form state
@@ -35,10 +38,13 @@ const AdminCategories = () => {
         description_ar: '',
         image_url: '',
         banner_url: '',
+        image_url_ar: '',
+        banner_url_ar: '',
         is_active: true,
         type: 'main_category' as string,
         parent_id: '' as string | number,
-        brands: [] as number[]
+        brands: [] as number[],
+        order_index: 0 as number | string
     });
 
     useEffect(() => {
@@ -82,7 +88,7 @@ const AdminCategories = () => {
 
     const fetchBrands = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include", headers: getAuthHeaders() });
+            const res = await fetch(`${API_BASE_URL}/brands?all=1`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) {
                 setAllBrands(data.data);
@@ -178,6 +184,39 @@ const AdminCategories = () => {
         }
     };
 
+    const uploadToField = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+        field: 'image_url_ar' | 'banner_url_ar',
+        setBusy: (v: boolean) => void,
+        label: string
+    ) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        const formDataUpload = new FormData();
+        formDataUpload.append('image', file);
+        setBusy(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/upload/image`, {
+                credentials: "include",
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: formDataUpload
+            });
+            const data = await res.json();
+            if (data.success) {
+                setFormData(prev => ({ ...prev, [field]: data.data }));
+                showNotification(`${label} uploaded successfully`);
+            } else {
+                showNotification(data.message || `Failed to upload ${label.toLowerCase()}`, 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showNotification(`An error occurred while uploading the ${label.toLowerCase()}`, 'error');
+        } finally {
+            setBusy(false);
+        }
+    };
+
     const handleEditClick = (category: any) => {
         setEditingId(category.id);
 
@@ -197,10 +236,13 @@ const AdminCategories = () => {
             description_ar: category.description_ar || '',
             image_url: category.image_url || '',
             banner_url: category.banner_url || '',
+            image_url_ar: category.image_url_ar || '',
+            banner_url_ar: category.banner_url_ar || '',
             is_active: Boolean(category.is_active),
             type: category.type || 'main_category',
             parent_id: category.parent_id || '',
-            brands: Array.isArray(category.brand_ids) ? category.brand_ids : []
+            brands: Array.isArray(category.brand_ids) ? category.brand_ids : [],
+            order_index: category.order_index ?? 0
         });
         setIsModalOpen(true);
     };
@@ -228,7 +270,10 @@ const AdminCategories = () => {
             type,
             parent_id: parentId,
             brands: [],
-            banner_url: ''
+            banner_url: '',
+            image_url_ar: '',
+            banner_url_ar: '',
+            order_index: 0
         });
         setIsModalOpen(true);
     };
@@ -247,15 +292,19 @@ const AdminCategories = () => {
             description_ar: '',
             image_url: '',
             banner_url: '',
+            image_url_ar: '',
+            banner_url_ar: '',
             is_active: true,
             type: 'main_category',
             parent_id: '',
-            brands: []
+            brands: [],
+            order_index: 0
         });
     };
 
     const handleSaveCategory = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSaving) return;
         try {
             const url = editingId
                 ? `${API_BASE_URL}/categories/${editingId}`
@@ -271,6 +320,8 @@ const AdminCategories = () => {
                 return;
             }
 
+            setIsSaving(true);
+
             const categoriesToSubmit = editingId
                 ? [{ name: formData.name, name_ar: formData.name_ar }]
                 : [{ name: formData.name, name_ar: formData.name_ar }, ...additionalCategories].filter(cat => cat.name.trim() !== '');
@@ -284,10 +335,13 @@ const AdminCategories = () => {
                     description_ar: formData.description_ar,
                     image_url: formData.image_url,
                     banner_url: formData.banner_url,
+                    image_url_ar: formData.image_url_ar,
+                    banner_url_ar: formData.banner_url_ar,
                     is_active: formData.is_active ? 1 : 0,
                     type: formData.type,
                     parent_id: formData.parent_id || null,
-                    brands: formData.brands
+                    brands: formData.brands,
+                    order_index: Number(formData.order_index) || 0
                 };
 
                 const res = await fetch(url, {
@@ -316,6 +370,8 @@ const AdminCategories = () => {
             }
         } catch (error) {
             showNotification('An error occurred during save', 'error');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -984,6 +1040,117 @@ const AdminCategories = () => {
                                 </div>
                             </div>
 
+                            <div className={styles.formGroup}>
+                                <label>Category Image (Arabic) <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>(shown when site language is Arabic — falls back to default if empty)</span></label>
+                                <div className={styles.imageUploadSection}>
+                                    <div className={styles.imagePreview}>
+                                        {formData.image_url_ar ? (
+                                            <div className={styles.previewContainer}>
+                                                <img src={formData.image_url_ar} alt="Arabic Preview" />
+                                                <button
+                                                    type="button"
+                                                    className={styles.removeImgBtn}
+                                                    onClick={() => setFormData(prev => ({ ...prev, image_url_ar: '' }))}
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className={styles.imagePlaceholder}>
+                                                <ImageIcon size={32} />
+                                                <span>No image</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className={styles.uploadControls}>
+                                        <div className={styles.uploadActions}>
+                                            <button
+                                                type="button"
+                                                className={styles.secondaryUploadBtn}
+                                                onClick={() => document.getElementById('category-image-upload-ar')?.click()}
+                                                disabled={uploadingAr}
+                                            >
+                                                {uploadingAr ? <Loader2 size={16} className={styles.spinner} /> : <Upload size={16} />}
+                                                {uploadingAr ? 'Uploading...' : 'Upload Arabic Image'}
+                                            </button>
+                                            <input
+                                                id="category-image-upload-ar"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => uploadToField(e, 'image_url_ar', setUploadingAr, 'Arabic image')}
+                                                style={{ display: 'none' }}
+                                            />
+                                        </div>
+                                        <div className={styles.urlInputGroup}>
+                                            <span>Or paste URL:</span>
+                                            <input
+                                                type="text"
+                                                name="image_url_ar"
+                                                placeholder="https://example.com/image-ar.jpg"
+                                                value={formData.image_url_ar}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label>Category Banner (Arabic) <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>(shown on top of the category landing page when language is Arabic)</span></label>
+                                <div className={styles.imageUploadSection}>
+                                    <div className={styles.imagePreview} style={{ width: '220px', height: '90px' }}>
+                                        {formData.banner_url_ar ? (
+                                            <div className={styles.previewContainer}>
+                                                <img src={formData.banner_url_ar} alt="Arabic Banner Preview" />
+                                                <button
+                                                    type="button"
+                                                    className={styles.removeImgBtn}
+                                                    onClick={() => setFormData(prev => ({ ...prev, banner_url_ar: '' }))}
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className={styles.imagePlaceholder}>
+                                                <ImageIcon size={28} />
+                                                <span>No banner</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className={styles.uploadControls}>
+                                        <div className={styles.uploadActions}>
+                                            <button
+                                                type="button"
+                                                className={styles.secondaryUploadBtn}
+                                                onClick={() => document.getElementById('category-banner-upload-ar')?.click()}
+                                                disabled={uploadingBannerAr}
+                                            >
+                                                {uploadingBannerAr ? <Loader2 size={16} className={styles.spinner} /> : <Upload size={16} />}
+                                                {uploadingBannerAr ? 'Uploading...' : 'Upload Arabic Banner'}
+                                            </button>
+                                            <input
+                                                id="category-banner-upload-ar"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => uploadToField(e, 'banner_url_ar', setUploadingBannerAr, 'Arabic banner')}
+                                                style={{ display: 'none' }}
+                                            />
+                                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>Recommended: 1920 × 400 px</span>
+                                        </div>
+                                        <div className={styles.urlInputGroup}>
+                                            <span>Or paste URL:</span>
+                                            <input
+                                                type="text"
+                                                name="banner_url_ar"
+                                                placeholder="https://example.com/banner-ar.jpg"
+                                                value={formData.banner_url_ar}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {formData.type === 'main_category' && (
                                 <div className={styles.formGroup}>
                                     <label>Assign Brands (Optional)</label>
@@ -1022,6 +1189,22 @@ const AdminCategories = () => {
                             )}
 
                             <div className={styles.formGroup}>
+                                <label>Display Order</label>
+                                <input
+                                    type="number"
+                                    name="order_index"
+                                    value={formData.order_index}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, order_index: e.target.value }))}
+                                    placeholder="0"
+                                    min={0}
+                                    step={1}
+                                />
+                                <small style={{ color: '#64748b', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                                    Lower numbers appear first. Leave 0 for default (alphabetical).
+                                </small>
+                            </div>
+
+                            <div className={styles.formGroup}>
                                 <label className={styles.checkboxLabel}>
                                     <input
                                         type="checkbox"
@@ -1036,8 +1219,8 @@ const AdminCategories = () => {
                                 <button type="button" className={styles.cancelBtn} onClick={handleCloseModal}>
                                     Cancel
                                 </button>
-                                <button type="submit" className={styles.submitBtn}>
-                                    {editingId ? 'Update Category' : 'Create Category'}
+                                <button type="submit" className={styles.submitBtn} disabled={isSaving}>
+                                    {isSaving ? (editingId ? 'Updating...' : 'Creating...') : (editingId ? 'Update Category' : 'Create Category')}
                                 </button>
                             </div>
                         </form>

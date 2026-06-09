@@ -124,11 +124,11 @@
 }
 
 .prevBtn {
-    margin-left: -20px;
+    margin-inline-start: -20px;
 }
 
 .nextBtn {
-    margin-right: -20px;
+    margin-inline-end: -20px;
 }
 
 .emblaViewport {
@@ -145,7 +145,7 @@
 .productWrapper {
     flex: 0 0 220px;
     min-width: 0;
-    padding-right: 2px;
+    padding-inline-end: 2px;
     display: flex;
     /* Space for the card to stretch */
 }
@@ -174,7 +174,7 @@
 
     .productWrapper {
         flex: 0 0 50%;
-        padding-right: 0;
+        padding-inline-end: 0;
     }
 }
 
@@ -228,7 +228,7 @@
 .discountBadge {
     position: absolute;
     top: 5px;
-    left: 5px;
+    inset-inline-start: 5px;
     background-color: #22c55e;
     color: #fff;
     font-size: 10px;
@@ -241,7 +241,7 @@
 .wishlistBtn {
     position: absolute;
     top: 5px;
-    right: 5px;
+    inset-inline-end: 5px;
     background: none;
     border: none;
     color: #94a3b8;
@@ -465,6 +465,6 @@
     .productWrapper {
         flex: 0 0 50%;
         width: 50%;
-        padding-right: 0;
+        padding-inline-end: 0;
     }
 }

@@ -9,9 +9,30 @@
     position: relative;
     text-decoration: none;
     cursor: pointer;
-    margin-right: 24px;
+    margin-inline-end: 24px;
     flex-shrink: 0;
     box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.bannerContainer {
+    display: block;
+    position: relative;
+    width: 280px; /* Match standard card width */
+    height: 100%; /* Fill parent height */
+    border-radius: 20px; 
+    overflow: hidden;
+    text-decoration: none;
+    cursor: pointer;
+    margin-inline-end: 24px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    background-color: #fdfdfd;
+}
+
+.bannerImage {
+    object-fit: cover; /* Cover the container completely, matching original card behavior but without overlay */
+    width: 100%;
+    height: 100%;
 }
 
 /* Background image handling */
@@ -60,10 +81,12 @@
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* Mobile Devices - Keep design same */
 @media (max-width: 1024px) {
     .cardContainer {
         width: 240px;
+    }
+    .bannerContainer {
+        max-width: 260px;
     }
 
     .title {
@@ -72,7 +95,7 @@
 }
 
 @media (max-width: 768px) {
-    .cardContainer {
+    .cardContainer, .bannerContainer {
         display: none;
         /* Hide for all mobile devices */
     }

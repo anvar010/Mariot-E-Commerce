@@ -5,35 +5,50 @@ import styles from './CategoryBrowse.module.css';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
+import {
+    CupSoda, Coffee, Flame, ThermometerSun, UtensilsCrossed, Snowflake, WashingMachine, Refrigerator, Sparkles, Wrench, Package, Droplet, Home, Grid, CheckCircle, Search
+} from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
 import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
 import { normalizeSlug } from '@/utils/shopCategories';
+import { sortByOrderIndex } from '@/utils/sortByOrderIndex';
 
-// Static image mapping for public/assets/product_images
-// This matches the updated categories and ensures professional images are used
-const CATEGORY_IMAGE_MAP: { [key: string]: string } = {
-    'coffee-makers': '/assets/product_images/coffeemakers.webp',
-    'ice-equipment': '/assets/product_images/ice-equipment.webp',
-    'cooking-equipment': '/assets/product_images/cooking-equipment.webp',
-    'refrigeration': '/assets/product_images/refrigeration.webp',
-    'beverage-equipment': '/assets/product_images/beverage-equipment.webp',
-    'commercial-ovens': '/assets/product_images/commercial-ovens.webp',
-    'food-preparation': '/assets/product_images/food-preparation.webp',
-    'food-holding-and-warming-line': '/assets/product_images/food-holding-and-warming-line.webp',
-    'delivery-and-storage': '/assets/product_images/delivery-and-storage.webp',
-    'parts': '/assets/product_images/parts.webp',
-    'used-equipment': '/assets/product_images/used-equipment.webp',
-    'dishwashing': '/assets/product_images/dishwashing.webp',
-    'stainless-steel-equipment': '/assets/product_images/stainless-steel-equipment.webp',
-    'janitorial-safety-supplies': '/assets/product_images/janitorial-safety-supplies.webp',
-    'water-treatment': '/assets/product_images/water-treatment.webp',
-    'home-use': '/assets/product_images/home-use.webp',
-    'dining-room': '/assets/product_images/dining-room.webp',
-    'smallwares': '/assets/product_images/smallwares.webp',
-    'disposables': '/assets/product_images/disposables.webp',
-    'food-beverage-ingredients': '/assets/product_images/food-beverage-ingredients.webp'
+// SVG for Microwave/Oven since Lucide's Microwave might not exist in this version
+const OvenIcon = ({ size }: { size: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+        <line x1="3" y1="8" x2="21" y2="8"></line>
+        <circle cx="17" cy="13" r="1"></circle>
+        <circle cx="17" cy="17" r="1"></circle>
+        <line x1="7" y1="13" x2="11" y2="13"></line>
+        <line x1="7" y1="17" x2="11" y2="17"></line>
+    </svg>
+);
+
+const getCategoryIcon = (slug: string) => {
+    switch (slug) {
+        case 'beverage-equipment': return <CupSoda size={20} />;
+        case 'commercial-ovens': return <OvenIcon size={20} />;
+        case 'coffee-makers': return <Coffee size={20} />;
+        case 'cooking-equipment': return <Flame size={20} />;
+        case 'food-holding-and-warming-line': return <ThermometerSun size={20} />;
+        case 'food-preparation': return <UtensilsCrossed size={20} />;
+        case 'ice-equipment': return <Snowflake size={20} />;
+        case 'laundry': return <WashingMachine size={20} />;
+        case 'refrigeration': return <Refrigerator size={20} />;
+        case 'stainless-steel-equipment':
+        case 'stainless-steel-fabrications': return <Sparkles size={20} />;
+        case 'parts': return <Wrench size={20} />;
+        case 'delivery-and-storage': return <Package size={20} />;
+        case 'dishwashing': return <Droplet size={20} />;
+        case 'janitorial-safety-supplies': return <CheckCircle size={20} />;
+        case 'water-treatment': return <Droplet size={20} />;
+        case 'home-use': return <Home size={20} />;
+        case 'smallwares': return <Grid size={20} />;
+        default: return <Search size={20} />;
+    }
 };
 
 interface CategoryBrowseProps {
@@ -41,13 +56,14 @@ interface CategoryBrowseProps {
 }
 
 const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
+    const sortedInitial = initialCategories.length > 0 ? sortByOrderIndex(initialCategories) : [];
     const t = useTranslations('categories');
     const tc = useTranslations('categoryContent');
     const locale = useLocale();
     const isRtl = locale === 'ar';
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
-    const [apiCategories, setApiCategories] = useState<any[]>(initialCategories);
+    const [apiCategories, setApiCategories] = useState<any[]>(sortedInitial);
     const [loading, setLoading] = useState(initialCategories.length === 0);
 
     const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -57,10 +73,9 @@ const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
         skipSnaps: false,
         dragFree: false,
         containScroll: 'trimSnaps',
-        slidesToScroll: 3
+        slidesToScroll: 1
     });
 
-    // Fetch categories dynamically to keep in sync with the Mega Menu and Shop
     useEffect(() => {
         if (initialCategories.length > 0) return;
         const fetchCategories = async () => {
@@ -68,10 +83,9 @@ const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
                 const res = await fetch(`${API_BASE_URL}/categories`, { credentials: "include" });
                 const data = await res.json();
                 if (data.success) {
-                    // Filter for main categories (same logic as CategoriesLayout)
-                    const mains = data.data
-                        .filter((c: any) => c.type === 'main_category' && c.is_active)
-                        .sort((a: any, b: any) => a.id - b.id);
+                    const mains = sortByOrderIndex(
+                        data.data.filter((c: any) => c.type === 'main_category' && c.is_active)
+                    );
                     setApiCategories(mains);
                 }
             } catch (err) {
@@ -105,13 +119,10 @@ const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
     }, [emblaApi, onSelect]);
 
     const getCategoryImage = (category: any) => {
-        // If the API provides an image, use it
         if (category.image_url) {
             if (category.image_url.startsWith('http')) return category.image_url;
             return `${MEDIA_BASE_URL}${category.image_url}`;
         }
-
-        // Use placeholder for all others
         return '/assets/placeholder-image.webp';
     };
 
@@ -139,7 +150,7 @@ const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
                         </Link>
                         <div className={styles.navBtns}>
                             <motion.button
-                                className={`${styles.navBtn} ${!canScrollLeft ? styles.navBtnDisabled : ''}`}
+                                className={`${styles.navBtnPrev} ${!canScrollLeft ? styles.navBtnDisabled : ''}`}
                                 onClick={scrollPrev}
                                 disabled={!canScrollLeft}
                                 aria-label="Scroll categories left"
@@ -147,7 +158,7 @@ const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
                                 <ChevronLeft size={20} />
                             </motion.button>
                             <motion.button
-                                className={`${styles.navBtn} ${!canScrollRight ? styles.navBtnDisabled : ''}`}
+                                className={`${styles.navBtnNext} ${!canScrollRight ? styles.navBtnDisabled : ''}`}
                                 onClick={scrollNext}
                                 disabled={!canScrollRight}
                                 aria-label="Scroll categories right"
@@ -178,30 +189,30 @@ const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
                                                         href={`/category/${slug}`}
                                                         className={styles.categoryCard}
                                                     >
-                                                        <div className={styles.imageBox}>
-                                                            <Image
-                                                                src={getCategoryImage(category)}
-                                                                alt=""
-                                                                fill
-                                                                sizes="(max-width: 640px) 80px, 110px"
-                                                                style={{ objectFit: 'contain', zIndex: 10 }}
-                                                                className={styles.categoryImg}
-                                                                onError={(e) => {
-                                                                    const target = e.target as HTMLImageElement;
-                                                                    target.src = '/assets/placeholder-image.webp';
-                                                                }}
-                                                            />
-                                                            <div className={styles.imageOverlay}>
-                                                                {displayName.split(' ')[0]}
+                                                        <div className={styles.cardLeft}>
+                                                            <div className={styles.iconCircle}>
+                                                                {getCategoryIcon(slug)}
                                                             </div>
-                                                        </div>
-                                                        <div className={styles.cardBottom}>
                                                             <span className={styles.categoryName}>
                                                                 {displayName}
                                                             </span>
-                                                            <span className={styles.categoryArrow}>
-                                                                {isRtl ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
-                                                            </span>
+                                                        </div>
+                                                        <div className={styles.cardRight}>
+                                                            <div className={styles.blobBackground}></div>
+                                                            <div className={styles.imageBox}>
+                                                                <Image
+                                                                    src={getCategoryImage(category)}
+                                                                    alt=""
+                                                                    fill
+                                                                    sizes="(max-width: 640px) 100px, 120px"
+                                                                    style={{ objectFit: 'contain' }}
+                                                                    className={styles.categoryImg}
+                                                                    onError={(e) => {
+                                                                        const target = e.target as HTMLImageElement;
+                                                                        target.src = '/assets/placeholder-image.webp';
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </Link>
                                                 </div>

@@ -10,7 +10,16 @@
  */
 export const getAuthHeaders = (): HeadersInit => {
     // No Bearer token needed — auth is handled by HTTP-Only cookies.
-    // This function is kept for backward compatibility with existing code
-    // that spreads ...getAuthHeaders() into their fetch headers.
-    return {};
+    // We do attach the UI language so the backend can localize emails
+    // (the NEXT_LOCALE cookie lives on the frontend domain and isn't sent
+    // cross-origin to the API, so pass it explicitly as a header).
+    return { 'x-locale': getCurrentLocale() };
+};
+
+// Read the active locale from the NEXT_LOCALE cookie (set by the language
+// switcher / next-intl). Falls back to 'en'.
+export const getCurrentLocale = (): string => {
+    if (typeof document === 'undefined') return 'en';
+    const m = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=(en|ar)/);
+    return m ? m[1] : 'en';
 };

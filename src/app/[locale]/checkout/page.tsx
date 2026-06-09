@@ -29,7 +29,12 @@ import {
     ShoppingBag,
     Ticket,
     X as CloseIcon,
-    Check
+    Check,
+    Home,
+    Building2,
+    MoreHorizontal,
+    BadgeCheck,
+    Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, BASE_URL } from '@/config';
@@ -38,6 +43,7 @@ import styles from './checkout.module.css';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import OtpVerifyModal from '@/components/shared/OtpVerifyModal/OtpVerifyModal';
+import AddressBookSheet from '@/components/Checkout/AddressBookSheet';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || '');
 
@@ -51,6 +57,7 @@ function CheckoutContent() {
     const n = useTranslations('notifications');
     const t = useTranslations('checkout');
     const common = useTranslations('common');
+    const otpT = useTranslations('otpModal');
     const router = useRouter();
     const searchParams = useSearchParams();
     const locale = useLocale();
@@ -100,7 +107,48 @@ function CheckoutContent() {
     const [activeBrandsPopup, setActiveBrandsPopup] = useState<number | null>(null);
     const [activeProductsPopup, setActiveProductsPopup] = useState<number | null>(null);
     const [isAddressDropdownOpen, setIsAddressDropdownOpen] = useState(false);
+    const [addressSheetOpen, setAddressSheetOpen] = useState(false);
     const addressDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Order receiver (who will be at the door) — defaults to the registered user.
+    const [receiverName, setReceiverName] = useState(user?.name || '');
+    const [receiverPhone, setReceiverPhone] = useState(user?.phone_number || '');
+    const [editingReceiver, setEditingReceiver] = useState(false);
+    const [recvCode, setRecvCode] = useState('+971');
+    const [recvNumber, setRecvNumber] = useState('');
+    const [codeOpen, setCodeOpen] = useState(false);
+    const [snapReceiver, setSnapReceiver] = useState({ name: '', phone: '' });
+
+    const dialCodes = [
+        { code: '+971', label: 'UAE' },
+        { code: '+966', label: 'Saudi Arabia' },
+        { code: '+968', label: 'Oman' },
+        { code: '+973', label: 'Bahrain' },
+        { code: '+965', label: 'Kuwait' },
+        { code: '+974', label: 'Qatar' },
+        { code: '+91', label: 'India' },
+    ];
+
+    const openReceiverEdit = () => {
+        setSnapReceiver({ name: receiverName, phone: receiverPhone });
+        const m = (receiverPhone || '').match(/^(\+\d{1,4})[\s-]?(.*)$/);
+        setRecvCode(m ? m[1] : '+971');
+        setRecvNumber(m ? m[2].trim() : (receiverPhone || ''));
+        setCodeOpen(false);
+        setEditingReceiver(true);
+    };
+
+    const saveReceiver = () => {
+        setReceiverPhone(`${recvCode} ${recvNumber}`.trim());
+        setEditingReceiver(false);
+    };
+
+    const cancelReceiver = () => {
+        setReceiverName(snapReceiver.name);
+        setReceiverPhone(snapReceiver.phone);
+        setCodeOpen(false);
+        setEditingReceiver(false);
+    };
 
     // Click outside to close dropdown
     useEffect(() => {
@@ -133,6 +181,30 @@ function CheckoutContent() {
             phone: addr.phone || '',
             country: addr.country || 'United Arab Emirates'
         }));
+
+        // Receiver follows the selected address (each address has its own contact)
+        setReceiverName(`${addr.first_name || ''} ${addr.last_name || ''}`.trim());
+        setReceiverPhone(addr.phone || '');
+        setEditingReceiver(false);
+    };
+
+    const goToAddressManager = () => {
+        setAddressSheetOpen(true);
+    };
+
+    // Keep checkout's selection valid when addresses change inside the sheet
+    // (e.g. the selected one was deleted). Falls back to default → first.
+    const handleAddressesChange = (list: any[]) => {
+        setUserAddresses(list);
+        const stillThere = list.find(a => a.id.toString() === selectedAddressId.toString());
+        if (!stillThere) {
+            const fallback = list.find(a => a.is_default) || list[0];
+            if (fallback) {
+                handleAddressOptionClick(fallback);
+            } else {
+                setSelectedAddressId('');
+            }
+        }
     };
 
     const handleNewAddressClick = () => {
@@ -153,7 +225,8 @@ function CheckoutContent() {
     };
 
     // Calculate final processing totals early so useEffects can use them
-    const finalTotal = cartTotal;
+    // Prices are VAT-exclusive — add 5% VAT on top of the discounted total (cartTotal).
+    const finalTotal = cartTotal * 1.05;
 
     const fetchAddresses = async () => {
         if (!user) return;
@@ -166,8 +239,8 @@ function CheckoutContent() {
             const data = await res.json();
             if (data.success) {
                 setUserAddresses(data.data || []);
-                // If there's a default address, pre-fill it!
-                const defaultAddr = data.data.find((a: any) => a.is_default);
+                // Pre-select the default address, else fall back to the first saved one.
+                const defaultAddr = data.data.find((a: any) => a.is_default) || data.data[0];
                 if (defaultAddr) {
                     setSelectedAddressId(defaultAddr.id);
                     setForm(prev => ({
@@ -183,6 +256,8 @@ function CheckoutContent() {
                         phone: defaultAddr.phone || '',
                         country: defaultAddr.country || 'United Arab Emirates'
                     }));
+                    setReceiverName(`${defaultAddr.first_name || ''} ${defaultAddr.last_name || ''}`.trim());
+                    setReceiverPhone(defaultAddr.phone || '');
                 }
             }
         } catch (error) {
@@ -226,6 +301,23 @@ function CheckoutContent() {
         if (user) {
             fetchAddresses();
         }
+    }, [user]);
+
+    // user may resolve after the form's useState init ran with empty values.
+    // Backfill identity fields from the profile, without clobbering anything
+    // the shopper already typed.
+    useEffect(() => {
+        if (!user) return;
+        const fullName = (user.name || '').trim();
+        setForm(prev => ({
+            ...prev,
+            firstName: prev.firstName || fullName.split(' ')[0] || '',
+            lastName: prev.lastName || fullName.split(' ').slice(1).join(' ') || '',
+            email: prev.email || user.email || '',
+            phone: prev.phone || user.phone_number || ''
+        }));
+        setReceiverName((prev: string) => prev || user.name || '');
+        setReceiverPhone((prev: string) => prev || user.phone_number || '');
     }, [user]);
 
     // Force re-render of Tabby Promo if coming back to the tab
@@ -320,10 +412,11 @@ function CheckoutContent() {
             return;
         }
 
-        if (!user?.phone_verified) {
-            setOtpOpen(true);
-            return;
-        }
+        // DISABLED: WhatsApp OTP phone verification – re-enable when ready
+        // if (!user?.phone_verified) {
+        //     setOtpOpen(true);
+        //     return;
+        // }
 
         setIsProcessing(true);
 
@@ -357,7 +450,12 @@ function CheckoutContent() {
                 coupon_id: appliedCoupon?.id,
                 billing_details: {
                     ...form,
-                    name: `${form.firstName} ${form.lastName}`
+                    name: (user && userAddresses.length > 0 && receiverName.trim())
+                        ? receiverName.trim()
+                        : `${form.firstName} ${form.lastName}`.trim(),
+                    phone: (user && userAddresses.length > 0 && receiverPhone.trim())
+                        ? receiverPhone.trim()
+                        : form.phone
                 },
                 locale: locale
             };
@@ -429,8 +527,13 @@ function CheckoutContent() {
                     router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
                 }
             } else {
-                const errorMsg = data.error_details?.error ? `${data.message}: ${data.error_details.error}` : (data.message || n('orderFailed'));
-                showNotification(errorMsg, 'error');
+                // if (data.type === 'PHONE_NOT_VERIFIED') {
+                //     setOtpOpen(true);
+                //     showNotification(otpT('checkoutDesc'), 'error');
+                // } else {
+                    const errorMsg = data.error_details?.error ? `${data.message}: ${data.error_details.error}` : (data.message || n('orderFailed'));
+                    showNotification(errorMsg, 'error');
+                // }
             }
 
         } catch (error) {
@@ -442,10 +545,8 @@ function CheckoutContent() {
     };
 
     const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-    // VAT is already included in prices, so cartTotal is our final payment amount
-
-    // Calculate the VAT breakdown (1/21 of total)
-    const vatAmount = (cartTotal * (5 / 105)); // 5% VAT inclusive
+    // Prices are VAT-exclusive — 5% VAT is added on top of the discounted total (cartTotal).
+    const vatAmount = cartTotal * 0.05;
     if (loading || (!user && !token)) {
         return (
             <div className={styles.checkoutPage}>
@@ -469,79 +570,115 @@ function CheckoutContent() {
                     <p>{t('subtitle')}</p>
                 </div>
 
+                {(() => {
+                    const selAddr = userAddresses.find(a => a.id.toString() === selectedAddressId.toString());
+                    if (!user || !selAddr) return null;
+                    const icon = selAddr.address_type === 'home' ? <Home size={20} /> : selAddr.address_type === 'work' ? <Building2 size={20} /> : <MapPin size={20} />;
+                    const typeLabel = selAddr.address_type === 'home' ? t('typeHome') : selAddr.address_type === 'work' ? t('typeWork') : t('typeOther');
+                    return (
+                        <div className={styles.deliverBanner} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+                            <div className={styles.deliverIcon}>{icon}</div>
+                            <div className={styles.deliverText}>
+                                <span className={styles.deliverTitle}>{t('deliverTo')} {typeLabel}</span>
+                                <span className={styles.deliverAddr}>{selAddr.address_line1}</span>
+                            </div>
+                            <button type="button" className={styles.deliverEdit} onClick={goToAddressManager}>
+                                {t('editAddress')}
+                            </button>
+                        </div>
+                    );
+                })()}
+
+                {user && userAddresses.length > 0 && (
+                    <div className={styles.receiverCard} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+                        <h3 className={styles.receiverHeading}>{t('whoReceives')}</h3>
+
+                        {!editingReceiver ? (
+                            <div className={styles.receiverRow}>
+                                <div className={styles.receiverIcon}><Phone size={18} /></div>
+                                <div className={styles.receiverInfo}>
+                                    <span className={styles.receiverName}>{receiverName}</span>
+                                    <span className={styles.receiverPhone} dir="ltr">{receiverPhone}</span>
+                                </div>
+                                <button type="button" className={styles.receiverChange} onClick={openReceiverEdit}>
+                                    {t('changeReceiver')}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className={styles.receiverForm}>
+                                <p className={styles.receiverFormTitle}>{t('someoneElse')}</p>
+                                <label className={styles.receiverFieldLabel}>{t('addReceiverContact')}</label>
+                                <input
+                                    type="text"
+                                    className={styles.receiverNameInput}
+                                    value={receiverName}
+                                    onChange={(e) => setReceiverName(e.target.value)}
+                                    placeholder={t('namePlaceholder')}
+                                />
+                                <div className={styles.receiverPhoneRow} dir="ltr">
+                                    <div className={styles.receiverCodeWrap}>
+                                        <button type="button" className={styles.receiverCodeBtn} onClick={() => setCodeOpen(!codeOpen)}>
+                                            <span dir="ltr">{recvCode}</span>
+                                            <ChevronDown size={16} className={codeOpen ? styles.codeChevronOpen : ''} />
+                                        </button>
+                                        {codeOpen && (
+                                            <>
+                                                <div className={styles.codeBackdrop} onClick={() => setCodeOpen(false)} />
+                                                <div className={styles.codeMenu}>
+                                                    {dialCodes.map(dc => (
+                                                        <button
+                                                            type="button"
+                                                            key={dc.code}
+                                                            className={`${styles.codeItem} ${recvCode === dc.code ? styles.codeItemActive : ''}`}
+                                                            onClick={() => { setRecvCode(dc.code); setCodeOpen(false); }}
+                                                        >
+                                                            <span className={styles.codeItemCode} dir="ltr">{dc.code}</span>
+                                                            <span className={styles.codeItemLabel}>{dc.label}</span>
+                                                            {recvCode === dc.code && <Check size={15} className={styles.codeItemCheck} />}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className={styles.receiverNumberWrap}>
+                                        <input
+                                            type="tel"
+                                            dir="ltr"
+                                            className={styles.receiverNumberInput}
+                                            value={recvNumber}
+                                            onChange={(e) => setRecvNumber(e.target.value)}
+                                            placeholder="-- --- ----"
+                                        />
+                                        {!!recvNumber && (
+                                            <button type="button" className={styles.receiverClear} onClick={() => setRecvNumber('')} aria-label="Clear">
+                                                <CloseIcon size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className={styles.receiverActions}>
+                                    <button type="button" className={styles.receiverCancelBtn} onClick={cancelReceiver}>
+                                        {common('cancel')}
+                                    </button>
+                                    <button type="button" className={styles.receiverSaveBtn} onClick={saveReceiver}>
+                                        {t('saveReceiver')}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <form className={styles.checkoutLayout} onSubmit={handlePlaceOrder}>
                     <div className={styles.leftColumn}>
-                        {/* Step 1: Shipping Information */}
+                        {/* Step 1: Shipping Information — only for users without a saved address */}
+                        {!(user && userAddresses.length > 0) && (
                         <div className={styles.checkoutSection}>
                             <div className={styles.sectionHeader}>
                                 <div className={styles.stepNumber}>1</div>
                                 <h2 className={styles.sectionTitle}>{t('shippingInfo')}</h2>
                             </div>
-
-                            {user && userAddresses.length > 0 && (
-                                <div className={styles.addressSelectorBox}>
-                                    <label className={styles.addressSelectorLabel}>
-                                        {t('savedAddress')}
-                                    </label>
-                                    <div className={styles.addressDropdownWrapper} ref={addressDropdownRef}>
-                                        <div
-                                            className={`${styles.customDropdownTrigger} ${isAddressDropdownOpen ? styles.triggerActive : ''}`}
-                                            onClick={handleAddressDropdownToggle}
-                                        >
-                                            <div className={styles.triggerContent}>
-                                                <MapPin size={18} className={styles.triggerIcon} />
-                                                <span className={styles.triggerText}>
-                                                    {selectedAddressId
-                                                        ? userAddresses.find(a => a.id.toString() === selectedAddressId.toString())?.address_line1
-                                                        : `-- ${t('newAddress')} --`}
-                                                </span>
-                                            </div>
-                                            <ChevronDown size={18} className={`${styles.chevronIcon} ${isAddressDropdownOpen ? styles.chevronRotate : ''}`} />
-                                        </div>
-
-                                        <AnimatePresence>
-                                            {isAddressDropdownOpen && (
-                                                <motion.div
-                                                    className={styles.addressDropdownMenu}
-                                                    initial={{ opacity: 0, y: -10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -10 }}
-                                                    transition={{ duration: 0.2 }}
-                                                >
-                                                    <div
-                                                        className={`${styles.addressOption} ${!selectedAddressId ? styles.optionSelected : ''}`}
-                                                        onClick={handleNewAddressClick}
-                                                    >
-                                                        <span className={styles.newAddrLabel}>-- {t('newAddress')} --</span>
-                                                        {!selectedAddressId && <Check size={16} className={styles.selectedCheck} />}
-                                                    </div>
-
-                                                    {userAddresses.map(addr => (
-                                                        <div
-                                                            key={addr.id}
-                                                            className={`${styles.addressOption} ${selectedAddressId === addr.id ? styles.optionSelected : ''}`}
-                                                            onClick={() => handleAddressOptionClick(addr)}
-                                                        >
-                                                            <div className={styles.optionInfo}>
-                                                                <div className={styles.optionHeader}>
-                                                                    <span className={styles.optionName}>
-                                                                        {addr.first_name} {addr.last_name}
-                                                                        {addr.is_default && <span className={styles.defaultPill}>★ {t('default')}</span>}
-                                                                    </span>
-                                                                </div>
-                                                                <span className={styles.optionAddress}>
-                                                                    {addr.address_line1}, {addr.city}
-                                                                </span>
-                                                            </div>
-                                                            {selectedAddressId === addr.id && <Check size={16} className={styles.selectedCheck} />}
-                                                        </div>
-                                                    ))}
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-                                </div>
-                            )}
 
                             <div className={styles.formGrid}>
                                 <div className={styles.formGroup}>
@@ -552,9 +689,9 @@ function CheckoutContent() {
                                     </div>
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label>{t('lastName')} <span>*</span></label>
+                                    <label>{t('lastName')}</label>
                                     <div className={styles.inputWrapper}>
-                                        <input className={styles.formInput} type="text" name="lastName" value={form.lastName} onChange={handleInputChange} required placeholder="e.g. Doe" />
+                                        <input className={styles.formInput} type="text" name="lastName" value={form.lastName} onChange={handleInputChange} placeholder="e.g. Doe" />
                                         <User className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
@@ -614,7 +751,7 @@ function CheckoutContent() {
                                 <div className={styles.formGroup}>
                                     <label>{t('phone')} <span>*</span></label>
                                     <div className={styles.inputWrapper}>
-                                        <input className={styles.formInput} type="tel" name="phone" value={form.phone} onChange={handleInputChange} required placeholder="+971 -- --- ----" dir="ltr" />
+                                        <input className={styles.formInput} type="tel" name="phone" value={form.phone} onChange={handleInputChange} required placeholder="+971 -- --- ----" dir="ltr" style={locale === 'ar' ? { paddingInlineStart: '12px', paddingInlineEnd: '42px' } : undefined} />
                                         <Phone className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
@@ -635,6 +772,7 @@ function CheckoutContent() {
                                 </div>
                             </div>
                         </div>
+                        )}
 
                         {/* Step 2: Payment Method */}
                         <div className={styles.checkoutSection}>
@@ -923,9 +1061,21 @@ function CheckoutContent() {
                                 <div className={styles.itemList}>
                                     {cartItems.map(item => (
                                         <div key={`${item.id}-${item.variant_id ?? 'base'}-${item.custom_signature ?? ''}`} className={styles.itemRow}>
-                                            <img src={resolveUrl(item.image)} alt={item.name} className={styles.itemImg} />
+                                            <img
+                                                src={resolveUrl(item.image)}
+                                                alt={item.name}
+                                                className={styles.itemImg}
+                                                style={item.slug ? { cursor: 'pointer' } : undefined}
+                                                onClick={() => item.slug && router.push(`/product/${item.slug}`)}
+                                            />
                                             <div className={styles.itemDetails}>
-                                                <div className={styles.itemName}>{item.name}</div>
+                                                <div
+                                                    className={styles.itemName}
+                                                    style={item.slug ? { cursor: 'pointer' } : undefined}
+                                                    onClick={() => item.slug && router.push(`/product/${item.slug}`)}
+                                                >
+                                                    {locale === 'ar' && item.name_ar ? item.name_ar : item.name}
+                                                </div>
                                                 {item.variant_label && (
                                                     <div style={{ fontSize: 12, color: '#64748b' }}>{item.variant_label}</div>
                                                 )}
@@ -965,7 +1115,7 @@ function CheckoutContent() {
 
                                     <div className={styles.totalRow}>
                                         <span>{common('taxableAmount')} (Excl. VAT)</span>
-                                        <span><CurrencyPrice amount={finalTotal / 1.05} /></span>
+                                        <span><CurrencyPrice amount={cartTotal} /></span>
                                     </div>
 
                                     <div className={styles.totalRow}>
@@ -1174,6 +1324,18 @@ function CheckoutContent() {
                 )}
             </AnimatePresence>
 
+            <AddressBookSheet
+                open={addressSheetOpen}
+                onClose={() => setAddressSheetOpen(false)}
+                user={user}
+                selectedAddressId={selectedAddressId}
+                onAddressesChange={handleAddressesChange}
+                onSelect={(addr) => {
+                    handleAddressOptionClick(addr);
+                    setAddressSheetOpen(false);
+                }}
+            />
+
             <Footer />
             <FloatingActions />
 
@@ -1183,11 +1345,11 @@ function CheckoutContent() {
                 onVerified={async () => {
                     await refreshUser();
                     setOtpOpen(false);
-                    showNotification('Mobile verified — you can now complete your purchase.', 'success');
+                    showNotification(otpT('checkoutSuccess'), 'success');
                 }}
                 phoneNumber={user?.phone_number}
-                title="Verify your mobile number to continue"
-                description="Your mobile number is not verified. Please verify to place your order. We will send a 6-digit OTP via WhatsApp."
+                title={otpT('checkoutTitle')}
+                description={otpT('checkoutDesc')}
             />
         </div >
     );

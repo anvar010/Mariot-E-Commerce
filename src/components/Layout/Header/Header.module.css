@@ -332,6 +332,13 @@
     z-index: 20;
 }
 
+/* Global `html[dir="rtl"] input { text-align: end }` resolves to LEFT in RTL.
+   Force search text to start at the right edge in Arabic. */
+:global(html[dir="rtl"]) .searchInput {
+    text-align: right;
+    direction: rtl;
+}
+
 .placeholderContainer {
     position: absolute;
     top: 50%;
@@ -493,6 +500,16 @@
     }
 }
 
+/* Tablet / narrow desktop: hide "Search" text label so button doesn't overflow the rounded bar */
+@media (max-width: 1100px) and (min-width: 769px) {
+    .searchButton {
+        padding: 0 16px;
+    }
+    .searchButton span:not(.searchSpinner) {
+        display: none;
+    }
+}
+
 /* User Actions */
 .userActions {
     display: flex;
@@ -631,7 +648,7 @@
 .cartBadge {
     position: absolute;
     top: -8px;
-    right: -8px;
+    inset-inline-end: -8px;
     background-color: var(--accent-orange);
     color: var(--white);
     font-size: 10px;
@@ -851,7 +868,7 @@
 
 .switch>span.switchOn {
     left: 3px;
-    padding-left: 0;
+    padding-inline-start: 0;
     color: #fff;
     /* Visual nudging for Arabic text bounding box */
     transform: translate(-2px, -1px);
@@ -859,13 +876,13 @@
 
 .switch>span.switchOff {
     right: 3px;
-    padding-right: 0;
+    padding-inline-end: 0;
     color: var(--primary-teal);
 }
 
 .checkToggle {
     position: absolute;
-    margin-left: -9999px;
+    margin-inline-start: -9999px;
     visibility: hidden;
 }
 
@@ -917,7 +934,7 @@
 }
 
 .checkToggleRoundFlat:checked+label:after {
-    margin-left: 44px;
+    margin-inline-start: 44px;
 }
 
 @media (max-width: 768px) {
@@ -931,7 +948,7 @@
     }
 
     .checkToggleRoundFlat:checked+label:after {
-        margin-left: 33px;
+        margin-inline-start: 33px;
     }
 
     .switch>span {
@@ -1319,23 +1336,39 @@
     .navBar {
         position: fixed;
         top: 0;
-        right: 0;
+        /* Dock at the inline-end edge (right in LTR, left in RTL) and park
+           off-screen with a transform — NOT a negative inset. A fixed element
+           pushed off-screen via inset isn't clipped by body's overflow-x, so in
+           RTL it created a horizontally pannable phantom panel. Transform-based
+           off-screen positioning adds no scrollable overflow. */
+        inset-inline-end: 0;
+        transform: translateX(100%);
         width: 90%;
         max-width: 380px;
         height: 100vh;
         z-index: 30001;
         background-color: white;
         box-shadow: -5px 0 25px rgba(0, 0, 0, 0.1);
-        transform: translateX(100%);
         transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         padding: 0;
         overflow-y: hidden;
+        overflow-x: hidden;
+        /* Only allow vertical panning inside the drawer — kills the horizontal
+           swipe that dragged the whole menu sideways in RTL. */
+        touch-action: pan-y;
+        overscroll-behavior: contain;
         border-radius: 0;
         display: flex;
         flex-direction: column;
     }
 
-    .navBar.navOpen {
+    /* In RTL the drawer docks on the left, so it parks off-screen to the left. */
+    :global(html[dir="rtl"]) .navBar {
+        transform: translateX(-100%);
+    }
+
+    .navBar.navOpen,
+    :global(html[dir="rtl"]) .navBar.navOpen {
         transform: translateX(0);
     }
 
@@ -1350,6 +1383,7 @@
         justify-content: flex-start !important;
         max-width: none !important;
         position: static !important;
+        overflow-x: hidden !important;
     }
 
     .mobileMenuHeader {
@@ -1378,9 +1412,21 @@
     .mobileScrollArea {
         flex: 1 !important;
         overflow-y: auto !important;
+        overflow-x: hidden !important;
+        touch-action: pan-y !important;
+        overscroll-behavior: contain !important;
         width: 100% !important;
         display: flex !important;
         flex-direction: column !important;
+    }
+
+    /* Drawer reuses .navLinks, which carries `overflow-x: auto` from the
+       769–1024px horizontal nav. In the vertical drawer that turns long RTL
+       rows into a horizontally pannable list. Force column + no x-scroll. */
+    .navBar .navLinks {
+        flex-direction: column !important;
+        overflow-x: hidden !important;
+        width: 100% !important;
     }
 
     /* Force scrollbar to be thin on mobile if needed */
@@ -1394,9 +1440,9 @@
     }
 
     .mobileCloseBtn {
-        position: absolute;
-        top: 20px;
-        inset-inline-end: 20px;
+        position: static;
+        flex-shrink: 0;
+        margin-inline-start: 8px;
         background: rgba(0, 0, 0, 0.05);
         border-radius: 50%;
         width: 32px;
@@ -1424,6 +1470,8 @@
         gap: 4px;
         align-items: flex-start;
         text-align: start;
+        min-width: 0;
+        flex: 1;
     }
 
     .mobileUserName {
@@ -1433,6 +1481,10 @@
         letter-spacing: -0.4px;
         margin-bottom: 2px;
         display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .mobileUserEmail {
@@ -1440,6 +1492,10 @@
         color: #64748b;
         font-weight: 400;
         display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .mobileSignInLink {
@@ -1628,6 +1684,23 @@
     font-size: 13px;
     font-weight: 700;
     color: #a16207;
+    white-space: nowrap;
+    max-width: 64px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Tight phones: shrink the points pill so a 6-digit value never breaks the row. */
+@media (max-width: 400px) {
+    .mobilePointsValue {
+        font-size: 11px;
+        max-width: 52px;
+    }
+
+    .rewardPointsMobile:has(.mobilePointsValue) {
+        padding: 4px 7px 4px 4px;
+        gap: 2px;
+    }
 }
 
 /* When points value is shown, make it a pill instead of a circle */
@@ -1650,6 +1723,11 @@
     .logoText img {
         height: 38px;
         width: auto;
+    }
+
+    /* Arabic logo is wider — trim slightly on mobile so header doesn't overflow */
+    .logoText img.logoImageAr {
+        height: 32px;
     }
 
     .logo {

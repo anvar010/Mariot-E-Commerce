@@ -10,14 +10,14 @@ const NotSignedIn = () => {
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>Hello</h1>
-            <p className={styles.subtitle}>You&apos;re not signed in!</p>
+            <h1 className={styles.title}>{t('notSignedInGreeting')}</h1>
+            <p className={styles.subtitle}>{t('notSignedInSubtitle')}</p>
             <div className={styles.buttonGroup}>
                 <Link href="/signin" className={styles.signInBtn}>
-                    Sign in
+                    {t('signIn')}
                 </Link>
                 <Link href="/signup" className={styles.createAccountBtn}>
-                    Create account
+                    {t('createAccount')}
                 </Link>
             </div>
         </div>

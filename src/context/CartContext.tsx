@@ -1,11 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface CartItem {
     id: string | number;
@@ -13,6 +13,8 @@ interface CartItem {
     variant_label?: string;
     variant_options?: any[] | null;
     name: string;
+    name_ar?: string;
+    model?: string;
     price: number;
     image: string;
     quantity: number;
@@ -49,29 +51,39 @@ const sameLine = (a: { id: any; variant_id?: any; custom_signature?: any; is_fre
     (a.custom_signature ?? null) === (b.custom_signature ?? null) &&
     Boolean(a.is_free_gift) === Boolean(b.is_free_gift);
 
-interface CartContextType {
-    cartItems: CartItem[];
+// Actions are referentially stable for the life of the provider — splitting
+// them into their own context lets action-only consumers (product cards, the
+// "Add to cart" button, search results) avoid re-rendering when cart *state*
+// (items, drawer, coupon, points) changes.
+interface CartActions {
     addToCart: (product: any, options?: { silent?: boolean }) => Promise<boolean>;
     removeFromCart: (productId: string | number, variantId?: number | null, customSignature?: string | null, isFreeGift?: boolean) => void;
     updateQuantity: (productId: string | number, quantity: number, variantId?: number | null, customSignature?: string | null) => void;
     clearCart: () => void;
+    applyDiscount: (code: string) => Promise<boolean>;
+    removeDiscount: () => void;
+    applyPoints: (points: number) => void;
+    removePoints: () => void;
+    setIsDrawerOpen: (isOpen: boolean) => void;
+}
+
+interface CartState {
+    cartItems: CartItem[];
     cartCount: number;
     cartTotal: number;
     subtotal: number;
     discountAmount: number;
     appliedCoupon: any | null;
-    applyDiscount: (code: string) => Promise<boolean>;
-    removeDiscount: () => void;
     isDrawerOpen: boolean;
-    setIsDrawerOpen: (isOpen: boolean) => void;
     pointsToUse: number;
     pointsDiscountAmount: number;
     pointRate: number;
-    applyPoints: (points: number) => void;
-    removePoints: () => void;
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+type CartContextType = CartState & CartActions;
+
+const CartStateContext = createContext<CartState | undefined>(undefined);
+const CartActionsContext = createContext<CartActions | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -84,9 +96,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { user, token } = useAuth();
     const { showNotification } = useNotification();
     const t = useTranslations('notifications');
+    const locale = useLocale();
 
-    const prevToken = React.useRef(token);
-    const hasHydrated = React.useRef(false);
+    const prevToken = useRef(token);
+    const hasHydrated = useRef(false);
+
+    // Latest-value refs so the action callbacks can stay referentially stable
+    // ([] deps) while still reading current state/props at call time.
+    const cartItemsRef = useRef(cartItems);
+    cartItemsRef.current = cartItems;
+    const tokenRef = useRef(token);
+    tokenRef.current = token;
+    const userRef = useRef(user);
+    userRef.current = user;
+    const pointRateRef = useRef(pointRate);
+    pointRateRef.current = pointRate;
+    const localeRef = useRef(locale);
+    localeRef.current = locale;
+    const discountAmountRef = useRef(discountAmount);
+    discountAmountRef.current = discountAmount;
+    const tRef = useRef(t);
+    tRef.current = t;
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -103,6 +133,51 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         };
         fetchSettings();
+    }, []);
+
+    const fetchUserCart = useCallback(async () => {
+        if (!tokenRef.current) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/cart`, {
+                credentials: "include",
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.data)) {
+                const items = data.data.map((item: any) => {
+                    const variantOpts = item.variant_options || null;
+                    const variantLabelFromOpts = Array.isArray(variantOpts) && variantOpts.length > 0
+                        ? variantOpts.map((o: any) => `${o.name}: ${o.value}`).join(' / ')
+                        : undefined;
+                    return {
+                        id: item.product_id || item.id,
+                        variant_id: item.variant_id ?? null,
+                        // Prefer the saved custom label (e.g. "Width: 60cm / ..."), fall back to variant options label
+                        variant_label: item.custom_label || variantLabelFromOpts,
+                        variant_options: variantOpts,
+                        name: item.name || item.product?.name || 'Product',
+                        name_ar: item.name_ar || item.product?.name_ar || undefined,
+                        // Variant SKU (model number) when this line is a variant, else parent model
+                        model: item.variant_sku || item.model || undefined,
+                        slug: item.slug || item.product?.slug || '',
+                        price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price || item.product?.price || 0),
+                        image: item.image || item.product?.image_url || '',
+                        quantity: Number(item.quantity),
+                        brand: item.brand || item.brand_name || item.product?.brand?.name || '',
+                        stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined,
+                        track_inventory: item.track_inventory,
+                        custom_dimensions: item.custom_dimensions || null,
+                        custom_signature: item.custom_signature || null,
+                        is_free_gift: Boolean(item.is_free_gift),
+                        bundle_parent_id: item.bundle_parent_id ?? null,
+                        original_price: item.original_price != null ? Number(item.original_price) : null
+                    };
+                });
+                setCartItems(items);
+            }
+        } catch (error) {
+            console.error('Failed to fetch user cart', error);
+        }
     }, []);
 
     // 1. Initial Load & Sync Logic
@@ -182,7 +257,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if ('requestIdleCallback' in window) (window as any).cancelIdleCallback(handle);
             else clearTimeout(handle);
         };
-    }, [token]);
+    }, [token, fetchUserCart]);
 
     // 2. Persistence loop for guests — skip until initial cart has been loaded from storage
     useEffect(() => {
@@ -203,49 +278,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
     }, [cartItems]);
 
-    const fetchUserCart = async () => {
-        if (!token) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/cart`, {
-                credentials: "include",
-                headers: getAuthHeaders()
-            });
-            const data = await res.json();
-            if (data.success && Array.isArray(data.data)) {
-                const items = data.data.map((item: any) => {
-                    const variantOpts = item.variant_options || null;
-                    const variantLabelFromOpts = Array.isArray(variantOpts) && variantOpts.length > 0
-                        ? variantOpts.map((o: any) => `${o.name}: ${o.value}`).join(' / ')
-                        : undefined;
-                    return {
-                        id: item.product_id || item.id,
-                        variant_id: item.variant_id ?? null,
-                        // Prefer the saved custom label (e.g. "Width: 60cm / ..."), fall back to variant options label
-                        variant_label: item.custom_label || variantLabelFromOpts,
-                        variant_options: variantOpts,
-                        name: item.name || item.product?.name || 'Product',
-                        slug: item.slug || item.product?.slug || '',
-                        price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price || item.product?.price || 0),
-                        image: item.image || item.product?.image_url || '',
-                        quantity: Number(item.quantity),
-                        brand: item.brand || item.brand_name || item.product?.brand?.name || '',
-                        stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined,
-                        track_inventory: item.track_inventory,
-                        custom_dimensions: item.custom_dimensions || null,
-                        custom_signature: item.custom_signature || null,
-                        is_free_gift: Boolean(item.is_free_gift),
-                        bundle_parent_id: item.bundle_parent_id ?? null,
-                        original_price: item.original_price != null ? Number(item.original_price) : null
-                    };
-                });
-                setCartItems(items);
-            }
-        } catch (error) {
-            console.error('Failed to fetch user cart', error);
-        }
-    };
-
-    const addToCart = async (product: any, options?: { silent?: boolean }): Promise<boolean> => {
+    const addToCart = useCallback(async (product: any, options?: { silent?: boolean }): Promise<boolean> => {
+        const items = cartItemsRef.current;
+        const tt = tRef.current;
         const productQuantity = Number(product.quantity || 1);
         const isFreeGift = Boolean(product.is_free_gift);
         const displayPrice = isFreeGift
@@ -257,7 +292,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const lineKey = { id: product.id, variant_id: variantId, custom_signature: customSignature, is_free_gift: isFreeGift };
 
         // Validation against current state
-        const existingItem = cartItems.find(item => sameLine(item, lineKey));
+        const existingItem = items.find(item => sameLine(item, lineKey));
         const isInventoryTracked = !isFreeGift && (product.track_inventory === 1 || String(product.track_inventory) === '1' || product.track_inventory === true);
 
         let quantityToAdd = productQuantity;
@@ -267,13 +302,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const remainingStock = stockLimit - currentInCart;
 
             if (remainingStock <= 0) {
-                showNotification(t('cartUpdateError', { count: stockLimit }), 'error');
+                showNotification(tt('cartUpdateError', { count: stockLimit }), 'error');
                 return false;
             }
 
             if (productQuantity > remainingStock) {
                 quantityToAdd = remainingStock;
-                showNotification(t('cartUpdateLimit', { count: quantityToAdd, total: stockLimit }), 'info');
+                showNotification(tt('cartUpdateLimit', { count: quantityToAdd, total: stockLimit }), 'info');
             }
         }
 
@@ -292,6 +327,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 variant_id: variantId,
                 variant_label: product.variant_label,
                 name: product.name || product.model || 'Product',
+                name_ar: product.name_ar || undefined,
+                model: product.model || undefined,
                 slug: product.slug || '',
                 price: displayPrice,
                 image: product.image,
@@ -315,10 +352,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Notification already shown for partial add
         } else if (!options?.silent) {
             // Calculate new cart stats for notification
-            const currentTotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-            const currentCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+            const currentTotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            const currentCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
-            const isNewItem = !cartItems.some(item => sameLine(item, lineKey));
             const newTotal = currentTotal + (displayPrice * quantityToAdd);
             const newCount = currentCount + quantityToAdd;
 
@@ -326,7 +362,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 '',
                 'cart',
                 {
-                    title: product.name || product.model || 'Product',
+                    title: (localeRef.current === 'ar' && product.name_ar ? product.name_ar : (product.name || product.model)) || 'Product',
                     image: product.image,
                     price: displayPrice,
                     oldPrice: product.old_price || product.price_old || product.oldPrice,
@@ -339,7 +375,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // Backend Sync if logged in
-        if (token) {
+        if (tokenRef.current) {
             try {
                 await fetch(`${API_BASE_URL}/cart`, {
                     credentials: "include",
@@ -363,17 +399,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         }
         return true;
-    };
+    }, [showNotification]);
 
-    const removeFromCart = async (productId: string | number, variantId: number | null = null, customSignature: string | null = null, isFreeGift: boolean = false) => {
+    const removeFromCart = useCallback(async (productId: string | number, variantId: number | null = null, customSignature: string | null = null, isFreeGift: boolean = false) => {
+        const items = cartItemsRef.current;
+        const tt = tRef.current;
         // is_free_gift is part of the line identity (a parent and its bundled gift can share id+variant).
         // Callers removing a free-gift line must pass isFreeGift=true; otherwise sameLine will miss it.
         const lineKey = { id: productId, variant_id: variantId, custom_signature: customSignature, is_free_gift: isFreeGift };
-        const itemToRemove = cartItems.find(i => sameLine(i, lineKey));
+        const itemToRemove = items.find(i => sameLine(i, lineKey));
         // Cascade: removing a bundle parent also removes its free-gift children.
         const isParent = itemToRemove && !itemToRemove.is_free_gift;
         const childGifts = isParent
-            ? cartItems.filter(i => i.is_free_gift && Number(i.bundle_parent_id) === Number(productId))
+            ? items.filter(i => i.is_free_gift && Number(i.bundle_parent_id) === Number(productId))
             : [];
         setCartItems(prevItems => prevItems.filter(item => {
             if (sameLine(item, lineKey)) return false;
@@ -382,10 +420,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
 
         if (itemToRemove) {
-            showNotification(t('cartRemove', { name: itemToRemove.name }), 'error', { title: t('itemRemoved') });
+            showNotification(tt('cartRemove', { name: itemToRemove.name }), 'error', { title: tt('itemRemoved') });
         }
 
-        if (token) {
+        if (tokenRef.current) {
             try {
                 const qsParts: string[] = [];
                 if (variantId != null) qsParts.push(`variant_id=${variantId}`);
@@ -408,21 +446,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.error('Failed to remove from cart backend', error);
             }
         }
-    };
+    }, [showNotification]);
 
-    const updateQuantity = async (productId: string | number, quantity: number, variantId: number | null = null, customSignature: string | null = null) => {
+    const updateQuantity = useCallback(async (productId: string | number, quantity: number, variantId: number | null = null, customSignature: string | null = null) => {
         if (quantity < 1) return;
+        const items = cartItemsRef.current;
+        const tt = tRef.current;
 
         const lineKey = { id: productId, variant_id: variantId, custom_signature: customSignature };
 
         // Validation against current state
-        const item = cartItems.find(i => sameLine(i, lineKey));
+        const item = items.find(i => sameLine(i, lineKey));
         let validQuantity = quantity;
 
         const isInventoryTracked = item && (item.track_inventory === 1 || String(item.track_inventory) === '1' || item.track_inventory === true);
 
         if (item && item.stock_quantity !== undefined && isInventoryTracked && quantity > item.stock_quantity) {
-            showNotification(t('cartUpdateError', { count: item.stock_quantity }), 'error');
+            showNotification(tt('cartUpdateError', { count: item.stock_quantity }), 'error');
             validQuantity = item.stock_quantity;
         }
 
@@ -434,7 +474,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             );
         });
 
-        if (token) {
+        if (tokenRef.current) {
             try {
                 await fetch(`${API_BASE_URL}/cart/update`, {
                     credentials: "include",
@@ -454,9 +494,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.error('Failed to update cart quantity backend', error);
             }
         }
-    };
+    }, [showNotification]);
 
-    const clearCart = async () => {
+    const clearCart = useCallback(async () => {
         setCartItems([]);
         setAppliedCoupon(null);
         setDiscountAmount(0);
@@ -464,7 +504,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setPointsDiscountAmount(0);
         localStorage.removeItem('cart');
 
-        if (token) {
+        if (tokenRef.current) {
             try {
                 await fetch(`${API_BASE_URL}/cart`, {
                     method: 'DELETE',
@@ -475,17 +515,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.error('Failed to clear cart backend', error);
             }
         }
-    };
+    }, []);
 
-    const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-    const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    // Single pass over the items, memoized so it only recomputes when the cart
+    // actually changes (not on every unrelated provider re-render).
+    const { cartCount, subtotal } = useMemo(() => {
+        let count = 0;
+        let sub = 0;
+        for (const item of cartItems) {
+            count += item.quantity;
+            sub += item.price * item.quantity;
+        }
+        return { cartCount: count, subtotal: sub };
+    }, [cartItems]);
     const cartTotal = Math.max(0, subtotal - discountAmount - pointsDiscountAmount);
 
-    const applyDiscount = async (code: string): Promise<boolean> => {
-        if (!token) {
-            showNotification(t('couponAuth'), 'error');
+    const applyDiscount = useCallback(async (code: string): Promise<boolean> => {
+        const tt = tRef.current;
+        if (!tokenRef.current) {
+            showNotification(tt('couponAuth'), 'error');
             return false;
         }
+
+        const items = cartItemsRef.current;
+        const sub = items.reduce((total, item) => total + (item.price * item.quantity), 0);
 
         try {
             const res = await fetch(`${API_BASE_URL}/coupons/validate`, {
@@ -497,8 +550,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 },
                 body: JSON.stringify({
                     code,
-                    cart_total: subtotal,
-                    items: cartItems.map(i => ({ id: i.id, brand: i.brand, price: i.price, quantity: i.quantity }))
+                    cart_total: sub,
+                    items: items.map(i => ({ id: i.id, brand: i.brand, price: i.price, quantity: i.quantity }))
                 })
             });
 
@@ -506,136 +559,175 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (data.success) {
                 setAppliedCoupon(data.data);
                 setDiscountAmount(data.data.discount_amount);
-                showNotification(data.message || t('couponApply'));
+                showNotification(data.message || tt('couponApply'));
                 return true;
             } else {
-                showNotification(data.message || t('couponInvalid'), 'error');
+                showNotification(data.message || tt('couponInvalid'), 'error');
                 return false;
             }
         } catch (error) {
             console.error('Coupon validation error:', error);
-            showNotification(t('couponError'), 'error');
+            showNotification(tt('couponError'), 'error');
             return false;
         }
-    };
+    }, [showNotification]);
 
-    const removeDiscount = (silent = false) => {
+    const removeDiscount = useCallback((silent = false) => {
         setAppliedCoupon(null);
         setDiscountAmount(0);
         if (!silent) {
-            showNotification(t('couponRemoved'));
+            showNotification(tRef.current('couponRemoved'));
         }
-    };
+    }, [showNotification]);
 
-    const applyPoints = (points: number) => {
-        if (!user) {
-            showNotification(t('pointsAuth'), 'error');
+    const applyPoints = useCallback((points: number) => {
+        const tt = tRef.current;
+        const currentUser = userRef.current;
+        if (!currentUser) {
+            showNotification(tt('pointsAuth'), 'error');
             return;
         }
 
-        const availablePoints = user.reward_points || 0;
+        const availablePoints = currentUser.reward_points || 0;
         if (points > availablePoints) {
-            showNotification(t('pointsLimit', { count: availablePoints }), 'error');
+            showNotification(tt('pointsLimit', { count: availablePoints }), 'error');
             return;
         }
 
+        const rate = pointRateRef.current;
         // Use dynamic pointRate instead of hardcoded 100
-        const maxAEDFromPoints = points * pointRate;
-        const currentTotal = subtotal - discountAmount;
+        const maxAEDFromPoints = points * rate;
+        const sub = cartItemsRef.current.reduce((total, item) => total + (item.price * item.quantity), 0);
+        const currentTotal = sub - discountAmountRef.current;
 
         const finalAEDFromPoints = Math.min(maxAEDFromPoints, currentTotal);
         // Round points to use to nearest whole number to avoid floating point display errors
-        const actualPointsToUse = Math.round(finalAEDFromPoints / pointRate);
+        const actualPointsToUse = Math.round(finalAEDFromPoints / rate);
 
         setPointsToUse(actualPointsToUse);
         setPointsDiscountAmount(finalAEDFromPoints);
 
         if (actualPointsToUse > 0) {
-            showNotification(t('pointsApplied', { amount: finalAEDFromPoints.toFixed(2) }));
+            showNotification(tt('pointsApplied', { amount: finalAEDFromPoints.toFixed(2) }));
         }
-    };
+    }, [showNotification]);
 
-    const removePoints = (silent = false) => {
+    const removePoints = useCallback((silent = false) => {
         setPointsToUse(0);
         setPointsDiscountAmount(0);
         if (!silent) {
-            showNotification(t('pointsRemoved'));
+            showNotification(tRef.current('pointsRemoved'));
         }
-    };
+    }, [showNotification]);
 
-    // Re-calculate discount if cart items change
+    // Re-calculate discount when the cart changes. Debounced + abortable so a
+    // burst of quantity changes (rapid +/- taps) collapses into a single
+    // /coupons/validate request instead of one per change — critical for
+    // backend load under traffic.
     useEffect(() => {
-        if (appliedCoupon) {
-            // Re-validate with items to ensure brands are still valid/calculated correctly
-            const calculateNewDiscount = async () => {
-                if (cartItems.length === 0) return;
-                try {
-                    const res = await fetch(`${API_BASE_URL}/coupons/validate`, {
-                        credentials: "include",
-                        method: 'POST',
-                        headers: {
-                            ...getAuthHeaders(),
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            code: appliedCoupon.code,
-                            cart_total: cartItems.reduce((total, item) => total + (item.price * item.quantity), 0),
-                            items: cartItems.map(i => ({ id: i.id, brand: i.brand, price: i.price, quantity: i.quantity }))
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        setDiscountAmount(data.data.discount_amount);
-                    } else if (cartItems.length > 0) {
-                        removeDiscount();
-                        showNotification(data.message || t('couponNotApplicable'), 'info');
-                    }
-                } catch (e) {
-                    console.error('Re-validation error', e);
-                }
-            };
-            calculateNewDiscount();
+        if (!appliedCoupon || cartItems.length === 0) return;
 
-            // Check min order again
+        const controller = new AbortController();
+        const handle = setTimeout(async () => {
             const current_subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-            if (cartItems.length > 0 && current_subtotal < appliedCoupon.min_order_amount) {
+
+            // Min-order check first — cheaper than a round-trip.
+            if (current_subtotal < appliedCoupon.min_order_amount) {
                 removeDiscount();
                 showNotification(t('couponMinOrder', { amount: appliedCoupon.min_order_amount }), 'info');
+                return;
             }
-        }
-    }, [cartItems]);
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/coupons/validate`, {
+                    credentials: "include",
+                    method: 'POST',
+                    signal: controller.signal,
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        code: appliedCoupon.code,
+                        cart_total: current_subtotal,
+                        items: cartItems.map(i => ({ id: i.id, brand: i.brand, price: i.price, quantity: i.quantity }))
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setDiscountAmount(data.data.discount_amount);
+                } else {
+                    removeDiscount();
+                    showNotification(data.message || t('couponNotApplicable'), 'info');
+                }
+            } catch (e) {
+                if ((e as any)?.name !== 'AbortError') console.error('Re-validation error', e);
+            }
+        }, 400);
+
+        return () => {
+            clearTimeout(handle);
+            controller.abort();
+        };
+    }, [cartItems, appliedCoupon, removeDiscount, showNotification, t]);
+
+    // Stable actions: identity never changes, so action-only consumers never
+    // re-render from cart-state updates.
+    const actions = useMemo<CartActions>(() => ({
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        applyDiscount,
+        removeDiscount,
+        applyPoints,
+        removePoints,
+        setIsDrawerOpen
+    }), [addToCart, removeFromCart, updateQuantity, clearCart, applyDiscount, removeDiscount, applyPoints, removePoints]);
+
+    const state = useMemo<CartState>(() => ({
+        cartItems,
+        cartCount,
+        cartTotal,
+        subtotal,
+        discountAmount,
+        appliedCoupon,
+        isDrawerOpen,
+        pointsToUse,
+        pointsDiscountAmount,
+        pointRate
+    }), [cartItems, cartCount, cartTotal, subtotal, discountAmount, appliedCoupon, isDrawerOpen, pointsToUse, pointsDiscountAmount, pointRate]);
 
     return (
-        <CartContext.Provider value={{
-            cartItems,
-            addToCart,
-            removeFromCart,
-            updateQuantity,
-            clearCart,
-            cartCount,
-            cartTotal,
-            subtotal,
-            discountAmount,
-            appliedCoupon,
-            applyDiscount,
-            removeDiscount,
-            isDrawerOpen,
-            setIsDrawerOpen,
-            pointsToUse,
-            pointsDiscountAmount,
-            pointRate,
-            applyPoints,
-            removePoints
-        }}>
-            {children}
-        </CartContext.Provider>
+        <CartActionsContext.Provider value={actions}>
+            <CartStateContext.Provider value={state}>
+                {children}
+            </CartStateContext.Provider>
+        </CartActionsContext.Provider>
     );
 };
 
-export const useCart = () => {
-    const context = useContext(CartContext);
+export const useCartState = () => {
+    const context = useContext(CartStateContext);
     if (context === undefined) {
-        throw new Error('useCart must be used within a CartProvider');
+        throw new Error('useCartState must be used within a CartProvider');
     }
     return context;
+};
+
+export const useCartActions = () => {
+    const context = useContext(CartActionsContext);
+    if (context === undefined) {
+        throw new Error('useCartActions must be used within a CartProvider');
+    }
+    return context;
+};
+
+// Backward-compatible combined hook. Components that need both state and
+// actions keep working unchanged. Prefer useCartActions() for action-only
+// consumers (e.g. product cards) so they don't re-render on cart-state changes.
+export const useCart = (): CartContextType => {
+    const state = useCartState();
+    const actions = useCartActions();
+    return { ...state, ...actions };
 };

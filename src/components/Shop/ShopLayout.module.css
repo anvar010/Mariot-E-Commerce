@@ -4,6 +4,18 @@
     min-height: 100vh;
 }
 
+.categoryBanner {
+    position: relative;
+    width: 100%;
+    background-color: #f8fafc;
+}
+
+.categoryBannerImg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
 .topInfo {
     width: 100%;
     padding: 30px 40px 0 40px;
@@ -1382,7 +1394,7 @@
     padding: 14px 20px;
     font-size: 14px;
     color: #334155;
-    text-align: left;
+    text-align: start;
     background: white;
     transition: background 0.2s;
 }

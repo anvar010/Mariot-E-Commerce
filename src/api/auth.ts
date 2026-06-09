@@ -21,7 +21,7 @@ export const authApi = {
         const response = await fetch(`${API_BASE_URL}/auth/google-login`, {
             credentials: "include",
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
             body: JSON.stringify({ token })
         });
         const data = await response.json();
@@ -35,7 +35,7 @@ export const authApi = {
         const response = await fetch(`${API_BASE_URL}/auth/register`, {
             credentials: "include",
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
             body: JSON.stringify(userData)
         });
         const data = await response.json();

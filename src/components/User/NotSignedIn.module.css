@@ -132,20 +132,20 @@
 
 .switch>span.switchOn {
     left: 3px;
-    padding-left: 0;
+    padding-inline-start: 0;
     color: #fff;
     transform: translate(-2px, -1px);
 }
 
 .switch>span.switchOff {
     right: 3px;
-    padding-right: 0;
+    padding-inline-end: 0;
     color: var(--primary-teal);
 }
 
 .checkToggle {
     position: absolute;
-    margin-left: -9999px;
+    margin-inline-start: -9999px;
     visibility: hidden;
 }
 
@@ -194,7 +194,7 @@
 }
 
 .checkToggleRoundFlat:checked+label:after {
-    margin-left: 44px;
+    margin-inline-start: 44px;
 }
 
 @media (max-width: 768px) {
@@ -208,7 +208,7 @@
     }
 
     .checkToggleRoundFlat:checked+label:after {
-        margin-left: 33px;
+        margin-inline-start: 33px;
     }
 
     .switch>span {

@@ -225,6 +225,14 @@
     color: #64748b;
 }
 
+.receiverInfo {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0369a1;
+}
+
 .statusBadge {
     padding: 4px 10px;
     border-radius: 6px;

@@ -2563,6 +2563,26 @@
     animation: slideIn 0.2s ease-out;
 }
 
+.specTableHeader {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 40px;
+    gap: 12px;
+    padding: 0 2px 10px 2px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.specRow {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 40px;
+    gap: 12px;
+    margin-bottom: 12px;
+    animation: slideIn 0.2s ease-out;
+}
+
 @keyframes slideIn {
     from {
         opacity: 0;
@@ -2681,4 +2701,148 @@
     display: block;
     font-size: 12px;
     color: #64748b;
+}
+
+/* ===== Modern offer date picker (react-datepicker) ===== */
+.datePickerWrap {
+    display: block;
+    width: 100%;
+}
+
+.datePickerWrap :global(.react-datepicker__input-container) input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.datePickerWrap :global(.react-datepicker__input-container) input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Popper above the modal */
+.datePickerPopper {
+    z-index: 99999 !important;
+}
+
+.datePickerPopper :global(.react-datepicker) {
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+    font-family: inherit;
+    overflow: hidden;
+    padding: 6px;
+}
+
+.datePickerPopper :global(.react-datepicker__header) {
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+    padding-top: 12px;
+}
+
+.datePickerPopper :global(.react-datepicker__current-month),
+.datePickerPopper :global(.react-datepicker-time__header) {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 6px;
+}
+
+.datePickerPopper :global(.react-datepicker__day-name) {
+    color: #94a3b8;
+    font-weight: 600;
+    width: 2rem;
+    line-height: 2rem;
+}
+
+.datePickerPopper :global(.react-datepicker__day) {
+    width: 2rem;
+    line-height: 2rem;
+    border-radius: 8px;
+    color: #334155;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.datePickerPopper :global(.react-datepicker__day:hover) {
+    background: #eff6ff;
+    color: #0f172a;
+}
+
+.datePickerPopper :global(.react-datepicker__day--selected),
+.datePickerPopper :global(.react-datepicker__day--keyboard-selected),
+.datePickerPopper :global(.react-datepicker__day--selected:hover),
+.datePickerPopper :global(.react-datepicker__day--keyboard-selected:hover) {
+    background: #2563eb !important;
+    color: #fff !important;
+    font-weight: 700;
+}
+
+.datePickerPopper :global(.react-datepicker__day--today) {
+    font-weight: 700;
+    color: #2563eb;
+}
+
+.datePickerPopper :global(.react-datepicker__day--outside-month) {
+    color: #cbd5e1;
+}
+
+.datePickerPopper :global(.react-datepicker__time-container) {
+    width: 96px;
+    border-left: 1px solid #f1f5f9;
+}
+
+.datePickerPopper :global(.react-datepicker__time),
+.datePickerPopper :global(.react-datepicker__time-box) {
+    width: 96px !important;
+    border-radius: 0 14px 14px 0;
+}
+
+.datePickerPopper :global(.react-datepicker__time-list) {
+    padding: 6px !important;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.datePickerPopper :global(.react-datepicker__time-list)::-webkit-scrollbar {
+    width: 6px;
+}
+
+.datePickerPopper :global(.react-datepicker__time-list)::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+}
+
+.datePickerPopper :global(.react-datepicker__time-list-item) {
+    height: auto !important;
+    padding: 8px 10px !important;
+    margin: 2px 0;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.datePickerPopper :global(.react-datepicker__time-list-item:hover) {
+    background: #eff6ff !important;
+    color: #0f172a !important;
+}
+
+.datePickerPopper :global(.react-datepicker__time-list-item--selected),
+.datePickerPopper :global(.react-datepicker__time-list-item--selected:hover) {
+    background: #2563eb !important;
+    color: #fff !important;
+    font-weight: 700;
+}
+
+.datePickerPopper :global(.react-datepicker__triangle) {
+    display: none;
 }

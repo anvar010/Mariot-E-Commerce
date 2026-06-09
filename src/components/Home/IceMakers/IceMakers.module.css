@@ -128,11 +128,11 @@
 }
 
 .prevBtn {
-    margin-left: -20px;
+    margin-inline-start: -20px;
 }
 
 .nextBtn {
-    margin-right: -20px;
+    margin-inline-end: -20px;
 }
 
 @media (max-width: 576px) {
@@ -157,7 +157,7 @@
 .productWrapper {
     flex: 0 0 220px;
     min-width: 0;
-    padding-right: 2px;
+    padding-inline-end: 2px;
     display: flex;
     /* Allow ProductCardPromotion to stretch to match grid height */
 }
@@ -186,7 +186,7 @@
 
     .productWrapper {
         flex: 0 0 50%;
-        padding-right: 0;
+        padding-inline-end: 0;
     }
 }
 

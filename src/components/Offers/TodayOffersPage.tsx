@@ -6,8 +6,6 @@ import styles from './TodayOffersPage.module.css';
 import {
     ChevronDown,
     Filter,
-    ChevronLeft,
-    ChevronRight,
     Search,
     Coins,
     ShoppingCart,
@@ -28,9 +26,14 @@ interface TodayOffersPageProps {
     initialProducts?: any[];
     initialCategories?: any[];
     initialBrands?: any[];
+    dealType?: 'daily' | 'weekly';
 }
 
-const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initialBrands = [] }: TodayOffersPageProps) => {
+const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initialBrands = [], dealType = 'daily' }: TodayOffersPageProps) => {
+    // API filter params differ per deal type. Products use `is_weekly_deal`,
+    // but the brands endpoint expects the shorthand `is_weekly`.
+    const productDealParam = dealType === 'weekly' ? 'is_weekly_deal' : 'is_daily_offer';
+    const brandDealParam = dealType === 'weekly' ? 'is_weekly' : 'is_daily_offer';
     const t = useTranslations('todayOffers');
     const tc = useTranslations('categoryContent');
     const [products, setProducts] = useState<any[]>(initialProducts);
@@ -170,7 +173,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
     // Brands — only show brands that actually have daily-offer products.
     // If a category is selected, narrow further to that category subtree.
     useEffect(() => {
-        const params = new URLSearchParams({ is_daily_offer: '1' });
+        const params = new URLSearchParams({ [brandDealParam]: '1' });
         if (activeFilters.category) params.set('category', activeFilters.category);
         if (activeFilters.minPrice > 0) params.set('minPrice', activeFilters.minPrice.toString());
         if (activeFilters.maxPrice < 99999) params.set('maxPrice', activeFilters.maxPrice.toString());
@@ -201,7 +204,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
             setLoading(true);
             try {
                 // Try fetching specifically marked daily offers first
-                let url = `${API_BASE_URL}/products?limit=40&is_daily_offer=1`;
+                let url = `${API_BASE_URL}/products?limit=40&${productDealParam}=1`;
                 if (activeFilters.category) url += `&category=${activeFilters.category}`;
                 if (activeFilters.brand.length > 0) url += `&brand=${activeFilters.brand.join(',')}`;
                 if (activeFilters.sort) url += `&sort=${activeFilters.sort}`;
@@ -297,16 +300,6 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                         title={t('filter')}
                     />
 
-                    <div className={styles.promoImage}>
-                        <Image
-                            src="/assets/offerposter.webp"
-                            alt="Promotion"
-                            fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            style={{ objectFit: 'cover' }}
-                            unoptimized
-                        />
-                    </div>
                 </div>
 
                 {isMobileFilterOpen && <div className={styles.filterOverlay} onClick={() => setIsMobileFilterOpen(false)} />}
@@ -316,11 +309,10 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                     {/* Hero Banner Area */}
                     <section className={styles.heroSection}>
                         <div className={styles.heroSliderFull}>
-                            <button className={styles.slideBtn}><ChevronLeft /></button>
                             <div className={styles.heroBannerFull}>
                                 <Image
-                                    src="/assets/todayoffersbanner.webp"
-                                    alt="Today's Offers Banner"
+                                    src={dealType === 'weekly' ? '/weeklydealsbanner.webp' : '/assets/todayoffersbanner.webp'}
+                                    alt={dealType === 'weekly' ? "Weekly Deals Banner" : "Today's Offers Banner"}
                                     width={1200}
                                     height={400}
                                     className={styles.fullBannerImg}
@@ -328,7 +320,6 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                                     unoptimized
                                 />
                             </div>
-                            <button className={styles.slideBtn}><ChevronRight /></button>
                         </div>
                     </section>
 
@@ -391,6 +382,7 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
                                         gallery: product.gallery,
                                         slug: product.slug,
                                         stock_quantity: product.stock_quantity,
+                                        track_inventory: product.track_inventory,
                                         is_best_seller: product.is_best_seller,
                                         is_weekly_deal: product.is_weekly_deal,
                                         is_limited_offer: product.is_limited_offer,

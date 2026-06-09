@@ -284,10 +284,13 @@
         padding: 0;
         margin: 0;
         width: 100%;
+        background-color: #f8fafc;
     }
 
     .title {
-        padding: 0 15px;
+        padding: 20px 15px 10px;
+        margin: 0;
+        font-size: 22px;
     }
 
     .layout {
@@ -300,8 +303,9 @@
     /* Sidebar becomes a top navigation */
     .sidebar {
         width: 100%;
-        padding: 15px;
+        padding: 0 15px 15px;
         border-radius: 0;
+        background-color: transparent;
     }
 
     .userCard {
@@ -373,20 +377,31 @@
         border: 1px solid #e2e8f0;
         border-radius: 10px;
         flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .active {
-        border-inline-start: 1px solid #56cfe1;
+        border-inline-start: 1px solid #0ea5e9;
         /* Reset desktop style */
-        border: 1px solid #56cfe1;
-        background-color: #e0f7fa;
-        color: #00796b;
+        border: 1px solid #0ea5e9;
+        background-color: #f0f9ff;
+        color: #0284c7;
         padding-inline-start: 12px !important;
     }
 
     .navIcon {
         width: 16px;
         height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .navIcon svg {
+        width: 100%;
+        height: 100%;
     }
 
     .divider {
@@ -394,9 +409,9 @@
     }
 
     .signOutBtn {
-        margin-top: 30px;
-        padding: 12px;
-        font-size: 15px;
+        margin-top: 20px;
+        padding: 10px;
+        font-size: 14px;
         width: 100%;
         display: flex;
         align-items: center;
@@ -404,15 +419,18 @@
         background-color: #fff1f0;
         border: 1px solid #ffa39e;
         color: #cf1322;
+        border-radius: 10px;
+        font-weight: 600;
     }
 
     /* Content Adjustments */
     .mainContent {
-        padding: 15px;
+        padding: 18px 15px;
         min-height: auto;
         border-radius: 0;
         box-shadow: none;
         width: 100%;
+        overflow: visible;
     }
 
     .tabs {
@@ -490,10 +508,18 @@
 
     /* Profile Form Mobile */
     .profileTabs {
-        gap: 20px;
+        gap: 10px;
         overflow-x: auto;
         justify-content: flex-start;
         padding-bottom: 5px;
+        width: 100%;
+        display: flex;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .profileTabs::-webkit-scrollbar {
+        display: none;
     }
 
     .profileTab {
@@ -501,21 +527,41 @@
         white-space: nowrap;
     }
 
-    .formGroup {
-        margin-bottom: 20px;
+    .profileForm {
+        padding: 16px 10px;
     }
 
-    .formRow {
-        grid-template-columns: 1fr;
-        gap: 0;
+    .formGroup {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 16px 0;
+        margin-bottom: 0;
     }
 
     .formLabel {
+        flex: none;
+        width: 100%;
         font-size: 14px;
+    }
+
+    .inputWrapper,
+    .inputActionGroup {
+        width: 100%;
     }
 
     .formInput {
         font-size: 14px;
+    }
+
+    .formActions {
+        padding: 16px 0;
+        justify-content: stretch;
+    }
+
+    .submitBtn {
+        width: 100%;
+        justify-content: center;
     }
 }
 
@@ -686,11 +732,12 @@
 }
 
 .profileForm {
-    max-width: 800px;
+    width: 100%;
+    max-width: 100%;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
-    padding: 10px 32px;
+    padding: 24px 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
@@ -711,13 +758,14 @@
 }
 
 .formGroup {
+    width: 100%;
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    padding: 24px 0;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 0;
     border-bottom: 1px solid #f1f5f9;
     margin: 0;
-    gap: 24px;
+    gap: 12px;
 }
 
 .formGroup:last-of-type {
@@ -725,14 +773,16 @@
 }
 
 .formLabel {
-    flex: 0 0 180px;
-    font-size: 14px;
-    font-weight: 500;
+    flex: none;
+    width: 100%;
+    font-size: 15px;
+    font-weight: 600;
     color: #475569;
     margin: 0;
 }
 
 .inputWrapper {
+    width: 100%;
     flex: 1;
     display: flex;
     align-items: center;
@@ -740,6 +790,7 @@
 }
 
 .inputActionGroup {
+    width: 100%;
     flex: 1;
     display: flex;
     align-items: center;
@@ -909,6 +960,268 @@
 
 .addressForm {
     width: 100%;
+}
+
+/* ===== Professional Add/Edit address form ===== */
+.addrForm {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.addrFormTitle {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 20px;
+}
+
+/* ===== Address type selector (Home / Work / Other) ===== */
+.addrTypeRow {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.addrTypeBtn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 11px 8px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.addrTypeBtn:hover:not(:disabled) {
+    border-color: #56cfe1;
+}
+
+.addrTypeBtnActive {
+    border-color: #16a1db;
+    background: #eef9fd;
+    color: #0c7fb0;
+}
+
+.addrTypeBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Type chip shown on saved address cards */
+.addressTypeChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #eef9fd;
+    color: #0c7fb0;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+/* Bottom-sheet bits — hidden on desktop, shown on mobile */
+.addrSheetOverlay {
+    display: none;
+}
+
+.addrSheetHandle {
+    display: none;
+}
+
+.addrGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.addrField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.addrFull {
+    grid-column: 1 / -1;
+}
+
+.addrLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.addrReq {
+    color: #ef4444;
+}
+
+.addrInput {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    padding: 11px 13px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #ffffff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.addrInput::placeholder {
+    color: #94a3b8;
+}
+
+.addrInput:focus {
+    outline: none;
+    border-color: #56cfe1;
+    box-shadow: 0 0 0 3px rgba(86, 207, 225, 0.15);
+}
+
+.addrCheckRow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 18px;
+    font-size: 14px;
+    color: #334155;
+    cursor: pointer;
+}
+
+.addrCheckRow input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.addrActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.addrSubmitBtn {
+    padding: 11px 24px;
+    border: none;
+    border-radius: 9px;
+    background: #16a1db;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.addrSubmitBtn:hover:not(:disabled) {
+    background: #1487bb;
+}
+
+.addrSubmitBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.addrCancelBtn {
+    padding: 11px 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #fff;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.addrCancelBtn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+@media (max-width: 640px) {
+    /* Form becomes a bottom sheet sliding up from the bottom */
+    .addrSheetOverlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 10001;
+        animation: addrFadeIn 0.2s ease;
+    }
+
+    .addrForm {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-height: 88vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0;
+        padding: 8px 16px calc(24px + env(safe-area-inset-bottom)) 16px;
+        border: none;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.18);
+        z-index: 10002;
+        animation: addrSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .addrSheetHandle {
+        display: block;
+        width: 40px;
+        height: 4px;
+        border-radius: 999px;
+        background: #cbd5e1;
+        margin: 0 auto 14px;
+    }
+
+    .addrGrid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .addrActions {
+        flex-direction: column-reverse;
+    }
+
+    .addrSubmitBtn,
+    .addrCancelBtn {
+        width: 100%;
+    }
+}
+
+@keyframes addrSlideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes addrFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* Quotations Section Redesign */
@@ -1372,7 +1685,7 @@
 
 .addressCard {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e1;
     border-radius: 12px;
     padding: 24px;
     display: flex;
@@ -1380,7 +1693,7 @@
     justify-content: space-between;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
 @media (hover: hover) {
@@ -1393,8 +1706,194 @@
 }
 
 .addressCardDefault {
-    border: 2px solid #56cfe1;
-    background-color: #f0fdfa;
+    border: 1.5px solid #56cfe1;
+    background-color: #ffffff;
+}
+
+/* ===== Dashed "Add New Address" button ===== */
+.addrAddDashed {
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px;
+    margin: 8px 0 18px;
+    border: 1.5px dashed #16a1db;
+    border-radius: 12px;
+    background: #f0f9fd;
+    color: #16a1db;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.addrAddDashed:hover {
+    background: #e0f2fb;
+    border-color: #1487bb;
+}
+
+/* ===== Redesigned address card (icon / type / kebab) ===== */
+.addrCardHead {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.addrCardIcon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.addrCardHeadText {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.addrCardType {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.addrCardDefaultTag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 999px;
+    text-transform: uppercase;
+}
+
+.addrMenuWrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.addrMenuBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.addrMenuBtn:hover {
+    background: #f1f5f9;
+}
+
+.addrMenuBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+}
+
+.addrMenu {
+    position: absolute;
+    top: 38px;
+    inset-inline-end: 0;
+    z-index: 41;
+    min-width: 160px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.addrMenuItem {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: start;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+.addrMenuItem:hover {
+    background: #f1f5f9;
+}
+
+.addrMenuItemDanger {
+    color: #dc2626;
+}
+
+.addrMenuItemDanger:hover {
+    background: #fef2f2;
+}
+
+.addrCardBody {
+    margin-top: 14px;
+    padding-inline-start: 54px;
+}
+
+.addrCardLine {
+    font-size: 14px;
+    color: #475569;
+    margin: 0 0 5px 0;
+    line-height: 1.55;
+}
+
+.addrCardContact {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #334155;
+}
+
+.addrCardName {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.addrCardPhone {
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.addrCardVerified {
+    color: #22c55e;
+    margin-inline-start: 6px;
+    flex-shrink: 0;
 }
 
 .addressBadge {
@@ -1839,10 +2338,10 @@
         padding: 15px;
         gap: 15px;
         border-radius: 0;
-        border-left: none;
-        border-right: none;
-        margin-left: -15px;
-        margin-right: -15px;
+        border-inline-start: none;
+        border-inline-end: none;
+        margin-inline-start: -15px;
+        margin-inline-end: -15px;
         width: calc(100% + 30px);
     }
 
@@ -1858,22 +2357,20 @@
     .premiumOrderCard {
         padding: 15px;
         border-radius: 0;
-        border-left: none;
-        border-right: none;
-        margin-left: -15px;
-        margin-right: -15px;
+        border-inline-start: none;
+        border-inline-end: none;
+        margin-inline-start: -15px;
+        margin-inline-end: -15px;
         width: calc(100% + 30px);
         margin-bottom: 10px;
     }
 
     .addressCard {
-        padding: 15px;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        margin-left: -15px;
-        margin-right: -15px;
-        width: calc(100% + 30px);
+        padding: 16px;
+    }
+
+    .addrCardBody {
+        padding-inline-start: 0;
     }
 
     .premiumQuotationCard {
@@ -1885,5 +2382,325 @@
 @keyframes rotate {
     to {
         transform: rotate(360deg);
+    }
+}
+
+/* ===== Reward points: tabs + statement ===== */
+.rewardTabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+}
+
+.rewardTab {
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.rewardTab:hover {
+    color: #0f172a;
+}
+
+.rewardTabActive {
+    color: #16a1db;
+    border-bottom-color: #16a1db;
+}
+
+.rewardEarnCard {
+    max-width: 300px;
+}
+
+.rewardStatement {
+    width: 100%;
+}
+
+.rewardFilters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.rewardFilterChip {
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.rewardFilterChip:hover {
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.rewardFilterChipActive {
+    background: #16a1db;
+    border-color: #16a1db;
+    color: #fff;
+}
+
+.rewardPagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.rewardPageBtn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f172a;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.rewardPageBtn:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.rewardPageBtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.rewardPageInfo {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.rewardStatementTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 14px;
+}
+
+.rewardStatementEmpty {
+    padding: 28px 20px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.rewardStatementList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.rewardStatementRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.rewardStatementRow:last-child {
+    border-bottom: none;
+}
+
+.rewardStatementRowClickable {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.rewardStatementRowClickable:hover {
+    background: #f8fafc;
+}
+
+.rewardStatementChevron {
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.rewardStatementIcon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.rewardStatementIcon.rewardCredit {
+    background: #dcfce7;
+}
+
+.rewardStatementIcon.rewardDebit {
+    background: #fee2e2;
+}
+
+.rewardCredit {
+    color: #16a34a;
+}
+
+.rewardDebit {
+    color: #dc2626;
+}
+
+.rewardStatementMeta {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.rewardStatementType {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.rewardStatementDesc {
+    font-size: 12px;
+    color: #64748b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rewardStatementDate {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.rewardStatementPoints {
+    font-size: 15px;
+    font-weight: 700;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .rewardStatementRow {
+        gap: 10px;
+        padding: 12px 12px;
+    }
+
+    .rewardStatementIcon {
+        width: 30px;
+        height: 30px;
+    }
+
+    .rewardStatementType {
+        font-size: 13px;
+    }
+
+    .rewardStatementPoints {
+        font-size: 14px;
+    }
+}
+/* ===== Order status tracker ===== */
+.orderTracker {
+    display: flex;
+    align-items: flex-start;
+    margin: 8px 0 28px;
+    padding: 0 6px;
+}
+
+.trackerStep {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    width: 78px;
+}
+
+.trackerDot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.trackerDotActive {
+    background: #16a1db;
+    border-color: #16a1db;
+}
+
+.trackerLine {
+    flex: 1;
+    height: 3px;
+    background: #e2e8f0;
+    margin-top: 11.5px;
+    border-radius: 2px;
+    transition: background 0.2s ease;
+}
+
+.trackerLineActive {
+    background: #16a1db;
+}
+
+.trackerLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.trackerLabelActive {
+    color: #0f172a;
+}
+
+.orderCancelledBanner {
+    margin: 8px 0 24px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: 0.04em;
+}
+
+@media (max-width: 560px) {
+    .trackerStep {
+        width: 64px;
+    }
+
+    .trackerLabel {
+        font-size: 11.5px;
     }
 }

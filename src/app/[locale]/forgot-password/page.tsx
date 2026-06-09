@@ -4,7 +4,7 @@ import Footer from '@/components/Layout/Footer/Footer';
 
 export default function ForgotPasswordPage() {
     return (
-        <main>
+        <main style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
             <Header />
             <ForgotPasswordForm />
             <Footer />

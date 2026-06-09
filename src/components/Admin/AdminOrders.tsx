@@ -498,6 +498,11 @@ const AdminOrders = () => {
                                         <div className={styles.clientInfo}>
                                             <span className={styles.customerName}>{order.user_name}</span>
                                             <span className={styles.customerEmail}>{order.user_email}</span>
+                                            {(order.receiver_name || order.receiver_phone) && (
+                                                <span className={styles.receiverInfo}>
+                                                    🚚 {order.receiver_name}{order.receiver_phone ? ` · ${order.receiver_phone}` : ''}
+                                                </span>
+                                            )}
                                         </div>
                                     </td>
                                     <td>
@@ -640,21 +645,43 @@ const AdminOrders = () => {
                                 <div style={{ marginTop: 12 }}>
                                     <label style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Order items</label>
                                     <div style={{ marginTop: 6, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
-                                        {invoiceOrderItems.map((it: any, idx: number) => (
+                                        {invoiceOrderItems.map((it: any, idx: number) => {
+                                            const isFree = Number(it.is_free_gift) === 1;
+                                            return (
                                             <div key={idx} style={{ padding: '10px 12px', borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0', background: idx % 2 === 0 ? '#fff' : '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ fontSize: 13, fontWeight: 600 }}>{it.name}</div>
+                                                    <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                                        <span>{it.name}</span>
+                                                        {isFree && (
+                                                            <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: '#10b981', padding: '2px 6px', borderRadius: 4, letterSpacing: 0.4 }}>FREE</span>
+                                                        )}
+                                                    </div>
+                                                    {(it.model_number || it.variant_sku || it.product_model) && (
+                                                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                                                            Model: {it.model_number || it.variant_sku || it.product_model}
+                                                        </div>
+                                                    )}
+                                                    {isFree && it.bundle_parent_name && (
+                                                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                                                            Free gift with {it.bundle_parent_name}
+                                                        </div>
+                                                    )}
                                                     {it.custom_label && (
                                                         <div style={{ fontSize: 12, color: '#0f172a', background: '#fef3c7', padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginTop: 4 }}>
                                                             Custom: {it.custom_label}
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
-                                                    Qty {it.quantity} × <CurrencyPrice amount={Number(it.price_at_purchase)} />
+                                                <div style={{ fontSize: 12, color: isFree ? '#10b981' : '#64748b', whiteSpace: 'nowrap', fontWeight: isFree ? 700 : 400 }}>
+                                                    {isFree ? (
+                                                        <>Qty {it.quantity} × FREE</>
+                                                    ) : (
+                                                        <>Qty {it.quantity} × <CurrencyPrice amount={Number(it.price_at_purchase)} /></>
+                                                    )}
                                                 </div>
                                             </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}

@@ -36,7 +36,7 @@
 .closeBtn {
     position: absolute;
     top: 14px;
-    right: 14px;
+    inset-inline-end: 14px;
     background: #ffffff;
     border: none;
     width: 32px;
@@ -87,7 +87,7 @@
 
 .cursorArt {
     position: absolute;
-    right: -22px;
+    inset-inline-end: -22px;
     bottom: -6px;
     color: #0f172a;
 }

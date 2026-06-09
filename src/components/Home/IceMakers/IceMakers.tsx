@@ -9,7 +9,7 @@ import CategoryPromotionCard from '@/components/shared/CategoryPromotionCard/Cat
 import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL } from '@/config';
 import { useTranslations, useLocale } from 'next-intl';
-import { useCart } from '@/context/CartContext';
+import { useCartActions } from '@/context/CartContext';
 
 // Embla imports
 import useEmblaCarousel from 'embla-carousel-react';
@@ -21,6 +21,8 @@ interface IceMakersProps {
 const IceMakers = ({ initialProducts = [] }: IceMakersProps) => {
     const t = useTranslations('weeklyDeals');
     const ct = useTranslations('product');
+    const tc = useTranslations('categories');
+    const tCommon = useTranslations('common');
     const locale = useLocale();
     const isRtl = locale === 'ar';
     const [products, setProducts] = useState<any[]>(initialProducts);
@@ -44,7 +46,7 @@ const IceMakers = ({ initialProducts = [] }: IceMakersProps) => {
         if (emblaApi) emblaApi.scrollNext();
     }, [emblaApi]);
 
-    const { addToCart } = useCart();
+    const { addToCart } = useCartActions();
 
     useEffect(() => {
         if (initialProducts.length > 0) return;
@@ -74,11 +76,11 @@ const IceMakers = ({ initialProducts = [] }: IceMakersProps) => {
             <div className={styles.container}>
                 <div className={styles.headerFlex}>
                     <div className={styles.titleGroup}>
-                        <h2 className={styles.title}>Ice Equipment</h2>
+                        <h2 className={styles.title}>{tc('ice-equipment')}</h2>
                     </div>
                     <div className={styles.headerActions}>
                         <Link href="/shop?category=ice-equipment" className={styles.viewAll}>
-                            VIEW ALL <span>{isRtl ? '←' : '→'}</span>
+                            {tCommon('viewAll')} <span>{isRtl ? '←' : '→'}</span>
                         </Link>
                     </div>
                 </div>
@@ -86,7 +88,7 @@ const IceMakers = ({ initialProducts = [] }: IceMakersProps) => {
                 <div className={styles.sectionContent}>
                     <div className={styles.promoColumn}>
                         <CategoryPromotionCard
-                            title="Ice Equipment"
+                            title={tc('ice-equipment')}
                             image="/assets/images/promo/ice_makers_promo.png"
                             link="/shop?category=ice-equipment"
                         />

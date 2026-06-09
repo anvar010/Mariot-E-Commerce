@@ -144,7 +144,7 @@ html[dir="rtl"] .closeBtn {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    text-align: left;
+    text-align: start;
 }
 
 .inputWrapper {

@@ -36,7 +36,7 @@ const BrandsBrowse = ({ initialBrands = [] }: BrandsBrowseProps) => {
         if (initialBrands.length > 0) return;
         const fetchBrands = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/brands`, { credentials: 'include' });
+                const res = await fetch(`${API_BASE_URL}/brands?all=1`, { credentials: 'include' });
                 const data = await res.json();
                 if (data.success) {
                     setBrands(data.data);

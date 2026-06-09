@@ -8,7 +8,7 @@ import ProductCardPromotion from '@/components/shared/ProductCardPromotion/Produ
 import CategoryPromotionCard from '@/components/shared/CategoryPromotionCard/CategoryPromotionCard';
 import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL } from '@/config';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 // Embla imports
 import useEmblaCarousel from 'embla-carousel-react';
@@ -20,6 +20,8 @@ interface CookingEquipmentProps {
 const CookingEquipment = ({ initialProducts = [] }: CookingEquipmentProps) => {
     const locale = useLocale();
     const isRtl = locale === 'ar';
+    const tc = useTranslations('categories');
+    const tCommon = useTranslations('common');
     const [products, setProducts] = useState<any[]>(initialProducts);
     const [loading, setLoading] = useState(initialProducts.length === 0);
 
@@ -69,19 +71,19 @@ const CookingEquipment = ({ initialProducts = [] }: CookingEquipmentProps) => {
             <div className={styles.container}>
                 <div className={styles.headerFlex}>
                     <div className={styles.titleGroup}>
-                        <h2 className={styles.title}>Cooking Equipment</h2>
+                        <h2 className={styles.title}>{tc('cooking-equipment')}</h2>
                     </div>
                     <div className={styles.headerActions}>
                         <Link href="/shop?category=cooking-equipment" className={styles.viewAll}>
-                            VIEW ALL <span>{isRtl ? '←' : '→'}</span>
+                            {tCommon('viewAll')} <span>{isRtl ? '←' : '→'}</span>
                         </Link>
                     </div>
                 </div>
 
                 <div className={styles.sectionContent}>
                     <div className={styles.promoColumn}>
-                        <CategoryPromotionCard 
-                            title="Cooking Equipment" 
+                        <CategoryPromotionCard
+                            title={tc('cooking-equipment')}
                             image="/assets/images/promo/cooking_equipment_promo.png" 
                             link="/shop?category=cooking-equipment" 
                         />

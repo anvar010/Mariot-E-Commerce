@@ -67,19 +67,37 @@ const FilterShopByBrand: React.FC<FilterProps> = ({
                     </div>
                     {expandedSections.includes('categories') && (
                         <div className={styles.sectionContent}>
-                            {mainCategories.map((cat: any) => (
-                                <label key={cat.id} className={styles.checkboxLabel}>
-                                    <input
-                                        type="checkbox"
-                                        checked={activeCategory === cat.slug}
-                                        onChange={() => onCategoryChange(activeCategory === cat.slug ? '' : cat.slug)}
-                                    />
-                                    <span>
-                                        <span>{isArabic && cat.name_ar ? cat.name_ar : cat.name}</span>
-                                        {cat.product_count > 0 && <span className={styles.countBadge}>{cat.product_count}</span>}
-                                    </span>
-                                </label>
-                            ))}
+                            {mainCategories.map((cat: any) => {
+                                const subCats = brandCategories.filter((s: any) => s.parent_id === cat.id);
+                                return (
+                                    <React.Fragment key={cat.id}>
+                                        <label className={styles.checkboxLabel}>
+                                            <input
+                                                type="checkbox"
+                                                checked={activeCategory === cat.slug}
+                                                onChange={() => onCategoryChange(activeCategory === cat.slug ? '' : cat.slug)}
+                                            />
+                                            <span>
+                                                <span>{isArabic && cat.name_ar ? cat.name_ar : cat.name}</span>
+                                                {cat.product_count > 0 && <span className={styles.countBadge}>{cat.product_count}</span>}
+                                            </span>
+                                        </label>
+                                        {subCats.map((sub: any) => (
+                                            <label key={sub.id} className={styles.checkboxLabel} style={{ paddingInlineStart: 22 }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={activeCategory === sub.slug}
+                                                    onChange={() => onCategoryChange(activeCategory === sub.slug ? '' : sub.slug)}
+                                                />
+                                                <span>
+                                                    <span>{isArabic && sub.name_ar ? sub.name_ar : sub.name}</span>
+                                                    {sub.product_count > 0 && <span className={styles.countBadge}>{sub.product_count}</span>}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </React.Fragment>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

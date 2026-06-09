@@ -9,7 +9,7 @@ const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://loca
 async function getShopNowData() {
     try {
         const productUrl = `${API_BASE_URL_SERVER}/products?page=1&limit=24&is_featured=1`;
-        const brandsUrl = `${API_BASE_URL_SERVER}/brands`;
+        const brandsUrl = `${API_BASE_URL_SERVER}/brands?all=1`;
         const categoriesUrl = `${API_BASE_URL_SERVER}/categories`;
 
         const [productsRes, brandsRes, categoriesRes] = await Promise.all([

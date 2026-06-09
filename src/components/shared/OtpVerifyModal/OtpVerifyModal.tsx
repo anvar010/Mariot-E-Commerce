@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, MessageCircle, ShieldCheck, AlertCircle } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
+import { useTranslations } from 'next-intl';
 import styles from './OtpVerifyModal.module.css';
 
 interface Props {
@@ -23,6 +24,7 @@ const OtpVerifyModal: React.FC<Props> = ({ open, onClose, onVerified, phoneNumbe
     const [resendIn, setResendIn] = useState(0);
     const [inputPhone, setInputPhone] = useState('');
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const t = useTranslations('otpModal');
 
     useEffect(() => {
         if (!open) {
@@ -92,14 +94,14 @@ const OtpVerifyModal: React.FC<Props> = ({ open, onClose, onVerified, phoneNumbe
             });
             const data = await res.json();
             if (!res.ok || !data.success) {
-                setError(data.message || 'Failed to send OTP');
+                setError(data.message || t('errorSend'));
                 return;
             }
             setMaskedPhone(data.phone || null);
             setStage('verify');
             setResendIn(60);
         } catch {
-            setError('Network error. Please try again.');
+            setError(t('networkError'));
         } finally {
             setLoading(false);
         }
@@ -108,7 +110,7 @@ const OtpVerifyModal: React.FC<Props> = ({ open, onClose, onVerified, phoneNumbe
     const checkOtp = async () => {
         const code = otp.join('');
         if (code.length < 6) {
-            setError('Enter the 6-digit code');
+            setError(t('errorLength'));
             return;
         }
         setLoading(true);
@@ -125,12 +127,12 @@ const OtpVerifyModal: React.FC<Props> = ({ open, onClose, onVerified, phoneNumbe
             });
             const data = await res.json();
             if (!res.ok || !data.success) {
-                setError(data.message || 'Invalid code');
+                setError(data.message || t('errorVerify'));
                 return;
             }
             onVerified(data);
         } catch {
-            setError('Network error. Please try again.');
+            setError(t('networkError'));
         } finally {
             setLoading(false);
         }
@@ -148,13 +150,13 @@ const OtpVerifyModal: React.FC<Props> = ({ open, onClose, onVerified, phoneNumbe
                 </div>
 
                 <h3 className={styles.title}>
-                    {title || (stage === 'send' ? 'Verify your mobile' : 'Enter security code')}
+                    {title || (stage === 'send' ? t('title') : t('titleVerify'))}
                 </h3>
 
                 <p className={styles.desc}>
                     {stage === 'send'
-                        ? (description || 'We will send a 6-digit verification code to your WhatsApp number.')
-                        : `We've sent a 6-digit code to ${maskedPhone || phoneNumber || 'your WhatsApp'}.`}
+                        ? (description || t('descriptionSend'))
+                        : t('descriptionVerify', { phone: maskedPhone || phoneNumber || 'your WhatsApp' })}
                 </p>
 
                 {stage === 'send' && (phoneNumber ? (
@@ -163,7 +165,7 @@ const OtpVerifyModal: React.FC<Props> = ({ open, onClose, onVerified, phoneNumbe
                     <div className={styles.inputWrapper}>
                         <input
                             type="text"
-                            placeholder="Enter your phone number (e.g. 0501234567)"
+                            placeholder={t('inputPlaceholder')}
                             value={inputPhone}
                             onChange={(e) => setInputPhone(e.target.value)}
                             className={styles.phoneInput}
@@ -203,7 +205,7 @@ const OtpVerifyModal: React.FC<Props> = ({ open, onClose, onVerified, phoneNumbe
                     disabled={loading || (stage === 'send' && !phoneNumber && !inputPhone) || (stage === 'verify' && otp.some(d => d === ''))}
                 >
                     {loading && <span className={styles.loader}></span>}
-                    {loading ? 'Processing…' : stage === 'send' ? 'Send WhatsApp OTP' : 'Verify Account'}
+                    {loading ? t('processing') : stage === 'send' ? t('sendOtpBtn') : t('verifyBtn')}
                 </button>
 
                 {stage === 'verify' && (
@@ -212,7 +214,7 @@ const OtpVerifyModal: React.FC<Props> = ({ open, onClose, onVerified, phoneNumbe
                         onClick={sendOtp}
                         disabled={resendIn > 0 || loading}
                     >
-                        {resendIn > 0 ? `Resend code in ${resendIn}s` : 'Resend code'}
+                        {resendIn > 0 ? t('resendCodeIn', { seconds: resendIn }) : t('resendCode')}
                     </button>
                 )}
             </div>

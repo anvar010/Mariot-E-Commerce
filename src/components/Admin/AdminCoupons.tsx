@@ -15,6 +15,7 @@ const AdminCoupons = () => {
     const [coupons, setCoupons] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [brands, setBrands] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
@@ -59,7 +60,7 @@ const AdminCoupons = () => {
 
     const fetchBrands = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/brands`, { credentials: "include", headers: getAuthHeaders() });
+            const res = await fetch(`${API_BASE_URL}/brands?all=1`, { credentials: "include", headers: getAuthHeaders() });
             const data = await res.json();
             if (data.success) {
                 setBrands(data.data);
@@ -142,6 +143,8 @@ const AdminCoupons = () => {
 
     const handleSaveCoupon = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSaving) return;
+        setIsSaving(true);
         try {
             const url = editingId
                 ? `${API_BASE_URL}/coupons/${editingId}`
@@ -181,6 +184,8 @@ const AdminCoupons = () => {
             }
         } catch (error) {
             showNotification('An error occurred', 'error');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -495,8 +500,8 @@ const AdminCoupons = () => {
                                 <button type="button" className={styles.cancelBtn} onClick={handleCloseModal}>
                                     Cancel
                                 </button>
-                                <button type="submit" className={styles.submitBtn}>
-                                    {editingId ? 'Update Coupon' : 'Create Coupon'}
+                                <button type="submit" className={styles.submitBtn} disabled={isSaving}>
+                                    {isSaving ? (editingId ? 'Updating...' : 'Creating...') : (editingId ? 'Update Coupon' : 'Create Coupon')}
                                 </button>
                             </div>
                         </form>

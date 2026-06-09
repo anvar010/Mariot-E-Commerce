@@ -33,7 +33,7 @@
 }
 
 .leftCol {
-    border-right: 1px solid #edf2f7;
+    border-inline-end: 1px solid #edf2f7;
     overflow-y: auto;
     padding: 16px 18px;
     max-height: min(720px, calc(100vh - 180px));
@@ -46,15 +46,19 @@
     max-height: min(720px, calc(100vh - 180px));
 }
 
-.leftCol::-webkit-scrollbar,
-.rightCol::-webkit-scrollbar {
-    width: 6px;
+.dropdown,
+.leftCol,
+.rightCol {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-.leftCol::-webkit-scrollbar-thumb,
-.rightCol::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 6px;
+.dropdown::-webkit-scrollbar,
+.leftCol::-webkit-scrollbar,
+.rightCol::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
 }
 
 .section {
@@ -342,6 +346,7 @@
     justify-content: center;
     gap: 6px;
     transition: background 0.15s;
+    white-space: nowrap;
 }
 
 .addBtn:hover {
@@ -354,7 +359,7 @@
     gap: 8px;
     max-height: 264px;
     overflow-y: auto;
-    padding-right: 4px;
+    padding-inline-end: 4px;
 }
 
 .brandsGrid::-webkit-scrollbar {
@@ -427,6 +432,39 @@
     white-space: nowrap;
 }
 
+/* Tablet / narrow desktop: dropdown is too narrow for 2 cols, stack into 1 */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .dropdown {
+        max-height: min(720px, calc(100vh - 180px));
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+    }
+
+    .dropdown::-webkit-scrollbar {
+        display: none;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+        max-height: none;
+        height: auto;
+    }
+
+    .leftCol {
+        border-inline-end: none;
+        border-bottom: 1px solid #edf2f7;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .rightCol {
+        max-height: none;
+        overflow-y: visible;
+    }
+}
+
 @media (max-width: 768px) {
     .dropdown {
         position: absolute;
@@ -453,7 +491,7 @@
     }
 
     .leftCol {
-        border-right: 0;
+        border-inline-end: 0;
         border-bottom: 1px solid #edf2f7;
     }
 }

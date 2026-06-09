@@ -7,7 +7,7 @@ import { Heart, ShoppingCart, Star } from 'lucide-react';
 import Link from 'next/link';
 import Image from "next/legacy/image";
 import { useLocale, useTranslations } from 'next-intl';
-import { useCart } from '@/context/CartContext';
+import { useCartActions } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { getBrandLogo } from '@/utils/brandLogos';
 
@@ -59,7 +59,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     id = "1",
     timeLeft
 }) => {
-    const { addToCart } = useCart();
+    const { addToCart } = useCartActions();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const locale = useLocale();
     const t = useTranslations('product');
@@ -67,7 +67,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
     // If product prop is provided, use it to override defaults
     const displayId = product?.id || id;
+    // "Always in stock" products (track_inventory = 0) are never out of stock, even with stock_quantity 0.
+    const cardTracksInventory = product?.track_inventory === undefined || Number(product.track_inventory) === 1;
+    const cardOutOfStock = cardTracksInventory && product?.stock_quantity !== undefined && Number(product.stock_quantity) <= 0;
     const displayModel = isArabic && product?.name_ar ? product.name_ar : (product?.name || product?.model || product?.sku || model);
+    // Canonical (non-localized) name to persist into cart/wishlist. Store the base
+    // name + name_ar separately so they re-localize with the active locale instead
+    // of freezing whichever language was active when the item was added.
+    const baseName = product?.name || product?.model || product?.sku || model;
     // Priority: locale-specific description -> fallback
     const displayDescription = isArabic && product?.description_ar ? product.description_ar : (product?.description || product?.title || description);
 
@@ -153,12 +160,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         const success = await addToCart({
             id: displayId,
-            name: displayModel,
+            name: baseName,
+            name_ar: product?.name_ar,
             price: displayPrice,
             image: displayImage,
             brand: displayBrand,
             slug: product?.slug,
             stock_quantity: product?.stock_quantity,
+            track_inventory: product?.track_inventory,
             oldPrice: displayOldPrice,
             custom_dimensions: baseDims || undefined
         });
@@ -177,7 +186,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
         } else {
             addToWishlist({
                 id: displayId,
-                name: displayModel,
+                name: baseName,
+                name_ar: product?.name_ar,
                 price: displayPrice,
                 image: displayImage,
                 brand: displayBrand
@@ -260,6 +270,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
                                 src={displayBrandImage}
                                 alt={displayBrand || 'Brand'}
                                 className={styles.brandLogoImg}
+                                loading="lazy"
+                                decoding="async"
                                 onError={() => setLogoError(true)}
                             />
                         ) : (
@@ -302,16 +314,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     <button
                         className={styles.cartBtn}
                         onClick={handleAddToCart}
-                        disabled={(product?.stock_quantity !== undefined && product.stock_quantity <= 0) || cartAdded}
+                        disabled={cardOutOfStock || cartAdded}
                         style={{
-                            opacity: product?.stock_quantity !== undefined && product.stock_quantity <= 0 ? 0.6 : 1,
-                            cursor: product?.stock_quantity !== undefined && product.stock_quantity <= 0 ? 'not-allowed' : 'pointer',
-                            backgroundColor: cartAdded ? '#28a745' : (product?.stock_quantity !== undefined && product.stock_quantity <= 0 ? '#999' : '#17a2b8'),
+                            opacity: cardOutOfStock ? 0.6 : 1,
+                            cursor: cardOutOfStock ? 'not-allowed' : 'pointer',
+                            backgroundColor: cartAdded ? '#28a745' : (cardOutOfStock ? '#999' : '#17a2b8'),
                             transition: 'background-color 0.3s ease'
                         }}
                     >
                         {!cartAdded && <ShoppingCart size={16} fill="white" />}
-                        <span>{cartAdded ? t('added') : (product?.stock_quantity !== undefined && product.stock_quantity <= 0 ? t('outOfStock') : t('addToCart'))}</span>
+                        <span>{cartAdded ? t('added') : (cardOutOfStock ? t('outOfStock') : t('addToCart'))}</span>
                     </button>
                 </div>
             </div>

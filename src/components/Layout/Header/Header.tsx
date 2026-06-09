@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 const CategoriesLayout = dynamic(() => import('@/components/Categories/CategoriesLayout'), { ssr: false });
 
 import { API_BASE_URL } from '@/config';
+import { cachedJson } from '@/utils/cachedFetch';
 import SearchDropdown, { SearchDropdownData } from './SearchDropdown';
 
 const Header = () => {
@@ -47,6 +48,13 @@ const Header = () => {
 
     const isArabic = locale === 'ar';
 
+    // Reward points can grow long and break the tight mobile header. Show full
+    // value up to 6 digits; beyond that show the first 4 digits + "..".
+    const formatPoints = (pts: number | string | null | undefined) => {
+        const s = String(Number(pts) || 0);
+        return s.length > 6 ? `${s.slice(0, 4)}..` : s;
+    };
+
     // Clear the search-button spinner once navigation to the new page (or new search query) completes
     useEffect(() => {
         setIsSearching(false);
@@ -56,8 +64,9 @@ const Header = () => {
         let cancelled = false;
         (async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/categories`);
-                const data = await res.json();
+                // Categories change rarely — cache for 5 min and share across
+                // mounts/components instead of refetching on every navigation.
+                const data = await cachedJson(`${API_BASE_URL}/categories`, 300000);
                 if (cancelled || !data?.success || !Array.isArray(data.data)) return;
                 const parents = new Set<number>();
                 const slugMap: Record<string, number> = {};
@@ -77,8 +86,9 @@ const Header = () => {
     useEffect(() => {
         const fetchCMS = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/cms/homepage`);
-                const data = await res.json();
+                // Shared 60s cache — the homepage server component and any other
+                // CMS consumer reuse this instead of issuing a fresh request.
+                const data = await cachedJson(`${API_BASE_URL}/cms/homepage`, 60000);
                 if (data.success && data.data.announcement) {
                     setAnnouncement(data.data.announcement);
                 }
@@ -283,6 +293,23 @@ const Header = () => {
         // Update visual state instantly
         setOptimisticIsArabic(newLocale === 'ar');
 
+        // Persist choice so a later visit to the bare domain redirects to it.
+        // next-intl's middleware reads the NEXT_LOCALE cookie for detection.
+        if (typeof document !== 'undefined') {
+            document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;samesite=lax`;
+        }
+
+        // If logged in, save the preference server-side too so emails sent by
+        // background jobs (e.g. abandoned cart) use the right language.
+        if (user) {
+            fetch(`${API_BASE_URL}/auth/locale`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ locale: newLocale })
+            }).catch(() => { });
+        }
+
         // Wait for the CSS animation (200ms) to finish before reloading the page
         setTimeout(() => {
             router.replace(pathname + currentSearch, { locale: newLocale });
@@ -381,7 +408,7 @@ const Header = () => {
                                             <img
                                                 src={isArabic ? "/MARIOT-A.webp" : "/assets/mariot-logo.webp"}
                                                 alt="Mariot Logo"
-                                                className={styles.logoImage}
+                                                className={`${styles.logoImage} ${isArabic ? styles.logoImageAr : ''}`}
                                             />
                                         </div>
                                     </div>
@@ -414,6 +441,7 @@ const Header = () => {
                                         ref={searchInputRef}
                                         type="search"
                                         enterKeyHint="search"
+                                        dir={isArabic ? 'rtl' : 'ltr'}
                                         placeholder=""
                                         value={searchQuery}
                                         onChange={(e) => {
@@ -503,8 +531,8 @@ const Header = () => {
                                 <Link href={user ? '/profile?tab=myRewards' : '/affiliate-program'} className={`${styles.rewardPointsMobile} ${styles.mobileOnly}`}>
                                     <Coins size={20} className={styles.pointIcon} />
                                     {user && (
-                                        <span className={styles.mobilePointsValue}>
-                                            {user.reward_points || 0}
+                                        <span className={styles.mobilePointsValue} title={String(user.reward_points || 0)}>
+                                            {formatPoints(user.reward_points)}
                                         </span>
                                     )}
                                 </Link>
@@ -535,9 +563,12 @@ const Header = () => {
                                     </div>
                                 </div>
 
-                                <button className={styles.mobileMenuBtn} onClick={toggleMenu}>
-                                    {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-                                </button>
+                                {/* Hide while sidebar open — its own close button handles it; otherwise this X bleeds over the sidebar's language switcher */}
+                                {!isMenuOpen && (
+                                    <button className={styles.mobileMenuBtn} onClick={toggleMenu}>
+                                        <Menu size={28} />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -603,72 +634,65 @@ const Header = () => {
 
             <nav className={`${styles.navBar} ${styles.mobileOnly} ${isMenuOpen ? styles.navOpen : ''}`}>
                 <div className={styles.container}>
-                    <div className={styles.mobileMenuHeader}>
-                        <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '12px', paddingInlineEnd: '45px' }}>
-                            <Link
-                                href={user ? "/profile" : "/signin"}
-                                className={styles.mobileProfileLink}
-                                onClick={() => setIsMenuOpen(false)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, textDecoration: 'none' }}
-                            >
-                                <div className={styles.mobileAvatar}>
-                                    <User size={24} color="#16a1db" />
-                                </div>
-                                <div className={styles.mobileUserInfo}>
-                                    <span className={styles.mobileUserName}>{user ? user.name : t('account')}</span>
-                                    {user && <span className={styles.mobileUserEmail}>{user.email}</span>}
-                                    {!user && <span className={styles.mobileSignInLink}>{t('signIn')}</span>}
-                                </div>
-                            </Link>
-                            <div className={`${styles.switch} ${styles.mobileLangSelector}`} dir="ltr">
-                                <input
-                                    id="languageToggleMobile"
-                                    className={`${styles.checkToggle} ${styles.checkToggleRoundFlat}`}
-                                    type="checkbox"
-                                    checked={!optimisticIsArabic}
-                                    onChange={() => {
-                                        switchLocale(optimisticIsArabic ? 'en' : 'ar');
-                                        setIsMenuOpen(false);
-                                    }}
-                                />
-                                <label htmlFor="languageToggleMobile"></label>
-                                <span className={styles.switchOn}>عربي</span>
-                                <span className={styles.switchOff}>EN</span>
+                    <div className={styles.mobileMenuHeader} style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+                        {/* Single row: profile + language switcher + close button */}
+                        <Link
+                            href={user ? "/profile" : "/signin"}
+                            className={styles.mobileProfileLink}
+                            onClick={() => setIsMenuOpen(false)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, textDecoration: 'none' }}
+                        >
+                            <div className={styles.mobileAvatar}>
+                                <User size={24} color="#16a1db" />
                             </div>
+                            <div className={styles.mobileUserInfo}>
+                                <span className={styles.mobileUserName}>{user ? user.name : t('account')}</span>
+                                {user && <span className={styles.mobileUserEmail}>{user.email}</span>}
+                                {!user && <span className={styles.mobileSignInLink}>{t('signIn')}</span>}
+                            </div>
+                        </Link>
+                        <div className={`${styles.switch} ${styles.mobileLangSelector}`} dir="ltr" style={{ flexShrink: 0 }}>
+                            <input
+                                id="languageToggleMobile"
+                                className={`${styles.checkToggle} ${styles.checkToggleRoundFlat}`}
+                                type="checkbox"
+                                checked={!optimisticIsArabic}
+                                onChange={() => {
+                                    switchLocale(optimisticIsArabic ? 'en' : 'ar');
+                                    setIsMenuOpen(false);
+                                }}
+                            />
+                            <label htmlFor="languageToggleMobile"></label>
+                            <span className={styles.switchOn}>عربي</span>
+                            <span className={styles.switchOff}>EN</span>
                         </div>
-                        <button className={styles.mobileCloseBtn} onClick={() => setIsMenuOpen(false)}>
-                            <X size={24} />
+                        <button
+                            className={styles.mobileCloseBtn}
+                            onClick={() => setIsMenuOpen(false)}
+                            style={{ flexShrink: 0, width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                            <X size={18} />
                         </button>
                     </div>
 
                     <div className={styles.mobileScrollArea}>
                         {/* Categories section */}
                         <div className={styles.categoriesWrapper}>
-                            <div
-                                className={`${styles.categories} ${isMegaMenuOpen ? styles.categoriesActive : ''} ${pathname === '/all-categories' ? styles.categoriesPageActive : ''}`}
-                                onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
+                            <Link
+                                href="/all-categories"
+                                className={`${styles.categories} ${pathname === '/all-categories' ? styles.categoriesPageActive : ''}`}
+                                onClick={() => {
+                                    setIsMenuOpen(false);
+                                    setIsMegaMenuOpen(false);
+                                }}
+                                style={{ textDecoration: 'none' }}
                             >
-                                <Link
-                                    href="/all-categories"
-                                    className={styles.navItemContent}
-                                    onClick={() => {
-                                        setIsMenuOpen(false);
-                                        setIsMegaMenuOpen(false);
-                                    }}
-                                >
+                                <div className={styles.navItemContent}>
                                     <Menu size={20} />
                                     <span>{t('allCategories')}</span>
-                                </Link>
+                                </div>
                                 <ChevronRight size={14} className={styles.mobileOnly} />
-                                {isMegaMenuOpen && (
-                                    <div className={styles.megaMenu} style={{ display: 'block', position: 'static', width: '100%', boxShadow: 'none', animation: 'none' }}>
-                                        <CategoriesLayout isPopup={true} onClose={() => {
-                                            setIsMenuOpen(false);
-                                            setIsMegaMenuOpen(false);
-                                        }} />
-                                    </div>
-                                )}
-                            </div>
+                            </Link>
                         </div>
 
                         {/* Traditional nav links */}
@@ -686,8 +710,8 @@ const Header = () => {
                                         </div>
                                         {item.isHot && <span className={styles.hotBadge}>HOT</span>}
                                         {item.hasBadge && (
-                                            <span className={styles.pointsBadge}>
-                                                {user?.reward_points || 0} PTS
+                                            <span className={styles.pointsBadge} title={String(user?.reward_points || 0)}>
+                                                {formatPoints(user?.reward_points)} PTS
                                             </span>
                                         )}
                                         <ChevronRight size={14} className={styles.mobileOnly} />

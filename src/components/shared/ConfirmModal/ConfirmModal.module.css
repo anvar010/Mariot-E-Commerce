@@ -41,7 +41,7 @@
 .closeBtn {
     position: absolute;
     top: 16px;
-    right: 16px;
+    inset-inline-end: 16px;
     background: none;
     border: none;
     color: #94a3b8;

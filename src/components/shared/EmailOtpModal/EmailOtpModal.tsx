@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Mail, Lightbulb, Check } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import { API_BASE_URL } from '@/config';
 import styles from './EmailOtpModal.module.css';
 
@@ -40,6 +41,7 @@ function maskEmail(email: string) {
 
 const EmailOtpModal: React.FC<Props> = (props) => {
     const { open, mode, onClose, onVerified } = props;
+    const isArabic = useLocale() === 'ar';
     const targetEmail = mode === 'signup' ? props.signupData.email : props.newEmail;
 
     const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
@@ -122,17 +124,17 @@ const EmailOtpModal: React.FC<Props> = (props) => {
             const res = await fetch(url, {
                 method: 'POST',
                 credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-locale': isArabic ? 'ar' : 'en' },
                 body: JSON.stringify(body)
             });
             const data = await res.json();
             if (!res.ok || !data.success) {
-                setError(data.message || 'Failed to send code');
+                setError(data.message || (isArabic ? 'فشل إرسال الرمز' : 'Failed to send code'));
                 return;
             }
             setResendIn(45);
         } catch {
-            setError('Network error. Please try again.');
+            setError(isArabic ? 'خطأ في الشبكة. حاول مرة أخرى.' : 'Network error. Please try again.');
         } finally {
             setSending(false);
         }
@@ -141,7 +143,7 @@ const EmailOtpModal: React.FC<Props> = (props) => {
     const verifyOtp = async (code: string) => {
         if (loading || verified) return;
         if (code.length < 6) {
-            setError('Enter the 6-digit code');
+            setError(isArabic ? 'أدخل الرمز المكون من 6 أرقام' : 'Enter the 6-digit code');
             return;
         }
         setLoading(true);
@@ -157,19 +159,20 @@ const EmailOtpModal: React.FC<Props> = (props) => {
             const res = await fetch(url, {
                 method: 'POST',
                 credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-locale': isArabic ? 'ar' : 'en' },
                 body: JSON.stringify(body)
             });
             const data = await res.json();
             if (!res.ok || !data.success) {
-                setError(data.message?.toLowerCase().includes('invalid') ? 'Invalid code' : (data.message || 'Invalid code'));
+                const invalidMsg = isArabic ? 'رمز غير صحيح' : 'Invalid code';
+                setError(data.message?.toLowerCase().includes('invalid') ? invalidMsg : (data.message || invalidMsg));
                 return;
             }
             setVerified(true);
             // Brief success state so user sees the confirmation, then hand off.
             setTimeout(() => onVerified(data), 1100);
         } catch {
-            setError('Network error. Please try again.');
+            setError(isArabic ? 'خطأ في الشبكة. حاول مرة أخرى.' : 'Network error. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -177,7 +180,9 @@ const EmailOtpModal: React.FC<Props> = (props) => {
 
     if (!open) return null;
 
-    const ctaLabel = mode === 'signup' ? 'SIGN UP' : 'VERIFY EMAIL';
+    const ctaLabel = mode === 'signup'
+        ? (isArabic ? 'إنشاء حساب' : 'SIGN UP')
+        : (isArabic ? 'تأكيد البريد' : 'VERIFY EMAIL');
     const hasError = !!error;
 
     return (
@@ -194,18 +199,18 @@ const EmailOtpModal: React.FC<Props> = (props) => {
                         <div className={styles.successCircle}>
                             <Check size={36} strokeWidth={3} />
                         </div>
-                        <h3 className={styles.successTitle}>OTP verified successfully</h3>
-                        <p className={styles.successSub}>Redirecting…</p>
+                        <h3 className={styles.successTitle}>{isArabic ? 'تم التحقق من الرمز بنجاح' : 'OTP verified successfully'}</h3>
+                        <p className={styles.successSub}>{isArabic ? 'جارٍ التحويل…' : 'Redirecting…'}</p>
                     </div>
                 ) : (
                     <>
-                        <p className={styles.heading}>Enter the 6-digit OTP sent to</p>
+                        <p className={styles.heading}>{isArabic ? 'أدخل الرمز المكون من 6 أرقام المُرسل إلى' : 'Enter the 6-digit OTP sent to'}</p>
                         <div className={styles.emailLine}>
                             <Mail size={18} className={styles.envelope} />
                             <span>{maskEmail(targetEmail)}</span>
                             {props.onChangeEmail && (
                                 <button type="button" className={styles.changeBtn} onClick={() => { onClose(); props.onChangeEmail?.(); }}>
-                                    Change
+                                    {isArabic ? 'تغيير' : 'Change'}
                                 </button>
                             )}
                         </div>
@@ -231,15 +236,17 @@ const EmailOtpModal: React.FC<Props> = (props) => {
                         {hasError && <div className={styles.inlineError}>{error}</div>}
 
                         <div className={styles.resendWrap}>
-                            <div className={styles.resendLabel}>Didn&apos;t get the OTP?</div>
+                            <div className={styles.resendLabel}>{isArabic ? 'لم تستلم الرمز؟' : "Didn't get the OTP?"}</div>
                             <button type="button" className={styles.resendBtn} onClick={sendOtp} disabled={resendIn > 0 || sending || loading}>
-                                {resendIn > 0 ? `Resend OTP via email in ${resendIn}s` : (sending ? 'Sending…' : 'Resend OTP via email')}
+                                {resendIn > 0
+                                    ? (isArabic ? `إعادة الإرسال خلال ${resendIn} ثانية` : `Resend OTP via email in ${resendIn}s`)
+                                    : (sending ? (isArabic ? 'جارٍ الإرسال…' : 'Sending…') : (isArabic ? 'إعادة إرسال الرمز عبر البريد' : 'Resend OTP via email'))}
                             </button>
                         </div>
 
                         <div className={styles.infoBanner}>
                             <Lightbulb size={16} style={{ flexShrink: 0, marginTop: 1, color: '#ca8a04' }} />
-                            <span>OTP verification protects your account from unauthorized access.</span>
+                            <span>{isArabic ? 'يحمي التحقق بالرمز حسابك من الوصول غير المصرح به.' : 'OTP verification protects your account from unauthorized access.'}</span>
                         </div>
 
                         <button
@@ -249,7 +256,7 @@ const EmailOtpModal: React.FC<Props> = (props) => {
                             disabled={loading || otp.some(d => d === '')}
                         >
                             {loading && <span className={styles.loader}></span>}
-                            {loading ? 'Verifying…' : ctaLabel}
+                            {loading ? (isArabic ? 'جارٍ التحقق…' : 'Verifying…') : ctaLabel}
                         </button>
                     </>
                 )}

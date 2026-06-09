@@ -18,7 +18,11 @@ const alexandria = Alexandria({
     variable: '--font-alexandria',
 });
 
-export const dynamic = 'force-dynamic';
+// NOTE: do NOT set `dynamic = 'force-dynamic'` here. This layout wraps every
+// route under /[locale]; forcing it dynamic opts the whole app out of the
+// full-route cache and negates per-fetch `revalidate` (ISR). Pages that truly
+// need per-request rendering (e.g. today-offers) declare `force-dynamic`
+// themselves. Everything else is statically generated / ISR-cached.
 
 export function generateStaticParams() {
     return [{ locale: 'en' }, { locale: 'ar' }];
@@ -93,6 +97,7 @@ export default async function LocaleLayout(
                 )}
                 <link rel="dns-prefetch" href="https://checkout.tabby.ai" />
                 <link rel="dns-prefetch" href="https://accounts.google.com" />
+                <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
             </head>
             <body suppressHydrationWarning>
                 <NextIntlClientProvider locale={locale} messages={messages}>

@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl';
 interface WishlistItem {
     id: string | number;
     name: string;
+    name_ar?: string;
     price: number;
     image: string;
     brand?: string;
@@ -113,6 +114,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 setWishlistItems(data.data.map((item: any) => ({
                     id: item.product_id,
                     name: item.name,
+                    name_ar: item.name_ar,
                     price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price || 0),
                     image: item.image || item.primary_image || '',
                     brand: item.brand_name,
@@ -135,6 +137,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const newItem = {
             id: product.id,
             name: product.name || product.model,
+            name_ar: product.name_ar,
             price: Number(product.price),
             image: product.image,
             brand: product.brand,

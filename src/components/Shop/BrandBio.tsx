@@ -10,17 +10,19 @@ interface BrandBioProps {
 }
 
 const BrandBio: React.FC<BrandBioProps> = ({ activeBrandInfo, isArabic, resolveUrl }) => {
-    if (!activeBrandInfo || (!activeBrandInfo.description && !activeBrandInfo.image_url)) {
+    const brandLogo = isArabic && activeBrandInfo?.image_url_ar ? activeBrandInfo.image_url_ar : activeBrandInfo?.image_url;
+
+    if (!activeBrandInfo || (!activeBrandInfo.description && !brandLogo)) {
         return null;
     }
 
     return (
         <div className={styles.aboutBrandSection}>
             <div className={styles.brandBio}>
-                {activeBrandInfo.image_url && (
+                {brandLogo && (
                     <div className={styles.brandBioLogoBox}>
                         <img
-                            src={resolveUrl(activeBrandInfo.image_url)}
+                            src={resolveUrl(brandLogo)}
                             alt={activeBrandInfo.name}
                             className={styles.brandBioLogoImg}
                         />

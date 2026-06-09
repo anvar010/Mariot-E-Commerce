@@ -20,7 +20,7 @@
 .sidebar {
     width: 260px;
     background-color: #f8fafc;
-    border-right: 1px solid #f1f5f9;
+    border-inline-end: 1px solid #f1f5f9;
     flex-shrink: 0;
     padding: 20px 10px;
     display: flex;
@@ -135,13 +135,13 @@
     height: 12px;
     background: #f1f5f9;
     border-radius: 3px;
-    margin-left: 12px;
+    margin-inline-start: 12px;
 }
 
 .brandsColumn {
     flex: 1;
-    border-left: 1px solid #f1f5f9;
-    padding-left: 60px;
+    border-inline-start: 1px solid #f1f5f9;
+    padding-inline-start: 60px;
 }
 
 .brandsTitle {
@@ -293,8 +293,8 @@
     }
 
     .brandsColumn {
-        border-left: none;
-        padding-left: 0;
+        border-inline-start: none;
+        padding-inline-start: 0;
         margin-top: 20px;
         border-top: 1px solid #f1f5f9;
         padding-top: 15px;
@@ -325,7 +325,7 @@
 
     .sidebar {
         width: 100%;
-        border-right: none;
+        border-inline-end: none;
         border-bottom: 1px solid #f1f5f9;
         padding: 8px;
     }

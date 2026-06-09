@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import ShopLayout from '@/components/Shop/ShopLayout';
+import TodayOffersPage from '@/components/Offers/TodayOffersPage';
+import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import Loader from '@/components/shared/Loader/Loader';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -110,6 +112,28 @@ export default async function ShopPage(
     const search = searchParams.search as string | undefined;
     if (search && data.total === 1 && data.products.length === 1 && data.products[0].slug) {
         redirect(`/${locale}/product/${data.products[0].slug}`);
+    }
+
+    // Weekly deals view reuses the Today Offers layout (banner + ticker + offer grid).
+    const isWeekly = !!searchParams.weekly;
+    if (isWeekly) {
+        return (
+            <>
+                <Header />
+                <main>
+                    <Suspense fallback={<div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>}>
+                        <TodayOffersPage
+                            dealType="weekly"
+                            initialProducts={data.products}
+                            initialBrands={data.brands}
+                            initialCategories={data.allCategories}
+                        />
+                    </Suspense>
+                </main>
+                <Footer />
+                <FloatingActions />
+            </>
+        );
     }
 
     return (

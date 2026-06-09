@@ -37,7 +37,7 @@
 .closeBtn {
     position: absolute;
     top: 20px;
-    right: 20px;
+    inset-inline-end: 20px;
     background: #f8fafc;
     border: none;
     color: #64748b;
@@ -170,7 +170,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    text-align: left;
+    text-align: start;
 }
 
 .primaryBtn {
@@ -234,7 +234,7 @@
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     display: inline-block;
-    margin-right: 8px;
+    margin-inline-end: 8px;
     vertical-align: middle;
 }
 

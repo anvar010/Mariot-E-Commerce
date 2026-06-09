@@ -65,29 +65,10 @@ const FilterCategory: React.FC<FilterProps> = ({
                 )}
             </div>
 
-            {/* SUB-CATEGORIES */}
-            {allCategories.length > 0 && (
-                <div className={styles.filterSection}>
-                    <div className={styles.sectionHeader} onClick={() => toggleSection('categories')}>
-                        <h3>{t('categories') || 'Categories'}</h3>
-                        <ChevronDown size={14} className={expandedSections.includes('categories') ? styles.rotateIcon : styles.collapsedIcon} />
-                    </div>
-                    {expandedSections.includes('categories') && (
-                        <div className={styles.sectionContent}>
-                            {allCategories.map(cat => (
-                                <label key={cat.id} className={styles.checkboxLabel}>
-                                    <input
-                                        type="checkbox"
-                                        checked={activeCategory === cat.slug}
-                                        onChange={() => onCategoryChange(activeCategory === cat.slug ? '' : cat.slug)}
-                                    />
-                                    <span>{isArabic && cat.name_ar ? cat.name_ar : cat.name}</span>
-                                </label>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
+            {/* Category list intentionally omitted here: the user is already inside
+                a category, and its sub-categories are shown in the CategoryGrid
+                above the product list — so a full category list in the sidebar
+                would be redundant. */}
 
             {/* BRANDS IN THIS CATEGORY */}
             {brands.length > 0 && (

@@ -1,9 +1,12 @@
 import dynamic from 'next/dynamic';
 import Header from '@/components/Layout/Header/Header';
 import Hero from '@/components/Home/Hero/Hero';
-import BrandsBrowse from '@/components/Home/BrandsBrowse/BrandsBrowse';
-import CategoryBrowse from '@/components/Home/CategoryBrowse/CategoryBrowse';
-import Reveal from '@/components/shared/Reveal/Reveal';
+
+// Above-fold sections — SSR but CSS is code-split (not render-blocking)
+const BrandsBrowse = dynamic(() => import('@/components/Home/BrandsBrowse/BrandsBrowse'), { ssr: true });
+const CategoryBrowse = dynamic(() => import('@/components/Home/CategoryBrowse/CategoryBrowse'), { ssr: true });
+const Reveal = dynamic(() => import('@/components/shared/Reveal/Reveal'), { ssr: true });
+import { sortByOrderIndex } from '@/utils/sortByOrderIndex';
 
 // Below-fold sections — deferred to keep initial CSS bundle small
 const LimitedOffers = dynamic(() => import('@/components/Home/LimitedOffers/LimitedOffers'));
@@ -26,8 +29,8 @@ async function getHomeData(locale: string) {
             fetch(`${API_BASE_URL_SERVER}/products?search=ice%20makers`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?search=coffee%20makers`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?search=cooking%20equipment`, { next: { revalidate: 60 } }),
-            fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 3600 } }),
-            fetch(`${API_BASE_URL_SERVER}/brands`, { next: { revalidate: 3600 } })
+            fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 60 } }),
+            fetch(`${API_BASE_URL_SERVER}/brands?all=1`, { next: { revalidate: 3600 } })
         ]);
 
         const cmsData = await cmsRes.json();
@@ -63,9 +66,7 @@ async function getHomeData(locale: string) {
         }
 
         const mainCategories = categoriesData?.success
-            ? categoriesData.data
-                .filter((c: any) => c.type === 'main_category' && c.is_active)
-                .sort((a: any, b: any) => a.id - b.id)
+            ? sortByOrderIndex(categoriesData.data.filter((c: any) => c.type === 'main_category' && c.is_active))
             : [];
 
         const allBrands = brandsData?.success ? brandsData.data : [];

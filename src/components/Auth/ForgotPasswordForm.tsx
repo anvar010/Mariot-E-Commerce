@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import styles from './Auth.module.css';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { API_BASE_URL } from '@/config';
 
 const ForgotPasswordForm: React.FC = () => {
@@ -13,6 +13,7 @@ const ForgotPasswordForm: React.FC = () => {
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const t = useTranslations('auth');
+    const locale = useLocale();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,8 +23,8 @@ const ForgotPasswordForm: React.FC = () => {
         try {
             const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+                headers: { 'Content-Type': 'application/json', 'x-locale': locale },
+                body: JSON.stringify({ email, locale })
             });
 
             const data = await response.json();
@@ -41,7 +42,7 @@ const ForgotPasswordForm: React.FC = () => {
 
     if (submitted) {
         return (
-            <div className={styles.authPage}>
+            <div className={styles.authPage} style={{ flex: 1, minHeight: 0 }}>
                 <div className={styles.formSection}>
                     <div className={styles.authContainer} style={{ textAlign: 'center' }}>
                         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
@@ -61,7 +62,7 @@ const ForgotPasswordForm: React.FC = () => {
     }
 
     return (
-        <div className={styles.authPage}>
+        <div className={styles.authPage} style={{ flex: 1, minHeight: 0 }}>
             <div className={styles.formSection}>
                 <div className={styles.authContainer}>
                     <h1 className={styles.authTitle}>{t('forgotPasswordTitle')}</h1>

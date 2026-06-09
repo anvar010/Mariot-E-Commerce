@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation';
 import styles from './CategoriesLayout.module.css';
 import { API_BASE_URL } from '@/config';
 import Loader from '@/components/shared/Loader/Loader';
+import { sortByOrderIndex } from '@/utils/sortByOrderIndex';
 import { useTranslations, useLocale } from 'next-intl';
 import CategoryMenuSkeleton from '@/components/shared/CategoryMenuSkeleton/CategoryMenuSkeleton';
 import {
@@ -27,7 +28,14 @@ import {
     Home,
     Utensils,
     PackageSearch,
-    Beef
+    Beef,
+    Sparkles,
+    Store,
+    ShoppingCart,
+    WashingMachine,
+    Grid,
+    Wrench,
+    Package
 } from 'lucide-react';
 
 interface CategoriesLayoutProps {
@@ -47,6 +55,18 @@ const ICON_MAP: { [key: string]: any } = {
     'food-holding-and-warming-line': ChefHat,
     'storage': Truck,
     'laundries': Waves,
+    'laundry': WashingMachine,
+    'stainless-steel-equipment': Sparkles,
+    'stainless-steel-fabrications': Sparkles,
+    'supermarket': Store,
+    'supermarket-equipment': Store,
+    'delivery-and-storage': Package,
+    'dishwashing': Droplets,
+    'janitorial-safety-supplies': ShieldCheck,
+    'water-treatment': Droplets,
+    'home-use': Home,
+    'smallwares': Grid,
+    'parts': Wrench,
     // Fallback for any new categories added later
     'default': Settings
 };
@@ -71,7 +91,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
             try {
                 const [catRes, brandRes] = await Promise.all([
                     fetch(`${API_BASE_URL}/categories`),
-                    fetch(`${API_BASE_URL}/brands`)
+                    fetch(`${API_BASE_URL}/brands?all=1`)
                 ]);
                 const catData = await catRes.json();
                 const brandData = await brandRes.json();
@@ -79,9 +99,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                 if (catData.success) {
                     const cats = catData.data;
                     setAllCategories(cats);
-                    const mains = cats
-                        .filter((c: any) => c.type === 'main_category' && c.is_active)
-                        .sort((a: any, b: any) => a.id - b.id);
+                    const mains = sortByOrderIndex(cats.filter((c: any) => c.type === 'main_category' && c.is_active));
                     setMainCategories(mains);
                 }
                 if (brandData.success) {
@@ -124,14 +142,14 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
 
     // Dynamically build the left/right sub-category structure from the database
     const buildSubcatStructure = () => {
-        const subs = allCategories
-            .filter((c: any) => c.type === 'sub_category' && c.parent_id === activeCategory.id && c.is_active)
-            .sort((a: any, b: any) => a.id - b.id);
+        const subs = sortByOrderIndex(
+            allCategories.filter((c: any) => c.type === 'sub_category' && c.parent_id === activeCategory.id && c.is_active)
+        );
 
         const groups = subs.map((sub: any) => {
-            const subSubs = allCategories
-                .filter((c: any) => c.type === 'sub_sub_category' && c.parent_id === sub.id && c.is_active)
-                .sort((a: any, b: any) => a.id - b.id);
+            const subSubs = sortByOrderIndex(
+                allCategories.filter((c: any) => c.type === 'sub_sub_category' && c.parent_id === sub.id && c.is_active)
+            );
             return {
                 title: (isArabic && sub.name_ar) ? sub.name_ar : sub.name,
                 slug: sub.slug,
@@ -267,7 +285,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                                 )}
                             </div>
                             <div className={styles.brandsColumn}>
-                                <h2 className={styles.brandsTitle}>TOP BRANDS</h2>
+                                <h2 className={styles.brandsTitle}>{tc('top-brands')}</h2>
                                 <div className={styles.brandsGrid}>
                                     {brands?.map((brand: any, idx: number) => (
                                         <Link
@@ -289,7 +307,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                                         </Link>
                                     ))}
                                     {brands.length === 0 && (
-                                        <span style={{ fontSize: '13px', color: '#94a3b8' }}>No brands assigned</span>
+                                        <span style={{ fontSize: '13px', color: '#94a3b8' }}>{t('noBrandsAssigned')}</span>
                                     )}
                                 </div>
                             </div>
@@ -306,6 +324,8 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                             const imgSrc = item.image_url ?
                                 (item.image_url.startsWith('http') ? item.image_url : `${API_BASE_URL.replace('/api/v1', '')}${item.image_url}`)
                                 : '/assets/mariot-logo2.webp';
+                            const SideIcon = ICON_MAP[item.slug] || ICON_MAP['default'];
+
                             return (
                                 <Link
                                     key={item.id}
@@ -313,15 +333,23 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                                     className={styles.mobileCard}
                                     onClick={onClose}
                                 >
-                                    <div className={styles.mobileCardImgWrapper}>
-                                        <img
-                                            src={imgSrc}
-                                            alt={catName}
-                                            className={styles.mobileCardImg}
-                                            onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
-                                        />
+                                    <div className={styles.mobileCardLeft}>
+                                        <div className={styles.mobileIconCircle}>
+                                            <SideIcon size={16} />
+                                        </div>
+                                        <span className={styles.mobileCardTitle}>{catName}</span>
                                     </div>
-                                    <span className={styles.mobileCardTitle}>{catName}</span>
+                                    <div className={styles.mobileCardRight}>
+                                        <div className={styles.mobileBlobBackground}></div>
+                                        <div className={styles.mobileImageBox}>
+                                            <img
+                                                src={imgSrc}
+                                                alt={catName}
+                                                className={styles.mobileCardImg}
+                                                onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                            />
+                                        </div>
+                                    </div>
                                 </Link>
                             );
                         })}

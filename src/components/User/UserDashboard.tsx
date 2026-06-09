@@ -30,7 +30,13 @@ import {
     Download,
     Banknote,
     Check,
-    ArrowUpRight
+    ArrowUpRight,
+    ArrowDownLeft,
+    Home,
+    Building2,
+    MoreHorizontal,
+    BadgeCheck,
+    Plus
 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
@@ -65,9 +71,33 @@ const UserDashboard = () => {
         }
     }, [tabParam]);
 
+    const navRef = useRef<HTMLElement>(null);
+
+    useEffect(() => {
+        if (navRef.current) {
+            const activeEl = navRef.current.querySelector(`.${styles.active}`) as HTMLElement;
+            if (activeEl) {
+                // Scroll the active tab into view horizontally with smooth behavior
+                const navScrollLeft = navRef.current.scrollLeft;
+                const navWidth = navRef.current.clientWidth;
+                const activeOffsetLeft = activeEl.offsetLeft;
+                const activeWidth = activeEl.clientWidth;
+
+                if (activeOffsetLeft < navScrollLeft || activeOffsetLeft + activeWidth > navScrollLeft + navWidth) {
+                    navRef.current.scrollTo({
+                        left: activeOffsetLeft - (navWidth / 2) + (activeWidth / 2),
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        }
+    }, [activeSection]);
+
     const [profileTab, setProfileTab] = useState('Personal Info');
     const [formData, setFormData] = useState({
         name: user?.name || '',
+        first_name: (user?.name || '').trim().split(' ')[0] || '',
+        last_name: (user?.name || '').trim().split(' ').slice(1).join(' ') || '',
         phone_number: user?.phone_number || '',
         company_name: user?.company_name || '',
         vat_number: user?.vat_number || '',
@@ -92,6 +122,8 @@ const UserDashboard = () => {
             setFormData(prev => ({
                 ...prev,
                 name: user.name || '',
+                first_name: (user.name || '').trim().split(' ')[0] || '',
+                last_name: (user.name || '').trim().split(' ').slice(1).join(' ') || '',
                 phone_number: user.phone_number || '',
                 company_name: user.company_name || '',
                 vat_number: user.vat_number || '',
@@ -108,6 +140,63 @@ const UserDashboard = () => {
             fetchQuotations();
         }
     }, [activeSection, user]);
+
+    useEffect(() => {
+        if (activeSection === 'myRewards' && user) {
+            fetchRewardHistory();
+        }
+    }, [activeSection, user]);
+
+    const fetchRewardHistory = async () => {
+        setLoadingRewardHistory(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/reward-history`, {
+                credentials: "include",
+                headers: getAuthHeaders()
+            });
+            const data = await response.json();
+            if (data.success) {
+                setRewardHistory(data.data || []);
+                setRewardsPage(1);
+            }
+        } catch (error) {
+            console.error('Error fetching reward history:', error);
+        } finally {
+            setLoadingRewardHistory(false);
+        }
+    };
+
+    // Localize a reward-history row's description. DB stores English text; map the
+    // known patterns to i18n keys so Arabic shows translated. Falls back to raw text.
+    const localizeRewardDesc = (row: any): string => {
+        const d: string = row?.description || '';
+        if (/welcome/i.test(d)) return t('rewards.descWelcome');
+        if (/admin/i.test(d) && /remov/i.test(d)) return t('rewards.descAdminRemove');
+        if (/admin/i.test(d) && /add/i.test(d)) return t('rewards.descAdminAdd');
+        if (row?.order_id && row?.transaction_type === 'redeemed') return t('rewards.descRedeemedOrder', { id: row.order_id });
+        if (row?.order_id && row?.transaction_type === 'earned') return t('rewards.descEarnedOrder', { id: row.order_id });
+        return d;
+    };
+
+    // Jump from a points-statement row to the linked order detail.
+    const openOrderById = async (orderId: number) => {
+        if (!orderId) return;
+        setActiveSection('yourOrders');
+        router.push('/profile?tab=yourOrders', { scroll: false });
+        setLoadingOrderDetails(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+                credentials: "include",
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
+            if (data.success) setSelectedOrder(data.data);
+        } catch (e) {
+            console.error('Failed to open order from points statement', e);
+        } finally {
+            setLoadingOrderDetails(false);
+        }
+    };
 
     const fetchOrders = async () => {
         setLoadingOrders(true);
@@ -255,6 +344,8 @@ const UserDashboard = () => {
                 setShowAddressForm(false);
                 setEditingAddressId(null);
                 setAddressForm({
+                    address_type: 'home',
+                    address_label: '',
                     first_name: '',
                     last_name: '',
                     company_name: '',
@@ -269,6 +360,8 @@ const UserDashboard = () => {
                     is_default: false
                 });
                 setMessage({ type: 'success', text: editingAddressId ? t('addresses.success') : t('addresses.addSuccess') });
+            } else {
+                setMessage({ type: 'error', text: data.message || (editingAddressId ? t('addresses.error') : t('addresses.addError')) });
             }
         } catch (error) {
             setMessage({ type: 'error', text: editingAddressId ? t('addresses.error') : t('addresses.addError') });
@@ -278,9 +371,38 @@ const UserDashboard = () => {
         }
     };
 
+    const openAddAddressForm = () => {
+        setEditingAddressId(null);
+        setOpenAddrMenu(null);
+        const fullName = (user?.name || '').trim();
+        const hasHome = addresses.some(a => a.address_type === 'home');
+        const hasWork = addresses.some(a => a.address_type === 'work');
+        const defaultType = !hasHome ? 'home' : !hasWork ? 'work' : 'other';
+        setAddressForm({
+            address_type: defaultType,
+            address_label: '',
+            first_name: fullName.split(' ')[0] || '',
+            last_name: fullName.split(' ').slice(1).join(' ') || '',
+            company_name: '',
+            email: user?.email || '',
+            address_line1: '',
+            address_line2: '',
+            city: '',
+            state: 'UAE',
+            zip_code: '',
+            country: 'United Arab Emirates',
+            phone: user?.phone_number || '',
+            is_default: false
+        });
+        setShowAddressForm(true);
+    };
+
     const handleEditAddress = (addr: any) => {
+        setOpenAddrMenu(null);
         setEditingAddressId(addr.id);
         setAddressForm({
+            address_type: addr.address_type || 'other',
+            address_label: addr.address_label || '',
             first_name: addr.first_name || '',
             last_name: addr.last_name || '',
             company_name: addr.company_name || '',
@@ -339,9 +461,18 @@ const UserDashboard = () => {
     const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
     const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
     const [addresses, setAddresses] = useState<any[]>([]);
+    const [rewardHistory, setRewardHistory] = useState<any[]>([]);
+    const [loadingRewardHistory, setLoadingRewardHistory] = useState(false);
+    const [rewardsTab, setRewardsTab] = useState<'earn' | 'history'>('earn');
+    const [rewardsPage, setRewardsPage] = useState(1);
+    const [rewardsFilter, setRewardsFilter] = useState<'all' | 'earned' | 'redeemed' | 'expired'>('all');
+    const REWARDS_PER_PAGE = 10;
     const [loadingAddresses, setLoadingAddresses] = useState(false);
     const [showAddressForm, setShowAddressForm] = useState(false);
+    const [openAddrMenu, setOpenAddrMenu] = useState<number | null>(null);
     const [addressForm, setAddressForm] = useState({
+        address_type: 'home',
+        address_label: '',
         first_name: '',
         last_name: '',
         company_name: '',
@@ -403,7 +534,8 @@ const UserDashboard = () => {
         setSaving(true);
         setMessage(null);
         try {
-            await updateUser(formData);
+            const name = `${formData.first_name} ${formData.last_name}`.trim();
+            await updateUser({ ...formData, name });
             setMessage({ type: 'success', text: t('profile.updateSuccess') });
         } catch (error: any) {
             setMessage({ type: 'error', text: error.message || t('profile.updateError') });
@@ -451,6 +583,7 @@ const UserDashboard = () => {
                                                 onClick={() => addToCart({
                                                     id: item.id,
                                                     name: item.name,
+                                                    name_ar: item.name_ar,
                                                     price: item.price,
                                                     image: item.image,
                                                     brand: item.brand,
@@ -487,12 +620,47 @@ const UserDashboard = () => {
                             <ChevronLeft size={16} style={locale === 'ar' ? { transform: 'rotate(180deg)' } : {}} /> {t('orders.backToOrders')}
                         </button>
 
-                        <h2 className={styles.sectionTitle} style={{ marginBottom: '5px' }}>{t('orders.orderNumber')}{selectedOrder.id}</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '5px' }}>
+                            <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>{t('orders.orderNumber')}{selectedOrder.id}</h2>
+                            {Number(selectedOrder.points_earned) > 0 && (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0, background: '#dcfce7', color: '#16a34a', padding: '6px 12px', borderRadius: 999, fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                    +{Number(selectedOrder.points_earned)} {t('rewards.ptsShort')}
+                                </span>
+                            )}
+                        </div>
                         <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '20px' }}>
                             {t('orders.placedOn')} {new Date(selectedOrder.created_at).toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-GB', {
                                 day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                             })}
                         </p>
+
+                        {selectedOrder.status === 'cancelled' ? (
+                            <div className={styles.orderCancelledBanner}>{t('orders.cancelled')}</div>
+                        ) : (() => {
+                            const steps = [
+                                { key: 'confirmed', label: t('orders.stepConfirmed') },
+                                { key: 'processing', label: t('orders.stepProcessing') },
+                                { key: 'shipped', label: t('orders.stepShipped') },
+                                { key: 'delivered', label: t('orders.stepDelivered') },
+                            ];
+                            const flow = ['pending', 'processing', 'shipped', 'delivered'];
+                            const current = Math.max(0, flow.indexOf(selectedOrder.status));
+                            return (
+                                <div className={styles.orderTracker} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+                                    {steps.map((s, i) => (
+                                        <React.Fragment key={s.key}>
+                                            {i > 0 && <div className={`${styles.trackerLine} ${i <= current ? styles.trackerLineActive : ''}`} />}
+                                            <div className={styles.trackerStep}>
+                                                <div className={`${styles.trackerDot} ${i <= current ? styles.trackerDotActive : ''}`}>
+                                                    {i < current && <Check size={14} />}
+                                                </div>
+                                                <span className={`${styles.trackerLabel} ${i <= current ? styles.trackerLabelActive : ''}`}>{s.label}</span>
+                                            </div>
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            );
+                        })()}
 
                         <div style={{ background: '#f8fafc', padding: '15px 20px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
@@ -521,27 +689,49 @@ const UserDashboard = () => {
 
                         <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>{t('orders.itemsInOrder')}</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '30px' }}>
-                            {selectedOrder.items && selectedOrder.items.map((item: any) => (
+                            {selectedOrder.items && selectedOrder.items.map((item: any) => {
+                                const isFree = Number(item.is_free_gift) === 1;
+                                const parentName = locale === 'ar' && item.bundle_parent_name_ar ? item.bundle_parent_name_ar : item.bundle_parent_name;
+                                return (
                                 <div key={item.id} style={{ display: 'flex', gap: '15px', padding: '15px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                                    <div style={{ width: '80px', height: '80px', flexShrink: 0, background: '#f8fafc', borderRadius: '6px', overflow: 'hidden' }}>
+                                    <Link
+                                        href={item.slug ? `/product/${item.slug}` : '#'}
+                                        style={{ width: '80px', height: '80px', flexShrink: 0, background: '#f8fafc', borderRadius: '6px', overflow: 'hidden', cursor: item.slug ? 'pointer' : 'default', pointerEvents: item.slug ? 'auto' : 'none' }}
+                                    >
                                         {item.image ? (
                                             <img src={resolveUrl(item.image)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                         ) : (
                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}><Package size={32} /></div>
                                         )}
-                                    </div>
+                                    </Link>
                                     <div style={{ flex: 1 }}>
-                                        <h4 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '5px' }}>{locale === 'ar' && item.name_ar ? item.name_ar : item.name}</h4>
+                                        <h4 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                            <Link
+                                                href={item.slug ? `/product/${item.slug}` : '#'}
+                                                style={{ textDecoration: 'none', color: 'inherit', cursor: item.slug ? 'pointer' : 'default', pointerEvents: item.slug ? 'auto' : 'none' }}
+                                            >
+                                                {locale === 'ar' && item.name_ar ? item.name_ar : item.name}
+                                            </Link>
+                                            {isFree && (
+                                                <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: '#10b981', padding: '2px 6px', borderRadius: 4, letterSpacing: 0.4 }}>FREE</span>
+                                            )}
+                                        </h4>
+                                        {isFree && parentName && (
+                                            <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>Free gift with {parentName}</div>
+                                        )}
                                         {item.custom_label && (
                                             <div style={{ color: '#475569', fontSize: '12px', marginBottom: '4px' }}>{item.custom_label}</div>
                                         )}
-                                        <div style={{ color: '#64748b', fontSize: '13px' }}>{t('orders.qty')} {item.quantity}  ×  <CurrencyPrice amount={parseFloat(item.price_at_purchase)} /></div>
+                                        <div style={{ color: isFree ? '#10b981' : '#64748b', fontSize: '13px', fontWeight: isFree ? 700 : 400 }}>
+                                            {isFree ? <>{t('orders.qty')} {item.quantity}  ×  FREE</> : <>{t('orders.qty')} {item.quantity}  ×  <CurrencyPrice amount={parseFloat(item.price_at_purchase)} /></>}
+                                        </div>
                                     </div>
-                                    <div style={{ fontWeight: 'bold', fontSize: '15px' }}>
-                                        <CurrencyPrice amount={item.quantity * parseFloat(item.price_at_purchase)} />
+                                    <div style={{ fontWeight: 'bold', fontSize: '15px', color: isFree ? '#10b981' : undefined }}>
+                                        {isFree ? 'FREE' : <CurrencyPrice amount={item.quantity * parseFloat(item.price_at_purchase)} />}
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
@@ -553,6 +743,12 @@ const UserDashboard = () => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', color: '#ef4444' }}>
                                     <span>{t('orders.discountApplied')}</span>
                                     <span>- <CurrencyPrice amount={parseFloat(selectedOrder.discount_amount || 0) + parseFloat(selectedOrder.points_discount || 0)} /></span>
+                                </div>
+                            )}
+                            {Number(selectedOrder.points_used) > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', color: '#475569' }}>
+                                    <span>{t('orders.pointsRedeemed')}</span>
+                                    <span style={{ color: '#dc2626' }}>- {Number(selectedOrder.points_used)} {t('rewards.ptsShort')}</span>
                                 </div>
                             )}
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '14px', color: '#475569' }}>
@@ -707,17 +903,32 @@ const UserDashboard = () => {
                         {profileTab === 'Personal Info' && (
                             <div className={styles.formContentFadeIn}>
                                 <div className={styles.formGroup}>
-                                    <label htmlFor="name" className={styles.formLabel}>{t('profile.fullName')}</label>
+                                    <label htmlFor="first_name" className={styles.formLabel}>{t('profile.firstName')}</label>
                                     <div className={styles.inputWrapper}>
                                         <input
                                             type="text"
-                                            id="name"
-                                            name="name"
-                                            value={formData.name}
+                                            id="first_name"
+                                            name="first_name"
+                                            value={formData.first_name}
                                             onChange={handleInputChange}
                                             className={styles.formInput}
-                                            placeholder={t('profile.fullName')}
-                                            autoComplete="name"
+                                            placeholder={t('profile.firstName')}
+                                            autoComplete="given-name"
+                                        />
+                                    </div>
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label htmlFor="last_name" className={styles.formLabel}>{t('profile.lastName')}</label>
+                                    <div className={styles.inputWrapper}>
+                                        <input
+                                            type="text"
+                                            id="last_name"
+                                            name="last_name"
+                                            value={formData.last_name}
+                                            onChange={handleInputChange}
+                                            className={styles.formInput}
+                                            placeholder={t('profile.lastName')}
+                                            autoComplete="family-name"
                                         />
                                     </div>
                                 </div>
@@ -736,7 +947,7 @@ const UserDashboard = () => {
                                         />
                                         {formData.phone_number && user?.phone_number === formData.phone_number && user?.phone_verified ? (
                                             <span className={styles.verifiedBadge}>
-                                                <Check size={16} strokeWidth={2.5} /> Verified
+                                                <Check size={16} strokeWidth={2.5} /> {t('profile.verified')}
                                             </span>
                                         ) : (
                                             <button
@@ -745,7 +956,7 @@ const UserDashboard = () => {
                                                 disabled={!formData.phone_number || formData.phone_number.length < 7}
                                                 className={`${styles.actionBtn} ${(!formData.phone_number || formData.phone_number.length < 7) ? styles.actionBtnDisabled : styles.actionBtnPrimary}`}
                                             >
-                                                Verify
+                                                {t('profile.verify')}
                                             </button>
                                         )}
                                     </div>
@@ -766,7 +977,7 @@ const UserDashboard = () => {
                                         />
                                         {formData.email && user?.email === formData.email && user?.email_verified ? (
                                             <span className={styles.verifiedBadge}>
-                                                <Check size={16} strokeWidth={2.5} /> Verified
+                                                <Check size={16} strokeWidth={2.5} /> {t('profile.verified')}
                                             </span>
                                         ) : (
                                             <button
@@ -775,7 +986,7 @@ const UserDashboard = () => {
                                                 disabled={!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)}
                                                 className={`${styles.actionBtn} ${(!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) ? styles.actionBtnDisabled : styles.actionBtnPrimary}`}
                                             >
-                                                Verify
+                                                {t('profile.verify')}
                                             </button>
                                         )}
                                     </div>
@@ -960,32 +1171,14 @@ const UserDashboard = () => {
         if (activeSection === 'addresses') {
             return (
                 <div className={styles.quotationsContainer}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', ...(locale === 'ar' ? { flexDirection: 'row-reverse' } : {}) }}>
+                    <div style={{ marginBottom: '20px', ...(locale === 'ar' ? { textAlign: 'right' } : {}) }}>
                         <h2 className={styles.sectionTitle} style={{ margin: 0 }}>{t('addresses.title')}</h2>
-                        <button
-                            className={styles.shoppingBtn}
-                            onClick={() => {
-                                setEditingAddressId(null);
-                                setAddressForm({
-                                    first_name: '',
-                                    last_name: '',
-                                    company_name: '',
-                                    email: '',
-                                    address_line1: '',
-                                    address_line2: '',
-                                    city: '',
-                                    state: 'UAE',
-                                    zip_code: '',
-                                    country: 'United Arab Emirates',
-                                    phone: '',
-                                    is_default: false
-                                });
-                                setShowAddressForm(!showAddressForm);
-                            }}
-                        >
-                            {showAddressForm ? t('addresses.cancel') : t('addresses.addNew')}
-                        </button>
                     </div>
+
+                    <button type="button" className={styles.addrAddDashed} onClick={openAddAddressForm}>
+                        <Plus size={20} />
+                        <span>{t('addresses.addNew')}</span>
+                    </button>
 
                     {message && (
                         <div style={{
@@ -1002,136 +1195,120 @@ const UserDashboard = () => {
                     )}
 
                     {showAddressForm && (
-                        <form onSubmit={handleAddAddress} className={styles.addressForm} style={{ marginBottom: '40px', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                            <h3 style={{ marginBottom: '20px', color: '#0f172a' }}>{editingAddressId ? t('addresses.edit') : t('addresses.addNew')}</h3>
-                            <div className={styles.formRow}>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('addresses.firstName')} *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className={styles.formInput}
-                                        value={addressForm.first_name}
-                                        onChange={(e) => setAddressForm({ ...addressForm, first_name: e.target.value })}
-                                        placeholder="e.g. John"
-                                    />
+                        <>
+                        <div className={styles.addrSheetOverlay} onClick={() => setShowAddressForm(false)} />
+                        <form onSubmit={handleAddAddress} className={styles.addrForm}>
+                            <div className={styles.addrSheetHandle} />
+                            <h3 className={styles.addrFormTitle}>{editingAddressId ? t('addresses.edit') : t('addresses.addNew')}</h3>
+
+                            {(() => {
+                                const homeTaken = addresses.some(a => a.address_type === 'home' && a.id !== editingAddressId);
+                                const workTaken = addresses.some(a => a.address_type === 'work' && a.id !== editingAddressId);
+                                const types = [
+                                    { key: 'home', label: t('addresses.typeHome'), icon: <Home size={17} />, disabled: homeTaken },
+                                    { key: 'work', label: t('addresses.typeWork'), icon: <Building2 size={17} />, disabled: workTaken },
+                                    { key: 'other', label: t('addresses.typeOther'), icon: <MapPin size={17} />, disabled: false },
+                                ];
+                                return (
+                                    <div className={styles.addrTypeRow}>
+                                        {types.map(tp => (
+                                            <button
+                                                type="button"
+                                                key={tp.key}
+                                                disabled={tp.disabled}
+                                                className={`${styles.addrTypeBtn} ${addressForm.address_type === tp.key ? styles.addrTypeBtnActive : ''}`}
+                                                onClick={() => setAddressForm({ ...addressForm, address_type: tp.key })}
+                                            >
+                                                {tp.icon}
+                                                <span>{tp.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
+
+                            {addressForm.address_type === 'other' && (
+                                <div className={styles.addrField} style={{ marginBottom: '14px' }}>
+                                    <label className={styles.addrLabel}>{t('addresses.labelName')} <span className={styles.addrReq}>*</span></label>
+                                    <input type="text" required className={styles.addrInput} value={addressForm.address_label}
+                                        maxLength={100}
+                                        onChange={(e) => setAddressForm({ ...addressForm, address_label: e.target.value })}
+                                        placeholder={t('addresses.labelNamePlaceholder')} />
                                 </div>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('addresses.lastName')} *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className={styles.formInput}
-                                        value={addressForm.last_name}
-                                        onChange={(e) => setAddressForm({ ...addressForm, last_name: e.target.value })}
-                                        placeholder="e.g. Doe"
-                                    />
+                            )}
+
+                            <div className={styles.addrGrid}>
+                                <div className={styles.addrField}>
+                                    <label className={styles.addrLabel}>{t('addresses.firstName')} <span className={styles.addrReq}>*</span></label>
+                                    <input type="text" required className={styles.addrInput} value={addressForm.first_name}
+                                        onChange={(e) => setAddressForm({ ...addressForm, first_name: e.target.value })} placeholder="e.g. John" />
                                 </div>
-                            </div>
-                            <div className={styles.formRow}>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('addresses.companyName')}</label>
-                                    <input
-                                        type="text"
-                                        className={styles.formInput}
-                                        value={addressForm.company_name}
-                                        onChange={(e) => setAddressForm({ ...addressForm, company_name: e.target.value })}
-                                        placeholder="Company LLC (Optional)"
-                                    />
+                                <div className={styles.addrField}>
+                                    <label className={styles.addrLabel}>{t('addresses.lastName')}</label>
+                                    <input type="text" className={styles.addrInput} value={addressForm.last_name}
+                                        onChange={(e) => setAddressForm({ ...addressForm, last_name: e.target.value })} placeholder="e.g. Doe" />
                                 </div>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('addresses.email')} *</label>
-                                    <input
-                                        type="email"
-                                        required
-                                        className={styles.formInput}
-                                        value={addressForm.email}
-                                        onChange={(e) => setAddressForm({ ...addressForm, email: e.target.value })}
-                                        placeholder="john@example.com"
-                                    />
+
+                                <div className={styles.addrField}>
+                                    <label className={styles.addrLabel}>{t('addresses.companyName')}</label>
+                                    <input type="text" className={styles.addrInput} value={addressForm.company_name}
+                                        onChange={(e) => setAddressForm({ ...addressForm, company_name: e.target.value })} placeholder="Company LLC (Optional)" />
                                 </div>
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label className={styles.formLabel}>{t('addresses.line1')}</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className={styles.formInput}
-                                    value={addressForm.address_line1}
-                                    onChange={(e) => setAddressForm({ ...addressForm, address_line1: e.target.value })}
-                                    placeholder={t('addresses.line1Placeholder')}
-                                />
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label className={styles.formLabel}>{t('addresses.line2')}</label>
-                                <input
-                                    type="text"
-                                    className={styles.formInput}
-                                    value={addressForm.address_line2}
-                                    onChange={(e) => setAddressForm({ ...addressForm, address_line2: e.target.value })}
-                                    placeholder={t('addresses.line2Placeholder')}
-                                />
-                            </div>
-                            <div className={styles.formRow}>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('addresses.city')}</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className={styles.formInput}
-                                        value={addressForm.city}
-                                        onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                                        placeholder={t('addresses.cityPlaceholder')}
-                                    />
+                                <div className={styles.addrField}>
+                                    <label className={styles.addrLabel}>{t('addresses.email')} <span className={styles.addrReq}>*</span></label>
+                                    <input type="email" required className={styles.addrInput} value={addressForm.email}
+                                        onChange={(e) => setAddressForm({ ...addressForm, email: e.target.value })} placeholder="john@example.com" />
                                 </div>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('addresses.state')}</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className={styles.formInput}
-                                        value={addressForm.state}
-                                        onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-                                        placeholder={t('addresses.statePlaceholder')}
-                                    />
+
+                                <div className={`${styles.addrField} ${styles.addrFull}`}>
+                                    <label className={styles.addrLabel}>{t('addresses.line1')} <span className={styles.addrReq}>*</span></label>
+                                    <input type="text" required className={styles.addrInput} value={addressForm.address_line1}
+                                        onChange={(e) => setAddressForm({ ...addressForm, address_line1: e.target.value })} placeholder={t('addresses.line1Placeholder')} />
                                 </div>
-                            </div>
-                            <div className={styles.formRow}>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('addresses.zip')}</label>
-                                    <input
-                                        type="text"
-                                        className={styles.formInput}
-                                        value={addressForm.zip_code}
-                                        onChange={(e) => setAddressForm({ ...addressForm, zip_code: e.target.value })}
-                                        placeholder={t('addresses.zipPlaceholder')}
-                                    />
+                                <div className={`${styles.addrField} ${styles.addrFull}`}>
+                                    <label className={styles.addrLabel}>{t('addresses.line2')}</label>
+                                    <input type="text" className={styles.addrInput} value={addressForm.address_line2}
+                                        onChange={(e) => setAddressForm({ ...addressForm, address_line2: e.target.value })} placeholder={t('addresses.line2Placeholder')} />
                                 </div>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>{t('addresses.phone')}</label>
-                                    <input
-                                        type="tel"
-                                        required
-                                        className={styles.formInput}
-                                        value={addressForm.phone}
-                                        onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
-                                        placeholder={t('addresses.phonePlaceholder')}
-                                    />
+
+                                <div className={styles.addrField}>
+                                    <label className={styles.addrLabel}>{t('addresses.city')} <span className={styles.addrReq}>*</span></label>
+                                    <input type="text" required className={styles.addrInput} value={addressForm.city}
+                                        onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} placeholder={t('addresses.cityPlaceholder')} />
+                                </div>
+                                <div className={styles.addrField}>
+                                    <label className={styles.addrLabel}>{t('addresses.state')}</label>
+                                    <input type="text" required className={styles.addrInput} value={addressForm.state}
+                                        onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })} placeholder={t('addresses.statePlaceholder')} />
+                                </div>
+                                <div className={styles.addrField}>
+                                    <label className={styles.addrLabel}>{t('addresses.zip')}</label>
+                                    <input type="text" className={styles.addrInput} value={addressForm.zip_code}
+                                        onChange={(e) => setAddressForm({ ...addressForm, zip_code: e.target.value })} placeholder={t('addresses.zipPlaceholder')} />
+                                </div>
+                                <div className={styles.addrField}>
+                                    <label className={styles.addrLabel}>{t('addresses.phone')} <span className={styles.addrReq}>*</span></label>
+                                    <input type="tel" required dir="ltr" className={styles.addrInput} value={addressForm.phone}
+                                        onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })} placeholder={t('addresses.phonePlaceholder')} />
                                 </div>
                             </div>
-                            <div className={styles.formGroup} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <input
-                                    type="checkbox"
-                                    id="is_default"
-                                    checked={addressForm.is_default}
-                                    onChange={(e) => setAddressForm({ ...addressForm, is_default: e.target.checked })}
-                                />
-                                <label htmlFor="is_default" style={{ cursor: 'pointer', fontSize: '14px' }}>{t('addresses.setAsDefault')}</label>
+
+                            <label className={styles.addrCheckRow}>
+                                <input type="checkbox" checked={addressForm.is_default}
+                                    onChange={(e) => setAddressForm({ ...addressForm, is_default: e.target.checked })} />
+                                <span>{t('addresses.setAsDefault')}</span>
+                            </label>
+
+                            <div className={styles.addrActions}>
+                                <button type="button" className={styles.addrCancelBtn} onClick={() => setShowAddressForm(false)}>
+                                    {t('addresses.cancel')}
+                                </button>
+                                <button type="submit" className={styles.addrSubmitBtn} disabled={saving}>
+                                    {saving ? (editingAddressId ? t('addresses.updating') : t('addresses.adding')) : (editingAddressId ? t('addresses.update') : t('addresses.add'))}
+                                </button>
                             </div>
-                            <button type="submit" className={styles.editBtn} disabled={saving}>
-                                {saving ? (editingAddressId ? t('addresses.updating') : t('addresses.adding')) : (editingAddressId ? t('addresses.update') : t('addresses.add'))}
-                            </button>
                         </form>
+                        </>
                     )
                     }
 
@@ -1146,54 +1323,63 @@ const UserDashboard = () => {
                             </div>
                         ) : (
                             <div className={styles.addressGrid}>
-                                {addresses.map((addr) => (
-                                    <div key={addr.id} className={`${styles.addressCard} ${addr.is_default ? styles.addressCardDefault : ''}`}>
-                                        <div className={styles.addressContent}>
-                                            {!!addr.is_default && (
-                                                <div className={styles.addressBadge}>
-                                                    <Check size={12} style={{ marginInlineEnd: '4px' }} />
-                                                    {t('addresses.default')}
-                                                </div>
-                                            )}
-                                            <h4 className={styles.addressNameText} style={{ ...(locale === 'ar' ? { flexDirection: 'row-reverse' } : {}), marginBottom: '4px' }}>
-                                                <User size={18} color="#56cfe1" />
-                                                {addr.first_name} {addr.last_name}
-                                            </h4>
-                                            <div style={locale === 'ar' ? { textAlign: 'right' } : {}}>
-                                                {!!addr.company_name && <p className={styles.addressInfoLine} style={{ fontWeight: 600, color: '#0f172a', marginBottom: '6px' }}>{addr.company_name}</p>}
-                                                <p className={styles.addressInfoLine}>
-                                                    <MapPin size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
-                                                    {addr.address_line1}
-                                                </p>
-                                                {!!addr.address_line2 && <p className={styles.addressInfoLine}>{addr.address_line2}</p>}
-                                                <p className={styles.addressInfoLine}>{addr.city}, {addr.state} {addr.zip_code}</p>
-                                                <p className={styles.addressInfoLine} style={{ opacity: 0.8 }}>{addr.country}</p>
-                                                <div className={styles.addressPhoneLine} style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}>
-                                                    <Phone size={14} color="#64748b" />
-                                                    <span dir="ltr">{addr.phone}</span>
-                                                </div>
+                                {addresses.map((addr) => {
+                                    const typeLabel = addr.address_type === 'home' ? t('addresses.typeHome') : addr.address_type === 'work' ? t('addresses.typeWork') : (addr.address_label || t('addresses.typeOther'));
+                                    const typeIcon = addr.address_type === 'home' ? <Home size={20} /> : addr.address_type === 'work' ? <Building2 size={20} /> : <MapPin size={20} />;
+                                    return (
+                                    <div key={addr.id} className={`${styles.addressCard} ${addr.is_default ? styles.addressCardDefault : ''}`} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+                                        <div className={styles.addrCardHead}>
+                                            <div className={styles.addrCardIcon}>{typeIcon}</div>
+                                            <div className={styles.addrCardHeadText}>
+                                                <span className={styles.addrCardType}>{typeLabel}</span>
+                                                {!!addr.is_default && <span className={styles.addrCardDefaultTag}>{t('addresses.default')}</span>}
+                                            </div>
+                                            <div className={styles.addrMenuWrap}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.addrMenuBtn}
+                                                    aria-label="Options"
+                                                    onClick={() => setOpenAddrMenu(openAddrMenu === addr.id ? null : addr.id)}
+                                                >
+                                                    <MoreHorizontal size={20} />
+                                                </button>
+                                                {openAddrMenu === addr.id && (
+                                                    <>
+                                                        <div className={styles.addrMenuBackdrop} onClick={() => setOpenAddrMenu(null)} />
+                                                        <div className={styles.addrMenu}>
+                                                            <button type="button" className={styles.addrMenuItem} onClick={() => handleEditAddress(addr)}>
+                                                                <Edit2 size={15} /> {t('addresses.edit')}
+                                                            </button>
+                                                            <button type="button" className={`${styles.addrMenuItem} ${styles.addrMenuItemDanger}`} onClick={() => { setOpenAddrMenu(null); handleDeleteAddress(addr.id); }}>
+                                                                <Trash2 size={15} /> {t('addresses.delete')}
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className={styles.addressCardActions} style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}>
-                                            <button
-                                                className={`${styles.addressActionBtn} ${styles.addressEditBtn}`}
-                                                onClick={() => handleEditAddress(addr)}
-                                                style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}
-                                            >
-                                                <Edit2 size={14} />
-                                                {t('addresses.edit').split(' ')[0]}
-                                            </button>
-                                            <button
-                                                className={`${styles.addressActionBtn} ${styles.addressDeleteBtn}`}
-                                                onClick={() => handleDeleteAddress(addr.id)}
-                                                style={locale === 'ar' ? { flexDirection: 'row-reverse' } : {}}
-                                            >
-                                                <Trash2 size={14} />
-                                                {t('addresses.delete').split(' ')[0]}
-                                            </button>
+
+                                        <div className={styles.addrCardBody}>
+                                            {!!addr.company_name && <p className={styles.addrCardLine} style={{ fontWeight: 600, color: '#0f172a' }}>{addr.company_name}</p>}
+                                            <p className={styles.addrCardLine}>
+                                                {addr.address_line1}
+                                                {!!addr.address_line2 && <>, {addr.address_line2}</>}
+                                            </p>
+                                            <p className={styles.addrCardLine}>{[addr.city, addr.state, addr.zip_code].filter(Boolean).join(', ')}</p>
+                                            <div className={styles.addrCardContact}>
+                                                <span className={styles.addrCardName}>{addr.first_name} {addr.last_name}</span>
+                                                {!!addr.phone && (
+                                                    <span className={styles.addrCardPhone}>
+                                                        <span dir="ltr">{addr.phone}</span>
+                                                        <BadgeCheck size={16} className={styles.addrCardVerified} />
+                                                    </span>
+                                                )}
+                                                {!addr.phone && <BadgeCheck size={16} className={styles.addrCardVerified} />}
+                                            </div>
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )
                     }
@@ -1260,26 +1446,42 @@ const UserDashboard = () => {
 
         if (activeSection === 'myRewards') {
             const profileComplete = !!user?.profile_bonus_awarded;
+            const filteredHistory = rewardsFilter === 'all'
+                ? rewardHistory
+                : rewardHistory.filter((r) => r.transaction_type === rewardsFilter);
             return (
                 <div className={styles.quotationsContainer}>
-                    <div className={styles.sectionHeader}>
-                        <h2 className={styles.sectionTitle}>{t('rewards.earnPoints')}</h2>
+                    <div className={styles.sectionHeader} style={{ marginBottom: 12 }}>
+                        <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>{t('nav.myRewards')}</h2>
                     </div>
 
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 280px))',
-                        gap: 16
-                    }}>
-                        <div style={{
+                    <div className={styles.rewardTabs}>
+                        <button
+                            type="button"
+                            className={`${styles.rewardTab} ${rewardsTab === 'earn' ? styles.rewardTabActive : ''}`}
+                            onClick={() => setRewardsTab('earn')}
+                        >
+                            {t('rewards.earnPoints')}
+                        </button>
+                        <button
+                            type="button"
+                            className={`${styles.rewardTab} ${rewardsTab === 'history' ? styles.rewardTabActive : ''}`}
+                            onClick={() => setRewardsTab('history')}
+                        >
+                            {t('rewards.statementTitle')}
+                        </button>
+                    </div>
+
+                    {rewardsTab === 'earn' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 280px))', gap: 16 }}>
+                        {!profileComplete && (
+                        <div className={styles.rewardEarnCard} style={{
                             background: '#ffffff',
                             border: '1px solid #94a3b8',
                             borderRadius: 16,
                             padding: '28px 22px 22px',
                             textAlign: 'center',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                            opacity: profileComplete ? 0.85 : 1,
-                            maxWidth: 300
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
                         }}>
                             <div style={{
                                 width: 56,
@@ -1352,12 +1554,149 @@ const UserDashboard = () => {
                                     opacity: profileComplete ? 0.85 : 1
                                 }}
                             >
-                                {profileComplete && <Check size={16} />}
-                                {profileComplete ? t('rewards.completed') : t('rewards.fillProfileCta')}
-                                {!profileComplete && <ArrowUpRight size={16} />}
+                                {t('rewards.fillProfileCta')}
+                                <ArrowUpRight size={16} />
                             </button>
                         </div>
+                        )}
+                        {profileComplete && (
+                            <div className={styles.rewardStatementEmpty} style={{ gridColumn: '1 / -1' }}>
+                                {t('rewards.allBonusClaimed')}
+                            </div>
+                        )}
                     </div>
+                    )}
+
+                    {rewardsTab === 'earn' && (
+                    <div style={{
+                        marginTop: 18,
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 6,
+                        fontSize: 14,
+                        color: '#64748b'
+                    }}>
+                        <span>{t('rewards.affiliatePrompt')}</span>
+                        <Link
+                            href="/affiliate-program"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                color: '#0d9488',
+                                fontWeight: 600,
+                                textDecoration: 'underline'
+                            }}
+                        >
+                            {t('rewards.affiliateLink')}
+                            <ArrowUpRight size={15} />
+                        </Link>
+                    </div>
+                    )}
+
+                    {rewardsTab === 'history' && (
+                        <div className={styles.rewardStatement}>
+                        {!loadingRewardHistory && rewardHistory.length > 0 && (
+                            <div className={styles.rewardFilters}>
+                                {([
+                                    ['all', t('rewards.filterAll')],
+                                    ['earned', t('rewards.credited')],
+                                    ['redeemed', t('rewards.redeemed')]
+                                ] as const).map(([key, label]) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        className={`${styles.rewardFilterChip} ${rewardsFilter === key ? styles.rewardFilterChipActive : ''}`}
+                                        onClick={() => { setRewardsFilter(key); setRewardsPage(1); }}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {loadingRewardHistory ? (
+                            <div className={styles.rewardStatementEmpty}>{t('rewards.statementLoading')}</div>
+                        ) : filteredHistory.length === 0 ? (
+                            <div className={styles.rewardStatementEmpty}>{t('rewards.statementEmpty')}</div>
+                        ) : (
+                            <ul className={styles.rewardStatementList}>
+                                {filteredHistory.slice((rewardsPage - 1) * REWARDS_PER_PAGE, rewardsPage * REWARDS_PER_PAGE).map((row) => {
+                                    const earned = row.transaction_type === 'earned';
+                                    const expired = row.transaction_type === 'expired';
+                                    const typeLabel = earned
+                                        ? t('rewards.credited')
+                                        : expired
+                                            ? t('rewards.expired')
+                                            : t('rewards.redeemed');
+                                    const sign = earned ? '+' : '-';
+                                    const dateStr = new Date(row.created_at).toLocaleDateString(
+                                        locale === 'ar' ? 'ar-AE' : 'en-GB',
+                                        { day: '2-digit', month: 'short', year: 'numeric' }
+                                    );
+                                    const clickable = !!row.order_id;
+                                    return (
+                                        <li
+                                            key={row.id}
+                                            className={`${styles.rewardStatementRow} ${clickable ? styles.rewardStatementRowClickable : ''}`}
+                                            onClick={clickable ? () => openOrderById(row.order_id) : undefined}
+                                            role={clickable ? 'button' : undefined}
+                                            tabIndex={clickable ? 0 : undefined}
+                                            onKeyDown={clickable ? (e) => { if (e.key === 'Enter') openOrderById(row.order_id); } : undefined}
+                                        >
+                                            <span className={`${styles.rewardStatementIcon} ${earned ? styles.rewardCredit : styles.rewardDebit}`}>
+                                                {earned ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
+                                            </span>
+                                            <div className={styles.rewardStatementMeta}>
+                                                <span className={styles.rewardStatementType}>
+                                                    {typeLabel}
+                                                    {row.order_id ? ` · ${t('rewards.orderRef', { id: row.order_id })}` : ''}
+                                                </span>
+                                                {row.description && (
+                                                    <span className={styles.rewardStatementDesc}>{localizeRewardDesc(row)}</span>
+                                                )}
+                                                <span className={styles.rewardStatementDate}>{dateStr}</span>
+                                            </div>
+                                            <span className={`${styles.rewardStatementPoints} ${earned ? styles.rewardCredit : styles.rewardDebit}`}>
+                                                {sign}{Math.abs(Number(row.points))} {t('rewards.ptsShort')}
+                                            </span>
+                                            {clickable && <ChevronRight size={16} className={styles.rewardStatementChevron} />}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
+
+                        {!loadingRewardHistory && filteredHistory.length > REWARDS_PER_PAGE && (() => {
+                            const totalPages = Math.ceil(filteredHistory.length / REWARDS_PER_PAGE);
+                            return (
+                                <div className={styles.rewardPagination}>
+                                    <button
+                                        type="button"
+                                        className={styles.rewardPageBtn}
+                                        onClick={() => setRewardsPage(p => Math.max(1, p - 1))}
+                                        disabled={rewardsPage <= 1}
+                                        aria-label="Previous"
+                                    >
+                                        <ChevronLeft size={16} />
+                                    </button>
+                                    <span className={styles.rewardPageInfo}>
+                                        {t('rewards.pageOf', { page: rewardsPage, total: totalPages })}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        className={styles.rewardPageBtn}
+                                        onClick={() => setRewardsPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={rewardsPage >= totalPages}
+                                        aria-label="Next"
+                                    >
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </div>
+                            );
+                        })()}
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -1404,7 +1743,7 @@ const UserDashboard = () => {
                         }} />
                     </div>
 
-                    <nav className={styles.nav}>
+                    <nav className={styles.nav} ref={navRef}>
                         {navItems.map((item, idx) => (
                             <React.Fragment key={item.name}>
                                 {idx === 3 && <div className={styles.divider} />}

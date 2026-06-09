@@ -104,7 +104,7 @@ const SuccessContent = () => {
                             <p className={styles.cardText}>{t('supportText')}</p>
                             <div className={styles.supportLinks}>
                                 <span>Email: support@mariotstore.com</span>
-                                <span dir="ltr">Phone: +971 4 000 0000</span>
+                                <span dir="ltr">Phone: +971 4 288 2777</span>
                             </div>
                         </div>
                     </div>
@@ -115,7 +115,7 @@ const SuccessContent = () => {
                             <ShoppingBag size={20} />
                             {t('continueShopping')}
                         </Link>
-                        <Link href="/profile?tab=orders" className={styles.ordersBtn}>
+                        <Link href="/profile?tab=yourOrders" className={styles.ordersBtn}>
                             {t('viewOrders')}
                             <ArrowRight size={18} />
                         </Link>

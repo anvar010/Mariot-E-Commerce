@@ -28,8 +28,8 @@
 }
 
 .checkIcon {
-    color: #10b981;
-    filter: drop-shadow(0 10px 15px rgba(16, 185, 129, 0.2));
+    color: #16A1DB;
+    filter: drop-shadow(0 10px 15px rgba(22, 161, 219, 0.2));
 }
 
 .mainTitle {
@@ -58,7 +58,7 @@
 }
 
 .orderBadge strong {
-    color: #237073;
+    color: #16A1DB;
 }
 
 /* Timeline */
@@ -90,9 +90,9 @@
 }
 
 .dot.active {
-    border-color: #237073;
-    background: #237073;
-    box-shadow: 0 0 0 4px rgba(35, 112, 115, 0.15);
+    border-color: #16A1DB;
+    background: #16A1DB;
+    box-shadow: 0 0 0 4px rgba(22, 161, 219, 0.15);
 }
 
 .timelineItem span {
@@ -154,8 +154,8 @@
 .stepIcon {
     width: 36px;
     height: 36px;
-    background: #f0f9f9;
-    color: #237073;
+    background: #e0f2fe;
+    color: #16A1DB;
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -186,7 +186,7 @@
 .supportLinks span {
     font-size: 14px;
     font-weight: 600;
-    color: #237073;
+    color: #16A1DB;
 }
 
 /* Actions */
@@ -196,7 +196,7 @@
 }
 
 .continueBtn {
-    background: #237073;
+    background: #16A1DB;
     color: white;
     padding: 16px 32px;
     border-radius: 14px;
@@ -206,15 +206,15 @@
     align-items: center;
     gap: 12px;
     transition: all 0.3s;
-    box-shadow: 0 10px 15px -3px rgba(35, 112, 115, 0.25);
+    box-shadow: 0 10px 15px -3px rgba(22, 161, 219, 0.25);
 }
 
 @media (hover: hover) {
 
 .continueBtn:hover {
-    background: #1a5658;
+    background: #1280ae;
     transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgba(35, 112, 115, 0.3);
+    box-shadow: 0 20px 25px -5px rgba(22, 161, 219, 0.3);
 }
 }
 

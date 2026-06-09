@@ -86,20 +86,20 @@
 
 .switch>span.switchOn {
     left: 3px;
-    padding-left: 0;
+    padding-inline-start: 0;
     color: #fff;
     transform: translate(-2px, -1px);
 }
 
 .switch>span.switchOff {
     right: 3px;
-    padding-right: 0;
+    padding-inline-end: 0;
     color: var(--primary-teal);
 }
 
 .checkToggle {
     position: absolute;
-    margin-left: -9999px;
+    margin-inline-start: -9999px;
     visibility: hidden;
 }
 
@@ -148,7 +148,7 @@
 }
 
 .checkToggleRoundFlat:checked+label:after {
-    margin-left: 49px;
+    margin-inline-start: 49px;
 }
 
 .supportIcons {
@@ -165,7 +165,7 @@
 .iconCircle {
     width: 45px;
     height: 45px;
-    background-color: #ffbf00;
+    background-color: var(--primary-teal);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -204,7 +204,7 @@
 
 .chevronIcon {
     display: none;
-    color: #f1a91a;
+    color: var(--primary-teal);
 }
 
 /* 2. Main Footer */
@@ -516,6 +516,59 @@
     }
 }
 
+/* Tablet support bar: stack header above contact items, allow wrapping */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .supportBar .container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 24px;
+    }
+
+    .supportHeader {
+        justify-content: flex-start;
+    }
+
+    .supportIcons {
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    .supportItem {
+        flex: 1 1 220px;
+        min-width: 0;
+        gap: 12px;
+        background-color: #ffffff;
+        padding: 14px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    }
+
+    .supportItem .iconCircle {
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+    }
+
+    .itemInfo {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .itemValue {
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .itemLabel {
+        font-size: 11px;
+        text-transform: uppercase;
+    }
+}
+
 @media (max-width: 768px) {
     .supportBar {
         background-color: #f8f9fa;
@@ -578,7 +631,7 @@
         /* Reduced to give more room for text */
         height: 50px;
         flex-shrink: 0;
-        box-shadow: 0 4px 10px rgba(241, 169, 26, 0.2);
+        box-shadow: 0 4px 10px rgba(22, 161, 219, 0.2);
     }
 
     .supportItem .iconCircle svg {
@@ -596,8 +649,7 @@
         font-size: 11px;
         /* Reduced label font */
         font-weight: 800;
-        color: #f1a91a;
-        /* Orange-yellow labels on mobile */
+        color: var(--primary-teal);
         text-transform: uppercase;
     }
 
