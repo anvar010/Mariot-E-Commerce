@@ -425,12 +425,12 @@ exports.getHeroSlides = async (req, res, next) => {
 // @route   POST /api/v1/admin/cms/hero-slides
 exports.addHeroSlide = async (req, res, next) => {
     try {
-        const { tagline, tagline_ar, title, title_ar, description, description_ar, image, accent, btnText, btnText_ar, link, order_index } = req.body;
+        const { tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, accent, btnText, btnText_ar, link, order_index } = req.body;
 
         const [result] = await db.query(`
-            INSERT INTO hero_slides (tagline, tagline_ar, title, title_ar, description, description_ar, image, accent, btnText, btnText_ar, link, order_index)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [tagline, tagline_ar, title, title_ar, description, description_ar, image, accent || '#ff3b30', btnText || 'Shop Now', btnText_ar, link || '/shopnow', order_index || 0]);
+            INSERT INTO hero_slides (tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, accent, btnText, btnText_ar, link, order_index)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar || null, accent || '#ff3b30', btnText || 'Shop Now', btnText_ar, link || '/shopnow', order_index || 0]);
 
         res.status(201).json({ success: true, message: 'Slide added successfully', data: { id: result.insertId } });
     } catch (error) {
@@ -442,13 +442,13 @@ exports.addHeroSlide = async (req, res, next) => {
 // @route   PUT /api/v1/admin/cms/hero-slides/:id
 exports.updateHeroSlide = async (req, res, next) => {
     try {
-        const { tagline, tagline_ar, title, title_ar, description, description_ar, image, accent, btnText, btnText_ar, link, order_index, is_active } = req.body;
+        const { tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, accent, btnText, btnText_ar, link, order_index, is_active } = req.body;
 
         await db.query(`
-            UPDATE hero_slides 
-            SET tagline = ?, tagline_ar = ?, title = ?, title_ar = ?, description = ?, description_ar = ?, image = ?, accent = ?, btnText = ?, btnText_ar = ?, link = ?, order_index = ?, is_active = ?
+            UPDATE hero_slides
+            SET tagline = ?, tagline_ar = ?, title = ?, title_ar = ?, description = ?, description_ar = ?, image = ?, image_ar = ?, accent = ?, btnText = ?, btnText_ar = ?, link = ?, order_index = ?, is_active = ?
             WHERE id = ?
-        `, [tagline, tagline_ar, title, title_ar, description, description_ar, image, accent, btnText, btnText_ar, link, order_index, is_active, req.params.id]);
+        `, [tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar || null, accent, btnText, btnText_ar, link, order_index, is_active, req.params.id]);
 
         res.json({ success: true, message: 'Slide updated successfully' });
     } catch (error) {
@@ -658,6 +658,7 @@ const ensurePromotionsTable = async () => {
             description TEXT,
             description_ar TEXT,
             image_url TEXT,
+            image_url_ar TEXT,
             coupon_code VARCHAR(60),
             cta_text VARCHAR(80),
             cta_text_ar VARCHAR(80),
@@ -681,7 +682,7 @@ const ensurePromotionsTable = async () => {
 };
 
 const PROMO_FIELDS = [
-    'display_type', 'title', 'title_ar', 'description', 'description_ar', 'image_url',
+    'display_type', 'title', 'title_ar', 'description', 'description_ar', 'image_url', 'image_url_ar',
     'coupon_code', 'cta_text', 'cta_text_ar', 'cta_link', 'bg_color', 'text_color',
     'target_mode', 'target_pages', 'popup_trigger', 'popup_trigger_value',
     'popup_frequency', 'popup_frequency_value', 'start_date', 'end_date',
@@ -815,7 +816,7 @@ exports.notifyOfferByEmail = async (req, res, next) => {
         else if (product.is_best_seller) offerLabel = 'Best Seller';
 
         // Fetch all users with email — deduplicate by email to avoid sending twice
-        const [allUsers] = await db.execute('SELECT id, name, email FROM users WHERE email IS NOT NULL AND email != ""');
+        const [allUsers] = await db.execute('SELECT id, name, email, preferred_locale FROM users WHERE email IS NOT NULL AND email != ""');
         const seenEmails = new Set();
         const users = allUsers.filter(u => {
             const key = u.email.toLowerCase().trim();
@@ -832,6 +833,7 @@ exports.notifyOfferByEmail = async (req, res, next) => {
 
         const productData = {
             name: product.name,
+            name_ar: product.name_ar,
             slug: product.slug,
             price: product.price,
             offer_price: product.offer_price,
@@ -842,7 +844,7 @@ exports.notifyOfferByEmail = async (req, res, next) => {
         let failed = 0;
         for (const user of users) {
             try {
-                await sendOfferNotificationEmail(user.email, user.name || 'Valued Customer', productData, offerLabel);
+                await sendOfferNotificationEmail(user.email, user.name || 'Valued Customer', productData, offerLabel, user.preferred_locale || 'en');
                 sent++;
             } catch (err) {
                 failed++;

@@ -167,7 +167,7 @@ class Category {
         };
     }
 
-    static async create({ name, name_ar = null, slug, image_url = null, banner_url = null, image_url_ar = null, banner_url_ar = null, description = null, description_ar = null, is_active = 1, parent_id = null, type = 'main_category', brands = [], order_index = 0 }) {
+    static async create({ name, name_ar = null, slug, image_url = null, banner_url = null, image_url_ar = null, banner_url_ar = null, description = null, description_ar = null, is_active = 1, parent_id = null, type = 'main_category', brands = [], order_index = 0, show_on_home = 0, home_poster_url = null, home_poster_url_ar = null }) {
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
@@ -181,8 +181,8 @@ class Category {
             const brandNamesStr = brandNames.join(', ');
 
             const [result] = await conn.execute(
-                'INSERT INTO categories (name, name_ar, slug, image_url, banner_url, image_url_ar, banner_url_ar, description, description_ar, is_active, parent_id, type, brand_names, order_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [name, name_ar, slug, image_url, banner_url, image_url_ar, banner_url_ar, description, description_ar, is_active, parent_id, type, brandNamesStr, order_index]
+                'INSERT INTO categories (name, name_ar, slug, image_url, banner_url, image_url_ar, banner_url_ar, description, description_ar, is_active, parent_id, type, brand_names, order_index, show_on_home, home_poster_url, home_poster_url_ar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [name, name_ar, slug, image_url, banner_url, image_url_ar, banner_url_ar, description, description_ar, is_active, parent_id, type, brandNamesStr, order_index, show_on_home, home_poster_url, home_poster_url_ar]
             );
             const categoryId = result.insertId;
 

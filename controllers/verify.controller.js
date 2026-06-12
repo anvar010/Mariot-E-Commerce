@@ -123,7 +123,8 @@ exports.sendEmailOtpForProfile = async (req, res, next) => {
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
         await User.saveEmailOtp(req.user.id, newEmail, otp, expiresAt);
         // Fire-and-forget — SMTP latency must not block the HTTP response.
-        sendOtpEmail(newEmail, me.name, otp, { purpose: 'email-change' })
+        const ecLocale = String(req.body?.locale || req.headers?.['x-locale'] || req.cookies?.NEXT_LOCALE || req.headers?.['accept-language'] || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
+        sendOtpEmail(newEmail, me.name, otp, { purpose: 'email-change', locale: ecLocale })
             .catch(err => console.error('[OTP] Failed to send email-change OTP:', err.message));
 
         res.json({ success: true, message: 'Verification code sent to your email', email: maskEmail(newEmail) });
@@ -199,7 +200,8 @@ exports.sendSignupOtp = async (req, res, next) => {
 
         await User.signupOtpUpsert({ email, name, passwordHash, code: otp, expiresAt });
         // Fire-and-forget — SMTP latency must not block the HTTP response.
-        sendOtpEmail(email, name, otp, { purpose: 'signup' })
+        const otpLocale = String(req.body?.locale || req.headers?.['x-locale'] || req.cookies?.NEXT_LOCALE || req.headers?.['accept-language'] || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
+        sendOtpEmail(email, name, otp, { purpose: 'signup', locale: otpLocale })
             .catch(err => console.error('[OTP] Failed to send signup OTP:', err.message));
 
         res.json({ success: true, message: 'Verification code sent to your email', email: maskEmail(email) });

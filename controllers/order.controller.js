@@ -149,7 +149,12 @@ exports.createOrder = async (req, res, next) => {
         const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
         // Prices are VAT-exclusive: add 5% VAT on top of the (discounted) subtotal.
         const vatAmount = discountedSubtotal * 0.05;
-        const finalAmount = discountedSubtotal + vatAmount;
+        // Per-product delivery charge (0 = free). Free-gift lines never ship-charged.
+        const deliveryTotal = items.reduce((sum, item) => {
+            if (Number(item.is_free_gift) === 1) return sum;
+            return sum + (Number(item.delivery_charge) || 0) * (Number(item.quantity) || 0);
+        }, 0);
+        const finalAmount = discountedSubtotal + vatAmount + deliveryTotal;
 
         const orderData = {
             items,
@@ -158,6 +163,7 @@ exports.createOrder = async (req, res, next) => {
             payment_method,
             total_amount: subtotal,
             vat_amount: vatAmount,
+            delivery_charge: deliveryTotal,
             final_amount: finalAmount,
             points_to_use: validatedPointsToUse,
             coupon_id: validatedCouponId,

@@ -18,6 +18,7 @@ exports.getHomepageCms = async (req, res, next) => {
                 description TEXT,
                 description_ar TEXT,
                 image TEXT,
+                image_ar TEXT,
                 accent VARCHAR(50) DEFAULT '#3b82f6',
                 btnText VARCHAR(100) DEFAULT 'Shop Now',
                 btnText_ar VARCHAR(100),

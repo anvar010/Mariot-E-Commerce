@@ -2,6 +2,7 @@ const db = require('../config/db');
 const Invoice = require('../models/invoice.model');
 const Order = require('../models/order.model');
 const { sendInvoiceEmail } = require('../utils/sendEmail');
+const User = require('../models/user.model');
 
 exports.checkInvoice = async (req, res, next) => {
     try {
@@ -92,6 +93,7 @@ exports.createInvoice = async (req, res, next) => {
 
         // Send invoice email with PDF attachment
         if (customerEmail) {
+            const invLocale = await User.getPreferredLocale(order.user_id);
             sendInvoiceEmail(
                 customerEmail,
                 customerName || 'Valued Customer',
@@ -100,7 +102,8 @@ exports.createInvoice = async (req, res, next) => {
                 order.final_amount,
                 order.items || [],
                 given_by_name || req.user.name || '',
-                pdfBuffer
+                pdfBuffer,
+                invLocale
             ).then(() => {
                 console.log(`[Invoice] ✅ Email sent to ${customerEmail} for invoice #${invoice_number}`);
             }).catch(err => {

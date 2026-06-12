@@ -405,12 +405,14 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
 
     const subtotalNum = Number(orderData.total_amount || 0);
     const vatNum = Number(orderData.vat_amount || 0);
+    const deliveryNum = Number(orderData.delivery_charge || 0);
     const totalNum = Number(finalAmount || 0);
     // Combined discount (coupon + reward points), derived from the stored amounts so the
-    // summary always reconciles:  items − discount + VAT = total.
-    const discountNum = Math.max(0, subtotalNum - (totalNum - vatNum));
+    // summary always reconciles:  items − discount + VAT + delivery = total.
+    const discountNum = Math.max(0, subtotalNum - (totalNum - vatNum - deliveryNum));
     const subtotal = subtotalNum.toFixed(2);
     const vat = vatNum.toFixed(2);
+    const delivery = deliveryNum.toFixed(2);
     const discount = discountNum.toFixed(2);
     const total = totalNum.toFixed(2);
     const date = new Date(orderData.created_at || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -419,6 +421,8 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
     const shipping = orderData.shipping_address || billing;
     const isPaid = (orderData.payment_status === 'paid' || orderData.payment_status === 'PAID');
     const isAdmin = orderData.is_admin_copy === true;
+    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const orderSummaryUrl = `${SITE}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
 
     const L = ar ? {
         subjectPaid: `✅ تم تأكيد الدفع — طلب #${orderId} — متجر ماريوت`,
@@ -427,7 +431,7 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
         dear: 'عزيزي',
         thankBody: `شكراً لتقديمك الطلب <strong>#${orderId}</strong> لدى ماريوت!`,
         received: 'لقد استلمنا طلبك وسنرسل لك تأكيد التسليم بمجرد شحنه.',
-        invoice: 'يمكنك <a href="#" style="color:#16A1DB;text-decoration:underline;">تحميل الفاتورة الضريبية من هنا.</a>',
+        invoice: `يمكنك <a href="${orderSummaryUrl}" style="color:#16A1DB;text-decoration:underline;">عرض ملخص الطلب وتحميل الفاتورة من هنا.</a>`,
         regards: 'مع خالص التحية،<br><strong>فريق ماريوت</strong>',
         orderDetail: 'تفاصيل الطلب', orderNo: 'رقم الطلب', dateL: 'التاريخ', totalL: 'الإجمالي',
         by: 'بواسطة:', delivery: 'توصيل ماريوت (قياسي)',
@@ -441,7 +445,7 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
         dear: 'Dear',
         thankBody: `Thank you for placing your order <strong>#${orderId}</strong> with us at Mariot!`,
         received: 'We have received your order and we will send you a delivery confirmation as soon as it has been dispatched.',
-        invoice: 'You can <a href="#" style="color:#16A1DB;text-decoration:underline;">Download the Tax Invoice here.</a>',
+        invoice: `You can <a href="${orderSummaryUrl}" style="color:#16A1DB;text-decoration:underline;">view your order summary and download the invoice here.</a>`,
         regards: 'Kind regards,<br><strong>Your Mariot Team</strong>',
         orderDetail: 'Order Detail', orderNo: 'Order #', dateL: 'Date', totalL: 'Total',
         by: 'by:', delivery: 'Mariot Delivery (Standard)',
@@ -589,7 +593,7 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
                                 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:35px;border-bottom:1px solid #e2e8f0;padding-bottom:15px;">
                                     <tr><td colspan="2" style="padding-bottom:15px;font-size:14px;font-weight:700;color:#334155;text-align:${alignStart(ar)};">${L.summary}</td></tr>
                                     <tr><td style="padding:5px 0;font-size:13px;color:#64748b;">${L.itemsL}</td><td style="padding:5px 0;font-size:13px;color:#334155;text-align:${ar ? 'left' : 'right'};">AED ${subtotal}</td></tr>
-                                    <tr><td style="padding:5px 0;font-size:13px;color:#64748b;">${L.shipping}</td><td style="padding:5px 0;font-size:13px;color:#334155;text-align:${ar ? 'left' : 'right'};">AED 0.00</td></tr>
+                                    <tr><td style="padding:5px 0;font-size:13px;color:#64748b;">${L.shipping}</td><td style="padding:5px 0;font-size:13px;color:#334155;text-align:${ar ? 'left' : 'right'};">${deliveryNum > 0 ? `AED ${delivery}` : (ar ? 'مجاني' : 'FREE')}</td></tr>
                                     ${Number(discount) > 0 ? `<tr><td style="padding:5px 0;font-size:13px;color:#64748b;">${L.discountL}</td><td style="padding:5px 0;font-size:13px;color:#ef4444;text-align:${ar ? 'left' : 'right'};">-AED ${discount}</td></tr>` : ''}
                                     <tr><td style="padding:5px 0;font-size:13px;color:#64748b;">${L.vatL}</td><td style="padding:5px 0;font-size:13px;color:#334155;text-align:${ar ? 'left' : 'right'};">AED ${vat}</td></tr>
                                     <tr style="font-weight:700;"><td style="padding:15px 0 5px;font-size:15px;color:#0f172a;">${L.totalVat} <span style="font-size:11px;font-weight:400;color:#64748b;">${L.vatIncl}</span></td><td style="padding:15px 0 5px;font-size:18px;color:#0f172a;text-align:${ar ? 'left' : 'right'};">AED ${total}</td></tr>
@@ -834,6 +838,8 @@ const sendOrderStatusUpdateEmail = async (toEmail, userName, orderId, status, or
     const orderItems = orderData.items || [];
     const total = Number(orderData.final_amount || 0).toFixed(2);
     const date = new Date(orderData.created_at || Date.now()).toLocaleDateString(ar ? 'ar-AE' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const orderSummaryUrl = `${SITE}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
     const billing = orderData.billing_details || {};
     const shipping = orderData.shipping_address || billing;
 
@@ -869,6 +875,7 @@ const sendOrderStatusUpdateEmail = async (toEmail, userName, orderId, status, or
         deliveryAddr: 'عنوان التوصيل', billingAddr: 'عنوان الفوترة', paymentL: 'الدفع',
         shipmentNo: 'الشحنة رقم 1', trackingId: 'رقم التتبع:', by: 'بواسطة:', delivery: 'توصيل ماريوت (قياسي)',
         estDelivery: 'تاريخ التوصيل المتوقع:', deliveryWord: 'التوصيل',
+        viewOrder: 'تحميل الفاتورة',
         cod: 'الدفع عند الاستلام', tabby: 'تابي (أقساط)', card: 'بطاقة ائتمان', freeLabel: 'مجاني', freeGiftWith: 'هدية مجانية مع'
     } : {
         subject: orderData.subject || `Your order #${orderId} ${friendlyStatus} — Mariot Store`,
@@ -881,6 +888,7 @@ const sendOrderStatusUpdateEmail = async (toEmail, userName, orderId, status, or
         deliveryAddr: 'Delivery Address', billingAddr: 'Billing Address', paymentL: 'Payment',
         shipmentNo: 'Shipment No. 1', trackingId: 'Tracking ID:', by: 'by:', delivery: 'Mariot Delivery (Standard)',
         estDelivery: 'Estimated delivery date:', deliveryWord: 'Delivery',
+        viewOrder: 'Download Invoice',
         cod: 'Cash on Delivery', tabby: 'Tabby (Installments)', card: 'Credit Card', freeLabel: 'FREE', freeGiftWith: 'Free gift with'
     };
 
@@ -939,6 +947,9 @@ const sendOrderStatusUpdateEmail = async (toEmail, userName, orderId, status, or
                                 <p style="margin:0 0 25px;font-size:14px;color:#475569;line-height:1.6;">
                                     ${L.below}
                                 </p>
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 25px;"><tr><td align="center">
+                                    <a href="${orderSummaryUrl}" class="cta-btn" style="display:inline-block;background-color:#0ea5e9;color:#ffffff;padding:13px 28px;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;">${L.viewOrder}<img src="https://img.icons8.com/material-rounded/48/ffffff/download.png" alt="" width="18" height="18" style="vertical-align:middle;margin-inline-start:10px;"></a>
+                                </td></tr></table>
                                 <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">
                                     ${L.thanks}
                                 </p>
@@ -1209,16 +1220,24 @@ const sendAbandonedCartEmail = async (toEmail, userName, cartItems = [], reminde
  * @param {{ name: string, slug: string, price: number, offer_price: number|null, primaryImage: string|null }} product
  * @param {string} offerLabel - e.g. "Limited Offer", "Daily Offer"
  */
-const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel) => {
+const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel, locale = 'en') => {
     const transporter = createTransporter();
+    const ar = isAr(locale);
     const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
-    const productUrl = `${SITE}/en/product/${product.slug}`;
+    const productUrl = `${SITE}/${ar ? 'ar' : 'en'}/product/${product.slug}`;
     const imageUrl = product.primaryImage || 'cid:mariotEmailLogo';
+    const productName = (ar && product.name_ar) ? product.name_ar : product.name;
     const hasDiscount = product.offer_price && Number(product.offer_price) < Number(product.price);
     const displayPrice = hasDiscount ? Number(product.offer_price).toFixed(2) : Number(product.price).toFixed(2);
     const originalPrice = Number(product.price).toFixed(2);
 
-    const badgeColors = {
+    const badgeColors = ar ? {
+        'Limited Offer': { bg: '#ef4444', text: '🔥 عرض محدود — أسرع!' },
+        'Daily Offer': { bg: '#f59e0b', text: '⚡ عرض اليوم — اليوم فقط!' },
+        'Weekly Deal': { bg: '#8b5cf6', text: '🏷️ صفقة الأسبوع — لا تفوتها!' },
+        'Featured': { bg: '#0ea5e9', text: '⭐ منتج مميز' },
+        'Best Seller': { bg: '#10b981', text: '🏆 الأكثر مبيعاً' },
+    } : {
         'Limited Offer': { bg: '#ef4444', text: '🔥 LIMITED OFFER — Hurry Up!' },
         'Daily Offer': { bg: '#f59e0b', text: '⚡ DAILY OFFER — Today Only!' },
         'Weekly Deal': { bg: '#8b5cf6', text: '🏷️ WEEKLY DEAL — Don\'t Miss It!' },
@@ -1226,6 +1245,8 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
         'Best Seller': { bg: '#10b981', text: '🏆 BEST SELLER' },
     };
     const badge = badgeColors[offerLabel] || { bg: '#ef4444', text: `🔥 ${offerLabel.toUpperCase()}` };
+    const urgencyText = ar ? '⏰ هذا العرض متاح لفترة محدودة فقط. سارع قبل نفاده!' : "⏰ This offer is available for a limited time only. Act fast before it's gone!";
+    const shopNow = ar ? 'تسوق الآن ←' : 'Shop Now →';
 
     const html = `
     <!DOCTYPE html>
@@ -1239,7 +1260,7 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
             }
         </style>
     </head>
-    <body style="margin:0;padding:0;background-color:#f4f7f9;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <body dir="${ar ? 'rtl' : 'ltr'}" style="margin:0;padding:0;background-color:#f4f7f9;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7f9;padding:40px 0;">
             <tr>
                 <td align="center">
@@ -1263,7 +1284,7 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
                         <tr>
                             <td align="center" style="padding:32px 40px 16px;">
                                 <a href="${productUrl}" style="display:inline-block;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
-                                    <img src="${imageUrl}" alt="${product.name}" width="320" style="display:block;max-width:320px;height:auto;object-fit:contain;">
+                                    <img src="${imageUrl}" alt="${productName}" width="320" style="display:block;max-width:320px;height:auto;object-fit:contain;">
                                 </a>
                             </td>
                         </tr>
@@ -1272,7 +1293,7 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
                         <tr>
                             <td align="center" style="padding:0 40px 10px;">
                                 <a href="${productUrl}" style="text-decoration:none;">
-                                    <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;line-height:1.4;text-align:center;">${product.name}</h2>
+                                    <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;line-height:1.4;text-align:center;">${productName}</h2>
                                 </a>
                             </td>
                         </tr>
@@ -1295,7 +1316,7 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
                         <tr>
                             <td align="center" style="padding:0 40px 28px;">
                                 <div style="background-color:#fef3c7;border-radius:8px;padding:12px 20px;display:inline-block;border-left:4px solid ${badge.bg};">
-                                    <p style="margin:0;font-size:13px;color:#92400e;font-weight:600;">⏰ This offer is available for a limited time only. Act fast before it's gone!</p>
+                                    <p style="margin:0;font-size:13px;color:#92400e;font-weight:600;">${urgencyText}</p>
                                 </div>
                             </td>
                         </tr>
@@ -1304,7 +1325,7 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
                         <tr>
                             <td align="center" style="padding:0 40px 40px;">
                                 <a href="${productUrl}" style="display:inline-block;background-color:#16A1DB;color:#ffffff;text-decoration:none;padding:16px 50px;border-radius:8px;font-size:16px;font-weight:700;letter-spacing:0.3px;">
-                                    Shop Now →
+                                    ${shopNow}
                                 </a>
                             </td>
                         </tr>
@@ -1330,7 +1351,7 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
         await transporter.sendMail({
             from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
             to: toEmail,
-            subject: `${badge.text} — ${product.name} | Mariot Store`,
+            subject: `${badge.text} — ${productName} | Mariot Store`,
             html,
             attachments: [emailLogoAttachment()].filter(Boolean)
         });
@@ -1343,14 +1364,38 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
 /**
  * Send a clean invoice notification email with the invoice PDF as attachment
  */
-const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, totalAmount, items = [], givenByName = '', pdfBuffer = null) => {
+const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, totalAmount, items = [], givenByName = '', pdfBuffer = null, locale = 'en') => {
     const transporter = createTransporter();
+    const ar = isAr(locale);
     const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const orderSummaryUrl = `${SITE}/${ar ? 'ar' : 'en'}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
 
-    const invoiceDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const invoiceDate = new Date().toLocaleDateString(ar ? 'ar-AE' : 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    const L = ar ? {
+        subject: `الفاتورة #${invoiceNumber} — الطلب #${orderId} | ماريوت لمعدات المطابخ`,
+        hello: `مرحباً ${userName || 'عميلنا العزيز'}،`,
+        deliveredTitle: 'تم توصيل طلبك!',
+        thanks1: 'شكراً لاختيارك ماريوت لمعدات المطابخ.',
+        deliveredBody: `يسعدنا إبلاغك بأنه تم توصيل طلبك #${orderId} بنجاح.`,
+        invoiceNo: 'رقم الفاتورة', orderNo: 'رقم الطلب', dateL: 'التاريخ', totalAmount: 'المبلغ الإجمالي',
+        attached: `الفاتورة مرفقة بهذا البريد باسم <strong>Invoice-${invoiceNumber}.pdf</strong>.<br>يرجى تنزيلها للاحتفاظ بها.`,
+        questions: 'إذا كان لديك أي استفسار بخصوص الفاتورة أو الطلب،<br>فلا تتردد في التواصل معنا.',
+        btn: 'تحميل الفاتورة'
+    } : {
+        subject: `Invoice #${invoiceNumber} — Order #${orderId} | Mariot Kitchen Equipment`,
+        hello: `Hello ${userName || 'Customer'},`,
+        deliveredTitle: 'Your order has been delivered!',
+        thanks1: 'Thank you for choosing Mariot Kitchen Equipment.',
+        deliveredBody: `We're pleased to inform you that your order #${orderId} has been successfully delivered.`,
+        invoiceNo: 'Invoice Number', orderNo: 'Order Number', dateL: 'Date', totalAmount: 'Total Amount',
+        attached: `Your invoice is attached to this email as <strong>Invoice-${invoiceNumber}.pdf</strong>.<br>Please download it for your records.`,
+        questions: "If you have any questions regarding your invoice or order,<br>please don't hesitate to contact us.",
+        btn: 'Download Invoice'
+    };
 
     const html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${ar ? 'ar' : 'en'}" dir="${ar ? 'rtl' : 'ltr'}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -1392,17 +1437,17 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
                         </div>
                     </td>
                     <td style="vertical-align:middle;">
-                        <p style="margin:0 0 5px;font-size:16px;font-weight:700;color:#333;">Hello ${userName || 'Customer'},</p>
-                        <h1 style="margin:0;font-size:24px;font-weight:800;color:#111;">Your order has been delivered!</h1>
+                        <p style="margin:0 0 5px;font-size:16px;font-weight:700;color:#333;">${L.hello}</p>
+                        <h1 style="margin:0;font-size:24px;font-weight:800;color:#111;">${L.deliveredTitle}</h1>
                     </td>
                 </tr>
             </table>
 
             <p style="margin:0 0 5px;font-size:14px;color:#444;line-height:1.6;">
-                Thank you for choosing Mariot Kitchen Equipment.
+                ${L.thanks1}
             </p>
             <p style="margin:0 0 25px;font-size:14px;color:#444;line-height:1.6;">
-                We're pleased to inform you that your order #${orderId} has been successfully delivered.
+                ${L.deliveredBody}
             </p>
 
             <!-- Order summary box -->
@@ -1412,8 +1457,8 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
                         <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td width="30"><img src="https://cdn-icons-png.flaticon.com/32/2956/2956485.png" style="width:16px;opacity:0.6;"></td>
-                                <td style="font-size:14px;color:#333;font-weight:600;">Invoice Number</td>
-                                <td style="font-size:14px;color:#111;font-weight:700;text-align:right;">${invoiceNumber}</td>
+                                <td style="font-size:14px;color:#333;font-weight:600;">${L.invoiceNo}</td>
+                                <td style="font-size:14px;color:#111;font-weight:700;text-align:${ar ? 'left' : 'right'};">${invoiceNumber}</td>
                             </tr>
                         </table>
                     </td>
@@ -1423,8 +1468,8 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
                         <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td width="30"><img src="https://cdn-icons-png.flaticon.com/32/679/679821.png" style="width:16px;opacity:0.6;"></td>
-                                <td style="font-size:14px;color:#333;font-weight:600;">Order Number</td>
-                                <td style="font-size:14px;color:#111;font-weight:700;text-align:right;">#${orderId}</td>
+                                <td style="font-size:14px;color:#333;font-weight:600;">${L.orderNo}</td>
+                                <td style="font-size:14px;color:#111;font-weight:700;text-align:${ar ? 'left' : 'right'};">#${orderId}</td>
                             </tr>
                         </table>
                     </td>
@@ -1434,8 +1479,8 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
                         <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td width="30"><img src="https://cdn-icons-png.flaticon.com/32/2838/2838779.png" style="width:16px;opacity:0.6;"></td>
-                                <td style="font-size:14px;color:#333;font-weight:600;">Date</td>
-                                <td style="font-size:14px;color:#111;font-weight:700;text-align:right;">${invoiceDate}</td>
+                                <td style="font-size:14px;color:#333;font-weight:600;">${L.dateL}</td>
+                                <td style="font-size:14px;color:#111;font-weight:700;text-align:${ar ? 'left' : 'right'};">${invoiceDate}</td>
                             </tr>
                         </table>
                     </td>
@@ -1447,8 +1492,8 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
                                 <td width="30">
                                     <div style="background:#16a1db;color:#fff;width:20px;height:20px;border-radius:50%;text-align:center;line-height:20px;font-size:12px;font-weight:bold;">$</div>
                                 </td>
-                                <td style="font-size:14px;color:#111;font-weight:700;">Total Amount</td>
-                                <td style="font-size:18px;color:#16a1db;font-weight:800;text-align:right;">AED ${Number(totalAmount).toFixed(2)}</td>
+                                <td style="font-size:14px;color:#111;font-weight:700;">${L.totalAmount}</td>
+                                <td style="font-size:18px;color:#16a1db;font-weight:800;text-align:${ar ? 'left' : 'right'};">AED ${Number(totalAmount).toFixed(2)}</td>
                             </tr>
                         </table>
                     </td>
@@ -1467,8 +1512,7 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
                                     </div>
                                 </td>
                                 <td style="font-size:13px;color:#444;line-height:1.5;">
-                                    Your invoice is attached to this email as <strong>Invoice-${invoiceNumber}.pdf</strong>.<br>
-                                    Please download it for your records.
+                                    ${L.attached}
                                 </td>
                             </tr>
                         </table>
@@ -1477,14 +1521,14 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
             </table>
 
             <p style="margin:0 0 20px;font-size:13px;color:#666;line-height:1.5;">
-                If you have any questions regarding your invoice or order,<br>
-                please don't hesitate to contact us.
+                ${L.questions}
             </p>
 
-            <a href="${SITE}/en/profile?tab=yourOrders" style="display:inline-block;background:#16a1db;color:#ffffff;text-decoration:none;padding:12px 25px;border-radius:6px;font-weight:700;font-size:14px;">
-                <img src="https://cdn-icons-png.flaticon.com/32/2926/2926214.png" style="width:16px;vertical-align:middle;margin-right:8px;filter:invert(1);">
-                Download Invoice
-            </a>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+                <a href="${orderSummaryUrl}" style="display:inline-block;background:#16a1db;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:700;font-size:15px;">
+                    ${L.btn}<img src="https://img.icons8.com/material-rounded/48/ffffff/download.png" alt="" width="18" height="18" style="vertical-align:middle;margin-inline-start:10px;">
+                </a>
+            </td></tr></table>
         </td>
     </tr>
 
@@ -1510,7 +1554,7 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
     const mailOptions = {
         from: `"Mariot Kitchen Equipment" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
-        subject: `Invoice #${invoiceNumber} — Order #${orderId} | Mariot Kitchen Equipment`,
+        subject: L.subject,
         html,
         attachments: [
             ...invoicePdfAttachment,
@@ -1538,46 +1582,64 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
  */
 const sendOtpEmail = async (toEmail, userName, otp, opts = {}) => {
     const purpose = opts.purpose || 'signup';
+    const ar = isAr(opts.locale);
     const transporter = createTransporter();
     const firstName = (userName || '').split(' ')[0] || '';
-    const heading = purpose === 'email-change' ? 'Verify your new email' : 'Account verification';
-    const subject = purpose === 'email-change'
-        ? `Mariot — Verify your new email (${otp})`
-        : `Mariot — Your verification code (${otp})`;
     const digits = String(otp).split('');
-    const helpCentreUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/en/contact`;
+    const helpCentreUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/${ar ? 'ar' : 'en'}/contact`;
+
+    const L = ar ? {
+        heading: purpose === 'email-change' ? 'تأكيد بريدك الإلكتروني الجديد' : 'تأكيد الحساب',
+        subject: purpose === 'email-change' ? `ماريوت — تأكيد بريدك الإلكتروني الجديد (${otp})` : `ماريوت — رمز التحقق الخاص بك (${otp})`,
+        hi: `مرحباً${firstName ? ' ' + firstName : ''}،`,
+        otpLabel: 'كلمة المرور لمرة واحدة (OTP) الخاصة بك هي',
+        expire: 'يرجى ملاحظة أن هذه كلمة مرور مؤقتة وستنتهي صلاحيتها خلال <strong>5 دقائق</strong>. إذا حدث خطأ، يرجى التواصل مع فريق الدعم على',
+        thanks: 'شكراً لك،', team: 'فريق ماريوت',
+        help: 'هل تحتاج مزيداً من المساعدة؟ زر', helpLink: 'مركز المساعدة',
+        textBody: `مرحباً${firstName ? ' ' + firstName : ''}،\n\nرمز التحقق لمرة واحدة (OTP) الخاص بك في ماريوت هو: ${otp}\n\nتنتهي صلاحية هذا الرمز خلال 5 دقائق.\n\nإذا لم تطلب ذلك، يمكنك تجاهل هذا البريد.\n\n— فريق ماريوت`
+    } : {
+        heading: purpose === 'email-change' ? 'Verify your new email' : 'Account verification',
+        subject: purpose === 'email-change' ? `Mariot — Verify your new email (${otp})` : `Mariot — Your verification code (${otp})`,
+        hi: `Hi${firstName ? ' ' + firstName : ''},`,
+        otpLabel: 'Your one time password (OTP) is',
+        expire: "Please note this is a temporary password and will expire in <strong>5 minutes</strong>. If there's been a mistake, please contact our customer support team at",
+        thanks: 'Thank you,', team: 'Team Mariot',
+        help: 'Need more help? Visit our', helpLink: 'Help Centre',
+        textBody: `Hi${firstName ? ' ' + firstName : ''},\n\nYour Mariot one-time password (OTP) is: ${otp}\n\nThis code expires in 5 minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n— Team Mariot`
+    };
+    const alignCss = ar ? 'right' : 'left';
 
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
-        subject,
-        text: `Hi${firstName ? ' ' + firstName : ''},\n\nYour Mariot one-time password (OTP) is: ${otp}\n\nThis code expires in 5 minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n— Team Mariot`,
+        subject: L.subject,
+        text: L.textBody,
         html: `
-            <div style="background-color: #f4f4f4; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                <div class="container content-pad" style="max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; color: #000000; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div dir="${ar ? 'rtl' : 'ltr'}" style="background-color: #f4f4f4; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <div class="container content-pad" style="max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; color: #000000; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: ${alignCss};">
                     <div style="margin-bottom: 24px;">
                         <img src="https://mariotstore.com/wp-content/uploads/2024/10/kitchen-equipment-store.png" alt="MARIOT" style="width: 180px; height: auto;">
                     </div>
 
-                    <h1 style="font-size: 32px; color: #0f172a; margin: 12px 0 28px; font-weight: 800; line-height: 1.15;">${heading}</h1>
+                    <h1 style="font-size: 32px; color: #0f172a; margin: 12px 0 28px; font-weight: 800; line-height: 1.15;">${L.heading}</h1>
 
-                    <p style="font-size: 15px; color: #0f172a; font-weight: 700; margin: 0 0 8px;">Hi${firstName ? ' ' + firstName : ''},</p>
-                    <p style="font-size: 14px; color: #1e293b; margin: 0 0 18px;">Your one time password (OTP) is</p>
+                    <p style="font-size: 15px; color: #0f172a; font-weight: 700; margin: 0 0 8px;">${L.hi}</p>
+                    <p style="font-size: 14px; color: #1e293b; margin: 0 0 18px;">${L.otpLabel}</p>
 
                     <div style="background-color: #fef9c3; border-radius: 8px; padding: 22px 16px; margin: 0 0 22px; text-align: center;">
-                        <div style="display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: 18px; padding-inline-start: 18px;">${digits.join('')}</div>
+                        <div dir="ltr" style="display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: 18px; padding-inline-start: 18px;">${digits.join('')}</div>
                     </div>
 
                     <p style="font-size: 13px; color: #334155; line-height: 1.6; margin: 0 0 14px;">
-                        Please note this is a temporary password and will expire in <strong>5 minutes</strong>. If there's been a mistake, please contact our customer support team at
+                        ${L.expire}
                         <a href="mailto:admin@mariotkitchen.com" style="color: #16a1db; text-decoration: underline;">admin@mariotkitchen.com</a>.
                     </p>
 
-                    <p style="font-size: 13px; color: #334155; margin: 24px 0 0;">Thank you,</p>
-                    <p style="font-size: 13px; color: #0f172a; font-weight: 700; margin: 0;">Team Mariot</p>
+                    <p style="font-size: 13px; color: #334155; margin: 24px 0 0;">${L.thanks}</p>
+                    <p style="font-size: 13px; color: #0f172a; font-weight: 700; margin: 0;">${L.team}</p>
 
                     <div style="margin-top: 32px; padding-top: 18px; border-top: 1px solid #e5e7eb; text-align: center; color: #64748b; font-size: 12px;">
-                        Need more help? Visit our <a href="${helpCentreUrl}" style="color: #16a1db; text-decoration: underline;">Help Centre</a>.
+                        ${L.help} <a href="${helpCentreUrl}" style="color: #16a1db; text-decoration: underline;">${L.helpLink}</a>.
                     </div>
                 </div>
                 ${emailFooterBlock()}
@@ -1594,6 +1656,128 @@ const sendOtpEmail = async (toEmail, userName, otp, opts = {}) => {
     }
 };
 
+/**
+ * Monthly reward-points e-statement. Sent on the 1st of each month, summarizing
+ * the previous calendar month's points activity.
+ * @param {string} toEmail
+ * @param {string} userName
+ * @param {object} stats { earned, pending, redeemed, expiringNextMonth, balance, monthLabel, monthLabelAr }
+ * @param {string} locale 'en' | 'ar'
+ */
+const sendMonthlyStatementEmail = async (toEmail, userName, stats = {}, locale = 'en') => {
+    const transporter = createTransporter();
+    const ar = isAr(locale);
+    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const rewardsUrl = `${SITE}/${ar ? 'ar' : 'en'}/profile?tab=myRewards`;
+
+    const firstName = String(userName || '').split(' ')[0] || (ar ? 'عميلنا' : 'there');
+    const fmt = (n) => Number(n || 0).toLocaleString(ar ? 'ar-EG' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtInt = (n) => Number(n || 0).toLocaleString(ar ? 'ar-EG' : 'en-US');
+    const month = ar ? (stats.monthLabelAr || stats.monthLabel) : stats.monthLabel;
+
+    const L = ar ? {
+        subject: `كشف نقاط مكافآتك — ${month}`,
+        preview: `ملخص نقاط مكافآت ماريوت لشهر ${month}`,
+        statement: 'كشف حسابك الإلكتروني',
+        dear: `عزيزي ${firstName}،`,
+        intro: `نحرص على إبقائك على اطلاع برحلة نقاط مكافآت ماريوت الخاصة بك. إليك ملخص حركة نقاطك لشهر <strong>${month}</strong>:`,
+        earned: 'النقاط المكتسبة',
+        pending: 'النقاط المعلّقة',
+        redeemed: 'النقاط المستبدلة',
+        expiring: 'النقاط المنتهية الشهر القادم',
+        balance: 'رصيد النقاط الحالي',
+        pts: 'نقطة',
+        cta: 'تحقق من حسابك',
+        note: 'هذا الكشف يُرسل تلقائياً في أول كل شهر. لإدارة نقاطك في أي وقت، افتح قسم المكافآت في حسابك.',
+    } : {
+        subject: `Your Rewards Statement — ${month}`,
+        preview: `Your Mariot loyalty points summary for ${month}`,
+        statement: 'YOUR E-STATEMENT',
+        dear: `Dear ${firstName},`,
+        intro: `We are committed to keeping you informed about your Mariot loyalty points journey. Here's a summary of your points transactions for <strong>${month}</strong>:`,
+        earned: 'Earned Points',
+        pending: 'Pending Points',
+        redeemed: 'Redeemed Points',
+        expiring: 'Points Expiring Next Month',
+        balance: 'Current Points Balance',
+        pts: 'points',
+        cta: 'Check Your Account',
+        note: 'This statement is sent automatically on the first of every month. To manage your points anytime, open the Rewards section of your account.',
+    };
+
+    const align = alignStart(ar);
+    const rowsHtml = `
+        <tr>
+            <td style="padding:14px 22px;font-size:14px;color:#334155;text-align:${align};">${L.earned}</td>
+            <td style="padding:14px 22px;font-size:14px;color:#334155;font-weight:600;text-align:${ar ? 'left' : 'right'};" dir="ltr">${fmt(stats.earned)} ${L.pts}</td>
+        </tr>
+        <tr style="background:#f1f5f9;">
+            <td style="padding:14px 22px;font-size:14px;color:#334155;text-align:${align};">${L.pending}</td>
+            <td style="padding:14px 22px;font-size:14px;color:#334155;font-weight:600;text-align:${ar ? 'left' : 'right'};" dir="ltr">${fmt(stats.pending)} ${L.pts}</td>
+        </tr>
+        <tr>
+            <td style="padding:14px 22px;font-size:14px;color:#334155;text-align:${align};">${L.redeemed}</td>
+            <td style="padding:14px 22px;font-size:14px;color:#334155;font-weight:600;text-align:${ar ? 'left' : 'right'};" dir="ltr">${fmt(stats.redeemed)} ${L.pts}</td>
+        </tr>
+        <tr style="background:#f1f5f9;">
+            <td style="padding:14px 22px;font-size:14px;color:#334155;text-align:${align};">${L.expiring}</td>
+            <td style="padding:14px 22px;font-size:14px;color:#334155;font-weight:600;text-align:${ar ? 'left' : 'right'};" dir="ltr">${fmt(stats.expiringNextMonth)} ${L.pts}</td>
+        </tr>
+        <tr style="background:#cdeefb;">
+            <td style="padding:16px 22px;font-size:15px;color:#0f172a;font-weight:800;text-align:${align};">${L.balance}</td>
+            <td style="padding:16px 22px;font-size:15px;color:#0f172a;font-weight:800;text-align:${ar ? 'left' : 'right'};" dir="ltr">${fmtInt(stats.balance)} ${L.pts}</td>
+        </tr>`;
+
+    const mailOptions = {
+        from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
+        to: toEmail,
+        subject: L.subject,
+        html: `
+            <div dir="${dirAttr(ar)}" style="background-color:#f4f4f4;padding:40px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                <div class="container content-pad" style="max-width:600px;box-sizing:border-box;margin:0 auto;padding:40px;background-color:#ffffff;color:#0f172a;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);text-align:${align};">
+
+                    <!-- Logo -->
+                    <div style="text-align:center;margin-bottom:24px;">
+                        <img src="cid:mariotEmailLogo" alt="MARIOT" style="width:170px;height:auto;">
+                    </div>
+
+                    <!-- Reward band -->
+                    <div style="background:#e0f7fa;border-radius:10px;padding:16px 22px;margin-bottom:26px;text-align:center;">
+                        <div style="font-size:13px;color:#0e7490;font-weight:700;letter-spacing:0.4px;">${L.preview}</div>
+                    </div>
+
+                    <h2 style="text-align:center;font-size:18px;color:#0f172a;margin:0 0 24px;font-weight:800;letter-spacing:0.5px;">${L.statement}: ${month}</h2>
+
+                    <p style="font-size:15px;color:#0f172a;font-weight:600;margin:0 0 12px;">${L.dear}</p>
+                    <p style="font-size:14px;color:#334155;line-height:1.7;margin:0 0 26px;">${L.intro}</p>
+
+                    <!-- Statement table -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:30px;">
+                        ${rowsHtml}
+                    </table>
+
+                    <!-- CTA -->
+                    <div style="text-align:center;margin:6px 0 8px;">
+                        <a href="${rewardsUrl}" class="cta-btn" style="display:inline-block;padding:14px 40px;background-color:#16A1DB;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;letter-spacing:0.3px;">${L.cta}</a>
+                    </div>
+
+                    <p style="font-size:12px;color:#94a3b8;line-height:1.6;text-align:center;margin:24px 0 0;">${L.note}</p>
+                </div>
+                ${emailFooterBlock()}
+            </div>
+        `,
+        attachments: emailLogoAttachment() ? [emailLogoAttachment()] : []
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[EMAIL] ✅ Monthly statement sent to ${toEmail}`);
+    } catch (error) {
+        console.error(`[EMAIL] ❌ Failed to send monthly statement to ${toEmail}:`, error.message);
+        throw error;
+    }
+};
+
 module.exports = {
     sendPasswordResetEmail,
     sendOrderConfirmationEmail,
@@ -1605,7 +1789,8 @@ module.exports = {
     sendEmail,
     sendOfferNotificationEmail,
     sendInvoiceEmail,
-    sendOtpEmail
+    sendOtpEmail,
+    sendMonthlyStatementEmail
 };
 
 

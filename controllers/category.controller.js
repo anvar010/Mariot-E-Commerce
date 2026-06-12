@@ -34,7 +34,7 @@ exports.getCategory = async (req, res, next) => {
 
 exports.createCategory = async (req, res, next) => {
     try {
-        const { name, name_ar, description, description_ar, image_url, banner_url, image_url_ar, banner_url_ar, is_active, parent_id, type, brands, order_index } = req.body;
+        const { name, name_ar, description, description_ar, image_url, banner_url, image_url_ar, banner_url_ar, is_active, parent_id, type, brands, order_index, show_on_home, home_poster_url, home_poster_url_ar } = req.body;
         const slug = await generateUniqueSlug(name, 'categories');
         const data = {
             name,
@@ -50,7 +50,10 @@ exports.createCategory = async (req, res, next) => {
             parent_id: parent_id || null,
             type: type || 'main_category',
             brands: brands || [],
-            order_index: order_index !== undefined && order_index !== null && order_index !== '' ? Number(order_index) : 0
+            order_index: order_index !== undefined && order_index !== null && order_index !== '' ? Number(order_index) : 0,
+            show_on_home: show_on_home ? 1 : 0,
+            home_poster_url: home_poster_url || null,
+            home_poster_url_ar: home_poster_url_ar || null
         };
         const id = await Category.create(data);
         res.status(201).json({

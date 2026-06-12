@@ -34,6 +34,10 @@ const startServer = async () => {
         const { startAbandonedCartJob } = require('./services/abandonedCart.service');
         startAbandonedCartJob();
 
+        // Start monthly reward-points e-statement job (fires on the 1st)
+        const { startPointsStatementJob } = require('./services/pointsStatement.service');
+        startPointsStatementJob();
+
         // Handle unhandled promise rejections
         process.on('unhandledRejection', (err) => {
             console.log(`Error: ${err.message}`);

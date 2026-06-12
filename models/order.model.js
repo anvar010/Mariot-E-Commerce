@@ -28,7 +28,7 @@ async function ensureCustomColumns(connection) {
 }
 
 class Order {
-    static async create(userId, { items, shipping_address_id, billing_details, payment_method, total_amount, vat_amount, final_amount, points_to_use = 0, coupon_id = null, discount_amount = 0 }) {
+    static async create(userId, { items, shipping_address_id, billing_details, payment_method, total_amount, vat_amount, final_amount, points_to_use = 0, coupon_id = null, discount_amount = 0, delivery_charge = 0 }) {
         await ensureCustomColumns(null);
         const connection = await db.getConnection();
         try {
@@ -75,9 +75,9 @@ class Order {
 
             // 1. Create order
             const [orderResult] = await connection.execute(
-                `INSERT INTO orders (user_id, total_amount, vat_amount, final_amount, shipping_address_id, receiver_name, receiver_phone, payment_method, payment_status, points_used, points_discount, coupon_id, discount_amount)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [userId, total_amount, vat_amount, adjustedFinalAmount, finalAddressId, receiverName, receiverPhone, payment_method, initialPaymentStatus, points_to_use, pointsDiscount, coupon_id, discount_amount]
+                `INSERT INTO orders (user_id, total_amount, vat_amount, final_amount, shipping_address_id, receiver_name, receiver_phone, payment_method, payment_status, points_used, points_discount, coupon_id, discount_amount, delivery_charge)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [userId, total_amount, vat_amount, adjustedFinalAmount, finalAddressId, receiverName, receiverPhone, payment_method, initialPaymentStatus, points_to_use, pointsDiscount, coupon_id, discount_amount, delivery_charge]
             );
             const orderId = orderResult.insertId;
 
@@ -194,7 +194,25 @@ class Order {
     }
 
     static async findByUserId(userId) {
-        const [rows] = await db.execute('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC', [userId]);
+        // Include the first ordered product's image (primary image preferred) for list thumbnails.
+        const [rows] = await db.execute(`
+            SELECT o.*,
+                   (SELECT COALESCE(
+                               (SELECT pi.image_url FROM product_images pi
+                                WHERE pi.product_id = oi.product_id
+                                ORDER BY pi.is_primary DESC LIMIT 1),
+                               NULLIF(pv.image_url, ''),
+                               CASE WHEN pv.image_urls IS NOT NULL AND JSON_VALID(pv.image_urls) AND JSON_LENGTH(pv.image_urls) > 0
+                                    THEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(pv.image_urls, '$[0]')), '') END)
+                    FROM order_items oi
+                    LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+                    WHERE oi.order_id = o.id
+                    ORDER BY oi.id ASC
+                    LIMIT 1) AS first_item_image
+            FROM orders o
+            WHERE o.user_id = ?
+            ORDER BY o.created_at DESC
+        `, [userId]);
         return rows;
     }
 
@@ -206,11 +224,18 @@ class Order {
         const [items] = await db.execute(`
             SELECT oi.*,
                    p.name, p.name_ar, p.slug, p.model AS product_model,
-                   pv.sku AS variant_sku,
+                   b.name AS brand_name, b.name_ar AS brand_name_ar,
+                   pv.sku AS variant_sku, pv.options_signature AS variant_options,
                    pp.name AS bundle_parent_name, pp.name_ar AS bundle_parent_name_ar,
-                   (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1) as image
+                   COALESCE(
+                       (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1),
+                       NULLIF(pv.image_url, ''),
+                       CASE WHEN pv.image_urls IS NOT NULL AND JSON_VALID(pv.image_urls) AND JSON_LENGTH(pv.image_urls) > 0
+                            THEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(pv.image_urls, '$[0]')), '') END
+                   ) as image
             FROM order_items oi
             JOIN products p ON oi.product_id = p.id
+            LEFT JOIN brands b ON p.brand_id = b.id
             LEFT JOIN product_variants pv ON pv.id = oi.variant_id
             LEFT JOIN products pp ON pp.id = oi.bundle_parent_product_id
             WHERE oi.order_id = ?
@@ -236,6 +261,24 @@ class Order {
             [id]
         );
         rows[0].points_earned = pe.points_earned;
+
+        // Attach the shipping address (for order-detail display).
+        if (rows[0].shipping_address_id) {
+            const [[addr]] = await db.execute(
+                'SELECT id, address_type, address_label, first_name, last_name, company_name, address_line1, address_line2, city, state, zip_code, country, phone FROM addresses WHERE id = ?',
+                [rows[0].shipping_address_id]
+            );
+            rows[0].shipping_address = addr || null;
+        } else {
+            rows[0].shipping_address = null;
+        }
+
+        // Attach the generated invoice (if any) so the customer can download it.
+        const [[inv]] = await db.execute(
+            'SELECT invoice_number, given_by_name, order_total, created_at FROM invoices WHERE order_id = ? ORDER BY id DESC LIMIT 1',
+            [id]
+        );
+        rows[0].invoice = inv || null;
 
         rows[0].items = items;
         return rows[0];

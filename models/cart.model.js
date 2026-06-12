@@ -80,7 +80,7 @@ class Cart {
                 ci.custom_signature,
                 ci.is_free_gift,
                 ci.bundle_parent_id,
-                p.name, p.name_ar, p.price, p.offer_price, p.slug, p.stock_quantity, p.track_inventory,
+                p.name, p.name_ar, p.price, p.offer_price, p.slug, p.stock_quantity, p.track_inventory, p.delivery_charge,
                 b.name as brand_name,
                 (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
                 pv.sku AS variant_sku,
@@ -159,7 +159,8 @@ class Cart {
                 variant_options: labelsByVariant[it.variant_id] || null,
                 custom_dimensions: parsedDims,
                 custom_label: it.custom_label || null,
-                custom_signature: it.custom_signature || null
+                custom_signature: it.custom_signature || null,
+                delivery_charge: Number(it.delivery_charge) || 0
             };
         });
     }

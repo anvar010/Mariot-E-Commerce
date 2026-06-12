@@ -688,6 +688,7 @@ class Product {
             const is_daily_offer = isTrue(data.is_daily_offer) ? 1 : 0;
             const is_best_seller = isTrue(data.is_best_seller) ? 1 : 0;
             const track_inventory = isTrue(data.track_inventory) ? 1 : 0;
+            const delivery_charge = (data.delivery_charge !== undefined && data.delivery_charge !== null && data.delivery_charge !== '') ? (parseFloat(data.delivery_charge) || 0) : 0;
 
             const status = data.status || 'active';
             const product_group = data.product_group || data.heading || null;
@@ -736,11 +737,11 @@ class Product {
                 data.compare_config ? String(data.compare_config) : null,
                 (data.warranty !== undefined && data.warranty !== '' && data.warranty !== null) ? parseInt(data.warranty) : null,
                 (data.warranty_ar !== undefined && data.warranty_ar !== '' && data.warranty_ar !== null) ? parseInt(data.warranty_ar) : null,
-                is_customizable, custom_dimensions, base_dimensions
+                is_customizable, custom_dimensions, base_dimensions, delivery_charge
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions, delivery_charge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -811,7 +812,7 @@ class Product {
             'is_best_seller', 'status', 'product_group', 'sub_category', 'model',
             'youtube_video_link', 'resources', 'offer_start', 'offer_end',
             'frequently_bought_together', 'you_may_also_need', 'free_gift_product_ids', 'compare_config', 'warranty', 'warranty_ar',
-            'is_customizable', 'custom_dimensions', 'base_dimensions'
+            'is_customizable', 'custom_dimensions', 'base_dimensions', 'delivery_charge'
         ];
 
         const productId = parseInt(id);
