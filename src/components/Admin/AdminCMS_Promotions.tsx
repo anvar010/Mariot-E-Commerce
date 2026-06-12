@@ -20,6 +20,7 @@ interface Promotion {
     description?: string;
     description_ar?: string;
     image_url?: string;
+    image_url_ar?: string;
     coupon_code?: string;
     cta_text?: string;
     cta_text_ar?: string;
@@ -57,6 +58,7 @@ const blank = (): Promotion => ({
     description: '',
     description_ar: '',
     image_url: '',
+    image_url_ar: '',
     coupon_code: '',
     cta_text: '',
     cta_text_ar: '',
@@ -149,7 +151,7 @@ const AdminCMS_Promotions: React.FC = () => {
         setActiveIdx(items.length);
     };
 
-    const handleImageUpload = async (file: File) => {
+    const handleImageUpload = async (file: File, field: 'image_url' | 'image_url_ar' = 'image_url') => {
         try {
             const formData = new FormData();
             formData.append('image', file);
@@ -161,7 +163,7 @@ const AdminCMS_Promotions: React.FC = () => {
             });
             const result = await res.json();
             if (result.success && result.data) {
-                update('image_url', result.data);
+                update(field, result.data);
                 showNotification('Image uploaded — click Save to apply.', 'success');
             } else {
                 showNotification('Upload error: ' + (result.message || 'Unknown'), 'error');
@@ -370,24 +372,36 @@ const AdminCMS_Promotions: React.FC = () => {
                             </label>
                         </div>
 
-                        {isPopup && (
-                            <label style={labelStyle}>
-                                <span style={labelText}>Popup Image (optional)</span>
-                                {current.image_url && (
-                                    <img src={current.image_url} alt="Popup preview" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #eee' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                )}
-                                <input type="text" value={current.image_url || ''} onChange={e => update('image_url', e.target.value)} placeholder="Paste URL or upload below" style={inputStyle} />
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                                    <input type="file" accept="image/*" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} style={{ fontSize: '12px' }} />
-                                    <span style={{ fontSize: '11px', color: '#6b7280', background: '#f3f4f6', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>
-                                        Recommended: <strong>880×400 px</strong> (2:1 ratio)
-                                    </span>
-                                </div>
-                                <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-                                    Image is cropped to fit a 440×200 area; use a 2:1 ratio so nothing important gets clipped.
+                        <label style={labelStyle}>
+                            <span style={labelText}>{isPopup ? 'Popup Image (optional)' : 'Banner Image (optional)'}</span>
+                            {current.image_url && (
+                                <img src={current.image_url} alt="Image preview" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #eee' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            )}
+                            <input type="text" value={current.image_url || ''} onChange={e => update('image_url', e.target.value)} placeholder="Paste URL or upload below" style={inputStyle} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                <input type="file" accept="image/*" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} style={{ fontSize: '12px' }} />
+                                <span style={{ fontSize: '11px', color: '#6b7280', background: '#f3f4f6', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>
+                                    Recommended: <strong>{isPopup ? '880×400 px (2:1 ratio)' : '1200×120 px (wide strip)'}</strong>
                                 </span>
-                            </label>
-                        )}
+                            </div>
+                        </label>
+
+                        <label style={labelStyle}>
+                            <span style={labelText}>{isPopup ? 'Popup Image — Arabic (optional)' : 'Banner Image — Arabic (optional)'}</span>
+                            {current.image_url_ar && (
+                                <img src={current.image_url_ar} alt="Image preview (Arabic)" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #eee' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            )}
+                            <input type="text" value={current.image_url_ar || ''} onChange={e => update('image_url_ar', e.target.value)} placeholder="Paste URL or upload below" style={inputStyle} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                <input type="file" accept="image/*" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'image_url_ar')} style={{ fontSize: '12px' }} />
+                                <span style={{ fontSize: '11px', color: '#6b7280', background: '#f3f4f6', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>
+                                    Recommended: <strong>{isPopup ? '880×400 px (2:1 ratio)' : '1200×120 px (wide strip)'}</strong>
+                                </span>
+                            </div>
+                            <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                Shown when site language is Arabic; falls back to the default image if empty.
+                            </span>
+                        </label>
                     </div>
 
                     {/* Right column — targeting + scheduling + popup settings */}

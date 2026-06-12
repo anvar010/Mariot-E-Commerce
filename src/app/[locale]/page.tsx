@@ -11,9 +11,7 @@ import { sortByOrderIndex } from '@/utils/sortByOrderIndex';
 // Below-fold sections — deferred to keep initial CSS bundle small
 const LimitedOffers = dynamic(() => import('@/components/Home/LimitedOffers/LimitedOffers'));
 const WeeklyDeals = dynamic(() => import('@/components/Home/WeeklyDeals/WeeklyDeals'));
-const IceMakers = dynamic(() => import('@/components/Home/IceMakers/IceMakers'));
-const CoffeeMakers = dynamic(() => import('@/components/Home/CoffeeMakers/CoffeeMakers'));
-const CookingEquipment = dynamic(() => import('@/components/Home/CookingEquipment/CookingEquipment'));
+const CategoryHomeSection = dynamic(() => import('@/components/Home/CategoryHomeSection/CategoryHomeSection'));
 const AboutSection = dynamic(() => import('@/components/Home/AboutSection/AboutSection'));
 const Footer = dynamic(() => import('@/components/Layout/Footer/Footer'));
 
@@ -22,13 +20,10 @@ const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://loca
 async function getHomeData(locale: string) {
     const isRtl = locale === 'ar';
     try {
-        const [cmsRes, limitedRes, weeklyRes, iceRes, coffeeRes, cookingRes, categoriesRes, brandsRes] = await Promise.all([
+        const [cmsRes, limitedRes, weeklyRes, categoriesRes, brandsRes] = await Promise.all([
             fetch(`${API_BASE_URL_SERVER}/cms/homepage`, { next: { revalidate: 30 } }),
             fetch(`${API_BASE_URL_SERVER}/products?is_limited_offer=true&limit=8`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/products?is_weekly_deal=true`, { next: { revalidate: 60 } }),
-            fetch(`${API_BASE_URL_SERVER}/products?search=ice%20makers`, { next: { revalidate: 60 } }),
-            fetch(`${API_BASE_URL_SERVER}/products?search=coffee%20makers`, { next: { revalidate: 60 } }),
-            fetch(`${API_BASE_URL_SERVER}/products?search=cooking%20equipment`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 60 } }),
             fetch(`${API_BASE_URL_SERVER}/brands?all=1`, { next: { revalidate: 3600 } })
         ]);
@@ -36,9 +31,6 @@ async function getHomeData(locale: string) {
         const cmsData = await cmsRes.json();
         const limitedData = await limitedRes.json();
         const weeklyData = await weeklyRes.json();
-        const iceData = await iceRes.json();
-        const coffeeData = await coffeeRes.json();
-        const cookingData = await cookingRes.json();
         const categoriesData = await categoriesRes.json();
         const brandsData = await brandsRes.json();
 
@@ -52,7 +44,7 @@ async function getHomeData(locale: string) {
                     title: isRtl && slide.title_ar ? slide.title_ar : slide.title,
                     subtitle: "",
                     description: isRtl && slide.description_ar ? slide.description_ar : slide.description,
-                    image: slide.image,
+                    image: isRtl && slide.image_ar ? slide.image_ar : slide.image,
                     accent: slide.accent || "#4c6ef5",
                     link: slide.link || "/shopnow",
                     btnText: isRtl && slide.btnText_ar ? slide.btnText_ar : (slide.btnText || "Shop Now")
@@ -71,20 +63,42 @@ async function getHomeData(locale: string) {
 
         const allBrands = brandsData?.success ? brandsData.data : [];
 
+        // Dynamic home sections: main categories flagged "Show on Home Page" (with a poster).
+        // Each renders a poster card + a slider of that category's products.
+        const flaggedSections = mainCategories.filter((c: any) => c.show_on_home);
+        const homeSections = await Promise.all(
+            flaggedSections.map(async (c: any) => {
+                let products = [];
+                try {
+                    const res = await fetch(`${API_BASE_URL_SERVER}/products?category=${encodeURIComponent(c.slug)}&limit=12`, { next: { revalidate: 60 } });
+                    const data = await res.json();
+                    products = data.success ? data.data : [];
+                } catch {
+                    products = [];
+                }
+                return {
+                    id: c.id,
+                    slug: c.slug,
+                    title: isRtl && c.name_ar ? c.name_ar : c.name,
+                    posterUrl: c.home_poster_url || null,
+                    posterUrlAr: c.home_poster_url_ar || null,
+                    products
+                };
+            })
+        );
+
         return {
             heroSlides,
             heroPosters,
             limitedProducts: limitedData.success ? limitedData.data : [],
             weeklyProducts: weeklyData.success ? weeklyData.data : [],
-            iceProducts: iceData.success ? iceData.data : [],
-            coffeeProducts: coffeeData.success ? coffeeData.data : [],
-            cookingProducts: cookingData.success ? cookingData.data : [],
+            homeSections,
             categories: mainCategories,
             brands: allBrands
         };
     } catch (e) {
         console.error("Home server fetch failed", e);
-        return { heroSlides: [], heroPosters: [], limitedProducts: [], weeklyProducts: [], iceProducts: [], coffeeProducts: [], cookingProducts: [], categories: [], brands: [] };
+        return { heroSlides: [], heroPosters: [], limitedProducts: [], weeklyProducts: [], homeSections: [], categories: [], brands: [] };
     }
 }
 
@@ -144,9 +158,17 @@ export default async function Home(props: { params: Promise<{ locale: string }> 
             <Reveal key="reveal-categories"><CategoryBrowse initialCategories={data.categories} /></Reveal>
             <Reveal key="reveal-limited"><LimitedOffers initialProducts={data.limitedProducts} /></Reveal>
             <Reveal key="reveal-weekly"><WeeklyDeals initialProducts={data.weeklyProducts} /></Reveal>
-            <Reveal key="reveal-ice"><IceMakers initialProducts={data.iceProducts} /></Reveal>
-            <Reveal key="reveal-coffee"><CoffeeMakers initialProducts={data.coffeeProducts} /></Reveal>
-            <Reveal key="reveal-cooking"><CookingEquipment initialProducts={data.cookingProducts} /></Reveal>
+            {data.homeSections.map((section: any) => (
+                <Reveal key={`reveal-cat-${section.id}`}>
+                    <CategoryHomeSection
+                        title={section.title}
+                        slug={section.slug}
+                        posterUrl={section.posterUrl}
+                        posterUrlAr={section.posterUrlAr}
+                        initialProducts={section.products}
+                    />
+                </Reveal>
+            ))}
             <Reveal key="reveal-about"><AboutSection /></Reveal>
             <Footer />
         </main>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminInvoices.module.css';
-import { FileText, Search, User, Calendar, Hash, Package, Eye, Loader2 } from 'lucide-react';
+import { FileText, Search, User, Calendar, Hash, Package, Eye, Download, Loader2 } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -16,6 +16,7 @@ const AdminInvoices = () => {
     const [issuedByFilter, setIssuedByFilter] = useState<string>('all');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [viewingId, setViewingId] = useState<number | null>(null);
+    const [downloadingId, setDownloadingId] = useState<number | null>(null);
     const { showNotification } = useNotification();
 
     const handleViewInvoice = async (inv: any) => {
@@ -37,6 +38,7 @@ const AdminInvoices = () => {
                 customer_name: inv.user_name || '',
                 given_by_name: inv.given_by_name || '',
                 final_amount: Number(inv.order_total || inv.final_amount || 0),
+                delivery_charge: Number(orderData?.data?.delivery_charge) || 0,
                 items
             });
 
@@ -61,6 +63,47 @@ const AdminInvoices = () => {
             showNotification('Failed to generate invoice PDF', 'error');
         } finally {
             setViewingId(null);
+        }
+    };
+
+    const handleDownloadInvoice = async (inv: any) => {
+        if (downloadingId) return;
+        setDownloadingId(inv.id);
+        try {
+            const orderRes = await fetch(`${API_BASE_URL}/orders/${inv.order_id}`, {
+                credentials: 'include',
+                headers: getAuthHeaders()
+            });
+            const orderData = await orderRes.json();
+            const items = orderData?.data?.items || [];
+
+            const { generateInvoicePDF } = await import('@/utils/pdfGenerator');
+            const dataUri = await generateInvoicePDF({
+                invoice_number: inv.invoice_number,
+                order_id: inv.order_id,
+                customer_name: inv.user_name || '',
+                given_by_name: inv.given_by_name || '',
+                final_amount: Number(inv.order_total || inv.final_amount || 0),
+                delivery_charge: Number(orderData?.data?.delivery_charge) || 0,
+                items
+            });
+
+            const base64 = dataUri.replace(/^data:application\/pdf[^,]*,/, '');
+            const byteChars = atob(base64);
+            const byteNumbers = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+            const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `Invoice-${inv.invoice_number}.pdf`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        } catch (error: any) {
+            console.error('[Invoice Download] Failed:', error?.message || error);
+            showNotification('Failed to download invoice PDF', 'error');
+        } finally {
+            setDownloadingId(null);
         }
     };
 
@@ -245,16 +288,28 @@ const AdminInvoices = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <button
-                                            className={styles.viewBtn}
-                                            onClick={() => handleViewInvoice(inv)}
-                                            disabled={viewingId === inv.id}
-                                            title="View / Download Invoice PDF"
-                                        >
-                                            {viewingId === inv.id
-                                                ? <Loader2 size={16} className={styles.spinIcon} />
-                                                : <Eye size={16} />}
-                                        </button>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <button
+                                                className={styles.viewBtn}
+                                                onClick={() => handleViewInvoice(inv)}
+                                                disabled={viewingId === inv.id}
+                                                title="View Invoice PDF"
+                                            >
+                                                {viewingId === inv.id
+                                                    ? <Loader2 size={16} className={styles.spinIcon} />
+                                                    : <Eye size={16} />}
+                                            </button>
+                                            <button
+                                                className={styles.viewBtn}
+                                                onClick={() => handleDownloadInvoice(inv)}
+                                                disabled={downloadingId === inv.id}
+                                                title="Download Invoice PDF"
+                                            >
+                                                {downloadingId === inv.id
+                                                    ? <Loader2 size={16} className={styles.spinIcon} />
+                                                    : <Download size={16} />}
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))

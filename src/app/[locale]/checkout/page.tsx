@@ -50,7 +50,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || ''
 function CheckoutContent() {
     const stripe = useStripe();
     const elements = useElements();
-    const { cartItems, cartTotal, discountAmount, pointsToUse, pointsDiscountAmount, appliedCoupon, clearCart, applyDiscount, removeDiscount } = useCart();
+    const { cartItems, cartTotal, deliveryTotal, discountAmount, pointsToUse, pointsDiscountAmount, appliedCoupon, clearCart, applyDiscount, removeDiscount } = useCart();
     const { user, token, loading, refreshUser } = useAuth();
     const [otpOpen, setOtpOpen] = useState(false);
     const { showNotification } = useNotification();
@@ -225,8 +225,9 @@ function CheckoutContent() {
     };
 
     // Calculate final processing totals early so useEffects can use them
-    // Prices are VAT-exclusive — add 5% VAT on top of the discounted total (cartTotal).
-    const finalTotal = cartTotal * 1.05;
+    // Prices are VAT-exclusive — add 5% VAT on top of the discounted total (cartTotal),
+    // then add per-product delivery charges (delivery is not VAT-taxed).
+    const finalTotal = cartTotal * 1.05 + deliveryTotal;
 
     const fetchAddresses = async () => {
         if (!user) return;
@@ -1121,6 +1122,13 @@ function CheckoutContent() {
                                     <div className={styles.totalRow}>
                                         <span>{common('vat')} (5%)</span>
                                         <span><CurrencyPrice amount={vatAmount} /></span>
+                                    </div>
+
+                                    <div className={styles.totalRow}>
+                                        <span>{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery charge'}</span>
+                                        {deliveryTotal > 0
+                                            ? <span><CurrencyPrice amount={deliveryTotal} /></span>
+                                            : <span style={{ color: '#16a34a', fontWeight: 700 }}>{locale === 'ar' ? 'مجاني' : 'FREE'}</span>}
                                     </div>
 
                                     <div className={styles.grandTotalRow}>

@@ -232,7 +232,7 @@ const AdminCMS = () => {
         });
     };
 
-    const handleSlideImageUpload = async (index: number, file: File) => {
+    const handleSlideImageUpload = async (index: number, file: File, field: 'image' | 'image_ar' = 'image') => {
         try {
             const formData = new FormData();
             formData.append('image', file);
@@ -244,7 +244,7 @@ const AdminCMS = () => {
             });
             const result = await res.json();
             if (result.success && result.data) {
-                updateSlideField(index, 'image', result.data);
+                updateSlideField(index, field, result.data);
                 showNotification('Slide image uploaded! Click Save to apply.', 'success');
             } else {
                 showNotification('Error uploading image: ' + (result.message || 'Unknown error'), 'error');
@@ -537,6 +537,7 @@ const AdminCMS = () => {
                     <Layout size={14} /> Hero Slider Configuration
                 </a>
 
+                {false && (
                 <a href="#hero-posters-section" className={styles.jumpLink} style={{
                     textDecoration: 'none',
                     padding: '8px 18px',
@@ -555,6 +556,7 @@ const AdminCMS = () => {
                 }}>
                     <Megaphone size={14} /> Hero Posters Configuration
                 </a>
+                )}
 
                 <a href="#announcement-bar-section" className={styles.jumpLink} style={{
                     textDecoration: 'none',
@@ -863,6 +865,50 @@ const AdminCMS = () => {
                                         </div>
                                     </div>
                                 </label>
+
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <span style={{ fontSize: '12px', color: '#666', fontWeight: '700', letterSpacing: '0.5px' }}>BACKGROUND IMAGE (ARABIC) <span style={{ fontWeight: 400, color: '#999', textTransform: 'none' }}>— shown when site language is Arabic; falls back to default if empty</span></span>
+                                    {currentSlide.image_ar && (
+                                        <img
+                                            src={currentSlide.image_ar}
+                                            alt="Slide preview (Arabic)"
+                                            style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #eee' }}
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                        />
+                                    )}
+                                    <input
+                                        type="text"
+                                        placeholder="https://... or upload below"
+                                        value={currentSlide.image_ar || ''}
+                                        onChange={(e) => updateSlideField(activeSlide, 'image_ar', e.target.value)}
+                                        style={{ padding: '12px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px' }}
+                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <label style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                            padding: '9px 16px', borderRadius: '8px',
+                                            background: '#f0f4ff', border: '1px solid #c7d1f7',
+                                            color: '#4c6ef5', fontWeight: '700', fontSize: '12px',
+                                            cursor: 'pointer', whiteSpace: 'nowrap'
+                                        }}>
+                                            📁 Upload Arabic Image
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                style={{ display: 'none' }}
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleSlideImageUpload(activeSlide, file, 'image_ar');
+                                                }}
+                                            />
+                                        </label>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span style={{ fontSize: '11px', color: '#999' }}>or paste URL above</span>
+                                            <span style={{ fontSize: '10px', color: '#666', fontWeight: '600' }}>Recommended size: 1920×800px</span>
+                                        </div>
+                                    </div>
+                                </label>
+
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                     <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         <span style={{ fontSize: '12px', color: '#666', fontWeight: '700', letterSpacing: '0.5px' }}>ACCENT COLOR</span>
@@ -937,7 +983,7 @@ const AdminCMS = () => {
                     </div>
 
                     {/* Hero Posters Editor */}
-                    <div id="hero-posters-section" style={{ background: '#fff', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden', border: '1px solid #eee', scrollMarginTop: '100px' }}>
+                    <div id="hero-posters-section" style={{ display: 'none', background: '#fff', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden', border: '1px solid #eee', scrollMarginTop: '100px' }}>
                         <div style={{ padding: '20px', background: '#f8f9fa', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <Megaphone size={20} color="#ff3b30" />

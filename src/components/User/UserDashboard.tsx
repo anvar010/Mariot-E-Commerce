@@ -71,6 +71,27 @@ const UserDashboard = () => {
         }
     }, [tabParam]);
 
+    // Deep link from order emails: /profile?tab=yourOrders&orderId=70&view=summary
+    const orderIdParam = searchParams.get('orderId');
+    const viewParam = searchParams.get('view');
+    useEffect(() => {
+        if (!orderIdParam || !user) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/orders/${orderIdParam}`, { credentials: 'include', headers: getAuthHeaders() });
+                const data = await res.json();
+                if (cancelled || !data.success) return;
+                setActiveSection('yourOrders');
+                wantSummaryRef.current = viewParam === 'summary';
+                setSelectedOrder(data.data);
+            } catch (e) {
+                console.error('Failed to open order from email link', e);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [orderIdParam, viewParam, user]);
+
     const navRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
@@ -458,6 +479,11 @@ const UserDashboard = () => {
     const [isViewingId, setIsViewingId] = useState<number | null>(null);
     const [isDownloadingId, setIsDownloadingId] = useState<number | null>(null);
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+    const [showOrderSummary, setShowOrderSummary] = useState(false);
+    const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+    const wantSummaryRef = useRef(false);
+    // On order change: open summary only if a deep link asked for it, else show detail.
+    useEffect(() => { setShowOrderSummary(wantSummaryRef.current); wantSummaryRef.current = false; }, [selectedOrder?.id]);
     const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
     const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
     const [addresses, setAddresses] = useState<any[]>([]);
@@ -549,6 +575,43 @@ const UserDashboard = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleDownloadInvoice = async () => {
+        if (!selectedOrder) return;
+        if (!selectedOrder.invoice) {
+            showNotification(t('orders.invoiceNotReady'), 'error');
+            return;
+        }
+        if (downloadingInvoice) return;
+        setDownloadingInvoice(true);
+        try {
+            const { generateInvoicePDF } = await import('@/utils/pdfGenerator');
+            const dataUri = await generateInvoicePDF({
+                invoice_number: selectedOrder.invoice.invoice_number,
+                order_id: selectedOrder.id,
+                customer_name: selectedOrder.receiver_name || user?.name || '',
+                given_by_name: selectedOrder.invoice.given_by_name || '',
+                final_amount: Number(selectedOrder.invoice.order_total || selectedOrder.final_amount || 0),
+                delivery_charge: Number(selectedOrder.delivery_charge) || 0,
+                items: selectedOrder.items || []
+            });
+            const base64 = dataUri.replace(/^data:application\/pdf[^,]*,/, '');
+            const byteChars = atob(base64);
+            const byteNumbers = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+            const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `Invoice-${selectedOrder.invoice.invoice_number}.pdf`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        } catch (error) {
+            showNotification(t('orders.invoiceDownloadError'), 'error');
+        } finally {
+            setDownloadingInvoice(false);
+        }
+    };
+
     const renderContent = () => {
         if (activeSection === 'favorites') {
             return (
@@ -609,6 +672,148 @@ const UserDashboard = () => {
         }
 
         if (activeSection === 'yourOrders') {
+            if (selectedOrder && showOrderSummary) {
+                const items = selectedOrder.items || [];
+                const itemsCount = items.reduce((n: number, it: any) => n + (Number(it.quantity) || 0), 0);
+                const itemsValue = parseFloat(selectedOrder.total_amount) || 0;
+                const vat = parseFloat(selectedOrder.vat_amount) || 0;
+                const orderTotal = parseFloat(selectedOrder.final_amount) || 0;
+                const deliveryFee = Math.max(0, Number(selectedOrder.delivery_charge) || 0);
+                const pm = (selectedOrder.payment_method || '').toLowerCase();
+                const paymentLabel = pm === 'card' ? t('orders.card') : (pm === 'cod' || pm === 'cash') ? t('orders.cashOnDelivery') : t('orders.bankTransfer');
+                const addr = selectedOrder.shipping_address;
+                const shipmentId = `#${selectedOrder.id}`;
+                const cardStyle: React.CSSProperties = { background: '#fff', border: '1.5px solid #d6dde5', borderRadius: '14px', padding: '22px' };
+                const rowStyle: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' };
+                return (
+                    <div className={styles.orderDetailsSection}>
+                        <button
+                            onClick={() => setShowOrderSummary(false)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '20px', padding: 0, ...(locale === 'ar' ? { flexDirection: 'row-reverse' } : {}) }}
+                        >
+                            <ChevronLeft size={24} style={locale === 'ar' ? { transform: 'rotate(180deg)' } : {}} />
+                            <span style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a' }}>{t('orders.orderSummary')}</span>
+                        </button>
+
+                        {/* ID + date strip */}
+                        <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                            <span style={{ fontSize: '15px', color: '#475569' }}>
+                                {t('orders.orderShipmentId')} <strong style={{ color: '#0f172a' }}>{shipmentId}</strong>
+                            </span>
+                            <span style={{ fontSize: '15px', color: '#64748b' }}>
+                                {t('orders.orderDate')}: {new Date(selectedOrder.created_at).toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </span>
+                        </div>
+
+                        {/* Two-column cards */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                            {/* Order details */}
+                            <div style={cardStyle}>
+                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 18px' }}>{t('orders.orderDetails')}</h3>
+                                <div style={{ ...rowStyle, marginBottom: '12px' }}>
+                                    <span style={{ color: '#475569' }}>{t('orders.itemsValue')} <span style={{ color: '#94a3b8', fontSize: '13px' }}>({itemsCount} {itemsCount === 1 ? t('orders.itemSingular') : t('orders.itemPlural')})</span></span>
+                                    <span style={{ fontWeight: 600 }}><CurrencyPrice amount={itemsValue} /></span>
+                                </div>
+                                <div style={{ ...rowStyle, marginBottom: '12px' }}>
+                                    <span style={{ color: '#475569' }}>{t('orders.vat')}</span>
+                                    <span style={{ fontWeight: 600 }}><CurrencyPrice amount={vat} /></span>
+                                </div>
+                                <div style={{ ...rowStyle, marginBottom: '16px' }}>
+                                    <span style={{ color: '#475569' }}>{t('orders.deliveryCharge')}</span>
+                                    {deliveryFee > 0
+                                        ? <span style={{ fontWeight: 600 }}><CurrencyPrice amount={deliveryFee} /></span>
+                                        : <span style={{ color: '#16a34a', fontWeight: 800 }}>{t('orders.free')}</span>}
+                                </div>
+                                <div style={{ ...rowStyle, borderTop: '1px solid #e2e8f0', paddingTop: '14px' }}>
+                                    <span style={{ fontWeight: 800, fontSize: '16px', color: '#0f172a' }}>{t('orders.orderTotalLabel')} <span style={{ color: '#94a3b8', fontWeight: 400, fontSize: '13px' }}>{t('orders.incVat')}</span></span>
+                                    <span style={{ fontWeight: 800, fontSize: '17px', color: '#0f172a' }}><CurrencyPrice amount={orderTotal} /></span>
+                                </div>
+                            </div>
+
+                            {/* Delivery address */}
+                            {addr && (
+                                <div style={cardStyle}>
+                                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 16px' }}>
+                                        {t('orders.deliveryAddress')} <span style={{ color: '#64748b' }}>({addr.address_label || t(`addresses.type${(addr.address_type || 'other').charAt(0).toUpperCase()}${(addr.address_type || 'other').slice(1)}`)})</span>
+                                    </h3>
+                                    <div style={{ fontSize: '15px', color: '#334155', fontWeight: 600, marginBottom: '6px' }}>
+                                        {selectedOrder.receiver_name || `${addr.first_name || ''} ${addr.last_name || ''}`.trim()}
+                                    </div>
+                                    <div style={{ fontSize: '15px', color: '#64748b', marginBottom: '6px' }}>
+                                        {[addr.address_line1, addr.address_line2, addr.city, addr.country].filter(Boolean).join(', ')}
+                                    </div>
+                                    {(selectedOrder.receiver_phone || addr.phone) && (
+                                        <div style={{ fontSize: '15px', color: '#16a34a', fontWeight: 600 }}>{selectedOrder.receiver_phone || addr.phone}</div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Payment + invoice */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                            <div style={cardStyle}>
+                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 16px' }}>{t('orders.paymentDetails')}</h3>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', borderRadius: '8px', padding: '8px 14px', fontWeight: 600, color: '#334155' }}>
+                                    <CreditCard size={16} /> {paymentLabel}
+                                </span>
+                            </div>
+                            <button type="button" onClick={handleDownloadInvoice} disabled={downloadingInvoice} style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', cursor: 'pointer', width: '100%', textAlign: locale === 'ar' ? 'right' : 'left', fontFamily: 'inherit' }}>
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                                        <FileText size={20} color="#0f172a" />
+                                        <strong style={{ fontSize: '17px', color: '#0f172a' }}>{t('orders.viewInvoice')}</strong>
+                                    </div>
+                                    <span style={{ fontSize: '13px', color: selectedOrder.invoice ? '#64748b' : '#ea580c' }}>
+                                        {selectedOrder.invoice ? t('orders.downloadInvoiceNote') : t('orders.invoiceNotReady')}
+                                    </span>
+                                </div>
+                                {downloadingInvoice
+                                    ? <span className={styles.invoiceSpinner} aria-label="Generating invoice" />
+                                    : <Download size={20} color="#64748b" style={{ flexShrink: 0 }} />}
+                            </button>
+                        </div>
+
+                        {/* Item summary */}
+                        {items.length > 0 && (
+                            <div style={cardStyle}>
+                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 14px' }}>{t('orders.itemSummary')}</h3>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', borderBottom: '1px solid #eef2f6', paddingBottom: '14px', marginBottom: '14px' }}>
+                                    <div className={`${styles.orderIconWrapper} ${styles[`iconBg_${selectedOrder.status}`]}`}>
+                                        <Package size={22} />
+                                    </div>
+                                    <div style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>
+                                        {t(`orders.${selectedOrder.status}`)} {t('orders.on')} {new Date(selectedOrder.updated_at || selectedOrder.created_at).toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {items.map((item: any) => {
+                                        const variantLine = item.variant_options || item.custom_label;
+                                        const brand = locale === 'ar' && item.brand_name_ar ? item.brand_name_ar : item.brand_name;
+                                        return (
+                                            <div key={`os-${item.id}`} style={{ display: 'flex', gap: '16px', border: '1.5px solid #d6dde5', borderRadius: '10px', padding: '14px' }}>
+                                                <Link href={item.slug ? `/product/${item.slug}` : '#'} style={{ width: '90px', height: '90px', flexShrink: 0, background: '#f8fafc', borderRadius: '8px', overflow: 'hidden', pointerEvents: item.slug ? 'auto' : 'none' }}>
+                                                    {item.image ? <img src={resolveUrl(item.image)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}><Package size={32} /></div>}
+                                                </Link>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    {brand && <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '2px' }}>{brand}</div>}
+                                                    <Link href={item.slug ? `/product/${item.slug}` : '#'} style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#334155', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', pointerEvents: item.slug ? 'auto' : 'none' }}>
+                                                        {locale === 'ar' && item.name_ar ? item.name_ar : item.name}
+                                                    </Link>
+                                                    {variantLine && <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>{variantLine}</div>}
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
+                                                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}><CurrencyPrice amount={parseFloat(item.price_at_purchase)} /></span>
+                                                        {item.model_number && <span style={{ fontSize: '12px', color: '#94a3b8' }}>{t('orders.itemId')} {item.model_number}</span>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
             if (selectedOrder) {
                 return (
                     <div className={styles.orderDetailsSection}>
@@ -662,6 +867,123 @@ const UserDashboard = () => {
                             );
                         })()}
 
+                        {/* Status + support + address + invoice quick blocks */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '24px 0' }}>
+                            {/* Current status row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', background: '#fff', border: '1.5px solid #d6dde5', borderRadius: '12px', padding: '14px 18px' }}>
+                                <div className={`${styles.orderIconWrapper} ${styles[`iconBg_${selectedOrder.status}`]}`}>
+                                    <Package size={22} />
+                                </div>
+                                <div style={{ fontSize: '15px', color: '#475569' }}>
+                                    <strong style={{ color: '#0f172a', fontWeight: 700 }}>{t(`orders.${selectedOrder.status}`)}</strong>
+                                    {' '}{t('orders.on')}{' '}
+                                    {new Date(selectedOrder.updated_at || selectedOrder.created_at).toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-GB', {
+                                        weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Got an issue */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: '#fff', border: '1.5px solid #d6dde5', borderRadius: '12px', padding: '14px 18px' }}>
+                                <strong style={{ fontSize: '15px', color: '#0f172a' }}>{t('orders.gotIssue')}</strong>
+                                <a
+                                    href={`https://wa.me/97142882777?text=${encodeURIComponent(
+                                        (locale === 'ar'
+                                            ? `مرحبًا، لدي مشكلة في الطلب رقم ${selectedOrder.id}.`
+                                            : `Hello, I have an issue with Order #${selectedOrder.id}.`)
+                                        + `\n${t('orders.status')}: ${t(`orders.${selectedOrder.status}`)}`
+                                        + `\n${t('orders.total')}: ${selectedOrder.final_amount}`
+                                        + (selectedOrder.items?.length
+                                            ? `\n${t('orders.itemsInOrder')}: ${selectedOrder.items.map((i: any) => (locale === 'ar' && i.name_ar ? i.name_ar : i.name)).join(', ')}`
+                                            : '')
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ flexShrink: 0, padding: '8px 18px', border: '1.5px solid #0056b3', borderRadius: '8px', color: '#0056b3', fontWeight: 600, fontSize: '14px', textDecoration: 'none' }}
+                                >
+                                    {t('orders.contactUs')}
+                                </a>
+                            </div>
+
+                            {/* Delivery address */}
+                            {selectedOrder.shipping_address && (
+                                <div style={{ background: '#fff', border: '1.5px solid #d6dde5', borderRadius: '12px', padding: '18px' }}>
+                                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>
+                                        {t('orders.deliveryAddress')}{' '}
+                                        <span style={{ color: '#64748b', fontWeight: 600 }}>
+                                            ({selectedOrder.shipping_address.address_label || t(`addresses.type${(selectedOrder.shipping_address.address_type || 'other').charAt(0).toUpperCase()}${(selectedOrder.shipping_address.address_type || 'other').slice(1)}`)})
+                                        </span>
+                                    </div>
+                                    <div style={{ fontSize: '14px', color: '#334155', fontWeight: 600, marginBottom: '4px' }}>
+                                        {selectedOrder.receiver_name || `${selectedOrder.shipping_address.first_name || ''} ${selectedOrder.shipping_address.last_name || ''}`.trim()}
+                                    </div>
+                                    <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '4px' }}>
+                                        {[selectedOrder.shipping_address.address_line1, selectedOrder.shipping_address.address_line2, selectedOrder.shipping_address.city, selectedOrder.shipping_address.country].filter(Boolean).join(', ')}
+                                    </div>
+                                    {(selectedOrder.receiver_phone || selectedOrder.shipping_address.phone) && (
+                                        <div style={{ fontSize: '14px', color: '#16a34a', fontWeight: 600 }}>
+                                            {selectedOrder.receiver_phone || selectedOrder.shipping_address.phone}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* View invoice summary */}
+                            <button type="button" onClick={() => setShowOrderSummary(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: '#fff', border: '1.5px solid #d6dde5', borderRadius: '12px', padding: '16px 18px', cursor: 'pointer', width: '100%', textAlign: locale === 'ar' ? 'right' : 'left', fontFamily: 'inherit' }}>
+                                <strong style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>{t('orders.viewInvoiceSummary')}</strong>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}>
+                                    {t('orders.findInvoiceHere')}
+                                    <ChevronRight size={18} style={locale === 'ar' ? { transform: 'rotate(180deg)' } : {}} />
+                                </span>
+                            </button>
+
+                            {/* Item summary (screenshot style) */}
+                            {selectedOrder.items?.length > 0 && (
+                                <div style={{ background: '#fff', border: '1.5px solid #d6dde5', borderRadius: '12px', padding: '18px' }}>
+                                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 14px' }}>{t('orders.itemSummary')}</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {selectedOrder.items.map((item: any) => {
+                                            const variantLine = item.variant_options || item.custom_label;
+                                            const brand = locale === 'ar' && item.brand_name_ar ? item.brand_name_ar : item.brand_name;
+                                            return (
+                                                <div key={`sum-${item.id}`} style={{ display: 'flex', gap: '16px', border: '1.5px solid #d6dde5', borderRadius: '10px', padding: '14px' }}>
+                                                    <Link
+                                                        href={item.slug ? `/product/${item.slug}` : '#'}
+                                                        style={{ width: '90px', height: '90px', flexShrink: 0, background: '#f8fafc', borderRadius: '8px', overflow: 'hidden', cursor: item.slug ? 'pointer' : 'default', pointerEvents: item.slug ? 'auto' : 'none' }}
+                                                    >
+                                                        {item.image ? (
+                                                            <img src={resolveUrl(item.image)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                                        ) : (
+                                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}><Package size={32} /></div>
+                                                        )}
+                                                    </Link>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        {brand && <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '2px' }}>{brand}</div>}
+                                                        <Link
+                                                            href={item.slug ? `/product/${item.slug}` : '#'}
+                                                            style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#334155', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: item.slug ? 'pointer' : 'default', pointerEvents: item.slug ? 'auto' : 'none' }}
+                                                        >
+                                                            {locale === 'ar' && item.name_ar ? item.name_ar : item.name}
+                                                        </Link>
+                                                        {variantLine && <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>{variantLine}</div>}
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
+                                                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
+                                                                <CurrencyPrice amount={parseFloat(item.price_at_purchase)} />
+                                                            </span>
+                                                            {item.model_number && (
+                                                                <span style={{ fontSize: '12px', color: '#94a3b8' }}>{t('orders.itemId')} {item.model_number}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {false && (<>
                         <div style={{ background: '#f8fafc', padding: '15px 20px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <strong style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>{t('orders.status')}</strong>
@@ -693,7 +1015,7 @@ const UserDashboard = () => {
                                 const isFree = Number(item.is_free_gift) === 1;
                                 const parentName = locale === 'ar' && item.bundle_parent_name_ar ? item.bundle_parent_name_ar : item.bundle_parent_name;
                                 return (
-                                <div key={item.id} style={{ display: 'flex', gap: '15px', padding: '15px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                                <div key={item.id} style={{ display: 'flex', gap: '15px', padding: '15px', border: '1.5px solid #d6dde5', borderRadius: '8px' }}>
                                     <Link
                                         href={item.slug ? `/product/${item.slug}` : '#'}
                                         style={{ width: '80px', height: '80px', flexShrink: 0, background: '#f8fafc', borderRadius: '6px', overflow: 'hidden', cursor: item.slug ? 'pointer' : 'default', pointerEvents: item.slug ? 'auto' : 'none' }}
@@ -760,6 +1082,7 @@ const UserDashboard = () => {
                                 <span><CurrencyPrice amount={parseFloat(selectedOrder.final_amount)} /></span>
                             </div>
                         </div>
+                        </>)}
                     </div>
                 );
             }
@@ -804,7 +1127,16 @@ const UserDashboard = () => {
                                 <div key={order.id} className={styles.premiumOrderCard}>
                                     <div className={styles.orderMain}>
                                         <div className={`${styles.orderIconWrapper} ${styles[`iconBg_${order.status}`]}`}>
-                                            <Package size={24} />
+                                            {order.first_item_image ? (
+                                                <img
+                                                    src={resolveUrl(order.first_item_image)}
+                                                    alt={`${t('orders.orderNumber')}${order.id}`}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }}
+                                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                />
+                                            ) : (
+                                                <Package size={24} />
+                                            )}
                                         </div>
                                         <div className={styles.orderBrief}>
                                             <div className={styles.orderIdRow}>

@@ -52,6 +52,7 @@ const CartDrawer = () => {
         cartCount,
         cartTotal,
         subtotal,
+        deliveryTotal,
         discountAmount,
         appliedCoupon,
         applyDiscount,
@@ -578,8 +579,14 @@ const CartDrawer = () => {
                                     <span>{t('vatAmount')} (5%)</span>
                                     <span><CurrencyPrice amount={cartTotal * 0.05} /></span>
                                 </div>
+                                <div className={styles.totalRow}>
+                                    <span>{isArabic ? 'رسوم التوصيل' : 'Delivery charge'}</span>
+                                    {deliveryTotal > 0
+                                        ? <span><CurrencyPrice amount={deliveryTotal} /></span>
+                                        : <span style={{ color: '#16a34a', fontWeight: 700 }}>{isArabic ? 'مجاني' : 'FREE'}</span>}
+                                </div>
                                 <div className={styles.finalTotal}>
-                                    <CurrencyPrice amount={cartTotal * 1.05} />
+                                    <CurrencyPrice amount={cartTotal * 1.05 + deliveryTotal} />
                                 </div>
 
                                 {/* Tabby Promo in Cart

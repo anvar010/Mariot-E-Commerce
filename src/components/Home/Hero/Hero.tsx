@@ -76,7 +76,7 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                             title: isRtl && slide.title_ar ? slide.title_ar : slide.title,
                             subtitle: "",
                             description: isRtl && slide.description_ar ? slide.description_ar : slide.description,
-                            image: resolveUrl(slide.image),
+                            image: resolveUrl(isRtl && slide.image_ar ? slide.image_ar : slide.image),
                             accent: slide.accent || "#4c6ef5",
                             link: slide.link || "/shopnow",
                             btnText: isRtl && slide.btnText_ar ? slide.btnText_ar : (slide.btnText || "Shop Now")

@@ -6,6 +6,7 @@ export interface InvoicePDFData {
     customer_name: string;
     given_by_name?: string;
     final_amount: number;
+    delivery_charge?: number;
     items: any[];
 }
 // Dynamically imported when generated to fix next.js SSR build errors
@@ -370,10 +371,12 @@ const INVOICE_BRAND_LOGOS = [
  */
 export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> => {
     const invoiceDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    // Prices are VAT-exclusive. final_amount already includes 5% VAT on the (discounted) net.
+    // Prices are VAT-exclusive. final_amount = goods (incl 5% VAT) + delivery (not VAT-taxed).
     const grandTotal = Number(data.final_amount);
-    const netExVat = grandTotal / 1.05;                 // post-discount taxable value
-    const vatAmount = grandTotal - netExVat;            // 5% VAT
+    const deliveryAmount = Math.max(0, Number(data.delivery_charge) || 0);
+    const goodsTotal = Math.max(0, grandTotal - deliveryAmount); // VAT-inclusive goods portion
+    const netExVat = goodsTotal / 1.05;                 // post-discount taxable value
+    const vatAmount = goodsTotal - netExVat;            // 5% VAT
     // Sum of item line totals = pre-discount, ex-VAT subtotal (matches the rows above).
     const itemsSubtotal = (data.items || []).reduce((sum: number, it: any) => {
         if (Number(it.is_free_gift) === 1) return sum;
@@ -535,7 +538,7 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
                             ${isLastPage ? `
                             <tfoot>
                                 <tr>
-                                    <td colspan="3" rowspan="${discountTotal > 0 ? 4 : 3}" style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:10px 14px;vertical-align:top;">
+                                    <td colspan="3" rowspan="${3 + (discountTotal > 0 ? 1 : 0) + (deliveryAmount > 0 ? 1 : 0)}" style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:10px 14px;vertical-align:top;">
                                         <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:bold;color:#111;">
                                             <span>Total (AED)</span><span style="flex:1;border-bottom:1px dotted #555;margin:0 10px;"></span><span style="direction:rtl;font-size:13px;">الإجمالي (درهم)</span>
                                         </div>
@@ -558,6 +561,13 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
                                     </td>
                                     <td style="border-top:1px solid #1565c0;padding:6px 10px;font-size:13px;font-weight:800;text-align:center;color:#111;">${vatAmount.toFixed(2)}</td>
                                 </tr>
+                                ${deliveryAmount > 0 ? `
+                                <tr>
+                                    <td style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:6px 4px;text-align:center;vertical-align:middle;">
+                                        <div style="font-size:11px;font-weight:900;color:#111;">رسوم التوصيل</div><div style="font-size:10px;font-weight:900;color:#111;">Delivery Charge</div>
+                                    </td>
+                                    <td style="border-top:1px solid #1565c0;padding:6px 10px;font-size:13px;font-weight:800;text-align:center;color:#111;">${deliveryAmount.toFixed(2)}</td>
+                                </tr>` : ``}
                                 <tr>
                                     <td style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:8px 4px;text-align:center;vertical-align:middle;">
                                         <div style="font-size:12px;font-weight:900;color:#111;">المجموع الإجمالي</div><div style="font-size:11px;font-weight:900;color:#111;">GRAND TOTAL</div>

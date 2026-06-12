@@ -681,6 +681,8 @@ const AdminProducts = () => {
         offer_start: '',
         offer_end: '',
         track_inventory: false,
+        charge_delivery: false,
+        delivery_charge: '',
         warranty: '',
         warranty_ar: ''
     });
@@ -715,6 +717,8 @@ const AdminProducts = () => {
                 resources: [{ name: '', url: '' }],
                 status: 'active', offer_start: '', offer_end: '',
                 track_inventory: false,
+                charge_delivery: false,
+                delivery_charge: '',
                 warranty: '',
                 warranty_ar: '',
                 notify_users_on_save: false
@@ -1235,6 +1239,8 @@ const AdminProducts = () => {
             offer_start: product.offer_start ? new Date(product.offer_start).toISOString().slice(0, 16) : '',
             offer_end: product.offer_end ? new Date(product.offer_end).toISOString().slice(0, 16) : '',
             track_inventory: isTrue(product.track_inventory),
+            charge_delivery: Number(product.delivery_charge) > 0,
+            delivery_charge: Number(product.delivery_charge) > 0 ? String(product.delivery_charge) : '',
             warranty: product.warranty !== null && product.warranty !== undefined ? String(product.warranty) : '',
             warranty_ar: product.warranty_ar !== null && product.warranty_ar !== undefined ? String(product.warranty_ar) : '',
             notify_users_on_save: false
@@ -1440,6 +1446,8 @@ const AdminProducts = () => {
             offer_start: '',
             offer_end: '',
             track_inventory: false,
+            charge_delivery: false,
+            delivery_charge: '',
             warranty: '',
             warranty_ar: '',
             notify_users_on_save: false
@@ -1492,9 +1500,10 @@ const AdminProducts = () => {
             const images = [formData.image_url, ...formData.additional_images].filter(img => img && img.trim() !== '');
 
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { notify_users_on_save: _notifyFlag, ...formDataClean } = formData;
+            const { notify_users_on_save: _notifyFlag, charge_delivery: _chargeDelivery, ...formDataClean } = formData;
             const payload = {
                 ...formDataClean,
+                delivery_charge: formData.charge_delivery ? (Number(formData.delivery_charge) || 0) : 0,
                 images,
                 youtube_video_link: JSON.stringify({
                     links: formData.youtube_video_links,
@@ -2628,6 +2637,28 @@ const AdminProducts = () => {
                                                             </span>
                                                         </div>
                                                     </div>
+                                                    <div className={styles.formGroup}>
+                                                        <label>Delivery Charge</label>
+                                                        <div className={styles.toggleWrapper}>
+                                                            <label className={styles.switch}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={formData.charge_delivery}
+                                                                    onChange={(e) => setFormData(prev => ({ ...prev, charge_delivery: e.target.checked, delivery_charge: e.target.checked ? prev.delivery_charge : '' }))}
+                                                                />
+                                                                <span className={styles.slider}></span>
+                                                            </label>
+                                                            <span className={styles.toggleLabel}>
+                                                                {formData.charge_delivery ? 'Charge Delivery' : 'Free Delivery'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {formData.charge_delivery && (
+                                                        <div className={styles.formGroup}>
+                                                            <label>Delivery Charge (per unit)</label>
+                                                            <input type="number" name="delivery_charge" step="0.01" min={0} value={formData.delivery_charge} onChange={handleInputChange} placeholder="0.00" />
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className={styles.formGrid}>
                                                     {formData.track_inventory && (

@@ -27,6 +27,8 @@ const AdminCategories = () => {
     const [uploadingBanner, setUploadingBanner] = useState(false);
     const [uploadingAr, setUploadingAr] = useState(false);
     const [uploadingBannerAr, setUploadingBannerAr] = useState(false);
+    const [uploadingPoster, setUploadingPoster] = useState(false);
+    const [uploadingPosterAr, setUploadingPosterAr] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const { showNotification } = useNotification();
 
@@ -44,7 +46,10 @@ const AdminCategories = () => {
         type: 'main_category' as string,
         parent_id: '' as string | number,
         brands: [] as number[],
-        order_index: 0 as number | string
+        order_index: 0 as number | string,
+        show_on_home: false,
+        home_poster_url: '',
+        home_poster_url_ar: ''
     });
 
     useEffect(() => {
@@ -186,7 +191,7 @@ const AdminCategories = () => {
 
     const uploadToField = async (
         e: React.ChangeEvent<HTMLInputElement>,
-        field: 'image_url_ar' | 'banner_url_ar',
+        field: 'image_url_ar' | 'banner_url_ar' | 'home_poster_url' | 'home_poster_url_ar',
         setBusy: (v: boolean) => void,
         label: string
     ) => {
@@ -242,7 +247,10 @@ const AdminCategories = () => {
             type: category.type || 'main_category',
             parent_id: category.parent_id || '',
             brands: Array.isArray(category.brand_ids) ? category.brand_ids : [],
-            order_index: category.order_index ?? 0
+            order_index: category.order_index ?? 0,
+            show_on_home: Boolean(category.show_on_home),
+            home_poster_url: category.home_poster_url || '',
+            home_poster_url_ar: category.home_poster_url_ar || ''
         });
         setIsModalOpen(true);
     };
@@ -273,7 +281,10 @@ const AdminCategories = () => {
             banner_url: '',
             image_url_ar: '',
             banner_url_ar: '',
-            order_index: 0
+            order_index: 0,
+            show_on_home: false,
+            home_poster_url: '',
+            home_poster_url_ar: ''
         });
         setIsModalOpen(true);
     };
@@ -298,7 +309,10 @@ const AdminCategories = () => {
             type: 'main_category',
             parent_id: '',
             brands: [],
-            order_index: 0
+            order_index: 0,
+            show_on_home: false,
+            home_poster_url: '',
+            home_poster_url_ar: ''
         });
     };
 
@@ -341,7 +355,10 @@ const AdminCategories = () => {
                     type: formData.type,
                     parent_id: formData.parent_id || null,
                     brands: formData.brands,
-                    order_index: Number(formData.order_index) || 0
+                    order_index: Number(formData.order_index) || 0,
+                    show_on_home: formData.type === 'main_category' && formData.show_on_home ? 1 : 0,
+                    home_poster_url: formData.home_poster_url || null,
+                    home_poster_url_ar: formData.home_poster_url_ar || null
                 };
 
                 const res = await fetch(url, {
@@ -1185,6 +1202,140 @@ const AdminCategories = () => {
                                             })
                                         )}
                                     </div>
+                                </div>
+                            )}
+
+                            {formData.type === 'main_category' && (
+                                <div className={styles.formGroup}>
+                                    <label className={styles.checkboxLabel}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.show_on_home}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, show_on_home: e.target.checked }))}
+                                        />
+                                        <span>Show on Home Page</span>
+                                    </label>
+                                    <small style={{ color: '#64748b', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                                        Displays a section on the home page with this category&apos;s poster and a slider of its products.
+                                    </small>
+
+                                    {formData.show_on_home && (
+                                        <div style={{ marginTop: '16px', padding: '16px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                            {/* English Poster */}
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: '8px' }}>Home Poster (English)</label>
+                                                <div className={styles.imageUploadSection}>
+                                                    <div className={styles.imagePreview} style={{ width: '140px', height: '186px' }}>
+                                                        {formData.home_poster_url ? (
+                                                            <div className={styles.previewContainer}>
+                                                                <img src={formData.home_poster_url} alt="Poster Preview" />
+                                                                <button
+                                                                    type="button"
+                                                                    className={styles.removeImgBtn}
+                                                                    onClick={() => setFormData(prev => ({ ...prev, home_poster_url: '' }))}
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className={styles.imagePlaceholder}>
+                                                                <ImageIcon size={28} />
+                                                                <span>No poster</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className={styles.uploadControls}>
+                                                        <div className={styles.uploadActions}>
+                                                            <button
+                                                                type="button"
+                                                                className={styles.secondaryUploadBtn}
+                                                                onClick={() => document.getElementById('home-poster-upload')?.click()}
+                                                                disabled={uploadingPoster}
+                                                            >
+                                                                {uploadingPoster ? <Loader2 size={16} className={styles.spinner} /> : <Upload size={16} />}
+                                                                {uploadingPoster ? 'Uploading...' : 'Upload Poster'}
+                                                            </button>
+                                                            <input
+                                                                id="home-poster-upload"
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => uploadToField(e, 'home_poster_url', setUploadingPoster, 'Home poster')}
+                                                                style={{ display: 'none' }}
+                                                            />
+                                                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>Recommended: 600 × 800 px (portrait). Shown as a 280px-wide card; image is cropped to fill (cover).</span>
+                                                        </div>
+                                                        <div className={styles.urlInputGroup}>
+                                                            <span>Or paste URL:</span>
+                                                            <input
+                                                                type="text"
+                                                                name="home_poster_url"
+                                                                placeholder="https://example.com/poster.jpg"
+                                                                value={formData.home_poster_url}
+                                                                onChange={handleInputChange}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Arabic Poster */}
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: '8px' }}>Home Poster (Arabic) <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>(shown when site language is Arabic — falls back to English poster if empty)</span></label>
+                                                <div className={styles.imageUploadSection}>
+                                                    <div className={styles.imagePreview} style={{ width: '140px', height: '186px' }}>
+                                                        {formData.home_poster_url_ar ? (
+                                                            <div className={styles.previewContainer}>
+                                                                <img src={formData.home_poster_url_ar} alt="Arabic Poster Preview" />
+                                                                <button
+                                                                    type="button"
+                                                                    className={styles.removeImgBtn}
+                                                                    onClick={() => setFormData(prev => ({ ...prev, home_poster_url_ar: '' }))}
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className={styles.imagePlaceholder}>
+                                                                <ImageIcon size={28} />
+                                                                <span>No poster</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className={styles.uploadControls}>
+                                                        <div className={styles.uploadActions}>
+                                                            <button
+                                                                type="button"
+                                                                className={styles.secondaryUploadBtn}
+                                                                onClick={() => document.getElementById('home-poster-upload-ar')?.click()}
+                                                                disabled={uploadingPosterAr}
+                                                            >
+                                                                {uploadingPosterAr ? <Loader2 size={16} className={styles.spinner} /> : <Upload size={16} />}
+                                                                {uploadingPosterAr ? 'Uploading...' : 'Upload Arabic Poster'}
+                                                            </button>
+                                                            <input
+                                                                id="home-poster-upload-ar"
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => uploadToField(e, 'home_poster_url_ar', setUploadingPosterAr, 'Arabic home poster')}
+                                                                style={{ display: 'none' }}
+                                                            />
+                                                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>Recommended: 600 × 800 px (portrait). Shown as a 280px-wide card; image is cropped to fill (cover).</span>
+                                                        </div>
+                                                        <div className={styles.urlInputGroup}>
+                                                            <span>Or paste URL:</span>
+                                                            <input
+                                                                type="text"
+                                                                name="home_poster_url_ar"
+                                                                placeholder="https://example.com/poster-ar.jpg"
+                                                                value={formData.home_poster_url_ar}
+                                                                onChange={handleInputChange}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

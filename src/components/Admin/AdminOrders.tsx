@@ -194,6 +194,7 @@ const AdminOrders = () => {
                     customer_name: order?.user_name || '',
                     given_by_name: givenByName.trim() || user?.name || '',
                     final_amount: Number(order?.final_amount || 0),
+                    delivery_charge: Number(order?.delivery_charge) || 0,
                     items: invoiceOrderItems
                 });
             } catch (pdfErr: any) {
@@ -262,6 +263,7 @@ const AdminOrders = () => {
                 customer_name: invoiceModal.order?.user_name || 'Customer',
                 given_by_name: givenByName.trim() || user?.name || '',
                 final_amount: Number(invoiceModal.order?.final_amount || invoiceModal.order?.total_amount || 0),
+                delivery_charge: Number(invoiceModal.order?.delivery_charge) || 0,
                 items: invoiceOrderItems
             });
 
@@ -683,6 +685,12 @@ const AdminOrders = () => {
                                             );
                                         })}
                                     </div>
+                                </div>
+                            )}
+
+                            {!invoiceNumber.trim() && (
+                                <div style={{ marginTop: 12, padding: '14px 16px', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 8, color: '#64748b', fontSize: 13, textAlign: 'center' }}>
+                                    Enter an invoice number above to preview the invoice.
                                 </div>
                             )}
                         </div>

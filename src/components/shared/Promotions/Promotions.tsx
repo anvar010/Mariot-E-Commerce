@@ -16,6 +16,7 @@ interface Promotion {
     description?: string;
     description_ar?: string;
     image_url?: string;
+    image_url_ar?: string;
     coupon_code?: string;
     cta_text?: string;
     cta_text_ar?: string;
@@ -84,6 +85,7 @@ const PromoBanner: React.FC<{ promo: Promotion; isArabic: boolean }> = ({ promo,
     if (hidden) return null;
     const title = (isArabic && promo.title_ar) ? promo.title_ar : promo.title;
     const cta = (isArabic && promo.cta_text_ar) ? promo.cta_text_ar : promo.cta_text;
+    const imageUrl = (isArabic && promo.image_url_ar) ? promo.image_url_ar : promo.image_url;
 
     const copyCoupon = async () => {
         if (!promo.coupon_code) return;
@@ -104,6 +106,14 @@ const PromoBanner: React.FC<{ promo: Promotion; isArabic: boolean }> = ({ promo,
                 color: promo.text_color || '#fff'
             }}
         >
+            {imageUrl && (
+                <img
+                    src={resolveUrl(imageUrl)}
+                    alt={title || 'Promotion'}
+                    style={{ height: '28px', width: 'auto', borderRadius: '4px', objectFit: 'contain', flexShrink: 0 }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+            )}
             <span className={styles.bannerTitle}>{title}</span>
             {promo.coupon_code && (
                 <button
@@ -189,6 +199,7 @@ const PromoPopup: React.FC<{ promo: Promotion; isArabic: boolean }> = ({ promo, 
     const title = (isArabic && promo.title_ar) ? promo.title_ar : promo.title;
     const description = (isArabic && promo.description_ar) ? promo.description_ar : promo.description;
     const cta = (isArabic && promo.cta_text_ar) ? promo.cta_text_ar : promo.cta_text;
+    const imageUrl = (isArabic && promo.image_url_ar) ? promo.image_url_ar : promo.image_url;
 
     const copyCoupon = async () => {
         if (!promo.coupon_code) return;
@@ -211,9 +222,9 @@ const PromoPopup: React.FC<{ promo: Promotion; isArabic: boolean }> = ({ promo, 
                     <X size={18} />
                 </button>
 
-                {promo.image_url && (
+                {imageUrl && (
                     <img
-                        src={resolveUrl(promo.image_url)}
+                        src={resolveUrl(imageUrl)}
                         alt={title || 'Promotion'}
                         className={styles.popupImage}
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}

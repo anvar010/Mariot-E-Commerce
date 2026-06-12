@@ -27,6 +27,7 @@ interface CartItem {
     is_free_gift?: boolean;
     bundle_parent_id?: number | null;
     original_price?: number | null;
+    delivery_charge?: number;
 }
 
 // Build a stable signature from a custom-dimensions object. Used to treat
@@ -72,6 +73,7 @@ interface CartState {
     cartCount: number;
     cartTotal: number;
     subtotal: number;
+    deliveryTotal: number;
     discountAmount: number;
     appliedCoupon: any | null;
     isDrawerOpen: boolean;
@@ -170,7 +172,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         custom_signature: item.custom_signature || null,
                         is_free_gift: Boolean(item.is_free_gift),
                         bundle_parent_id: item.bundle_parent_id ?? null,
-                        original_price: item.original_price != null ? Number(item.original_price) : null
+                        original_price: item.original_price != null ? Number(item.original_price) : null,
+                        delivery_charge: Number(item.delivery_charge) || 0
                     };
                 });
                 setCartItems(items);
@@ -339,6 +342,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 custom_dimensions: product.custom_dimensions || null,
                 custom_signature: customSignature,
                 is_free_gift: isFreeGift,
+                delivery_charge: Number(product.delivery_charge) || 0,
                 bundle_parent_id: product.bundle_parent_id ?? null,
                 original_price: isFreeGift
                     ? (product.original_price != null
@@ -519,14 +523,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Single pass over the items, memoized so it only recomputes when the cart
     // actually changes (not on every unrelated provider re-render).
-    const { cartCount, subtotal } = useMemo(() => {
+    const { cartCount, subtotal, deliveryTotal } = useMemo(() => {
         let count = 0;
         let sub = 0;
+        let delivery = 0;
         for (const item of cartItems) {
             count += item.quantity;
             sub += item.price * item.quantity;
+            if (!item.is_free_gift) delivery += (Number(item.delivery_charge) || 0) * item.quantity;
         }
-        return { cartCount: count, subtotal: sub };
+        return { cartCount: count, subtotal: sub, deliveryTotal: delivery };
     }, [cartItems]);
     const cartTotal = Math.max(0, subtotal - discountAmount - pointsDiscountAmount);
 
@@ -690,13 +696,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cartCount,
         cartTotal,
         subtotal,
+        deliveryTotal,
         discountAmount,
         appliedCoupon,
         isDrawerOpen,
         pointsToUse,
         pointsDiscountAmount,
         pointRate
-    }), [cartItems, cartCount, cartTotal, subtotal, discountAmount, appliedCoupon, isDrawerOpen, pointsToUse, pointsDiscountAmount, pointRate]);
+    }), [cartItems, cartCount, cartTotal, subtotal, deliveryTotal, discountAmount, appliedCoupon, isDrawerOpen, pointsToUse, pointsDiscountAmount, pointRate]);
 
     return (
         <CartActionsContext.Provider value={actions}>

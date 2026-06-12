@@ -25,8 +25,17 @@ export default function ProfilePage() {
     }, []);
 
     React.useEffect(() => {
-        if (mounted && !loading && !user && !isMobile) {
-            router.push('/');
+        if (mounted && !loading && !user) {
+            // Deep link (e.g. from an order/statement email) → send to sign-in, return here after login.
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('orderId') || params.get('tab')) {
+                // Strip the locale prefix so the post-login (next-intl) router doesn't add a second one (/en/en).
+                const pathNoLocale = window.location.pathname.replace(/^\/(en|ar)(?=\/|$)/, '') || '/';
+                const target = pathNoLocale + window.location.search;
+                router.push(`/signin?redirectTo=${encodeURIComponent(target)}`);
+            } else if (!isMobile) {
+                router.push('/');
+            }
         }
     }, [user, loading, isMobile, router, mounted]);
 
