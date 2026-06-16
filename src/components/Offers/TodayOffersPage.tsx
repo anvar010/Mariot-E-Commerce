@@ -161,14 +161,17 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
         return () => clearInterval(timer);
     }, [products]);
 
-    // Categories — fetch once
+    // Categories — only those that actually have offer products (like the shop pages),
+    // not the full catalogue. Filtered server-side by the deal flag.
     useEffect(() => {
-        if (initialCategories.length > 0) return;
-        fetch(`${API_BASE_URL}/categories`, { credentials: 'include' })
+        const dealParam = dealType === 'weekly' ? 'is_weekly=true' : 'is_daily=true';
+        fetch(`${API_BASE_URL}/categories?${dealParam}`, { credentials: 'include' })
             .then(r => r.json())
-            .then(json => { if (json.success) setCategories(json.data); })
+            .then(json => {
+                if (json.success) setCategories(json.data.filter((c: any) => c.type === 'main_category' && c.is_active));
+            })
             .catch(err => console.error('Error fetching categories:', err));
-    }, [initialCategories]);
+    }, [dealType]);
 
     // Brands — only show brands that actually have daily-offer products.
     // If a category is selected, narrow further to that category subtree.
@@ -236,7 +239,9 @@ const TodayOffersPage = ({ initialProducts = [], initialCategories = [], initial
     const now = Date.now();
     const displayedProducts = products
         .filter(p =>
-            p.offer_end && new Date(p.offer_end).getTime() > now &&
+            // A null offer_end means "no expiry" (active), matching the backend filter
+            // and the admin's Daily/Weekly/Limited tag logic. Only hide once expired.
+            (!p.offer_end || new Date(p.offer_end).getTime() > now) &&
             (!p.offer_start || new Date(p.offer_start).getTime() <= now)
         )
         .slice(0, visibleCount);

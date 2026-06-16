@@ -39,6 +39,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import { formatCustomDims } from '@/utils/customDimensions';
 import styles from './checkout.module.css';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -50,13 +51,14 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || ''
 function CheckoutContent() {
     const stripe = useStripe();
     const elements = useElements();
-    const { cartItems, cartTotal, deliveryTotal, discountAmount, pointsToUse, pointsDiscountAmount, appliedCoupon, clearCart, applyDiscount, removeDiscount } = useCart();
+    const { cartItems, cartTotal, deliveryTotal, discountAmount, pointsToUse, pointsDiscountAmount, appliedCoupon, clearCart, applyDiscount, removeDiscount, applyPoints, removePoints } = useCart();
     const { user, token, loading, refreshUser } = useAuth();
     const [otpOpen, setOtpOpen] = useState(false);
     const { showNotification } = useNotification();
     const n = useTranslations('notifications');
     const t = useTranslations('checkout');
     const common = useTranslations('common');
+    const tProd = useTranslations('product');
     const otpT = useTranslations('otpModal');
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -97,6 +99,8 @@ function CheckoutContent() {
     });
 
     const [couponCode, setCouponCode] = useState('');
+    const [pointsInput, setPointsInput] = useState<number | string>(pointsToUse > 0 ? pointsToUse : '');
+    const [showPointsBox, setShowPointsBox] = useState(pointsToUse > 0);
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const [showCouponModal, setShowCouponModal] = useState(false);
     const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
@@ -1059,6 +1063,81 @@ function CheckoutContent() {
                                     )}
                                 </div>
 
+                                {user && (user.reward_points || 0) > 0 && (
+                                    <div className={styles.couponSection}>
+                                        {pointsToUse > 0 ? (
+                                            <div className={styles.appliedCouponBox}>
+                                                <div className={styles.appliedCouponInfo}>
+                                                    <span className={styles.couponCodeTag}>
+                                                        {pointsToUse.toFixed(0)} {t('ptShort')}
+                                                    </span>
+                                                    <span className={styles.couponSuccessText}>{t('pointsApplied')}</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { removePoints(); setPointsInput(''); }}
+                                                    className={styles.removeCouponBtn}
+                                                >
+                                                    {common('delete')}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className={styles.couponWrapper}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.viewCouponsBtn}
+                                                    onClick={() => setShowPointsBox(v => !v)}
+                                                    style={{ width: '100%', justifyContent: 'space-between' }}
+                                                >
+                                                    <span>{t('applyPointsForDiscount')}</span>
+                                                    <ChevronDown size={16} className={showPointsBox ? styles.codeChevronOpen : ''} />
+                                                </button>
+                                                {showPointsBox && (
+                                                <>
+                                                <div style={{ fontSize: 13, color: '#64748b', margin: '10px 0 8px' }}>
+                                                    {t('availablePoints')}: {(user.reward_points || 0).toLocaleString()} {t('ptShort')}
+                                                </div>
+                                                <div className={styles.couponForm}>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        max={user.reward_points || 0}
+                                                        value={pointsInput}
+                                                        onChange={(e) => setPointsInput(e.target.value === '' ? '' : Math.max(0, Math.min(Number(e.target.value), user.reward_points || 0)))}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                e.preventDefault();
+                                                                const p = Number(pointsInput);
+                                                                if (p > 0) applyPoints(p);
+                                                            }
+                                                        }}
+                                                        placeholder={t('pointsPlaceholder')}
+                                                        className={styles.couponInput}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setPointsInput(user.reward_points || 0)}
+                                                        className={styles.viewCouponsBtn}
+                                                        style={{ padding: '0 12px', whiteSpace: 'nowrap' }}
+                                                    >
+                                                        {t('pointsMax')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { const p = Number(pointsInput); if (p > 0) applyPoints(p); }}
+                                                        className={styles.applyCouponBtn}
+                                                        disabled={!Number(pointsInput)}
+                                                    >
+                                                        {t('applyPoints')}
+                                                    </button>
+                                                </div>
+                                                </>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 <div className={styles.itemList}>
                                     {cartItems.map(item => (
                                         <div key={`${item.id}-${item.variant_id ?? 'base'}-${item.custom_signature ?? ''}`} className={styles.itemRow}>
@@ -1077,9 +1156,11 @@ function CheckoutContent() {
                                                 >
                                                     {locale === 'ar' && item.name_ar ? item.name_ar : item.name}
                                                 </div>
-                                                {item.variant_label && (
+                                                {(item.custom_dimensions && Object.keys(item.custom_dimensions).length > 0) ? (
+                                                    <div style={{ fontSize: 12, color: '#64748b' }}>{formatCustomDims(item.custom_dimensions, tProd)}</div>
+                                                ) : item.variant_label ? (
                                                     <div style={{ fontSize: 12, color: '#64748b' }}>{item.variant_label}</div>
-                                                )}
+                                                ) : null}
                                                 <div className={styles.itemMeta}>Qty: {item.quantity}</div>
                                             </div>
                                             <div className={styles.itemPrice}>

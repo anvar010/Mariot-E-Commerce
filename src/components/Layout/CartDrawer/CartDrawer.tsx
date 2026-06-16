@@ -30,6 +30,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
+import { customDimParts } from '@/utils/customDimensions';
 import styles from './CartDrawer.module.css';
 import qStyles from './CartDrawer.quotation.module.css';
 
@@ -38,7 +39,26 @@ const CartDrawer = () => {
     const locale = useLocale();
     const t = useTranslations('cart');
     const tNotif = useTranslations('notifications');
+    const tDim = useTranslations('product');
     const isArabic = locale === 'ar';
+
+    // Render the per-item attribute pills. For customizable products we have a
+    // structured custom_dimensions map → localize the dimension labels + unit.
+    // Otherwise fall back to the pre-built variant_label string.
+    const renderItemPills = (item: any) => {
+        const parts = customDimParts(item?.custom_dimensions, tDim);
+        if (parts.length > 0) {
+            return parts.map((part, i) => (
+                <span key={i} className={styles.itemVariant}>{part}</span>
+            ));
+        }
+        if (item?.variant_label) {
+            return item.variant_label.split(' / ').map((part: string, i: number) => (
+                <span key={i} className={styles.itemVariant}>{part}</span>
+            ));
+        }
+        return null;
+    };
     const { user, token } = useAuth();
     const { showNotification } = useNotification();
 
@@ -325,11 +345,9 @@ const CartDrawer = () => {
                                                     <div className={styles.itemNameRow}>
                                                         <div className={styles.itemNameMain}>
                                                             <h4 className={styles.itemName}>{isArabic && item.name_ar ? item.name_ar : item.name}</h4>
-                                                            {item.variant_label && (
+                                                            {(item.custom_dimensions || item.variant_label) && (
                                                                 <div className={styles.itemVariantList}>
-                                                                    {item.variant_label.split(' / ').map((part: string, i: number) => (
-                                                                        <span key={i} className={styles.itemVariant}>{part}</span>
-                                                                    ))}
+                                                                    {renderItemPills(item)}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -368,11 +386,9 @@ const CartDrawer = () => {
                                                     <div className={styles.itemNameRow}>
                                                         <div className={styles.itemNameMain}>
                                                             <h4 className={styles.itemName}>{isArabic && item.name_ar ? item.name_ar : item.name}</h4>
-                                                            {item.variant_label && (
+                                                            {(item.custom_dimensions || item.variant_label) && (
                                                                 <div className={styles.itemVariantList}>
-                                                                    {item.variant_label.split(' / ').map((part: string, i: number) => (
-                                                                        <span key={i} className={styles.itemVariant}>{part}</span>
-                                                                    ))}
+                                                                    {renderItemPills(item)}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -545,7 +561,7 @@ const CartDrawer = () => {
                                         </div>
                                         {pointsToUse > 0 && (
                                             <button className={styles.removeCouponBtn} onClick={() => removePoints()} style={{ marginTop: '10px' }}>
-                                                <X size={14} /> Remove Points
+                                                <X size={14} /> {t('removePoints')}
                                             </button>
                                         )}
                                     </div>

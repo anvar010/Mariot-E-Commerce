@@ -4,6 +4,7 @@ import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import ProductDetail from '@/components/Product/ProductDetail/ProductDetail';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
+import { localeAlternates, ogLocale } from '@/lib/seo';
 
 const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://mariot-backend.onrender.com/api/v1';
 
@@ -39,6 +40,13 @@ export async function generateMetadata(props: { params: Promise<{ slug: string |
         if (!html) return '';
         return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
     };
+    // Keep meta descriptions to a sane SEO length (~160 chars), cutting on a word boundary.
+    const clampDesc = (s: string, max = 160) => {
+        if (s.length <= max) return s;
+        const cut = s.slice(0, max);
+        const lastSpace = cut.lastIndexOf(' ');
+        return (lastSpace > 80 ? cut.slice(0, lastSpace) : cut).trim() + '…';
+    };
 
     try {
         const res = await fetch(`${API_BASE_URL_SERVER}/products/${encodeURIComponent(id)}`, {
@@ -53,8 +61,11 @@ export async function generateMetadata(props: { params: Promise<{ slug: string |
         if (data.success && data.data) {
             const product = data.data;
             const title = isArabic && product.name_ar ? product.name_ar : product.name;
-            const rawDescription = isArabic && product.short_description_ar ? product.short_description_ar : product.short_description;
-            const cleanDescription = stripHtml(rawDescription) || `Buy ${title} at the best price in UAE only at Mariot Store.`;
+            // Use the full description as the primary meta description, fall back to the
+            // short description, then a generic line.
+            const longDesc = isArabic && product.description_ar ? product.description_ar : product.description;
+            const shortDesc = isArabic && product.short_description_ar ? product.short_description_ar : product.short_description;
+            const cleanDescription = clampDesc(stripHtml(longDesc) || stripHtml(shortDesc) || `Buy ${title} at the best price in UAE only at Mariot Store.`);
 
             // Get the primary image
             const imagePath = product.primary_image || (product.images && product.images[0]?.image_url);
@@ -63,9 +74,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string |
             return {
                 title: `${title} | Mariot Kitchen Equipment UAE`,
                 description: cleanDescription,
-                alternates: {
-                    canonical: `${SITE_URL}/${params.locale}/product/${encodeURIComponent(id)}`,
-                },
+                alternates: localeAlternates(params.locale, `/product/${encodeURIComponent(id)}`),
                 openGraph: {
                     title: `${title} | Mariot Store`,
                     description: cleanDescription,
@@ -80,6 +89,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string |
                     type: 'website',
                     url: `${SITE_URL}/${params.locale}/product/${encodeURIComponent(id)}`,
                     siteName: 'Mariot Kitchen Equipment',
+                    ...ogLocale(params.locale),
                 },
                 twitter: {
                     card: 'summary_large_image',
@@ -177,10 +187,25 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                     "url": `${SITE_URL}/${params.locale}/product/${encodeURIComponent(slug)}`,
                     "priceCurrency": "AED",
                     "price": product.offer_price ? Number(product.offer_price) : Number(product.price || 0),
+                    // Keep the offer "valid" for a year out so Google doesn't flag a stale price.
+                    "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                     "availability": product.stock_quantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
                     "itemCondition": "https://schema.org/NewCondition"
                 }
             };
+
+            // Star ratings (rich snippet) — only when at least one real review exists.
+            const ratingCount = Number(product.total_reviews) || 0;
+            const ratingValue = Number(product.average_rating) || 0;
+            if (ratingCount > 0 && ratingValue > 0) {
+                (jsonLd as any).aggregateRating = {
+                    "@type": "AggregateRating",
+                    "ratingValue": ratingValue.toFixed(1),
+                    "reviewCount": ratingCount,
+                    "bestRating": "5",
+                    "worstRating": "1"
+                };
+            }
         }
     } catch (e) {
         console.error("Failed to generate JSON-LD", e);

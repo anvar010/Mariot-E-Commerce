@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminProducts.module.css';
-import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag, Ruler, MoveHorizontal, MoveVertical, Scale, Info } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag, Ruler, MoveHorizontal, MoveVertical, Scale, Info, GripVertical } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
@@ -444,6 +444,18 @@ const AdminProducts = () => {
     const [customDimensions, setCustomDimensions] = useState<Array<'width' | 'depth' | 'height'>>(['width', 'depth', 'height']);
     const [sizeTiers, setSizeTiers] = useState<SizeTierRow[]>([]);
     const [baseDimensions, setBaseDimensions] = useState<{ width: string; depth: string; height: string }>({ width: '', depth: '', height: '' });
+    // Drag-reorder of customization dimensions — controls display order on the product page.
+    const [dimDragIdx, setDimDragIdx] = useState<number | null>(null);
+    const [dimDragOverIdx, setDimDragOverIdx] = useState<number | null>(null);
+    const reorderDimension = (from: number, to: number) => {
+        setCustomDimensions(prev => {
+            if (from === to || from < 0 || to < 0 || from >= prev.length || to >= prev.length) return prev;
+            const next = [...prev];
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved);
+            return next;
+        });
+    };
     const [brands, setBrands] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
     const [exporting, setExporting] = useState(false);
@@ -3208,14 +3220,48 @@ const AdminProducts = () => {
                                                         <p>For every measurement below, add the size ranges and the price for each. Example: <em>From 0 to 50&nbsp;cm → 100&nbsp;AED, From 51 to 100&nbsp;cm → 180&nbsp;AED</em>.</p>
                                                     </div>
 
-                                                    {customDimensions.map(dim => {
+                                                    {customDimensions.map((dim, dimIdx) => {
                                                         const dimTiers = sizeTiers
                                                             .map((t, i) => ({ ...t, _idx: i }))
                                                             .filter(t => t.dimension === dim);
+                                                        const isDimDragOver = dimDragOverIdx === dimIdx && dimDragIdx !== dimIdx;
                                                         return (
-                                                            <div key={dim} className={styles.customSizingSection}>
+                                                            <div
+                                                                key={dim}
+                                                                className={styles.customSizingSection}
+                                                                onDragOver={(e) => {
+                                                                    if (dimDragIdx === null) return;
+                                                                    e.preventDefault();
+                                                                    e.dataTransfer.dropEffect = 'move';
+                                                                    if (dimDragOverIdx !== dimIdx) setDimDragOverIdx(dimIdx);
+                                                                }}
+                                                                onDragLeave={() => { if (dimDragOverIdx === dimIdx) setDimDragOverIdx(null); }}
+                                                                onDrop={(e) => {
+                                                                    e.preventDefault();
+                                                                    if (dimDragIdx !== null) reorderDimension(dimDragIdx, dimIdx);
+                                                                    setDimDragIdx(null);
+                                                                    setDimDragOverIdx(null);
+                                                                }}
+                                                                style={{
+                                                                    background: isDimDragOver ? '#eff6ff' : undefined,
+                                                                    outline: isDimDragOver ? '2px dashed #3b82f6' : undefined,
+                                                                    opacity: dimDragIdx === dimIdx ? 0.4 : 1,
+                                                                    borderRadius: 12,
+                                                                }}
+                                                            >
                                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                                                                    <h4 style={{ textTransform: 'capitalize', margin: 0 }}>{dim}</h4>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                        <span
+                                                                            draggable
+                                                                            onDragStart={(e) => { setDimDragIdx(dimIdx); e.dataTransfer.effectAllowed = 'move'; }}
+                                                                            onDragEnd={() => { setDimDragIdx(null); setDimDragOverIdx(null); }}
+                                                                            title="Drag to reorder — this is the order shown on the product page"
+                                                                            style={{ cursor: 'grab', color: '#94a3b8', display: 'flex', alignItems: 'center' }}
+                                                                        >
+                                                                            <GripVertical size={16} />
+                                                                        </span>
+                                                                        <h4 style={{ textTransform: 'capitalize', margin: 0 }}>{dim}</h4>
+                                                                    </div>
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setSizeTiers(prev => {

@@ -79,7 +79,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
     const displayDescription = isArabic && product?.description_ar ? product.description_ar : (product?.description || product?.title || description);
 
     // Price Logic:
-    const hasOffer = !!(product?.offer_price && Number(product.offer_price) > 0);
+    // An offer only applies within its active window. Once offer_end passes the
+    // product reverts to its main price (matches ProductCardPromotion / the offers page).
+    const nowTs = Date.now();
+    const isOfferActive =
+        (!product?.offer_start || new Date(product.offer_start).getTime() <= nowTs) &&
+        (!product?.offer_end || new Date(product.offer_end).getTime() > nowTs);
+    const hasOffer = isOfferActive && !!(product?.offer_price && Number(product.offer_price) > 0);
     const displayPrice = hasOffer ? Number(product.offer_price) : (Number(product?.price) || price);
 
     // Only show old price if it's an actual offer or explicitly provided as non-zero prop
@@ -88,9 +94,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
         : (product ? 0 : (oldPrice || 0));
     const displayOldPrice = displayOldPriceValue;
 
-    // Discount logic: Only show if valid percentage > 0
+    // Discount logic: Only show while the offer is active (so an expired offer doesn't
+    // leave a stale "% OFF" badge next to the restored main price).
     const dbDiscount = product?.discount_percentage;
-    const isDiscountValid = dbDiscount && Number(dbDiscount) > 0;
+    const isDiscountValid = isOfferActive && dbDiscount && Number(dbDiscount) > 0;
 
     const displayDiscount = isDiscountValid
         ? `${dbDiscount}% OFF`

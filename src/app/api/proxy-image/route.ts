@@ -9,6 +9,7 @@ const ALLOWED_DOMAINS = [
     'plus.unsplash.com',
     'via.placeholder.com',
     'www.rational-online.com',
+    'api.qrserver.com',
 ];
 
 function isAllowedUrl(urlString: string): boolean {

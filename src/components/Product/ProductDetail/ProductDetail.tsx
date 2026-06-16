@@ -1061,8 +1061,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
     const customAllValid = isCustomizable && customPrice !== null;
 
-    const variantHasOffer = !!(selectedVariant && selectedVariant.offer_price !== null && Number(selectedVariant.offer_price) > 0);
-    const productHasOffer = !!(product.offer_price && Number(product.offer_price) > 0);
+    // An offer only counts while it is within its active window. Once offer_end passes,
+    // the product (and its variants) revert to the main price everywhere — including the
+    // price added to the cart.
+    const offerNowTs = Date.now();
+    const isOfferActive =
+        (!product.offer_start || new Date(product.offer_start).getTime() <= offerNowTs) &&
+        (!product.offer_end || new Date(product.offer_end).getTime() > offerNowTs);
+    const variantHasOffer = isOfferActive && !!(selectedVariant && selectedVariant.offer_price !== null && Number(selectedVariant.offer_price) > 0);
+    const productHasOffer = isOfferActive && !!(product.offer_price && Number(product.offer_price) > 0);
     const hasOffer = selectedVariant ? variantHasOffer : productHasOffer;
 
     const displayPrice = isCustomizable
@@ -2303,9 +2310,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         'standard features (heg)'
                     ]);
 
-                    const parseSpecs = (raw: string | null | undefined): Map<string, string> => {
-                        const m = new Map<string, string>();
-                        if (!raw) return m;
+                    // Canonical key for a spec label: trimmed, collapsed whitespace, lower-cased.
+                    // Prevents the same attribute appearing as separate rows when products differ
+                    // only by casing/spacing (e.g. "Top Thickness" vs "Top thickness").
+                    const normLabel = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+                    // Map a canonical key → the first original-cased label seen (used for display).
+                    const labelDisplay = new Map<string, string>();
+
+                    // Parse one spec blob into an ordered list of { label, value } pairs.
+                    const parseSpecLines = (raw: string | null | undefined): Array<{ label: string; value: string }> => {
+                        const out: Array<{ label: string; value: string }> = [];
+                        if (!raw) return out;
                         const cleaned = fixMojibake(cleanShortcodes(String(raw)))
                             .replace(/<[^>]*>/g, '\n')
                             .replace(/^[•\s✳️✅\-â€¢]+\s*/gm, '');
@@ -2316,21 +2331,48 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 const label = parts[0].trim();
                                 const value = parts.slice(1).join(':').trim();
                                 if (!label || !value) continue;
-                                if (compareLabelDenylist.has(label.toLowerCase())) continue;
-                                if (!m.has(label)) m.set(label, value);
+                                out.push({ label, value });
                             }
+                        }
+                        return out;
+                    };
+
+                    // Build a product's spec map keyed by the canonical ENGLISH label so rows align
+                    // across products regardless of which ones have Arabic specs. The Arabic value/label
+                    // (when present) is matched to the English one by line order and used for display.
+                    const parseSpecs = (p: any): Map<string, string> => {
+                        const m = new Map<string, string>();
+                        const enList = parseSpecLines(p?.specifications);
+                        const arList = parseSpecLines(p?.specifications_ar);
+                        enList.forEach((en, i) => {
+                            const key = normLabel(en.label);
+                            if (compareLabelDenylist.has(key)) return;
+                            const ar = arList[i];
+                            const value = (isArabic && ar?.value) ? ar.value : en.value;
+                            const dispLabel = (isArabic && ar?.label) ? ar.label : en.label;
+                            if (!m.has(key)) m.set(key, value);
+                            if (!labelDisplay.has(key)) labelDisplay.set(key, dispLabel);
+                        });
+                        // Fallback: a product with only Arabic specs still keys by its own labels.
+                        if (enList.length === 0) {
+                            arList.forEach((ar) => {
+                                const key = normLabel(ar.label);
+                                if (compareLabelDenylist.has(key)) return;
+                                if (!m.has(key)) m.set(key, ar.value);
+                                if (!labelDisplay.has(key)) labelDisplay.set(key, ar.label);
+                            });
                         }
                         return m;
                     };
 
-                    const specMaps = slotProducts.map(p => parseSpecs(isArabic && p?.specifications_ar ? p.specifications_ar : p?.specifications));
+                    const specMaps = slotProducts.map(p => parseSpecs(p));
 
-                    // Build the union of attribute labels, preserving the order they first appear (left → right).
+                    // Build the union of attribute keys, preserving first-appearance order (left → right).
                     const seen = new Set<string>();
-                    const allLabels: string[] = [];
+                    const allLabels: string[] = []; // canonical keys
                     specMaps.forEach(m => {
-                        m.forEach((_, label) => {
-                            if (!seen.has(label)) { seen.add(label); allLabels.push(label); }
+                        m.forEach((_, key) => {
+                            if (!seen.has(key)) { seen.add(key); allLabels.push(key); }
                         });
                     });
 
@@ -2343,6 +2385,34 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         if (!p) return null;
                         const o = Number(p.offer_price);
                         return o > 0 ? o : Number(p.price);
+                    };
+
+                    // Stainless-steel products get an extra "Sizes" (W × D × H) row under Price.
+                    const isStainlessSteel = [slot0?.category_slug, slot0?.sub_category_slug, slot0?.sub_sub_category_slug]
+                        .some((s: any) => s === 'stainless-steel-fabrications')
+                        || /stainless steel/i.test(String(slot0?.category_name || ''));
+
+                    const parseDims = (raw: any): { width?: any; depth?: any; height?: any } | null => {
+                        if (!raw) return null;
+                        let bd: any = raw;
+                        if (typeof bd === 'string') { try { bd = JSON.parse(bd); } catch { return null; } }
+                        return (bd && typeof bd === 'object') ? bd : null;
+                    };
+                    const fmtSize = (bd: { width?: any; depth?: any; height?: any } | null): string | null => {
+                        if (!bd) return null;
+                        const nums = [bd.width, bd.depth, bd.height]
+                            .map(v => (v === undefined || v === null || String(v).trim() === '') ? null : v);
+                        if (nums.every(v => v === null)) return null;
+                        const unit = isArabic ? 'سم' : 'cm';
+                        return `${nums.map(v => (v === null ? '—' : v)).join(' × ')} ${unit}`;
+                    };
+                    // Slot 0 (this product) reflects the LIVE selected size so it updates with the
+                    // chosen dimensions — exactly like the price does; other slots use base dimensions.
+                    const sizeFor = (p: any, idx: number): string | null => {
+                        if (idx === 0 && isCustomizable) {
+                            return fmtSize({ width: customDims.width, depth: customDims.depth, height: customDims.height });
+                        }
+                        return fmtSize(parseDims(p?.base_dimensions));
                     };
 
                     return (
@@ -2457,6 +2527,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                 );
                                             })}
                                         </tr>
+                                        {isStainlessSteel && (
+                                            <tr>
+                                                <td className={styles.compareRowLabel}>{isArabic ? 'المقاسات' : 'Sizes'}</td>
+                                                {slotProducts.map((p, idx) => (
+                                                    <td key={idx} className={styles.compareCell}>{sizeFor(p, idx) || '—'}</td>
+                                                ))}
+                                            </tr>
+                                        )}
                                         {adminRows.length > 0
                                             ? adminRows.map((row, ri) => {
                                                 // values[0] is "this product"; values[1 + poolIdx] maps to the curated product at that pool position.
@@ -2483,11 +2561,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                     </tr>
                                                 );
                                             })
-                                            : allLabels.map(label => (
-                                                <tr key={label}>
-                                                    <td className={styles.compareRowLabel}>{label}</td>
+                                            : allLabels.map(key => (
+                                                <tr key={key}>
+                                                    <td className={styles.compareRowLabel}>{labelDisplay.get(key) || key}</td>
                                                     {specMaps.map((m, idx) => (
-                                                        <td key={idx} className={styles.compareCell}>{m.get(label) || '—'}</td>
+                                                        <td key={idx} className={styles.compareCell}>{m.get(key) || '—'}</td>
                                                     ))}
                                                 </tr>
                                             ))

@@ -150,7 +150,9 @@
 .breadcrumbs {
     display: flex;
     align-items: center;
-    flex-wrap: nowrap;
+    /* Wrap to the next line instead of overflowing the fixed-width column and
+       bleeding over the "Shop by Category" heading when the brand name is long. */
+    flex-wrap: wrap;
     gap: 8px;
     font-size: 14px;
     line-height: 1.6;
@@ -559,10 +561,10 @@
 
 .categoryCard {
     background: white;
-    padding: 12px;
+    padding: 10px;
     text-align: center;
     border-radius: 8px;
-    width: 180px;
+    width: 200px;
     /* Slightly smaller for better fit */
     flex: 0 0 auto;
     transition: all 0.3s ease;
@@ -571,7 +573,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    height: 175px;
+    height: 220px;
     text-decoration: none;
     scroll-snap-align: start;
     /* Snap point for mobile */
@@ -585,19 +587,21 @@
 }
 
 .categoryImage {
-    height: 100px;
-    margin-bottom: 10px;
+    width: 100%;
+    height: 160px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #f8fafc;
-    border-radius: 4px;
+    border-radius: 6px;
+    overflow: hidden;
 }
 
 .demoImg {
-    max-height: 100%;
-    max-width: 100%;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .categoryCard p {
@@ -888,14 +892,14 @@
     }
 
     .categoryCard {
-        width: 160px;
-        height: 175px;
-        padding: 12px;
+        width: 180px;
+        height: 205px;
+        padding: 10px;
     }
 
     .categoryImage {
-        height: 90px;
-        margin-bottom: 10px;
+        height: 145px;
+        margin-bottom: 8px;
     }
 
     .productGrid {
@@ -924,7 +928,7 @@
 
     .breadcrumbs {
         font-size: 12px;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
     }
 
     .resultsHeader {
@@ -979,16 +983,16 @@
     }
 
     .categoryCard {
-        width: 140px;
-        height: 165px;
-        padding: 10px;
+        width: 150px;
+        height: 185px;
+        padding: 8px;
         scroll-snap-align: center;
         /* Center snap on mobile for better focus */
     }
 
     .categoryImage {
-        height: 70px;
-        margin-bottom: 8px;
+        height: 130px;
+        margin-bottom: 6px;
     }
 
     .categoryCard p {
@@ -1090,14 +1094,14 @@
     }
 
     .categoryCard {
-        width: 110px;
-        height: 110px;
-        padding: 8px;
+        width: 120px;
+        height: 150px;
+        padding: 6px;
     }
 
     .categoryImage {
-        height: 55px;
-        margin-bottom: 6px;
+        height: 110px;
+        margin-bottom: 4px;
     }
 
     .categoryCard p {

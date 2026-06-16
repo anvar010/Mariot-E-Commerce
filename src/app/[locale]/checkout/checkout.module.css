@@ -784,7 +784,13 @@
     border: 1px solid #f1f5f9;
     flex: 1;
     overflow-y: auto;
-    scrollbar-width: thin;
+    /* Keep scroll, hide the scrollbar chrome (appears when points dropdown expands) */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.summaryCard::-webkit-scrollbar {
+    display: none;
 }
 
 .summaryTitle {

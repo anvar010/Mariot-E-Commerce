@@ -5,6 +5,7 @@ import { getMessages } from 'next-intl/server';
 import Providers from './providers';
 import DeferredChrome from './DeferredChrome';
 import { Inter, Alexandria } from 'next/font/google';
+import { localeAlternates, ogLocale } from '@/lib/seo';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -50,6 +51,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
             shortcut: '/favicon.ico',
             apple: '/favicon.ico',
         },
+        alternates: localeAlternates(locale, ''),
         openGraph: {
             title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
             description: isArabic ? 'تصفح مجموعتنا الواسعة من معدات المطابخ. جودة فائقة وأسعار لا تقبل المنافسة.' : 'Browse our wide range of premium commercial kitchen equipment with unbeatable prices.',
@@ -63,7 +65,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
                     alt: isArabic ? 'ماريوت لمعدات المطابخ' : 'Mariot Kitchen Equipment',
                 }
             ],
-            locale: isArabic ? 'ar_AE' : 'en_US',
+            ...ogLocale(locale),
             type: 'website',
         }
     };

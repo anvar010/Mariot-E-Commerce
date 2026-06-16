@@ -4,6 +4,7 @@ import Footer from '@/components/Layout/Footer/Footer';
 import CategoryLanding from '@/components/Categories/CategoryLanding/CategoryLanding';
 import { Metadata } from 'next';
 import { API_BASE_URL } from '@/config';
+import { localeAlternates, ogLocale } from '@/lib/seo';
 
 interface CategoryPageProps {
   params: Promise<{
@@ -24,9 +25,20 @@ export async function generateMetadata(props: CategoryPageProps): Promise<Metada
     
     if (category) {
       const title = isArabic && category.name_ar ? category.name_ar : category.name;
+      const desc = (isArabic && category.description_ar ? category.description_ar : category.description)
+        || `Buy professional ${title} in UAE at Mariot Store.`;
       return {
         title: `${title} | Mariot Store`,
-        description: category.description || `Buy professional ${title} in UAE at Mariot Store.`
+        description: desc,
+        alternates: localeAlternates(locale, `/category/${slug}`),
+        openGraph: {
+          title: `${title} | Mariot Store`,
+          description: desc,
+          url: `https://mariotstore.com/${locale}/category/${slug}`,
+          siteName: 'Mariot Kitchen Equipment',
+          type: 'website',
+          ...ogLocale(locale),
+        },
       };
     }
   } catch (err) {
@@ -34,7 +46,8 @@ export async function generateMetadata(props: CategoryPageProps): Promise<Metada
   }
 
   return {
-    title: 'Category | Mariot Store'
+    title: 'Category | Mariot Store',
+    alternates: localeAlternates(locale, `/category/${slug}`),
   };
 }
 

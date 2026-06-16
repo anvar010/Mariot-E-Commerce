@@ -386,14 +386,18 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
     // Any coupon/points discount is the gap between the item subtotal and the taxable net.
     const discountTotal = Math.max(0, itemsSubtotal - netExVat);
 
-    // Fetch logo + brand images in parallel
-    const [mariotLogoEnB64, mariotLogoArB64, faviconB64, isoB64, icvB64, qaB64, ...brandLogosB64] = await Promise.all([
+    // Fetch logo + brand images in parallel. The QR is fetched via the same proxy
+    // → base64 path so it does NOT taint the canvas (a direct cross-origin <img>
+    // with allowTaint makes canvas.toDataURL() throw a SecurityError).
+    const QR_URL = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://mariotstore.com';
+    const [mariotLogoEnB64, mariotLogoArB64, faviconB64, isoB64, icvB64, qaB64, qrB64, ...brandLogosB64] = await Promise.all([
         imageToBase64(window.location.origin + '/assets/mariot-logo2.webp'),   // English logo — left
         imageToBase64(window.location.origin + '/MARIOT-A.webp'),              // Arabic logo  — right
         imageToBase64(window.location.origin + '/favicon.ico'),                // Icon          — centre
         imageToBase64(window.location.origin + '/ISO.webp'),
         imageToBase64(window.location.origin + '/ICV.webp'),
         imageToBase64(window.location.origin + '/Quality-Assurance.webp'),
+        imageToBase64(QR_URL),                                                 // QR — via proxy (no taint)
         ...INVOICE_BRAND_LOGOS.map(p => imageToBase64(window.location.origin + p))
     ]);
 
@@ -591,7 +595,7 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
                         <td style="width:170px;padding-right:10px;">
                             <div style="display:flex;align-items:center;gap:5px;margin-bottom:7px;">
                                 <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
-                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://mariotstore.com" style="width:40px;height:40px;border:1px solid #ccc;padding:2px;border-radius:3px;">
+                                    <img src="${qrB64}" style="width:40px;height:40px;border:1px solid #ccc;padding:2px;border-radius:3px;">
                                     <span style="font-size:7px;font-weight:bold;margin-top:2px;color:#111;">SCAN ME</span>
                                 </div>
                                 <img src="${isoB64}" style="height:38px;max-width:42px;object-fit:contain;" alt="ISO">

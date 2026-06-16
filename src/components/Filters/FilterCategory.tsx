@@ -14,6 +14,7 @@ const FilterCategory: React.FC<FilterProps> = ({
     selectedBrands,
     handleBrandToggle,
     allCategories,
+    subCategories,
     activeCategory,
     minPrice,
     setMinPrice,
@@ -65,10 +66,38 @@ const FilterCategory: React.FC<FilterProps> = ({
                 )}
             </div>
 
-            {/* Category list intentionally omitted here: the user is already inside
-                a category, and its sub-categories are shown in the CategoryGrid
-                above the product list — so a full category list in the sidebar
-                would be redundant. */}
+            {/* CATEGORIES — kept here so users can switch category in place from the
+                filter (consistent with the shop / brand pages), instead of feeling
+                like a full page change. */}
+            <div className={styles.filterSection}>
+                <div className={styles.sectionHeader} onClick={() => toggleSection('categories')}>
+                    <h3>{t('categories') || 'Product Categories'}</h3>
+                    <ChevronDown size={14} className={expandedSections.includes('categories') ? styles.rotateIcon : styles.collapsedIcon} />
+                </div>
+                {expandedSections.includes('categories') && (
+                    <div className={styles.sectionContent}>
+                        {(() => {
+                        // On a main-category page, scope the list to that category's
+                        // sub-categories instead of every top-level category.
+                        const categoryList = (subCategories && subCategories.length > 0) ? subCategories : allCategories;
+                        return categoryList.length > 0 ? (
+                            categoryList.map(cat => (
+                                <label key={cat.id} className={styles.checkboxLabel}>
+                                    <input
+                                        type="checkbox"
+                                        checked={activeCategory === cat.slug}
+                                        onChange={() => onCategoryChange(activeCategory === cat.slug ? '' : cat.slug)}
+                                    />
+                                    <span><span>{isArabic && cat.name_ar ? cat.name_ar : cat.name}</span></span>
+                                </label>
+                            ))
+                        ) : (
+                            <p style={{ fontSize: '12px', color: '#999' }}>{t('no-categories-found')}</p>
+                        );
+                        })()}
+                    </div>
+                )}
+            </div>
 
             {/* BRANDS IN THIS CATEGORY */}
             {brands.length > 0 && (

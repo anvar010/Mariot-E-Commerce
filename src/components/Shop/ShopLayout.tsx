@@ -355,7 +355,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 setSelectedBrands(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]);
                 setIsMobileFilterOpen(false);
             },
-            allCategories, brandCategories, activeCategory, minPrice, setMinPrice, maxPrice, setMaxPrice,
+            allCategories, brandCategories, subCategories: subCategoriesToShow, activeCategory, minPrice, setMinPrice, maxPrice, setMaxPrice,
             resetFilters, toggleSection, expandedSections,
             onCategoryChange: (slug: string) => { handleCategoryChange(slug); setIsMobileFilterOpen(false); }
         };
@@ -365,7 +365,9 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         if (activeCategory) {
             const isMainCategory = !matchedCategoryForGrid?.parent_id;
             if (isMainCategory && subCategoriesToShow.length > 0) return <FilterCategory {...commonProps} />;
-            return <DefaultShopFilter {...commonProps} enableCategoryFilter={false} />;
+            // Keep the category list in the filter so users can switch categories in place
+            // (without it, selecting a category hides the list and feels like a page change).
+            return <DefaultShopFilter {...commonProps} />;
         }
         return <DefaultShopFilter {...commonProps} />;
     };

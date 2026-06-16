@@ -43,6 +43,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import Loader from '@/components/shared/Loader/Loader';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import { formatCustomDims } from '@/utils/customDimensions';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import OtpVerifyModal from '@/components/shared/OtpVerifyModal/OtpVerifyModal';
 import EmailOtpModal from '@/components/shared/EmailOtpModal/EmailOtpModal';
@@ -50,6 +51,10 @@ import { useSearchParams } from 'next/navigation';
 
 const UserDashboard = () => {
     const t = useTranslations('userDashboard');
+    const tProd = useTranslations('product');
+    // Prefer the localized custom-dimension string; fall back to variant signature / stored label.
+    const itemVariantLine = (item: any): string =>
+        formatCustomDims(item?.custom_dimensions, tProd) || item?.variant_options || item?.custom_label || '';
     const { user, logout, updateUser, refreshUser, loading: authLoading } = useAuth();
     const [otpOpen, setOtpOpen] = useState(false);
     const [emailOtpOpen, setEmailOtpOpen] = useState(false);
@@ -196,6 +201,8 @@ const UserDashboard = () => {
         if (/admin/i.test(d) && /add/i.test(d)) return t('rewards.descAdminAdd');
         if (row?.order_id && row?.transaction_type === 'redeemed') return t('rewards.descRedeemedOrder', { id: row.order_id });
         if (row?.order_id && row?.transaction_type === 'earned') return t('rewards.descEarnedOrder', { id: row.order_id });
+        if (row?.order_id && row?.transaction_type === 'reversed') return t('rewards.descReversedOrder', { id: row.order_id });
+        if (row?.order_id && row?.transaction_type === 'refunded') return t('rewards.descRefundedOrder', { id: row.order_id });
         return d;
     };
 
@@ -577,6 +584,10 @@ const UserDashboard = () => {
 
     const handleDownloadInvoice = async () => {
         if (!selectedOrder) return;
+        if (selectedOrder.status === 'cancelled') {
+            showNotification(t('orders.invoiceUnavailable'), 'error');
+            return;
+        }
         if (!selectedOrder.invoice) {
             showNotification(t('orders.invoiceNotReady'), 'error');
             return;
@@ -757,19 +768,23 @@ const UserDashboard = () => {
                                     <CreditCard size={16} /> {paymentLabel}
                                 </span>
                             </div>
-                            <button type="button" onClick={handleDownloadInvoice} disabled={downloadingInvoice} style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', cursor: 'pointer', width: '100%', textAlign: locale === 'ar' ? 'right' : 'left', fontFamily: 'inherit' }}>
+                            <button type="button" onClick={handleDownloadInvoice} disabled={downloadingInvoice || selectedOrder.status === 'cancelled'} style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', cursor: selectedOrder.status === 'cancelled' ? 'not-allowed' : 'pointer', opacity: selectedOrder.status === 'cancelled' ? 0.7 : 1, width: '100%', textAlign: locale === 'ar' ? 'right' : 'left', fontFamily: 'inherit' }}>
                                 <div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                                         <FileText size={20} color="#0f172a" />
                                         <strong style={{ fontSize: '17px', color: '#0f172a' }}>{t('orders.viewInvoice')}</strong>
                                     </div>
-                                    <span style={{ fontSize: '13px', color: selectedOrder.invoice ? '#64748b' : '#ea580c' }}>
-                                        {selectedOrder.invoice ? t('orders.downloadInvoiceNote') : t('orders.invoiceNotReady')}
+                                    <span style={{ fontSize: '13px', color: selectedOrder.status === 'cancelled' ? '#ea580c' : (selectedOrder.invoice ? '#64748b' : '#ea580c') }}>
+                                        {selectedOrder.status === 'cancelled'
+                                            ? t('orders.invoiceUnavailable')
+                                            : (selectedOrder.invoice ? t('orders.downloadInvoiceNote') : t('orders.invoiceNotReady'))}
                                     </span>
                                 </div>
-                                {downloadingInvoice
-                                    ? <span className={styles.invoiceSpinner} aria-label="Generating invoice" />
-                                    : <Download size={20} color="#64748b" style={{ flexShrink: 0 }} />}
+                                {selectedOrder.status === 'cancelled'
+                                    ? null
+                                    : (downloadingInvoice
+                                        ? <span className={styles.invoiceSpinner} aria-label="Generating invoice" />
+                                        : <Download size={20} color="#64748b" style={{ flexShrink: 0 }} />)}
                             </button>
                         </div>
 
@@ -787,7 +802,7 @@ const UserDashboard = () => {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     {items.map((item: any) => {
-                                        const variantLine = item.variant_options || item.custom_label;
+                                        const variantLine = itemVariantLine(item);
                                         const brand = locale === 'ar' && item.brand_name_ar ? item.brand_name_ar : item.brand_name;
                                         return (
                                             <div key={`os-${item.id}`} style={{ display: 'flex', gap: '16px', border: '1.5px solid #d6dde5', borderRadius: '10px', padding: '14px' }}>
@@ -943,7 +958,7 @@ const UserDashboard = () => {
                                     <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 14px' }}>{t('orders.itemSummary')}</h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         {selectedOrder.items.map((item: any) => {
-                                            const variantLine = item.variant_options || item.custom_label;
+                                            const variantLine = itemVariantLine(item);
                                             const brand = locale === 'ar' && item.brand_name_ar ? item.brand_name_ar : item.brand_name;
                                             return (
                                                 <div key={`sum-${item.id}`} style={{ display: 'flex', gap: '16px', border: '1.5px solid #d6dde5', borderRadius: '10px', padding: '14px' }}>
@@ -1041,8 +1056,8 @@ const UserDashboard = () => {
                                         {isFree && parentName && (
                                             <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>Free gift with {parentName}</div>
                                         )}
-                                        {item.custom_label && (
-                                            <div style={{ color: '#475569', fontSize: '12px', marginBottom: '4px' }}>{item.custom_label}</div>
+                                        {itemVariantLine(item) && (
+                                            <div style={{ color: '#475569', fontSize: '12px', marginBottom: '4px' }}>{itemVariantLine(item)}</div>
                                         )}
                                         <div style={{ color: isFree ? '#10b981' : '#64748b', fontSize: '13px', fontWeight: isFree ? 700 : 400 }}>
                                             {isFree ? <>{t('orders.qty')} {item.quantity}  ×  FREE</> : <>{t('orders.qty')} {item.quantity}  ×  <CurrencyPrice amount={parseFloat(item.price_at_purchase)} /></>}
@@ -1954,14 +1969,22 @@ const UserDashboard = () => {
                         ) : (
                             <ul className={styles.rewardStatementList}>
                                 {filteredHistory.slice((rewardsPage - 1) * REWARDS_PER_PAGE, rewardsPage * REWARDS_PER_PAGE).map((row) => {
-                                    const earned = row.transaction_type === 'earned';
+                                    const refunded = row.transaction_type === 'refunded';
                                     const expired = row.transaction_type === 'expired';
-                                    const typeLabel = earned
+                                    const reversed = row.transaction_type === 'reversed';
+                                    // Credits add points back (earned from purchase, or refunded on cancel).
+                                    const credit = row.transaction_type === 'earned' || refunded;
+                                    const earned = credit; // icon/colour use the credit flag
+                                    const typeLabel = row.transaction_type === 'earned'
                                         ? t('rewards.credited')
-                                        : expired
-                                            ? t('rewards.expired')
-                                            : t('rewards.redeemed');
-                                    const sign = earned ? '+' : '-';
+                                        : refunded
+                                            ? t('rewards.refunded')
+                                            : expired
+                                                ? t('rewards.expired')
+                                                : reversed
+                                                    ? t('rewards.reversed')
+                                                    : t('rewards.redeemed');
+                                    const sign = credit ? '+' : '-';
                                     const dateStr = new Date(row.created_at).toLocaleDateString(
                                         locale === 'ar' ? 'ar-AE' : 'en-GB',
                                         { day: '2-digit', month: 'short', year: 'numeric' }
