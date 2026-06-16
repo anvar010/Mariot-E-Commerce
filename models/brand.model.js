@@ -88,9 +88,10 @@ class Brand {
         }
 
         if (is_featured) query += ' AND p.is_featured = 1';
-        if (is_limited_offer) query += ' AND p.is_limited_offer = 1 AND p.is_weekly_deal = 0 AND p.offer_end IS NOT NULL AND p.offer_end > NOW()';
-        if (is_weekly_deal) query += ' AND p.is_weekly_deal = 1 AND p.is_limited_offer = 0 AND p.offer_end IS NOT NULL AND p.offer_end > NOW()';
-        if (is_daily_offer) query += ' AND p.is_daily_offer = 1 AND p.offer_end IS NOT NULL AND p.offer_end > NOW()';
+        // A null offer_end means "no expiry" (active) — keep brands consistent with the product filter.
+        if (is_limited_offer) query += ' AND p.is_limited_offer = 1 AND p.is_weekly_deal = 0 AND (p.offer_end IS NULL OR p.offer_end > NOW())';
+        if (is_weekly_deal) query += ' AND p.is_weekly_deal = 1 AND p.is_limited_offer = 0 AND (p.offer_end IS NULL OR p.offer_end > NOW())';
+        if (is_daily_offer) query += ' AND p.is_daily_offer = 1 AND (p.offer_end IS NULL OR p.offer_end > NOW())';
 
         if (seller) {
             query += ' AND (p.seller_id = ? OR p.seller_name = ?)';

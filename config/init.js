@@ -39,13 +39,28 @@ const initDb = async () => {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
                 points INT NOT NULL,
-                transaction_type ENUM('earned', 'redeemed', 'expired') NOT NULL,
+                transaction_type ENUM('earned', 'redeemed', 'expired', 'reversed', 'refunded') NOT NULL,
                 order_id INT,
                 description VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
         console.log('[DB] reward_points_history table verified');
+
+        // 1.6b Extend transaction_type ENUM to include 'reversed' (order-cancel claw-back).
+        // Idempotent: MODIFY to the full set each boot. Then backfill any rows that were
+        // inserted as '' before the ENUM knew 'reversed'.
+        try {
+            await db.query(
+                "ALTER TABLE reward_points_history MODIFY transaction_type ENUM('earned','redeemed','expired','reversed','refunded') NOT NULL"
+            );
+            await db.query(
+                "UPDATE reward_points_history SET transaction_type = 'reversed' WHERE transaction_type = ''"
+            );
+            console.log('[DB] reward_points_history.transaction_type ENUM verified (reversed, refunded)');
+        } catch (err) {
+            console.error('[DB] Error extending reward_points_history ENUM:', err.message);
+        }
 
         // 1.7 Seed 'staff' role (INSERT IGNORE is safe — no error if it already exists)
         try {

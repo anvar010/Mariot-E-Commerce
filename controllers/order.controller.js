@@ -415,14 +415,25 @@ exports.stripeWebhook = async (req, res) => {
                     try {
                         const order = await Order.findById(orderId);
                         if (order) {
-                            await sendOrderConfirmationEmail(
-                                order.billing_email || order.user_email,
-                                order.billing_name || order.user_name,
-                                orderId,
-                                order.final_amount,
-                                order.items,
-                                { ...order, payment_status: 'paid' }
-                            );
+                            // orders has no email/name columns — resolve from the user, and
+                            // localize per the customer's preferred language.
+                            const u = await User.findById(order.user_id);
+                            const toEmail = u?.email || order.billing_email || order.user_email;
+                            const toName = u?.name || order.billing_name || order.user_name || 'Customer';
+                            if (toEmail) {
+                                const sLocale = await User.getPreferredLocale(order.user_id);
+                                await sendOrderConfirmationEmail(
+                                    toEmail,
+                                    toName,
+                                    orderId,
+                                    order.final_amount,
+                                    order.items,
+                                    { ...order, payment_status: 'paid' },
+                                    sLocale
+                                );
+                            } else {
+                                console.error(`[Stripe Webhook] No email resolved for order #${orderId} — confirmation skipped`);
+                            }
                         }
                     } catch (emailErr) {
                         console.error('[Stripe Webhook] Failed to send payment confirmation email:', emailErr.message);
@@ -486,16 +497,23 @@ exports.tabbyWebhook = async (req, res) => {
             try {
                 const order = await Order.findById(orderId);
                 if (order) {
-                    const oLocale = await User.getPreferredLocale(order.user_id);
-                    await sendOrderConfirmationEmail(
-                        order.billing_email || order.user_email,
-                        order.billing_name || order.user_name,
-                        orderId,
-                        order.final_amount,
-                        order.items,
-                        { ...order, payment_status: 'paid' },
-                        oLocale
-                    );
+                    const u = await User.findById(order.user_id);
+                    const toEmail = u?.email || order.billing_email || order.user_email;
+                    const toName = u?.name || order.billing_name || order.user_name || 'Customer';
+                    if (toEmail) {
+                        const oLocale = await User.getPreferredLocale(order.user_id);
+                        await sendOrderConfirmationEmail(
+                            toEmail,
+                            toName,
+                            orderId,
+                            order.final_amount,
+                            order.items,
+                            { ...order, payment_status: 'paid' },
+                            oLocale
+                        );
+                    } else {
+                        console.error(`[Tabby Webhook] No email resolved for order #${orderId} — confirmation skipped`);
+                    }
                 }
             } catch (emailErr) {
                 console.error('[Tabby Webhook] Failed to send payment confirmation email:', emailErr.message);
@@ -567,16 +585,24 @@ exports.updateOrderStatus = async (req, res, next) => {
                 try {
                     const order = await Order.findById(req.params.id);
                     if (order) {
-                        const { sendOrderStatusUpdateEmail } = require('../utils/sendEmail');
-                        const sLocale = await User.getPreferredLocale(order.user_id);
-                        await sendOrderStatusUpdateEmail(
-                            order.billing_email || order.user_email || order.email,
-                            order.billing_name || order.user_name || order.name,
-                            req.params.id,
-                            status,
-                            order,
-                            sLocale
-                        );
+                        // orders has no email/name columns — resolve from the user.
+                        const u = await User.findById(order.user_id);
+                        const toEmail = u?.email || order.billing_email || order.user_email;
+                        const toName = u?.name || order.billing_name || order.user_name || 'Customer';
+                        if (toEmail) {
+                            const { sendOrderStatusUpdateEmail } = require('../utils/sendEmail');
+                            const sLocale = await User.getPreferredLocale(order.user_id);
+                            await sendOrderStatusUpdateEmail(
+                                toEmail,
+                                toName,
+                                req.params.id,
+                                status,
+                                order,
+                                sLocale
+                            );
+                        } else {
+                            console.error(`[Admin Update] No email resolved for order #${req.params.id} — status mail skipped`);
+                        }
                     }
                 } catch (emailErr) {
                     console.error('[Admin Update] Failed to send status update email:', emailErr.message);
@@ -592,17 +618,24 @@ exports.updateOrderStatus = async (req, res, next) => {
                 try {
                     const order = await Order.findById(req.params.id);
                     if (order) {
-                        const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
-                        const pLocale = await User.getPreferredLocale(order.user_id);
-                        await sendOrderConfirmationEmail(
-                            order.billing_email || order.user_email || order.email,
-                            order.billing_name || order.user_name || order.name,
-                            req.params.id,
-                            order.final_amount,
-                            order.items,
-                            { ...order, payment_status: 'paid' },
-                            pLocale
-                        );
+                        const u = await User.findById(order.user_id);
+                        const toEmail = u?.email || order.billing_email || order.user_email;
+                        const toName = u?.name || order.billing_name || order.user_name || 'Customer';
+                        if (toEmail) {
+                            const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
+                            const pLocale = await User.getPreferredLocale(order.user_id);
+                            await sendOrderConfirmationEmail(
+                                toEmail,
+                                toName,
+                                req.params.id,
+                                order.final_amount,
+                                order.items,
+                                { ...order, payment_status: 'paid' },
+                                pLocale
+                            );
+                        } else {
+                            console.error(`[Admin Update] No email resolved for order #${req.params.id} — paid mail skipped`);
+                        }
                     }
                 } catch (emailErr) {
                     console.error('[Admin Update] Failed to send payment confirmation email:', emailErr.message);

@@ -136,6 +136,8 @@ const getCartItemsForEmail = async (userId) => {
     const [items] = await db.query(`
         SELECT
             ci.quantity,
+            ci.variant_id,
+            ci.is_free_gift,
             p.name, p.price, p.offer_price, p.slug,
             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image,
             pv.price AS variant_price,
@@ -152,20 +154,31 @@ const getCartItemsForEmail = async (userId) => {
     const MEDIA = process.env.MEDIA_BASE_URL || 'https://mariot-backend.onrender.com';
 
     return items.map(item => {
-        const hasVariant = item.variant_price != null;
+        // A line has a variant only when it actually references one (matches cart.model.js).
+        const hasVariant = item.variant_id != null;
         const usePrimary = hasVariant && Number(item.variant_use_primary) === 1;
         const rawImg = (hasVariant && !usePrimary && item.variant_image) ? item.variant_image : item.image;
         const fullImage = rawImg
             ? (rawImg.startsWith('http') ? rawImg : `${MEDIA}/uploads/${rawImg}`)
             : 'https://mariotstore.com/assets/mariot-logo.webp';
 
+        // Variant price wins ONLY when it's a real positive value; many variants
+        // inherit the base price (variant price stored as NULL or 0) — fall back to
+        // the product price so the email never shows AED 0.00.
+        const basePrice = Number(item.price) || 0;
+        const variantPrice = Number(item.variant_price) || 0;
+        const price = hasVariant && variantPrice > 0 ? variantPrice : basePrice;
+
+        const baseOffer = item.offer_price != null ? Number(item.offer_price) : null;
+        const variantOffer = item.variant_offer_price != null ? Number(item.variant_offer_price) : null;
+        const offer_price = hasVariant && variantPrice > 0 ? variantOffer : baseOffer;
+
         return {
             name: item.name,
             quantity: item.quantity,
-            price: hasVariant ? Number(item.variant_price) : Number(item.price),
-            offer_price: hasVariant
-                ? (item.variant_offer_price != null ? Number(item.variant_offer_price) : null)
-                : (item.offer_price != null ? Number(item.offer_price) : null),
+            // Free-gift lines are genuinely 0; everything else uses the resolved price.
+            price: Number(item.is_free_gift) === 1 ? 0 : price,
+            offer_price: Number(item.is_free_gift) === 1 ? 0 : offer_price,
             image: fullImage,
             slug: item.slug
         };

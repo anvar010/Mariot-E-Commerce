@@ -80,7 +80,7 @@ class Cart {
                 ci.custom_signature,
                 ci.is_free_gift,
                 ci.bundle_parent_id,
-                p.name, p.name_ar, p.price, p.offer_price, p.slug, p.stock_quantity, p.track_inventory, p.delivery_charge,
+                p.name, p.name_ar, p.price, p.offer_price, p.offer_start, p.offer_end, p.slug, p.stock_quantity, p.track_inventory, p.delivery_charge,
                 b.name as brand_name,
                 (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
                 pv.sku AS variant_sku,
@@ -120,10 +120,17 @@ class Cart {
             });
         }
 
+        const now = Date.now();
         return items.map(it => {
             const hasVariant = it.variant_id != null;
             const usePrimary = hasVariant && Number(it.variant_use_primary) === 1;
             const isFreeGift = Number(it.is_free_gift) === 1;
+            // An offer (product- or variant-level) only applies inside its active window.
+            // Once offer_end passes, the line reverts to its main price — so the cart, the
+            // checkout summary, and the actual order total all charge the main price.
+            const isOfferActive =
+                (!it.offer_start || new Date(it.offer_start).getTime() <= now) &&
+                (!it.offer_end || new Date(it.offer_end).getTime() > now);
             let parsedDims = null;
             if (it.custom_dimensions) {
                 try { parsedDims = typeof it.custom_dimensions === 'string' ? JSON.parse(it.custom_dimensions) : it.custom_dimensions; }
@@ -144,9 +151,11 @@ class Cart {
                 price: isFreeGift ? 0 : (hasVariant ? Number(it.variant_price) : Number(it.price)),
                 offer_price: isFreeGift
                     ? 0
-                    : (hasVariant
-                        ? (it.variant_offer_price !== null ? Number(it.variant_offer_price) : null)
-                        : (it.offer_price !== null ? Number(it.offer_price) : null)),
+                    : (!isOfferActive
+                        ? null
+                        : (hasVariant
+                            ? (it.variant_offer_price !== null ? Number(it.variant_offer_price) : null)
+                            : (it.offer_price !== null ? Number(it.offer_price) : null))),
                 // Original catalog price preserved for free-gift lines so the UI can show a strikethrough next to FREE.
                 original_price: isFreeGift
                     ? (hasVariant ? Number(it.variant_price) : Number(it.price))

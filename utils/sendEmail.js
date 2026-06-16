@@ -422,7 +422,9 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
     const isPaid = (orderData.payment_status === 'paid' || orderData.payment_status === 'PAID');
     const isAdmin = orderData.is_admin_copy === true;
     const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
-    const orderSummaryUrl = `${SITE}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
+    // Locale-prefixed so the profile deep-link guard fires (not logged in →
+    // /signin?redirectTo=… → returns to orders tab → download invoice).
+    const orderSummaryUrl = `${SITE}/${ar ? 'ar' : 'en'}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
 
     const L = ar ? {
         subjectPaid: `✅ تم تأكيد الدفع — طلب #${orderId} — متجر ماريوت`,
@@ -839,7 +841,9 @@ const sendOrderStatusUpdateEmail = async (toEmail, userName, orderId, status, or
     const total = Number(orderData.final_amount || 0).toFixed(2);
     const date = new Date(orderData.created_at || Date.now()).toLocaleDateString(ar ? 'ar-AE' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
-    const orderSummaryUrl = `${SITE}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
+    // Locale-prefixed so the profile page's deep-link guard (tab/orderId) fires:
+    // not logged in → /signin?redirectTo=… → returns to the orders tab after login.
+    const orderSummaryUrl = `${SITE}/${ar ? 'ar' : 'en'}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
     const billing = orderData.billing_details || {};
     const shipping = orderData.shipping_address || billing;
 
@@ -891,6 +895,25 @@ const sendOrderStatusUpdateEmail = async (toEmail, userName, orderId, status, or
         viewOrder: 'Download Invoice',
         cod: 'Cash on Delivery', tabby: 'Tabby (Installments)', card: 'Credit Card', freeLabel: 'FREE', freeGiftWith: 'Free gift with'
     };
+
+    // Cancellation reads differently from a shipment update: drop the delivery
+    // framing, confirm the cancel, and tell the user about their points.
+    const isCancelled = status.toLowerCase() === 'cancelled';
+    if (isCancelled) {
+        if (ar) {
+            L.heading = 'تم إلغاء طلبك';
+            L.body = `نؤكد لك أنه تم إلغاء طلبك <strong>#${orderId}</strong>.`;
+            L.below = 'تم استرداد أي نقاط مكافآت استخدمتها في هذا الطلب، وتم عكس النقاط المكتسبة. إذا تم خصم أي مبلغ، فسيُرد إليك وفقاً لطريقة الدفع.';
+            L.viewOrder = 'عرض الطلب';
+            L.shipmentNo = 'عناصر الطلب';
+        } else {
+            L.heading = 'Your order has been cancelled';
+            L.body = `We're writing to confirm that your order <strong>#${orderId}</strong> has been cancelled.`;
+            L.below = 'Any reward points redeemed on this order have been refunded, and points earned have been reversed. If you were charged, a refund will follow per your payment method.';
+            L.viewOrder = 'View Order';
+            L.shipmentNo = 'Order Items';
+        }
+    }
 
     // Generate product highlight rows for the Shipment Box
     const itemRows = orderItems.map(item => `
@@ -1009,12 +1032,12 @@ const sendOrderStatusUpdateEmail = async (toEmail, userName, orderId, status, or
                                                     <span style="margin:0 10px;padding:2px 10px;background-color:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:12px;text-transform:uppercase;vertical-align:middle;">${statusTitle}</span>
                                                 </td>
                                                 <td style="text-align:${ar ? 'left' : 'right'};">
-                                                    <span style="font-size:12px;color:#16A1DB;font-weight:600;">${L.trackingId} ${orderId}</span>
+                                                    ${isCancelled ? '' : `<span style="font-size:12px;color:#16A1DB;font-weight:600;">${L.trackingId} ${orderId}</span>`}
                                                 </td>
                                             </tr>
                                         </table>
                                     </div>
-                                    <div style="padding:10px 20px;background-color:#f8fafc;border-bottom:1px solid #f1f5f9;">
+                                    ${isCancelled ? '' : `<div style="padding:10px 20px;background-color:#f8fafc;border-bottom:1px solid #f1f5f9;">
                                         <table width="100%" cellpadding="0" cellspacing="0">
                                             <tr>
                                                 <td style="font-size:12px;color:#64748b;text-align:${alignStart(ar)};">${L.by} <span style="color:#334155;font-weight:600;">${L.delivery}</span></td>
@@ -1023,7 +1046,7 @@ const sendOrderStatusUpdateEmail = async (toEmail, userName, orderId, status, or
                                                 </td>
                                             </tr>
                                         </table>
-                                    </div>
+                                    </div>`}
                                     ${itemRows}
                                 </div>
                             </td>

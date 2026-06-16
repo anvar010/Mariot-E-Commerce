@@ -203,7 +203,13 @@ class Order {
                                 ORDER BY pi.is_primary DESC LIMIT 1),
                                NULLIF(pv.image_url, ''),
                                CASE WHEN pv.image_urls IS NOT NULL AND JSON_VALID(pv.image_urls) AND JSON_LENGTH(pv.image_urls) > 0
-                                    THEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(pv.image_urls, '$[0]')), '') END)
+                                    THEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(pv.image_urls, '$[0]')), '') END,
+                               (SELECT NULLIF(v2.image_url, '') FROM product_variants v2
+                                WHERE v2.product_id = oi.product_id AND v2.image_url IS NOT NULL AND v2.image_url <> ''
+                                ORDER BY v2.is_default DESC, v2.id ASC LIMIT 1),
+                               (SELECT NULLIF(JSON_UNQUOTE(JSON_EXTRACT(v3.image_urls, '$[0]')), '') FROM product_variants v3
+                                WHERE v3.product_id = oi.product_id AND v3.image_urls IS NOT NULL AND JSON_VALID(v3.image_urls) AND JSON_LENGTH(v3.image_urls) > 0
+                                ORDER BY v3.is_default DESC, v3.id ASC LIMIT 1))
                     FROM order_items oi
                     LEFT JOIN product_variants pv ON pv.id = oi.variant_id
                     WHERE oi.order_id = o.id
@@ -231,7 +237,15 @@ class Order {
                        (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC LIMIT 1),
                        NULLIF(pv.image_url, ''),
                        CASE WHEN pv.image_urls IS NOT NULL AND JSON_VALID(pv.image_urls) AND JSON_LENGTH(pv.image_urls) > 0
-                            THEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(pv.image_urls, '$[0]')), '') END
+                            THEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(pv.image_urls, '$[0]')), '') END,
+                       -- Fallback: image of any variant (default first) when the line has no
+                       -- variant of its own and the product has no product_images rows.
+                       (SELECT NULLIF(v2.image_url, '') FROM product_variants v2
+                        WHERE v2.product_id = p.id AND v2.image_url IS NOT NULL AND v2.image_url <> ''
+                        ORDER BY v2.is_default DESC, v2.id ASC LIMIT 1),
+                       (SELECT NULLIF(JSON_UNQUOTE(JSON_EXTRACT(v3.image_urls, '$[0]')), '') FROM product_variants v3
+                        WHERE v3.product_id = p.id AND v3.image_urls IS NOT NULL AND JSON_VALID(v3.image_urls) AND JSON_LENGTH(v3.image_urls) > 0
+                        ORDER BY v3.is_default DESC, v3.id ASC LIMIT 1)
                    ) as image
             FROM order_items oi
             JOIN products p ON oi.product_id = p.id
@@ -285,6 +299,103 @@ class Order {
     }
 
     static async updateStatus(id, status) {
+        // Cancelling an order must claw back the reward points it credited, and
+        // record that reversal in the user's points ledger. Done in a transaction
+        // so balance + history stay consistent.
+        if (String(status).toLowerCase() === 'cancelled') {
+            const connection = await db.getConnection();
+            try {
+                await connection.beginTransaction();
+
+                const [[order]] = await connection.execute(
+                    'SELECT user_id, status, is_processed FROM orders WHERE id = ? FOR UPDATE',
+                    [id]
+                );
+                if (!order) throw new Error('Order not found');
+
+                await connection.execute('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
+
+                // Only act once: skip if already cancelled or already settled
+                // (a prior cancel left a 'reversed' and/or 'refunded' ledger row).
+                const alreadyCancelled = String(order.status).toLowerCase() === 'cancelled';
+                const [[rev]] = await connection.execute(
+                    "SELECT COUNT(*) AS c FROM reward_points_history WHERE order_id = ? AND transaction_type IN ('reversed','refunded')",
+                    [id]
+                );
+
+                if (!alreadyCancelled && rev.c === 0) {
+                    // 1. Claw back points the order CREDITED (earned).
+                    const [[pe]] = await connection.execute(
+                        "SELECT COALESCE(SUM(points), 0) AS earned FROM reward_points_history WHERE order_id = ? AND transaction_type = 'earned'",
+                        [id]
+                    );
+                    const earned = Number(pe.earned) || 0;
+
+                    if (earned > 0) {
+                        await connection.execute(
+                            'UPDATE users SET reward_points = GREATEST(0, reward_points - ?) WHERE id = ?',
+                            [earned, order.user_id]
+                        );
+                        await connection.execute(
+                            "INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, 'reversed', ?, ?)",
+                            [order.user_id, earned, id, `Points reversed — order #${id} cancelled`]
+                        );
+                    }
+
+                    // 2. Refund points the order actually REDEEMED. Base this on the
+                    // ledger (not orders.points_used) so we only give back points that
+                    // were truly deducted — an unpaid/unprocessed order never deducted.
+                    const [[pr]] = await connection.execute(
+                        "SELECT COALESCE(SUM(points), 0) AS redeemed FROM reward_points_history WHERE order_id = ? AND transaction_type = 'redeemed'",
+                        [id]
+                    );
+                    const redeemed = Number(pr.redeemed) || 0;
+                    if (redeemed > 0) {
+                        await connection.execute(
+                            'UPDATE users SET reward_points = reward_points + ? WHERE id = ?',
+                            [redeemed, order.user_id]
+                        );
+                        await connection.execute(
+                            "INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, 'refunded', ?, ?)",
+                            [order.user_id, redeemed, id, `Points refunded — order #${id} cancelled`]
+                        );
+                    }
+                }
+
+                // 3. Restock items. Stock was only reduced when the order was processed
+                // (paid), tracked by is_processed. Add it back and clear the flag so a
+                // re-cancel cannot restock twice (idempotent regardless of points).
+                if (!alreadyCancelled && Number(order.is_processed) === 1) {
+                    const [orderItems] = await connection.execute(
+                        'SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ?',
+                        [id]
+                    );
+                    for (const item of orderItems) {
+                        if (item.variant_id) {
+                            await connection.execute(
+                                'UPDATE product_variants SET stock_quantity = stock_quantity + ? WHERE id = ?',
+                                [item.quantity, item.variant_id]
+                            );
+                        } else {
+                            await connection.execute(
+                                'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ? AND track_inventory = 1',
+                                [item.quantity, item.product_id]
+                            );
+                        }
+                    }
+                    await connection.execute('UPDATE orders SET is_processed = 0 WHERE id = ?', [id]);
+                }
+
+                await connection.commit();
+            } catch (err) {
+                await connection.rollback();
+                throw err;
+            } finally {
+                connection.release();
+            }
+            return;
+        }
+
         await db.execute('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
     }
 

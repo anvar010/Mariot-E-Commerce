@@ -93,19 +93,20 @@ class Product {
         if (is_weekly_deal !== undefined && isTrue(is_weekly_deal)) {
             whereClauses.push('p.is_weekly_deal = 1');
             whereClauses.push('p.is_limited_offer = 0');
-            whereClauses.push('p.offer_end IS NOT NULL AND p.offer_end > NOW()');
+            // A null offer_end means "no expiry" (active), matching the admin tag logic.
+            whereClauses.push('(p.offer_end IS NULL OR p.offer_end > NOW())');
         }
         if (is_limited_offer !== undefined && isTrue(is_limited_offer)) {
             whereClauses.push('p.is_limited_offer = 1');
             whereClauses.push('p.is_weekly_deal = 0');
-            whereClauses.push('p.offer_end IS NOT NULL AND p.offer_end > NOW()');
+            whereClauses.push('(p.offer_end IS NULL OR p.offer_end > NOW())');
         }
         if (is_featured !== undefined && isTrue(is_featured)) {
             whereClauses.push('p.is_featured = 1');
         }
         if (is_daily_offer !== undefined && isTrue(is_daily_offer)) {
             whereClauses.push('p.is_daily_offer = 1');
-            whereClauses.push('p.offer_end IS NOT NULL AND p.offer_end > NOW()');
+            whereClauses.push('(p.offer_end IS NULL OR p.offer_end > NOW())');
         }
         if (is_best_seller !== undefined && isTrue(is_best_seller)) {
             whereClauses.push('p.is_best_seller = 1');
@@ -531,7 +532,7 @@ class Product {
                 if (slotIds.length > 0) {
                     const placeholders = slotIds.map(() => '?').join(',');
                     const [slotRows] = await db.query(
-                        `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+                        `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage, p.base_dimensions,
                          (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
                          FROM products p WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
                         slotIds

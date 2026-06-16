@@ -221,7 +221,7 @@ CREATE TABLE IF NOT EXISTS reward_points_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     points INT NOT NULL,
-    transaction_type ENUM('earned', 'redeemed', 'expired') NOT NULL,
+    transaction_type ENUM('earned', 'redeemed', 'expired', 'reversed', 'refunded') NOT NULL,
     order_id INT,
     description VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

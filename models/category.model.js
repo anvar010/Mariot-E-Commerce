@@ -17,10 +17,11 @@ class Category {
         }));
     }
 
-    static async findActiveByOffer({ is_limited_offer, is_weekly_deal }) {
+    static async findActiveByOffer({ is_limited_offer, is_weekly_deal, is_daily_offer }) {
         const conds = [];
         if (is_limited_offer) conds.push('(p.is_limited_offer = 1 AND p.is_weekly_deal = 0)');
         if (is_weekly_deal) conds.push('(p.is_weekly_deal = 1 AND p.is_limited_offer = 0)');
+        if (is_daily_offer) conds.push('(p.is_daily_offer = 1)');
         if (conds.length === 0) return this.findAll();
 
         const offerWhere = conds.join(' OR ');
@@ -32,7 +33,7 @@ class Category {
                 FROM categories c
                 JOIN products p ON p.category_id = c.id
                 WHERE (p.status = 'active' OR p.status IS NULL) AND p.is_active = 1
-                  AND p.offer_end IS NOT NULL AND p.offer_end > NOW()
+                  AND (p.offer_end IS NULL OR p.offer_end > NOW())
                   AND (${offerWhere})
                 UNION ALL
                 SELECT pc.id, pc.parent_id, cc.origin_id
