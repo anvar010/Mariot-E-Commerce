@@ -152,8 +152,14 @@ app.use(['/uploads', '/product_images'], (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
 });
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/product_images', express.static(path.join(__dirname, 'uploads')));
+// UPLOAD_DIR lets uploads live OUTSIDE the project so they survive code updates/redeploys.
+// Resolved relative to the app root (e.g. "../uploads" = sibling folder) or used as-is if
+// absolute. Must match the destination used in middlewares/upload.middleware.js.
+const uploadsPath = process.env.UPLOAD_DIR
+    ? path.resolve(__dirname, process.env.UPLOAD_DIR)
+    : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath));
+app.use('/product_images', express.static(uploadsPath));
 
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {

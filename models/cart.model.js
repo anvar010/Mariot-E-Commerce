@@ -81,6 +81,7 @@ class Cart {
                 ci.is_free_gift,
                 ci.bundle_parent_id,
                 p.name, p.name_ar, p.price, p.offer_price, p.offer_start, p.offer_end, p.slug, p.stock_quantity, p.track_inventory, p.delivery_charge,
+                p.is_customizable, p.custom_dimensions AS product_custom_dims, p.base_dimensions,
                 b.name as brand_name,
                 (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
                 pv.sku AS variant_sku,
@@ -120,6 +121,49 @@ class Cart {
             });
         }
 
+        // ---- Customizable products: compute the line price from size tiers ----
+        // The static p.price is 0/placeholder for tier-priced (stainless-steel) products;
+        // the real price = sum of the matched tier price for each customizable dimension,
+        // using the buyer's chosen size (falling back to the product base size). Mirrors
+        // Product.findAll and the storefront calc so the cart, checkout, order total AND
+        // the confirmation emails all charge the correct amount instead of AED 0.00.
+        const customIds = [...new Set(items.filter(i => Number(i.is_customizable) === 1).map(i => i.product_id))];
+        const tiersByProduct = {};
+        if (customIds.length > 0) {
+            try {
+                const [tierRows] = await db.query(
+                    `SELECT product_id, dimension, min_cm, max_cm, price FROM product_size_tiers WHERE product_id IN (?)`,
+                    [customIds]
+                );
+                for (const t of tierRows) {
+                    (tiersByProduct[t.product_id] = tiersByProduct[t.product_id] || []).push(t);
+                }
+            } catch (e) { /* table missing → leave prices as the static p.price */ }
+        }
+        const safeParse = (raw) => {
+            if (!raw) return null;
+            try { return typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return null; }
+        };
+        const computeCustomPrice = (it, chosenDims) => {
+            if (Number(it.is_customizable) !== 1) return null;
+            const cfgDims = safeParse(it.product_custom_dims);
+            if (!Array.isArray(cfgDims) || cfgDims.length === 0) return null;
+            const tiers = tiersByProduct[it.product_id] || [];
+            if (tiers.length === 0) return null;
+            const baseDims = safeParse(it.base_dimensions) || {};
+            let total = 0;
+            for (const dim of cfgDims) {
+                const chosen = chosenDims && chosenDims[dim] != null && String(chosenDims[dim]).trim() !== ''
+                    ? Number(chosenDims[dim])
+                    : Number(baseDims[dim]);
+                if (!Number.isFinite(chosen)) return null;
+                const tier = tiers.find(t => t.dimension === dim && chosen >= Number(t.min_cm) && chosen <= Number(t.max_cm));
+                if (!tier) return null;
+                total += Number(tier.price);
+            }
+            return total;
+        };
+
         const now = Date.now();
         return items.map(it => {
             const hasVariant = it.variant_id != null;
@@ -136,6 +180,8 @@ class Cart {
                 try { parsedDims = typeof it.custom_dimensions === 'string' ? JSON.parse(it.custom_dimensions) : it.custom_dimensions; }
                 catch (e) { parsedDims = null; }
             }
+            // Tier-based price for customizable products (null for everything else).
+            const customPrice = isFreeGift ? null : computeCustomPrice(it, parsedDims);
             return {
                 cart_item_id: Number(it.cart_item_id),
                 product_id: it.product_id,
@@ -147,11 +193,13 @@ class Cart {
                 brand_name: it.brand_name,
                 // Variant lines always honor stock, regardless of product-level track_inventory
                 track_inventory: hasVariant ? 1 : it.track_inventory,
-                // Price: variant wins when present; free-gift lines always price 0
-                price: isFreeGift ? 0 : (hasVariant ? Number(it.variant_price) : Number(it.price)),
+                // Price: free-gift = 0; customizable = tier price; else variant/base price.
+                price: isFreeGift ? 0 : (customPrice != null ? customPrice : (hasVariant ? Number(it.variant_price) : Number(it.price))),
+                // Customizable products don't support a separate offer (matches findAll), so
+                // a tier-priced line never carries an offer_price.
                 offer_price: isFreeGift
                     ? 0
-                    : (!isOfferActive
+                    : (customPrice != null || !isOfferActive
                         ? null
                         : (hasVariant
                             ? (it.variant_offer_price !== null ? Number(it.variant_offer_price) : null)

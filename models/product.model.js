@@ -469,6 +469,43 @@ class Product {
         }
     }
 
+    // Customizable products keep their price in product_size_tiers, not products.price
+    // (which is 0/placeholder). For any customizable rows in `rows`, set price = sum of the
+    // matched tier price for each customizable dimension (using the product's base size).
+    // Mirrors the inline logic in findAll so related rails, compare slots, FBT, gifts and the
+    // product page all show the real configured price instead of 0.
+    static async applyCustomizableBasePrice(rows) {
+        if (!Array.isArray(rows) || rows.length === 0) return rows;
+        const customIds = rows.filter(p => p && Number(p.is_customizable) === 1).map(p => p.id);
+        if (customIds.length === 0) return rows;
+        const tiersByProduct = {};
+        try {
+            const [tierRows] = await db.query(
+                `SELECT product_id, dimension, min_cm, max_cm, price FROM product_size_tiers WHERE product_id IN (?)`,
+                [customIds]
+            );
+            for (const t of tierRows) (tiersByProduct[t.product_id] = tiersByProduct[t.product_id] || []).push(t);
+        } catch (e) { return rows; }
+        const parse = (raw) => { if (!raw) return null; try { return typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return null; } };
+        rows.forEach(p => {
+            if (!p || Number(p.is_customizable) !== 1) return;
+            const cfg = parse(p.custom_dimensions);
+            const base = parse(p.base_dimensions) || {};
+            const tiers = tiersByProduct[p.id] || [];
+            if (!Array.isArray(cfg) || cfg.length === 0 || tiers.length === 0) return;
+            let total = 0, ok = true;
+            for (const dim of cfg) {
+                const v = Number(base[dim]);
+                if (!Number.isFinite(v)) { ok = false; break; }
+                const tier = tiers.find(t => t.dimension === dim && v >= Number(t.min_cm) && v <= Number(t.max_cm));
+                if (!tier) { ok = false; break; }
+                total += Number(tier.price);
+            }
+            if (ok) { p.price = total; p.offer_price = null; p.discount_percentage = 0; }
+        });
+        return rows;
+    }
+
     static async findById(id) {
         await ensureFreeGiftColumn();
         await ensureCompareConfigColumn();
@@ -494,6 +531,10 @@ class Product {
 
         if (rows.length > 0) {
             const product = rows[0];
+            // Customizable products: set product.price to the computed base price (tiers) so any
+            // consumer reading it directly gets the real price, not the 0 placeholder. The detail
+            // page still recomputes live from size_tiers as the buyer changes dimensions.
+            await Product.applyCustomizableBasePrice([product]);
             const [images] = await db.execute('SELECT * FROM product_images WHERE product_id = ?', [product.id]);
             product.images = images;
 
@@ -508,10 +549,12 @@ class Product {
                 const placeholders = fbtIds.map(() => '?').join(',');
                 const [fbtRows] = await db.query(
                     `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+                     p.is_customizable, p.custom_dimensions, p.base_dimensions,
                      (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
                      FROM products p WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
                     fbtIds
                 );
+                await Product.applyCustomizableBasePrice(fbtRows);
                 product.frequently_bought_together_products = fbtRows;
             } else {
                 product.frequently_bought_together_products = [];
@@ -532,11 +575,13 @@ class Product {
                 if (slotIds.length > 0) {
                     const placeholders = slotIds.map(() => '?').join(',');
                     const [slotRows] = await db.query(
-                        `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage, p.base_dimensions,
+                        `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+                         p.is_customizable, p.custom_dimensions, p.base_dimensions,
                          (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
                          FROM products p WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
                         slotIds
                     );
+                    await Product.applyCustomizableBasePrice(slotRows);
                     // Preserve admin-defined slot ordering.
                     product.compare_slot_products = slotIds.map(id => slotRows.find(r => r.id === id) || null);
                 } else {
@@ -557,10 +602,12 @@ class Product {
                 const placeholders = giftIds.map(() => '?').join(',');
                 const [giftRows] = await db.query(
                     `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+                     p.is_customizable, p.custom_dimensions, p.base_dimensions,
                      (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
                      FROM products p WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
                     giftIds
                 );
+                await Product.applyCustomizableBasePrice(giftRows);
                 product.free_gift_products = giftRows;
             } else {
                 product.free_gift_products = [];
@@ -577,10 +624,12 @@ class Product {
                 const placeholders = ymanIds.map(() => '?').join(',');
                 const [ymanRows] = await db.query(
                     `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+                     p.is_customizable, p.custom_dimensions, p.base_dimensions,
                      (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
                      FROM products p WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
                     ymanIds
                 );
+                await Product.applyCustomizableBasePrice(ymanRows);
                 product.you_may_also_need_products = ymanRows;
             } else {
                 product.you_may_also_need_products = [];

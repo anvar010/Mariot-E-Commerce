@@ -1,9 +1,33 @@
 const db = require('../config/db');
 const { sendQuotationEmail } = require('../utils/sendEmail');
 
+// Lazy migration: persist the applied coupon/points discount so admin views and
+// re-downloads can show a discount line. Runs once; cheap no-op afterwards.
+let quotationDiscountColumnReady = false;
+const ensureQuotationDiscountColumn = async () => {
+    if (quotationDiscountColumnReady) return;
+    try {
+        const [cols] = await db.query(
+            `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'quotations' AND COLUMN_NAME = 'discount_amount'`
+        );
+        if (cols.length === 0) {
+            await db.query(`ALTER TABLE quotations ADD COLUMN discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER subtotal`);
+        }
+        quotationDiscountColumnReady = true;
+    } catch (e) {
+        console.error('[Quotation] Failed to ensure discount_amount column:', e.message);
+    }
+};
+
 exports.createQuotation = async (req, res, next) => {
     try {
-        const { customer_name, customer_email, customer_phone, vat_number, items, subtotal, tax_amount, total_amount } = req.body;
+        const {
+            customer_name, customer_email, customer_phone, vat_number, items, subtotal, tax_amount, total_amount,
+            discount_amount = 0, coupon_discount = 0, points_discount = 0, coupon_code = null, points_used = 0
+        } = req.body;
+
+        await ensureQuotationDiscountColumn();
 
         // Prefer user from auth middleware (optionalProtect), fallback to body, then null
         const user_id = req.user?.id || req.body.user_id || null;
@@ -12,8 +36,8 @@ exports.createQuotation = async (req, res, next) => {
         const quotation_ref = `EQT-${Math.floor(100000 + Math.random() * 900000)}`;
 
         const [result] = await db.execute(
-            `INSERT INTO quotations (quotation_ref, customer_name, customer_email, customer_phone, vat_number, items, subtotal, tax_amount, total_amount, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [quotation_ref, customer_name, customer_email, customer_phone, vat_number, JSON.stringify(items), subtotal, tax_amount, total_amount, user_id]
+            `INSERT INTO quotations (quotation_ref, customer_name, customer_email, customer_phone, vat_number, items, subtotal, discount_amount, tax_amount, total_amount, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [quotation_ref, customer_name, customer_email, customer_phone, vat_number, JSON.stringify(items), subtotal, discount_amount, tax_amount, total_amount, user_id]
         );
 
         const newQuotation = {
@@ -25,6 +49,11 @@ exports.createQuotation = async (req, res, next) => {
             vat_number,
             items,
             subtotal,
+            discount_amount,
+            coupon_discount,
+            points_discount,
+            coupon_code,
+            points_used,
             tax_amount,
             total_amount,
             user_id,
@@ -41,7 +70,8 @@ exports.createQuotation = async (req, res, next) => {
                     quotation_ref,
                     total_amount,
                     items,
-                    qLocale
+                    qLocale,
+                    { subtotal, discount_amount, coupon_discount, points_discount, coupon_code, points_used, tax_amount }
                 );
             } catch (err) {
                 console.error('[Email Service Error] Failed to send quotation email:', err.message);

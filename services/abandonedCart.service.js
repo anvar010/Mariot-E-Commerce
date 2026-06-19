@@ -138,7 +138,10 @@ const getCartItemsForEmail = async (userId) => {
             ci.quantity,
             ci.variant_id,
             ci.is_free_gift,
+            ci.custom_dimensions,
+            ci.product_id,
             p.name, p.price, p.offer_price, p.slug,
+            p.is_customizable, p.custom_dimensions AS product_custom_dims, p.base_dimensions,
             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image,
             pv.price AS variant_price,
             pv.offer_price AS variant_offer_price,
@@ -152,6 +155,44 @@ const getCartItemsForEmail = async (userId) => {
     `, [userId]);
 
     const MEDIA = process.env.MEDIA_BASE_URL || 'https://mariot-backend.onrender.com';
+
+    // Tier pricing for customizable products (same calc as Cart.getCartItems) so the
+    // reminder email shows the real configured price, not the 0 base price.
+    const customIds = [...new Set(items.filter(i => Number(i.is_customizable) === 1).map(i => i.product_id))];
+    const tiersByProduct = {};
+    if (customIds.length > 0) {
+        try {
+            const [tierRows] = await db.query(
+                `SELECT product_id, dimension, min_cm, max_cm, price FROM product_size_tiers WHERE product_id IN (?)`,
+                [customIds]
+            );
+            for (const t of tierRows) {
+                (tiersByProduct[t.product_id] = tiersByProduct[t.product_id] || []).push(t);
+            }
+        } catch (e) { /* table missing → fall back to base price */ }
+    }
+    const safeParse = (raw) => {
+        if (!raw) return null;
+        try { return typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return null; }
+    };
+    const computeCustomPrice = (item) => {
+        if (Number(item.is_customizable) !== 1) return null;
+        const cfgDims = safeParse(item.product_custom_dims);
+        if (!Array.isArray(cfgDims) || cfgDims.length === 0) return null;
+        const tiers = tiersByProduct[item.product_id] || [];
+        if (tiers.length === 0) return null;
+        const chosen = safeParse(item.custom_dimensions) || {};
+        const baseDims = safeParse(item.base_dimensions) || {};
+        let total = 0;
+        for (const dim of cfgDims) {
+            const v = (chosen[dim] != null && String(chosen[dim]).trim() !== '') ? Number(chosen[dim]) : Number(baseDims[dim]);
+            if (!Number.isFinite(v)) return null;
+            const tier = tiers.find(t => t.dimension === dim && v >= Number(t.min_cm) && v <= Number(t.max_cm));
+            if (!tier) return null;
+            total += Number(tier.price);
+        }
+        return total;
+    };
 
     return items.map(item => {
         // A line has a variant only when it actually references one (matches cart.model.js).
@@ -173,12 +214,16 @@ const getCartItemsForEmail = async (userId) => {
         const variantOffer = item.variant_offer_price != null ? Number(item.variant_offer_price) : null;
         const offer_price = hasVariant && variantPrice > 0 ? variantOffer : baseOffer;
 
+        // Customizable products use the size-tier price; they don't carry a separate offer.
+        const isFree = Number(item.is_free_gift) === 1;
+        const customPrice = isFree ? null : computeCustomPrice(item);
+
         return {
             name: item.name,
             quantity: item.quantity,
-            // Free-gift lines are genuinely 0; everything else uses the resolved price.
-            price: Number(item.is_free_gift) === 1 ? 0 : price,
-            offer_price: Number(item.is_free_gift) === 1 ? 0 : offer_price,
+            // Free-gift = 0; customizable = tier price; else resolved variant/base price.
+            price: isFree ? 0 : (customPrice != null ? customPrice : price),
+            offer_price: isFree ? 0 : (customPrice != null ? null : offer_price),
             image: fullImage,
             slug: item.slug
         };

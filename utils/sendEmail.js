@@ -737,7 +737,7 @@ const sendWelcomeEmail = async (toEmail, userName, locale = 'en') => {
 /**
  * Send a quotation email to the customer
  */
-const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, items = [], locale = 'en') => {
+const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, items = [], locale = 'en', totals = {}) => {
     const transporter = createTransporter();
     const ar = isAr(locale);
     const L = ar ? {
@@ -746,6 +746,7 @@ const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, 
         dear: 'عزيزي',
         intro: 'شكراً لاختيارك ماريوت لمعدات المطابخ. فيما يلي عرض السعر الذي طلبته لمعدات مطبخك التجاري.',
         product: 'المنتج', qty: 'الكمية', price: 'السعر',
+        subtotal: 'الإجمالي الفرعي', couponL: 'خصم القسيمة', pointsL: 'خصم النقاط', vatL: 'ضريبة القيمة المضافة (5%)',
         finalTotal: 'الإجمالي النهائي:',
         note: '<strong>ملاحظة:</strong> هذا العرض صالح لمدة 15 يوماً من تاريخ الإصدار. الأسعار لا تشمل ضريبة القيمة المضافة؛ تُضاف 5% ضريبة على الإجمالي.',
         contact: 'إذا كان لديك أي استفسار أو ترغب بالمتابعة، يرجى الرد على هذه الرسالة أو الاتصال بنا على',
@@ -756,6 +757,7 @@ const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, 
         dear: 'Dear',
         intro: 'Thank you for choosing Mariot Kitchen Equipment. Below is the quotation you requested for your commercial kitchen equipment.',
         product: 'Product', qty: 'Qty', price: 'Price',
+        subtotal: 'Subtotal', couponL: 'Coupon discount', pointsL: 'Reward points', vatL: 'VAT (5%)',
         finalTotal: 'Final Total:',
         note: '<strong>Note:</strong> This quotation is valid for 15 days from the date of issue. Prices are exclusive of VAT; 5% VAT is added to the total.',
         contact: 'If you have any questions or would like to proceed with this quotation, please reply to this email or call us at',
@@ -770,6 +772,26 @@ const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, 
             <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: ${ar ? 'left' : 'right'};">${Number(item.price).toFixed(2)} AED</td>
         </tr>
     `).join('');
+
+    // Totals breakdown — show the coupon / reward-points discount when one was applied.
+    const subtotalNum = Number(totals.subtotal || 0);
+    const couponNum = Number(totals.coupon_discount || 0);
+    const pointsNum = Number(totals.points_discount || 0);
+    const vatNum = Number(totals.tax_amount || 0);
+    const couponCode = totals.coupon_code ? ` (${totals.coupon_code})` : '';
+    const pointsUsed = Number(totals.points_used || 0);
+    const endAlign = ar ? 'left' : 'right';
+    const summaryCell = (label, value, color) =>
+        `<tr>
+            <td colspan="2" style="padding: 6px 10px; text-align: ${endAlign}; color: #475569;">${label}</td>
+            <td style="padding: 6px 10px; text-align: ${endAlign}; font-weight: 600; color: ${color || '#334155'};">${value}</td>
+        </tr>`;
+    const summaryRows = `
+        ${subtotalNum > 0 ? summaryCell(L.subtotal, `${subtotalNum.toFixed(2)} AED`) : ''}
+        ${couponNum > 0 ? summaryCell(`${L.couponL}${couponCode}`, `- ${couponNum.toFixed(2)} AED`, '#16a34a') : ''}
+        ${pointsNum > 0 ? summaryCell(`${L.pointsL}${pointsUsed > 0 ? ` (${pointsUsed} pts)` : ''}`, `- ${pointsNum.toFixed(2)} AED`, '#16a34a') : ''}
+        ${vatNum > 0 ? summaryCell(L.vatL, `${vatNum.toFixed(2)} AED`) : ''}
+    `;
 
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
@@ -796,9 +818,10 @@ const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, 
                         ${itemRows}
                     </tbody>
                     <tfoot>
+                        ${summaryRows}
                         <tr>
-                            <td colspan="2" style="padding: 15px 10px; text-align: ${ar ? 'left' : 'right'}; font-weight: bold;">${L.finalTotal}</td>
-                            <td style="padding: 15px 10px; text-align: ${ar ? 'left' : 'right'}; font-weight: bold; color: #e11d48; font-size: 18px;">${Number(finalAmount).toFixed(2)} AED</td>
+                            <td colspan="2" style="padding: 15px 10px; text-align: ${ar ? 'left' : 'right'}; font-weight: bold; border-top: 1px solid #eee;">${L.finalTotal}</td>
+                            <td style="padding: 15px 10px; text-align: ${ar ? 'left' : 'right'}; font-weight: bold; color: #e11d48; font-size: 18px; border-top: 1px solid #eee;">${Number(finalAmount).toFixed(2)} AED</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -809,8 +832,12 @@ const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, 
                     </p>
                 </div>
 
-                <p style="font-size: 14px; color: #666; line-height: 1.6;">
-                    ${L.contact} <a href="tel:+97142882777" style="color: #0ea5e9;" dir="ltr">+971 4 288 2777</a>.
+                <p style="font-size: 14px; color: #666; line-height: 1.8;">
+                    ${L.contact}
+                    <span dir="ltr"><a href="tel:+97142882777" style="color: #0ea5e9;">+971 4 288 2777</a> / <a href="tel:+971503114080" style="color: #0ea5e9;">+971 50 311 4080</a></span><br>
+                    <a href="mailto:Admin@mariotkitchen.com" style="color: #0ea5e9;" dir="ltr">Admin@mariotkitchen.com</a> &nbsp;|&nbsp;
+                    <a href="mailto:Support@mariot-group.com" style="color: #0ea5e9;" dir="ltr">Support@mariot-group.com</a><br>
+                    <a href="https://www.mariotstore.com" style="color: #0ea5e9;" dir="ltr">www.mariotstore.com</a>
                 </p>
 
                 <div style="text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; color: #999; font-size: 12px;">

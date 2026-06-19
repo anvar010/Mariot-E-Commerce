@@ -2,8 +2,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure upload directory exists
-const uploadDir = path.join(__dirname, '../uploads');
+// Ensure upload directory exists.
+// UPLOAD_DIR lets uploads live OUTSIDE the project so they survive code updates/redeploys.
+// Resolved relative to the app root (so e.g. "../uploads" points to a sibling folder),
+// or used as-is if an absolute path is given. Falls back to the in-project ./uploads.
+const appRoot = path.join(__dirname, '..');
+const uploadDir = process.env.UPLOAD_DIR
+    ? path.resolve(appRoot, process.env.UPLOAD_DIR)
+    : path.join(appRoot, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
