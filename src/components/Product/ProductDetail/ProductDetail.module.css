@@ -5113,7 +5113,9 @@
     }
 
     .customInputRange {
-        display: none;
+        display: block;
+        font-size: 10px;
+        margin-top: 3px;
     }
 
     .customPriceFooter {

@@ -189,9 +189,12 @@ const CartDrawer = () => {
 
         setIsGeneratingQuote(true);
         try {
-            // Prices are VAT-exclusive — add 5% VAT on top of the discounted total.
-            const finalTaxable = cartTotal;
-            const finalVat = cartTotal * 0.05;
+            // Prices are VAT-exclusive. subtotal = pre-discount items total; apply the
+            // coupon + reward-points discount, then add 5% VAT on the discounted amount.
+            const itemsSubtotal = subtotal;
+            const totalDiscount = Number((discountAmount + pointsDiscountAmount).toFixed(2));
+            const finalTaxable = Math.max(0, itemsSubtotal - totalDiscount); // == cartTotal
+            const finalVat = finalTaxable * 0.05;
 
             // 1. Save quotation to database first
             const res = await fetch(`${API_BASE_URL}/quotations`, {
@@ -207,7 +210,12 @@ const CartDrawer = () => {
                     customer_phone: quotationForm.phone,
                     vat_number: quotationForm.vat_number,
                     items: cartItems,
-                    subtotal: Number(finalTaxable.toFixed(2)),
+                    subtotal: Number(itemsSubtotal.toFixed(2)),
+                    discount_amount: totalDiscount,
+                    coupon_discount: Number(discountAmount.toFixed(2)),
+                    points_discount: Number(pointsDiscountAmount.toFixed(2)),
+                    coupon_code: appliedCoupon?.code || null,
+                    points_used: Number(pointsToUse) || 0,
                     tax_amount: Number(finalVat.toFixed(2)),
                     total_amount: Number((finalTaxable + finalVat).toFixed(2))
                 })
@@ -216,7 +224,7 @@ const CartDrawer = () => {
             const data = await res.json();
             if (data.success) {
                 // 2. Generate PDF using the returned quotation ref/data
-                await generateQuotationPDF(data.data, true);
+                await generateQuotationPDF(data.data, true, isArabic);
                 showNotification(tNotif('quotationSuccess'));
                 setShowQuotationPopup(false);
             } else {

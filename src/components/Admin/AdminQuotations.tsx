@@ -45,6 +45,7 @@ const AdminQuotations = () => {
             'modal.summary': 'Quotation Summary',
             'modal.dateGenerated': 'Date Generated',
             'modal.subtotal': 'Subtotal',
+            'modal.discount': 'Discount',
             'modal.tax': 'Tax (5%)',
             'modal.total': 'Total Amount',
             'modal.quotedItems': 'Quoted Items',
@@ -292,6 +293,12 @@ const AdminQuotations = () => {
                                             <span>{t('modal.subtotal')}</span>
                                             <span><CurrencyPrice amount={Number(selectedQuotation.subtotal)} /></span>
                                         </div>
+                                        {Number(selectedQuotation.discount_amount) > 0 && (
+                                            <div className={styles.summaryLine}>
+                                                <span>{t('modal.discount') || 'Discount'}</span>
+                                                <span style={{ color: '#16a34a' }}>- <CurrencyPrice amount={Number(selectedQuotation.discount_amount)} /></span>
+                                            </div>
+                                        )}
                                         <div className={styles.summaryLine}>
                                             <span>{t('modal.tax')}</span>
                                             <span><CurrencyPrice amount={Number(selectedQuotation.tax_amount)} /></span>

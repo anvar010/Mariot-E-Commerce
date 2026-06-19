@@ -54,7 +54,7 @@ const imageToBase64 = async (url: string): Promise<string> => {
     return '/assets/placeholder-image.webp';
 };
 
-export const generateQuotationPDF = async (quotation: any, shouldDownload = false) => {
+export const generateQuotationPDF = async (quotation: any, shouldDownload = false, isArabic = false) => {
     const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
 
     const formatDate = (dateStr: any) => {
@@ -84,7 +84,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
     // Helper to generate a single page HTML
     const getPageHTML = (itemChunk: any[], chunkStartIndex: number, isFirstPage: boolean, isLastPage: boolean) => {
         return `
-            <div style="width: 794px; min-height: 1122px; background: white; padding: 40px; font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; line-height: 1.5; box-sizing: border-box; display: flex; flex-direction: column;">
+            <div dir="ltr" style="width: 794px; min-height: 1122px; background: white; padding: 40px; font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; line-height: 1.5; box-sizing: border-box; display: flex; flex-direction: column;">
                 <!-- Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; padding-bottom: 10px; margin-bottom: 20px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -100,8 +100,8 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
 
                 ${isFirstPage ? `
                     <!-- Ref & Date -->
-                    <div style="text-align: center; margin-bottom: 30px;">
-                        <div style="display: flex; justify-content: center; gap: 40px; font-size: 14px;">
+                    <div style="margin-bottom: 30px;">
+                        <div style="display: flex; justify-content: space-between; gap: 40px; font-size: 14px;">
                             <div style="text-align: left;">
                                 <div style="color: #64748b; margin-bottom: 4px;">Quotation Ref.</div>
                                 <div style="font-weight: bold; font-size: 16px;">${quotation.quotation_ref || 'N/A'}</div>
@@ -111,7 +111,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                                 <div style="font-weight: bold; font-size: 16px;">${quotation.quotation_ref || 'N/A'}</div>
                             </div>
                         </div>
-                        <div style="display: flex; justify-content: center; gap: 40px; font-size: 14px; margin-top: 10px;">
+                        <div style="display: flex; justify-content: space-between; gap: 40px; font-size: 14px; margin-top: 10px;">
                             <div style="text-align: left;">
                                 <div style="color: #64748b; margin-bottom: 4px;">Quotation Issue Date</div>
                                 <div style="font-weight: bold; font-size: 16px;">${formatDate(quotation.created_at)}</div>
@@ -130,8 +130,14 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                                 <span style="font-size: 12px; color: #64748b;">Issued from</span>
                                 <span style="font-size: 12px; color: #64748b; direction: rtl;">أصدرت من</span>
                             </div>
-                            <div style="font-weight: bold; font-size: 15px; margin-bottom: 4px;">MARIOT.com</div>
+                            <div style="font-weight: bold; font-size: 15px; margin-bottom: 4px;">Mariot Store</div>
                             <div style="font-size: 13px; color: #334155;">Mariot Kitchen Equipment Trading LLC</div>
+                            <div style="font-size: 12px; color: #334155; margin-top: 8px; line-height: 1.7;">
+                                <div dir="ltr">📞 +971 4 288 2777&nbsp;&nbsp;|&nbsp;&nbsp;+971 50 311 4080</div>
+                                <div dir="ltr">✉ Admin@mariotkitchen.com</div>
+                                <div dir="ltr">✉ Support@mariot-group.com</div>
+                                <div dir="ltr">🌐 www.mariotstore.com</div>
+                            </div>
                             <div style="background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 10px; font-size: 12px;">
                                 VAT# 100412345600003 <span style="margin-left: 10px; direction: rtl;">الرقم الضريبي</span>
                             </div>
@@ -206,6 +212,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                                 <td style="padding: 15px 10px; font-size: 11px;">#${item.id || 'N/A'}</td>
                                 <td style="padding: 15px 10px; font-size: 11px;">
                                     <div style="font-weight: bold; color: #1e293b;">${item.name}</div>
+                                    ${isArabic && item.name_ar ? `<div style="font-weight: bold; color: #1e293b; text-align: right; direction: rtl;">${item.name_ar}</div>` : ''}
                                     ${item.model ? `<div style="color: #64748b; font-size: 10px;">Model: ${item.model}</div>` : ''}
                                     <div style="color: #64748b; font-size: 10px;">Brand: ${item.brand || 'Standard'}</div>
                                     ${variantLabel ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
@@ -236,6 +243,24 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                                 <span style="font-weight: bold;">AED ${Number(quotation.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 <span style="width: 180px; text-align: right; direction: rtl;">الإجمالي (غير شامل الضريبة)</span>
                             </div>
+                            ${Number(quotation.coupon_discount) > 0 ? `
+                            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #16a34a;">
+                                <span style="width: 180px;">Coupon Discount${quotation.coupon_code ? ` (${quotation.coupon_code})` : ''}</span>
+                                <span style="font-weight: bold;">- AED ${Number(quotation.coupon_discount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span style="width: 180px; text-align: right; direction: rtl;">خصم القسيمة</span>
+                            </div>` : ''}
+                            ${Number(quotation.points_discount) > 0 ? `
+                            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #16a34a;">
+                                <span style="width: 180px;">Reward Points${Number(quotation.points_used) > 0 ? ` (${quotation.points_used} pts)` : ''}</span>
+                                <span style="font-weight: bold;">- AED ${Number(quotation.points_discount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span style="width: 180px; text-align: right; direction: rtl;">خصم النقاط</span>
+                            </div>` : ''}
+                            ${(!(Number(quotation.coupon_discount) > 0) && !(Number(quotation.points_discount) > 0) && Number(quotation.discount_amount) > 0) ? `
+                            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #16a34a;">
+                                <span style="width: 180px;">Discount</span>
+                                <span style="font-weight: bold;">- AED ${Number(quotation.discount_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span style="width: 180px; text-align: right; direction: rtl;">الخصم</span>
+                            </div>` : ''}
                             <div style="display: flex; justify-content: space-between; font-size: 13px;">
                                 <span style="width: 180px;">Total VAT (5%)</span>
                                 <span style="font-weight: bold;">AED ${Number(quotation.tax_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -305,6 +330,11 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
             pageContainer.style.position = 'absolute';
             pageContainer.style.top = '-10000px';
             pageContainer.style.left = '0';
+            // Force LTR so the bilingual layout renders identically regardless of the site
+            // language. On the Arabic site the page is dir="rtl", which would otherwise mirror
+            // the whole quotation (columns/alignment flip). Arabic text keeps its own rtl spans.
+            pageContainer.setAttribute('dir', 'ltr');
+            pageContainer.style.direction = 'ltr';
             pageContainer.innerHTML = getPageHTML(chunks[i], startIndex, isFirst, isLast);
             document.body.appendChild(pageContainer);
 
