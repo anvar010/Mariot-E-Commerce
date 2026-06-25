@@ -1,10 +1,15 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
+
+// useLayoutEffect on the client (restore before paint → no empty-cart flash), useEffect on the
+// server (avoids the SSR warning). Lets us restore the cart snapshot without a hydration mismatch.
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import { resolveUrl } from '@/utils/resolveUrl';
 import { useTranslations, useLocale } from 'next-intl';
 
 interface CartItem {
@@ -102,6 +107,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const prevToken = useRef(token);
     const hasHydrated = useRef(false);
+    const snapshotRestored = useRef(false);
+
+    // Restore the last cart snapshot BEFORE paint on (re)mount. A locale switch remounts this
+    // provider (it lives under /[locale]); guests reload instantly from localStorage but logged-in
+    // users re-fetch from the server, so without this they'd see an empty cart (missing image/price)
+    // for a moment. Runs after a render that matches SSR (empty), so there's no hydration mismatch.
+    useIsomorphicLayoutEffect(() => {
+        if (snapshotRestored.current) return;
+        snapshotRestored.current = true;
+        try {
+            const snap = localStorage.getItem('cart_snapshot');
+            if (snap) {
+                const parsed = JSON.parse(snap);
+                // Re-resolve images on restore so a stale/raw-format persisted path normalizes to
+                // a current absolute URL instead of staying broken.
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    setCartItems(parsed.map((it: any) => ({ ...it, image: resolveUrl(it.image) })));
+                }
+            }
+        } catch { /* ignore */ }
+    }, []);
 
     // Latest-value refs so the action callbacks can stay referentially stable
     // ([] deps) while still reading current state/props at call time.
@@ -163,7 +189,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         model: item.variant_sku || item.model || undefined,
                         slug: item.slug || item.product?.slug || '',
                         price: Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price || item.product?.price || 0),
-                        image: item.image || item.product?.image_url || '',
+                        image: resolveUrl(item.image || item.product?.image_url || ''),
                         quantity: Number(item.quantity),
                         brand: item.brand || item.brand_name || item.product?.brand?.name || '',
                         stock_quantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : undefined,
@@ -230,13 +256,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setPointsToUse(0);
                 setPointsDiscountAmount(0);
                 localStorage.removeItem('cart');
+                localStorage.removeItem('cart_snapshot');
                 hasHydrated.current = true;
             } else {
                 // Initial guest load
                 const savedCart = localStorage.getItem('cart');
                 if (savedCart) {
                     try {
-                        setCartItems(JSON.parse(savedCart));
+                        const guestItems = JSON.parse(savedCart);
+                        setCartItems(Array.isArray(guestItems)
+                            ? guestItems.map((it: any) => ({ ...it, image: resolveUrl(it.image) }))
+                            : []);
                     } catch (error) {
                         console.error('Failed to parse cart from localStorage', error);
                         setCartItems([]);
@@ -269,6 +299,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem('cart', JSON.stringify(cartItems));
         }
     }, [cartItems, token]);
+
+    // 2b. Snapshot of the full cart (guest OR logged-in) for instant restore on the next mount
+    //     (e.g. locale switch). Keeps image/price/qty so nothing flashes missing.
+    useEffect(() => {
+        if (!hasHydrated.current) return;
+        try { localStorage.setItem('cart_snapshot', JSON.stringify(cartItems)); } catch { /* quota */ }
+    }, [cartItems]);
+
+    // 2c. Re-sync from the server when the locale changes. In the App Router a locale switch
+    //     (/en ↔ /ar) is a client navigation that does NOT remount this provider, so the cart
+    //     would otherwise keep showing stale in-memory items (e.g. a line added without a
+    //     resolved image). Re-fetching guarantees fresh, correctly-resolved image/price data.
+    //     Skips the first run (initial sync already covers mount) and guests (no server cart).
+    const didLocaleSync = useRef(false);
+    useEffect(() => {
+        if (!didLocaleSync.current) { didLocaleSync.current = true; return; }
+        if (tokenRef.current) fetchUserCart();
+    }, [locale, fetchUserCart]);
 
     // Prune orphan free-gift lines: a gift can only exist while its bundle parent is in the cart.
     useEffect(() => {
@@ -334,7 +382,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 model: product.model || undefined,
                 slug: product.slug || '',
                 price: displayPrice,
-                image: product.image,
+                // Store an absolute, resolved URL so the cart image is consistent regardless of
+                // source (guest add / server fetch / snapshot) and renders in the quotation PDF +
+                // email, which can't resolve a relative /uploads path.
+                image: resolveUrl(product.image),
                 brand: product.brand || product.brand_name || '',
                 quantity: quantityToAdd,
                 stock_quantity: stockLimit,
@@ -367,7 +418,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 'cart',
                 {
                     title: (localeRef.current === 'ar' && product.name_ar ? product.name_ar : (product.name || product.model)) || 'Product',
-                    image: product.image,
+                    image: resolveUrl(product.image),
                     price: displayPrice,
                     oldPrice: product.old_price || product.price_old || product.oldPrice,
                     quantity: quantityToAdd,
@@ -424,7 +475,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
 
         if (itemToRemove) {
-            showNotification(tt('cartRemove', { name: itemToRemove.name }), 'error', { title: tt('itemRemoved') });
+            // Use the Arabic product name when the site is in Arabic (matches addToCart).
+            const removedName = (localeRef.current === 'ar' && itemToRemove.name_ar)
+                ? itemToRemove.name_ar
+                : (itemToRemove.name || (itemToRemove as any).model || 'Product');
+            showNotification(tt('cartRemove', { name: removedName }), 'error', { title: tt('itemRemoved') });
         }
 
         if (tokenRef.current) {

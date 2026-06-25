@@ -843,7 +843,7 @@
 }
 
 .compareRowLabel {
-    font-weight: 600;
+    font-weight: 400;
     color: #1e293b;
     background: inherit !important;
     text-align: start;
@@ -851,7 +851,7 @@
 
 .compareCell {
     color: #0f172a;
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .compareCornerCell {
@@ -1566,7 +1566,7 @@
 
 .priceMatchMain {
     font-size: 17px;
-    font-weight: 800;
+    font-weight: 500;
     color: #1e293b;
     /* Darker slate */
     letter-spacing: -0.01em;
@@ -1577,6 +1577,29 @@
     color: #64748b;
     /* Lighter slate */
     font-weight: 600;
+}
+
+/* Mobile: shrink so the heading stays on one line in the narrow card. */
+@media (max-width: 768px) {
+    .priceMatchCard {
+        padding: 6px 12px;
+        gap: 10px;
+    }
+
+    .priceMatchMain {
+        font-size: 13.5px;
+        letter-spacing: -0.02em;
+    }
+
+    .priceMatchSub {
+        font-size: 11px;
+    }
+
+    .priceMatchIcon {
+        width: 28px;
+        height: 28px;
+        padding: 6px;
+    }
 }
 
 .chevronIcon {
@@ -3820,6 +3843,7 @@
 
     .breadcrumbs {
         padding: 0;
+        flex-wrap: nowrap;
         overflow-x: auto;
         white-space: nowrap;
         scrollbar-width: none;
@@ -3828,6 +3852,11 @@
         /* IE/Edge */
         gap: 6px;
         margin-bottom: 15px;
+    }
+
+    /* Keep each crumb on the single scrollable line instead of wrapping/clipping. */
+    .breadcrumbs > * {
+        flex-shrink: 0;
     }
 
     .breadcrumbs::-webkit-scrollbar {
@@ -4050,7 +4079,7 @@
 }
 
 .specsTable tr:nth-child(even) td {
-    background: #ffffff;
+    background: #f4f7fa;
 }
 
 .specsTable td {
@@ -4097,7 +4126,7 @@
 .specLabel {
     color: #000000;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 500;
     width: 35%;
     min-width: 150px;
     padding-inline-end: 20px;
@@ -4106,7 +4135,7 @@
 .specValue {
     color: #000000;
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 400;
     flex: 1;
     text-align: start;
 }

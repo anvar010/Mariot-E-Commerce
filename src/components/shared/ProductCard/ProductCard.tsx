@@ -167,6 +167,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         const success = await addToCart({
             id: displayId,
+            // For variant products the listing already resolved the default variant's
+            // image/price into displayImage/displayPrice; pass its id + label too so the
+            // cart line is the proper variant (and shows the variant image), not a
+            // variantless line that falls back to a missing primary image.
+            variant_id: product?.default_variant_id ?? null,
+            variant_label: product?.variant_label,
             name: baseName,
             name_ar: product?.name_ar,
             price: displayPrice,

@@ -31,6 +31,7 @@ import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
 import { customDimParts } from '@/utils/customDimensions';
+import { resolveUrl } from '@/utils/resolveUrl';
 import styles from './CartDrawer.module.css';
 import qStyles from './CartDrawer.quotation.module.css';
 
@@ -205,11 +206,12 @@ const CartDrawer = () => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
+                    locale,
                     customer_name: quotationForm.name,
                     customer_email: quotationForm.email,
                     customer_phone: quotationForm.phone,
                     vat_number: quotationForm.vat_number,
-                    items: cartItems,
+                    items: cartItems.map(it => ({ ...it, image: resolveUrl(it.image) })),
                     subtotal: Number(itemsSubtotal.toFixed(2)),
                     discount_amount: totalDiscount,
                     coupon_discount: Number(discountAmount.toFixed(2)),
@@ -346,7 +348,11 @@ const CartDrawer = () => {
                                                 style={opts.compact ? { borderBottom: 'none', paddingBottom: 0 } : undefined}
                                             >
                                                 <div className={styles.itemImg} onClick={() => { setIsDrawerOpen(false); router.push(`/product/${item.slug}`); }}>
-                                                    <img src={item.image || '/assets/mariot-logo2.webp'} alt={item.name} />
+                                                    <img
+                                                        src={resolveUrl(item.image) || '/assets/mariot-logo2.webp'}
+                                                        alt={item.name}
+                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                                    />
                                                     {!isGift && <span className={styles.itemCountBadge}>{item.quantity}</span>}
                                                 </div>
                                                 <div className={styles.itemDetails}>
@@ -387,7 +393,11 @@ const CartDrawer = () => {
                                         return (
                                             <div key={groupKey} className={styles.cartItem}>
                                                 <div className={styles.itemImg} onClick={() => { setIsDrawerOpen(false); router.push(`/product/${item.slug}`); }}>
-                                                    <img src={item.image || '/assets/mariot-logo2.webp'} alt={item.name} />
+                                                    <img
+                                                        src={resolveUrl(item.image) || '/assets/mariot-logo2.webp'}
+                                                        alt={item.name}
+                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                                    />
                                                     <span className={styles.itemCountBadge}>{item.quantity}</span>
                                                 </div>
                                                 <div className={styles.itemDetails}>
@@ -754,7 +764,7 @@ const CartDrawer = () => {
                                                 });
                                             }}
                                         />
-                                        <img className={styles.giftTrimImg} src={g.image || '/assets/mariot-logo2.webp'} alt={g.name} />
+                                        <img className={styles.giftTrimImg} src={resolveUrl(g.image) || '/assets/mariot-logo2.webp'} alt={g.name} />
                                         <span className={styles.giftTrimName}>{g.name}</span>
                                     </label>
                                 );

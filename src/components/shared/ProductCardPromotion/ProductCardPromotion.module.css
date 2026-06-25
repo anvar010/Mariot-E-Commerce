@@ -391,7 +391,7 @@
 
 .productName {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 400;
     color: #1d1d1f;
     margin: 0 0 2px 0;
     line-height: 1.4;
@@ -597,6 +597,9 @@
 .cartBtn span {
     overflow: hidden;
     text-overflow: ellipsis;
+    /* Taller line-box + small vertical padding so Arabic descenders (ة، ل، etc.) aren't clipped. */
+    line-height: 1.8;
+    padding-block: 1px;
 }
 
 .notifyBtn {

@@ -37,9 +37,10 @@ import {
     Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { API_BASE_URL, BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { formatCustomDims } from '@/utils/customDimensions';
+import { resolveUrl } from '@/utils/resolveUrl';
 import styles from './checkout.module.css';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -368,15 +369,6 @@ function CheckoutContent() {
         } finally {
             setIsApplyingCoupon(false);
         }
-    };
-
-    const resolveUrl = (url?: string) => {
-        if (!url) return '';
-        if (url.includes('localhost:5000')) {
-            return url.replace('http://localhost:5000', BASE_URL);
-        }
-        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
-        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
     };
 
     const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1142,11 +1134,12 @@ function CheckoutContent() {
                                     {cartItems.map(item => (
                                         <div key={`${item.id}-${item.variant_id ?? 'base'}-${item.custom_signature ?? ''}`} className={styles.itemRow}>
                                             <img
-                                                src={resolveUrl(item.image)}
+                                                src={resolveUrl(item.image) || '/assets/mariot-logo2.webp'}
                                                 alt={item.name}
                                                 className={styles.itemImg}
                                                 style={item.slug ? { cursor: 'pointer' } : undefined}
                                                 onClick={() => item.slug && router.push(`/product/${item.slug}`)}
+                                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
                                             />
                                             <div className={styles.itemDetails}>
                                                 <div

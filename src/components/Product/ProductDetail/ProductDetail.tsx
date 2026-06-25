@@ -1972,7 +1972,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('securePayment')} text={t('securePaymentText')} />
                             <TrustItem icon={<RotateCcw size={32} color="#4caf50" strokeWidth={1.5} />} title={t('satisfaction')} text={t('satisfactionText')} />
                             <TrustItem icon={<Headset size={32} color="#4caf50" strokeWidth={1.5} />} title={t('onlineSupport')} text={t('onlineSupportText')} />
-                            <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('warranty')} text={t('warrantyText', { count: product?.warranty_years || 1 })} />
+                            <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('warranty')} text={t('warrantyText', { count: Number(product?.warranty) > 0 ? Number(product?.warranty) : 1 })} />
                         </div>
 
                         <div className={styles.paymentMethods}>
@@ -2254,7 +2254,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('securePayment')} text={t('securePaymentText')} />
                         <TrustItem icon={<RotateCcw size={32} color="#4caf50" strokeWidth={1.5} />} title={t('satisfaction')} text={t('satisfactionText')} />
                         <TrustItem icon={<Headset size={32} color="#4caf50" strokeWidth={1.5} />} title={t('onlineSupport')} text={t('onlineSupportText')} />
-                        <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('warranty')} text={t('warrantyText', { count: product?.warranty_years || 1 })} />
+                        <TrustItem icon={<ShieldCheck size={32} color="#4caf50" strokeWidth={1.5} />} title={t('warranty')} text={t('warrantyText', { count: Number(product?.warranty) > 0 ? Number(product?.warranty) : 1 })} />
                     </div>
 
                     <div className={styles.paymentMethods}>

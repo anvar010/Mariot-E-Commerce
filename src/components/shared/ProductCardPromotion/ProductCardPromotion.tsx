@@ -122,6 +122,10 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
 
             addToCart({
                 id: product.id,
+                // Add the default variant (id + label) for variant products so the cart
+                // line is the proper variant, not a variantless line with a missing image.
+                variant_id: product.default_variant_id ?? null,
+                variant_label: product.variant_label,
                 // Store both languages so the cart/checkout can localize dynamically
                 // based on the active locale (not whichever was active at add time).
                 name: product.name,

@@ -161,6 +161,11 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         if (isLimited) return tc('limited-time-offers');
         if (brandParam) return getBrandDisplayName() || '';
         if (activeCategory) {
+            // Prefer the real category name (Arabic when the site is Arabic) from the API,
+            // not a title-cased slug — otherwise admin-set name_ar never shows.
+            const cat = apiCategories.find((c: any) =>
+                normalizeSlug(c.slug) === normalizeSlug(activeCategory) || normalizeSlug(c.name) === normalizeSlug(activeCategory));
+            if (cat) return (isArabic && cat.name_ar) ? cat.name_ar : cat.name;
             if (tc.has(activeCategory)) return tc(activeCategory);
             if (t.has(activeCategory)) return t(activeCategory);
             return activeCategory.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -196,6 +201,10 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const subCategoriesToShow = matchedCategoryForGrid ? apiCategories.filter((cat: any) => (cat.parent_id == matchedCategoryForGrid.id) && cat.is_active) : [];
 
     const parentSlug = activeCategory ? (getApiParentCategory(activeCategory) || getParentCategory(activeCategory)) : null;
+    // Localized parent name for the breadcrumb (so admin-set name_ar shows in Arabic).
+    const parentCat = parentSlug ? apiCategories.find((c: any) =>
+        normalizeSlug(c.slug) === normalizeSlug(parentSlug) || normalizeSlug(c.name) === normalizeSlug(parentSlug)) : null;
+    const parentName = parentCat ? ((isArabic && parentCat.name_ar) ? parentCat.name_ar : parentCat.name) : null;
 
     const isInitialMount = React.useRef(true);
 
@@ -391,6 +400,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                     <div className={styles.breadcrumbColumn}>
                         <ShopBreadcrumbs
                             parentSlug={parentSlug}
+                            parentName={parentName}
                             brandParam={brandParam}
                             activeCategory={activeCategory}
                             formattedCategoryName={formattedCategoryName}

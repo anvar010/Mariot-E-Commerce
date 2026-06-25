@@ -51,14 +51,24 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
 
     const [slides, setSlides] = React.useState(
         initialSlides.length > 0
-            ? initialSlides.map(s => ({ ...s, image: resolveUrl(s.image) }))
+            ? initialSlides.map(s => ({ ...s, image: resolveUrl(s.image), imageMobile: s.imageMobile ? resolveUrl(s.imageMobile) : '' }))
             : defaultSlides
     );
     const [currentSlide, setCurrentSlide] = React.useState(0);
     const [isPaused, setIsPaused] = React.useState(false);
     const [direction, setDirection] = React.useState(1);
+    // Phones get the portrait mobile image when one is set; everyone else the desktop image.
+    const [isMobile, setIsMobile] = React.useState(false);
 
     const isRtl = locale === 'ar';
+
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 768px)');
+        const update = () => setIsMobile(mq.matches);
+        update();
+        mq.addEventListener('change', update);
+        return () => mq.removeEventListener('change', update);
+    }, []);
 
     useEffect(() => {
         if (initialSlides.length > 0) return;
@@ -77,6 +87,11 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                             subtitle: "",
                             description: isRtl && slide.description_ar ? slide.description_ar : slide.description,
                             image: resolveUrl(isRtl && slide.image_ar ? slide.image_ar : slide.image),
+                            imageMobile: resolveUrl(
+                                isRtl
+                                    ? (slide.image_mobile_ar || slide.image_mobile || '')
+                                    : (slide.image_mobile || '')
+                            ),
                             accent: slide.accent || "#4c6ef5",
                             link: slide.link || "/shopnow",
                             btnText: isRtl && slide.btnText_ar ? slide.btnText_ar : (slide.btnText || "Shop Now")
@@ -115,6 +130,8 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
     }, [isPaused, nextSlide, slides.length]);
 
     const slide = slides[currentSlide] || slides[0] || defaultSlides[0];
+    // On phones use the portrait mobile image when the slide has one; otherwise desktop.
+    const bgImage = (isMobile && (slide as any).imageMobile) ? (slide as any).imageMobile : slide.image;
 
     const slideVariants = {
         enter: (dir: number) => ({
@@ -181,12 +198,12 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                         }}
                     >
                         <Image
-                            src={slide.image}
+                            src={bgImage}
                             alt={slide.title}
                             fill
                             className={styles.bgImage}
                             priority={currentSlide === 0}
-                            unoptimized={slide.image.startsWith('/assets/')}
+                            unoptimized={bgImage.startsWith('/assets/')}
                             sizes="100vw"
                             style={{ objectFit: 'cover' }}
                         />

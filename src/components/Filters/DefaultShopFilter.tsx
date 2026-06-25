@@ -25,7 +25,7 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
     onCategoryChange,
     enableBrandFilter = true,
     enableCategoryFilter = true,
-    title = 'Filter'
+    title = ''
 }) => {
     const t = useTranslations('categoryContent');
     const locale = useLocale();
@@ -45,7 +45,7 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
             <div className={styles.filterHeader}>
                 <div className={styles.filterTitle}>
                     <Filter size={18} />
-                    <h2>{title.toUpperCase()}</h2>
+                    <h2>{(title || t('filter')).toUpperCase()}</h2>
                 </div>
                 <button className={styles.resetBtn} onClick={resetFilters}>
                     {t("reset") || 'Reset'}

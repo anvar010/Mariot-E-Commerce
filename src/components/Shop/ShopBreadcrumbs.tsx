@@ -6,6 +6,7 @@ import styles from './ShopLayout.module.css';
 
 interface ShopBreadcrumbsProps {
     parentSlug: string | null;
+    parentName?: string | null;
     brandParam: string | null;
     activeCategory: string | null;
     formattedCategoryName: string;
@@ -15,6 +16,7 @@ interface ShopBreadcrumbsProps {
 
 const ShopBreadcrumbs: React.FC<ShopBreadcrumbsProps> = ({
     parentSlug,
+    parentName,
     brandParam,
     activeCategory,
     formattedCategoryName,
@@ -28,11 +30,13 @@ const ShopBreadcrumbs: React.FC<ShopBreadcrumbsProps> = ({
                 <>
                     <span className={styles.separator}>/</span>
                     <span>
-                        {t.has(parentSlug)
-                            ? t(parentSlug)
-                            : (tc.has(parentSlug)
-                                ? tc(parentSlug)
-                                : parentSlug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
+                        {parentName
+                            ? parentName
+                            : (t.has(parentSlug)
+                                ? t(parentSlug)
+                                : (tc.has(parentSlug)
+                                    ? tc(parentSlug)
+                                    : parentSlug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')))
                         }
                     </span>
                 </>

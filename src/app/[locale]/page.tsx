@@ -45,6 +45,9 @@ async function getHomeData(locale: string) {
                     subtitle: "",
                     description: isRtl && slide.description_ar ? slide.description_ar : slide.description,
                     image: isRtl && slide.image_ar ? slide.image_ar : slide.image,
+                    imageMobile: isRtl
+                        ? (slide.image_mobile_ar || slide.image_mobile || '')
+                        : (slide.image_mobile || ''),
                     accent: slide.accent || "#4c6ef5",
                     link: slide.link || "/shopnow",
                     btnText: isRtl && slide.btnText_ar ? slide.btnText_ar : (slide.btnText || "Shop Now")

@@ -232,7 +232,7 @@ const AdminCMS = () => {
         });
     };
 
-    const handleSlideImageUpload = async (index: number, file: File, field: 'image' | 'image_ar' = 'image') => {
+    const handleSlideImageUpload = async (index: number, file: File, field: 'image' | 'image_ar' | 'image_mobile' | 'image_mobile_ar' = 'image') => {
         try {
             const formData = new FormData();
             formData.append('image', file);
@@ -905,6 +905,92 @@ const AdminCMS = () => {
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                             <span style={{ fontSize: '11px', color: '#999' }}>or paste URL above</span>
                                             <span style={{ fontSize: '10px', color: '#666', fontWeight: '600' }}>Recommended size: 1920×800px</span>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <span style={{ fontSize: '12px', color: '#666', fontWeight: '700', letterSpacing: '0.5px' }}>MOBILE IMAGE (ENGLISH) <span style={{ fontWeight: 400, color: '#999', textTransform: 'none' }}>— shown on phones; falls back to the desktop image if empty</span></span>
+                                    {currentSlide.image_mobile && (
+                                        <img
+                                            src={currentSlide.image_mobile}
+                                            alt="Slide preview (mobile)"
+                                            style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #eee' }}
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                        />
+                                    )}
+                                    <input
+                                        type="text"
+                                        placeholder="https://... or upload below"
+                                        value={currentSlide.image_mobile || ''}
+                                        onChange={(e) => updateSlideField(activeSlide, 'image_mobile', e.target.value)}
+                                        style={{ padding: '12px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px' }}
+                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <label style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                            padding: '9px 16px', borderRadius: '8px',
+                                            background: '#f0f4ff', border: '1px solid #c7d1f7',
+                                            color: '#4c6ef5', fontWeight: '700', fontSize: '12px',
+                                            cursor: 'pointer', whiteSpace: 'nowrap'
+                                        }}>
+                                            📱 Upload Mobile Image
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                style={{ display: 'none' }}
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleSlideImageUpload(activeSlide, file, 'image_mobile');
+                                                }}
+                                            />
+                                        </label>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span style={{ fontSize: '11px', color: '#999' }}>or paste URL above</span>
+                                            <span style={{ fontSize: '10px', color: '#666', fontWeight: '600' }}>Recommended size: 800×1000px (portrait)</span>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <span style={{ fontSize: '12px', color: '#666', fontWeight: '700', letterSpacing: '0.5px' }}>MOBILE IMAGE (ARABIC) <span style={{ fontWeight: 400, color: '#999', textTransform: 'none' }}>— shown on phones when site language is Arabic; falls back to mobile/desktop image if empty</span></span>
+                                    {currentSlide.image_mobile_ar && (
+                                        <img
+                                            src={currentSlide.image_mobile_ar}
+                                            alt="Slide preview (mobile Arabic)"
+                                            style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #eee' }}
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                        />
+                                    )}
+                                    <input
+                                        type="text"
+                                        placeholder="https://... or upload below"
+                                        value={currentSlide.image_mobile_ar || ''}
+                                        onChange={(e) => updateSlideField(activeSlide, 'image_mobile_ar', e.target.value)}
+                                        style={{ padding: '12px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px' }}
+                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <label style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                            padding: '9px 16px', borderRadius: '8px',
+                                            background: '#f0f4ff', border: '1px solid #c7d1f7',
+                                            color: '#4c6ef5', fontWeight: '700', fontSize: '12px',
+                                            cursor: 'pointer', whiteSpace: 'nowrap'
+                                        }}>
+                                            📱 Upload Mobile Arabic Image
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                style={{ display: 'none' }}
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleSlideImageUpload(activeSlide, file, 'image_mobile_ar');
+                                                }}
+                                            />
+                                        </label>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span style={{ fontSize: '11px', color: '#999' }}>or paste URL above</span>
+                                            <span style={{ fontSize: '10px', color: '#666', fontWeight: '600' }}>Recommended size: 800×1000px (portrait)</span>
                                         </div>
                                     </div>
                                 </label>

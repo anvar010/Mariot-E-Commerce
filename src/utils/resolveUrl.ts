@@ -28,6 +28,18 @@ export const resolveUrl = (url?: string): string => {
         normalizedUrl.startsWith('data:') ||
         normalizedUrl.startsWith('blob:')
     ) {
+        // Force ANY absolute backend /uploads URL onto MEDIA_BASE_URL, regardless of the host
+        // the DB/backend returned (the WordPress apex mariotstore.com, an old onrender host,
+        // localhost, etc.). Without this, the cart re-fetch on a locale switch can return
+        // https://mariotstore.com/uploads/... and the image 404s. Matched on "/uploads/" only,
+        // and "/wp-content/uploads/" is excluded so genuine WordPress media is left alone.
+        if (normalizedUrl.startsWith('http') && !normalizedUrl.includes('/wp-content/')) {
+            const uploadsIdx = normalizedUrl.indexOf('/uploads/');
+            if (uploadsIdx !== -1) {
+                return `${MEDIA_BASE_URL}${normalizedUrl.slice(uploadsIdx)}`.replace(/ /g, '%20');
+            }
+        }
+
         // Fix for old/local domains still in DB
         const backendDomains = [
             'localhost:5000',

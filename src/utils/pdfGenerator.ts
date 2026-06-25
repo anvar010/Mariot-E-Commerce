@@ -65,11 +65,64 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
         });
     };
 
-    // Pre-convert all images to base64 to avoid CORS issues in html2canvas
-    const logoBase64 = await imageToBase64(window.location.origin + '/assets/mariot-logo.webp');
+    // Pre-convert all images to base64 to avoid CORS issues in html2canvas.
+    // Use the Arabic logo on the Arabic quotation.
+    const logoBase64 = await imageToBase64(window.location.origin + (isArabic ? '/MARIOT-A.webp' : '/assets/mariot-logo.webp'));
     const itemImageBase64s = await Promise.all(
         items.map((item: any) => imageToBase64(resolveImageUrl(item.image)))
     );
+
+    // Monolingual quotation: every label follows the site language; layout direction flips for Arabic.
+    const dir = isArabic ? 'rtl' : 'ltr';
+    const alignStart = isArabic ? 'right' : 'left';
+    const alignEnd = isArabic ? 'left' : 'right';
+    const L = isArabic ? {
+        quotation: 'تسعيرة', ref: 'مرجع التسعيرة', issueDate: 'تاريخ إصدار التسعيرة',
+        issuedFrom: 'صادر من', issuedTo: 'صادر إلى',
+        companyName: 'متجر ماريوت', companyLegal: 'ماريوت لتجارة معدات المطابخ ذ.م.م', vat: 'الرقم الضريبي',
+        note: 'لن يتم حجز المنتجات في هذه التسعيرة إلا بعد إتمام الطلب',
+        thRef: 'مرجع المنتج', thName: 'اسم المنتج', thImage: 'صورة المنتج', thQty: 'الكمية', thUnit: 'سعر الوحدة', thTotal: 'مجموع السعر',
+        brand: 'الماركة', model: 'الموديل',
+        totalAmounts: 'إجمالي المبلغ', subtotal: 'الإجمالي (غير شامل الضريبة)', coupon: 'خصم القسيمة', points: 'خصم النقاط', discount: 'الخصم', vatLine: 'إجمالي الضريبة (5٪)', grandTotal: 'إجمالي المبلغ المستحق',
+        terms: 'الشروط والأحكام',
+        term1: '١. الأسعار صالحة لمدة ٧ أيام فقط من تاريخ الإصدار.',
+        term2: '٢. هذه تسعيرة معدة بواسطة الكمبيوتر ولا تتطلب توقيعاً.',
+        term3: '٣. توفر المخزون عرضة للتغيير عند تأكيد الطلب.',
+        thankyou: 'شكراً لاختياركم متجر ماريوت', continued: 'يتبع في الصفحة التالية...', continuedRef: 'مرجع التسعيرة',
+    } : {
+        quotation: 'Quotation', ref: 'Quotation Ref.', issueDate: 'Quotation Issue Date',
+        issuedFrom: 'Issued from', issuedTo: 'Issued to',
+        companyName: 'Mariot Store', companyLegal: 'Mariot Kitchen Equipment Trading LLC', vat: 'VAT#',
+        note: "This quotation won't reserve the available stock for you until you place an order",
+        thRef: 'Product Ref.', thName: 'Product Name', thImage: 'Product Image', thQty: 'QTY', thUnit: 'Unit Price', thTotal: 'Total Price',
+        brand: 'Brand', model: 'Model',
+        totalAmounts: 'Total Amounts', subtotal: 'Subtotal (Excl. VAT)', coupon: 'Coupon Discount', points: 'Reward Points', discount: 'Discount', vatLine: 'Total VAT (5%)', grandTotal: 'Grand Total',
+        terms: 'Terms & Conditions',
+        term1: '1. Prices are valid for 7 days only from issue date.',
+        term2: '2. This is a computer generated quotation, signature not required.',
+        term3: '3. Stock availability is subject to change at time of order.',
+        thankyou: 'THANK YOU FOR CHOOSING MARIOT STORE', continued: 'Continued on next page...', continuedRef: 'Quotation Ref',
+    };
+
+    // Embed the UAE Dirham symbol font (U+20C3) as base64 so html2canvas can render the new
+    // dirham symbol. English uses the symbol; Arabic uses the word "درهم" (matches the site).
+    let dirhamFontFace = '';
+    try {
+        const fontRes = await fetch('/fonts/dirham.woff2');
+        const buf = await fontRes.arrayBuffer();
+        let bin = '';
+        const bytes = new Uint8Array(buf);
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        const b64 = btoa(bin);
+        dirhamFontFace = `@font-face{font-family:'DirhamPDF';src:url(data:font/woff2;base64,${b64}) format('woff2');font-weight:normal;font-style:normal;}`;
+    } catch (e) { /* fall back to AED text below */ }
+
+    const DIRHAM = '⃃';
+    const fmtNum = (n: any) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Money cell: Arabic → "1,234.00 درهم"; English → new dirham symbol + amount.
+    const money = (n: any) => isArabic
+        ? `<span dir="ltr">${fmtNum(n)}</span> درهم`
+        : `${dirhamFontFace ? `<span style="font-family:'DirhamPDF';">${DIRHAM}</span> ` : 'AED '}<span dir="ltr">${fmtNum(n)}</span>`;
 
     const { jsPDF } = await import('jspdf');
     const html2canvas = (await import('html2canvas')).default;
@@ -84,119 +137,77 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
     // Helper to generate a single page HTML
     const getPageHTML = (itemChunk: any[], chunkStartIndex: number, isFirstPage: boolean, isLastPage: boolean) => {
         return `
-            <div dir="ltr" style="width: 794px; min-height: 1122px; background: white; padding: 40px; font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; line-height: 1.5; box-sizing: border-box; display: flex; flex-direction: column;">
+            <div dir="${dir}" style="width: 794px; min-height: 1122px; background: white; padding: 40px; font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; line-height: 1.5; box-sizing: border-box; display: flex; flex-direction: column;">
+                <style>${dirhamFontFace}</style>
                 <!-- Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; padding-bottom: 10px; margin-bottom: 20px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                          <div style="width: 12px; height: 12px; background: #334155;"></div>
-                         <span style="font-size: 24px; font-weight: bold; color: #334155;">Quotation</span>
+                         <span style="font-size: 24px; font-weight: bold; color: #334155;">${L.quotation}</span>
                     </div>
                     <img src="${logoBase64}" alt="Logo" style="height: 50px;">
-                    <div style="display: flex; align-items: center; gap: 8px; direction: rtl;">
-                         <div style="width: 12px; height: 12px; background: #334155;"></div>
-                         <span style="font-size: 24px; font-weight: bold; color: #334155;">تسعيرة</span>
-                    </div>
                 </div>
 
                 ${isFirstPage ? `
-                    <!-- Ref & Date -->
-                    <div style="margin-bottom: 30px;">
-                        <div style="display: flex; justify-content: space-between; gap: 40px; font-size: 14px;">
-                            <div style="text-align: left;">
-                                <div style="color: #64748b; margin-bottom: 4px;">Quotation Ref.</div>
-                                <div style="font-weight: bold; font-size: 16px;">${quotation.quotation_ref || 'N/A'}</div>
-                            </div>
-                            <div style="text-align: right; direction: rtl;">
-                                <div style="color: #64748b; margin-bottom: 4px;">مرجع التسعيرة</div>
-                                <div style="font-weight: bold; font-size: 16px;">${quotation.quotation_ref || 'N/A'}</div>
-                            </div>
+                    <!-- Ref & Date: reference at the start, date at the end -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; font-size: 14px;">
+                        <div style="text-align: ${alignStart};">
+                            <div style="color: #64748b; margin-bottom: 4px;">${L.ref}</div>
+                            <div style="font-weight: bold; font-size: 16px;" dir="ltr">${quotation.quotation_ref || 'N/A'}</div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; gap: 40px; font-size: 14px; margin-top: 10px;">
-                            <div style="text-align: left;">
-                                <div style="color: #64748b; margin-bottom: 4px;">Quotation Issue Date</div>
-                                <div style="font-weight: bold; font-size: 16px;">${formatDate(quotation.created_at)}</div>
-                            </div>
-                            <div style="text-align: right; direction: rtl;">
-                                <div style="color: #64748b; margin-bottom: 4px;">تاريخ اصدار التسعيرة</div>
-                                <div style="font-weight: bold; font-size: 16px;">${formatDate(quotation.created_at)}</div>
-                            </div>
+                        <div style="text-align: ${alignEnd};">
+                            <div style="color: #64748b; margin-bottom: 4px;">${L.issueDate}</div>
+                            <div style="font-weight: bold; font-size: 16px;">${formatDate(quotation.created_at)}</div>
                         </div>
                     </div>
 
                     <!-- Issued From / To -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px;">
-                        <div style="padding: 15px; border-right: 1px solid #e2e8f0;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                <span style="font-size: 12px; color: #64748b;">Issued from</span>
-                                <span style="font-size: 12px; color: #64748b; direction: rtl;">أصدرت من</span>
-                            </div>
-                            <div style="font-weight: bold; font-size: 15px; margin-bottom: 4px;">Mariot Store</div>
-                            <div style="font-size: 13px; color: #334155;">Mariot Kitchen Equipment Trading LLC</div>
+                        <div style="padding: 15px; border-${alignEnd}: 1px solid #e2e8f0; text-align: ${alignStart};">
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">${L.issuedFrom}</div>
+                            <div style="font-weight: bold; font-size: 15px; margin-bottom: 4px;">${L.companyName}</div>
+                            <div style="font-size: 13px; color: #334155;">${L.companyLegal}</div>
                             <div style="font-size: 12px; color: #334155; margin-top: 8px; line-height: 1.7;">
-                                <div dir="ltr">📞 +971 4 288 2777&nbsp;&nbsp;|&nbsp;&nbsp;+971 50 311 4080</div>
-                                <div dir="ltr">✉ Admin@mariotkitchen.com</div>
-                                <div dir="ltr">✉ Support@mariot-group.com</div>
-                                <div dir="ltr">🌐 www.mariotstore.com</div>
+                                <div dir="${dir}" style="text-align:${alignStart};">📞 <span dir="ltr">+971 4 288 2777&nbsp;&nbsp;|&nbsp;&nbsp;+971 50 311 4080</span></div>
+                                <div dir="${dir}" style="text-align:${alignStart};">✉ <span dir="ltr">Admin@mariotkitchen.com</span></div>
+                                <div dir="${dir}" style="text-align:${alignStart};">✉ <span dir="ltr">Support@mariot-group.com</span></div>
+                                <div dir="${dir}" style="text-align:${alignStart};">🌐 <span dir="ltr">www.mariotstore.com</span></div>
                             </div>
-                            <div style="background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 10px; font-size: 12px;">
-                                VAT# 100412345600003 <span style="margin-left: 10px; direction: rtl;">الرقم الضريبي</span>
+                            <div style="background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 10px; font-size: 12px;" dir="ltr">
+                                ${L.vat} 100412345600003
                             </div>
                         </div>
-                        <div style="padding: 15px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                <span style="font-size: 12px; color: #64748b;">Issued to</span>
-                                <span style="font-size: 12px; color: #64748b; direction: rtl;">أصدرت إلى</span>
-                            </div>
+                        <div style="padding: 15px; text-align: ${alignStart};">
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">${L.issuedTo}</div>
                             <div style="font-weight: bold; font-size: 15px; margin-bottom: 4px;">${quotation.customer_name || 'Valued Customer'}</div>
-                            <div style="font-size: 13px; color: #334155;">${quotation.customer_phone || ''}</div>
-                            <div style="font-size: 13px; color: #334155;">${quotation.customer_email || ''}</div>
+                            <div style="font-size: 13px; color: #334155; text-align:${alignStart};" dir="ltr">${quotation.customer_phone || ''}</div>
+                            <div style="font-size: 13px; color: #334155; text-align:${alignStart};" dir="ltr">${quotation.customer_email || ''}</div>
                         </div>
                     </div>
 
                     <!-- Note Box -->
                     <div style="display: flex; align-items: center; gap: 15px; padding: 12px 20px; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 30px;">
                          <div style="width: 24px; height: 24px; min-width: 24px; border: 2px solid #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">i</div>
-                         <div style="flex: 1; font-size: 12px; color: #334155;">
-                            This quotation won't reserve the available stock for you until you place an order
-                         </div>
-                         <div style="flex: 1; font-size: 12px; color: #334155; text-align: right; direction: rtl;">
-                            لن يتم حجز المنتجات في هذه التسعيرة الا بعد إتمام الطلب
+                         <div style="flex: 1; font-size: 12px; color: #334155; text-align: ${alignStart};">
+                            ${L.note}
                          </div>
                     </div>
                 ` : `
-                    <div style="margin-bottom: 20px; font-size: 14px; color: #64748b;">
-                        Quotation Ref: ${quotation.quotation_ref || 'N/A'} (Continued)
+                    <div style="margin-bottom: 20px; font-size: 14px; color: #64748b; text-align: ${alignStart};">
+                        ${L.continuedRef}: ${quotation.quotation_ref || 'N/A'} (${L.continued})
                     </div>
                 `}
 
                 <!-- Items Table -->
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; flex-grow: 1;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
                     <thead>
-                        <tr style="border-bottom: 2px solid #e2e8f0; background: #f8fafc;">
-                            <th style="padding: 10px; text-align: left;">
-                                <div style="font-size: 10px; color: #64748b;">Product Ref.</div>
-                                <div style="font-size: 10px;">مرجع المنتج</div>
-                            </th>
-                            <th style="padding: 10px; text-align: left; width: 35%;">
-                                <div style="font-size: 10px; color: #64748b;">Product Name.</div>
-                                <div style="font-size: 10px;">اسم المنتج</div>
-                            </th>
-                            <th style="padding: 10px; text-align: center;">
-                                <div style="font-size: 10px; color: #64748b;">Product Image</div>
-                                <div style="font-size: 10px;">صورة المنتج</div>
-                            </th>
-                            <th style="padding: 10px; text-align: center;">
-                                <div style="font-size: 10px; color: #64748b;">QTY</div>
-                                <div style="font-size: 10px;">الكميه</div>
-                            </th>
-                            <th style="padding: 10px; text-align: right;">
-                                <div style="font-size: 10px; color: #64748b;">Unit Price</div>
-                                <div style="font-size: 10px;">سعر الوحده</div>
-                            </th>
-                            <th style="padding: 10px; text-align: right;">
-                                <div style="font-size: 10px; color: #64748b;">Total Price</div>
-                                <div style="font-size: 10px;">مجموع السعر</div>
-                            </th>
+                        <tr style="border-bottom: 2px solid #e2e8f0; background: #f8fafc; font-size: 10px; color: #64748b;">
+                            <th style="padding: 10px; text-align: ${alignStart};">${L.thRef}</th>
+                            <th style="padding: 10px; text-align: ${alignStart}; width: 35%;">${L.thName}</th>
+                            <th style="padding: 10px; text-align: center;">${L.thImage}</th>
+                            <th style="padding: 10px; text-align: center;">${L.thQty}</th>
+                            <th style="padding: 10px; text-align: ${alignEnd};">${L.thUnit}</th>
+                            <th style="padding: 10px; text-align: ${alignEnd};">${L.thTotal}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -207,23 +218,37 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                                     .join(' · ')
                                 : '';
                             const variantLabel = item.variant_label || '';
+                            const itemName = (isArabic && item.name_ar) ? item.name_ar : item.name;
+                            // Product specifications (same source as the product detail specs area). Strip
+                            // HTML/shortcodes, split into lines, keep the first few so the row stays compact.
+                            const specsRaw = (isArabic && item.specifications_ar) ? item.specifications_ar : (item.specifications || '');
+                            const specLines = String(specsRaw)
+                                .replace(/â€¢/g, '\n').replace(/â€"/g, '-').replace(/Â/g, '')
+                                .replace(/\[[^\]]*\]/g, ' ')
+                                .replace(/<\/?(p|div|br|li|ul|ol|tr|td)[^>]*>/gi, '\n')
+                                .replace(/<[^>]*>/g, ' ')
+                                .replace(/&nbsp;/g, ' ')
+                                .split(/\n|•|·/)
+                                .map((s: string) => s.replace(/\s+/g, ' ').replace(/^[•·\-•\s]+/, '').trim())
+                                .filter((s: string) => s.length > 0)
+                                .slice(0, 6);
                             return `
                             <tr style="border-bottom: 1px solid #f1f5f9;">
-                                <td style="padding: 15px 10px; font-size: 11px;">#${item.id || 'N/A'}</td>
-                                <td style="padding: 15px 10px; font-size: 11px;">
-                                    <div style="font-weight: bold; color: #1e293b;">${item.name}</div>
-                                    ${isArabic && item.name_ar ? `<div style="font-weight: bold; color: #1e293b; text-align: right; direction: rtl;">${item.name_ar}</div>` : ''}
-                                    ${item.model ? `<div style="color: #64748b; font-size: 10px;">Model: ${item.model}</div>` : ''}
-                                    <div style="color: #64748b; font-size: 10px;">Brand: ${item.brand || 'Standard'}</div>
-                                    ${variantLabel ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
+                                <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart};" dir="ltr">${chunkStartIndex + idx + 1}</td>
+                                <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart};">
+                                    <div style="font-weight: bold; color: #1e293b;">${itemName}</div>
+                                    <div style="color: #64748b; font-size: 10px;">${L.brand}: ${item.brand || 'Standard'}</div>
+                                    ${specLines.length ? `<div style="color: #475569; font-size: 9.5px; margin-top: 4px; line-height: 1.5;">${specLines.map((s: string) => `<div>• ${s}</div>`).join('')}</div>` : ''}
+                                    ${item.model ? `<div style="color: #64748b; font-size: 10px; margin-top: 4px;">${L.model}: ${item.model}</div>` : ''}
+                                    ${(variantLabel && !dims) ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
                                     ${dims ? `<div style="color: #334155; font-size: 10px; margin-top: 4px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${dims}</div>` : ''}
                                 </td>
                                 <td style="padding: 15px 10px; text-align: center;">
-                                    <img src="${itemImageBase64s[chunkStartIndex + idx]}" style="height: 50px; width: 50px; object-fit: contain;">
+                                    <img src="${itemImageBase64s[chunkStartIndex + idx]}" style="height: 80px; width: 80px; object-fit: contain;">
                                 </td>
                                 <td style="padding: 15px 10px; text-align: center; font-size: 12px;">${item.quantity}</td>
-                                <td style="padding: 15px 10px; text-align: right; font-size: 12px;">${Number(item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                <td style="padding: 15px 10px; text-align: right; font-size: 12px; font-weight: bold;">${(Number(item.price) * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                <td style="padding: 15px 10px; text-align: ${alignEnd}; font-size: 12px;">${money(item.price)}</td>
+                                <td style="padding: 15px 10px; text-align: ${alignEnd}; font-size: 12px; font-weight: bold;">${money(Number(item.price) * item.quantity)}</td>
                             </tr>
                         `;
                         }).join('')}
@@ -233,80 +258,67 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                 ${isLastPage ? `
                     <!-- Totals -->
                     <div style="margin-top: auto; margin-bottom: 40px; background: #fafafa; padding: 20px; border-radius: 8px;">
-                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
-                            <span style="font-size: 13px; font-weight: bold; color: #64748b;">Total Amounts</span>
-                            <span style="font-size: 13px; font-weight: bold; color: #64748b; direction: rtl;">إجمالي المبلغ</span>
+                        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px; text-align: ${alignStart};">
+                            <span style="font-size: 13px; font-weight: bold; color: #64748b;">${L.totalAmounts}</span>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <div style="display: flex; justify-content: space-between; font-size: 13px;">
-                                <span style="width: 180px;">Subtotal (Excl. VAT)</span>
-                                <span style="font-weight: bold;">AED ${Number(quotation.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span style="width: 180px; text-align: right; direction: rtl;">الإجمالي (غير شامل الضريبة)</span>
+                                <span>${L.subtotal}</span>
+                                <span style="font-weight: bold;">${money(quotation.subtotal)}</span>
                             </div>
                             ${Number(quotation.coupon_discount) > 0 ? `
                             <div style="display: flex; justify-content: space-between; font-size: 13px; color: #16a34a;">
-                                <span style="width: 180px;">Coupon Discount${quotation.coupon_code ? ` (${quotation.coupon_code})` : ''}</span>
-                                <span style="font-weight: bold;">- AED ${Number(quotation.coupon_discount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span style="width: 180px; text-align: right; direction: rtl;">خصم القسيمة</span>
+                                <span>${L.coupon}${quotation.coupon_code ? ` (${quotation.coupon_code})` : ''}</span>
+                                <span style="font-weight: bold;">- ${money(quotation.coupon_discount)}</span>
                             </div>` : ''}
                             ${Number(quotation.points_discount) > 0 ? `
                             <div style="display: flex; justify-content: space-between; font-size: 13px; color: #16a34a;">
-                                <span style="width: 180px;">Reward Points${Number(quotation.points_used) > 0 ? ` (${quotation.points_used} pts)` : ''}</span>
-                                <span style="font-weight: bold;">- AED ${Number(quotation.points_discount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span style="width: 180px; text-align: right; direction: rtl;">خصم النقاط</span>
+                                <span>${L.points}${Number(quotation.points_used) > 0 ? ` (${quotation.points_used} pts)` : ''}</span>
+                                <span style="font-weight: bold;">- ${money(quotation.points_discount)}</span>
                             </div>` : ''}
                             ${(!(Number(quotation.coupon_discount) > 0) && !(Number(quotation.points_discount) > 0) && Number(quotation.discount_amount) > 0) ? `
                             <div style="display: flex; justify-content: space-between; font-size: 13px; color: #16a34a;">
-                                <span style="width: 180px;">Discount</span>
-                                <span style="font-weight: bold;">- AED ${Number(quotation.discount_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span style="width: 180px; text-align: right; direction: rtl;">الخصم</span>
+                                <span>${L.discount}</span>
+                                <span style="font-weight: bold;">- ${money(quotation.discount_amount)}</span>
                             </div>` : ''}
                             <div style="display: flex; justify-content: space-between; font-size: 13px;">
-                                <span style="width: 180px;">Total VAT (5%)</span>
-                                <span style="font-weight: bold;">AED ${Number(quotation.tax_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span style="width: 180px; text-align: right; direction: rtl;">إجمالي الضريبة (5٪)</span>
+                                <span>${L.vatLine}</span>
+                                <span style="font-weight: bold;">${money(quotation.tax_amount)}</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 16px; margin-top: 10px; padding-top: 10px; border-top: 2px solid #e2e8f0; color: #334155;">
-                                <span style="width: 180px;"><strong>Grand Total</strong></span>
-                                <span style="font-weight: 800; font-size: 20px; color: #334155;">AED ${Number(quotation.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span style="width: 180px; text-align: right; direction: rtl;"><strong>إجمالي المبلغ المستحق</strong></span>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 16px; margin-top: 10px; padding-top: 10px; border-top: 2px solid #e2e8f0; color: #334155;">
+                                <span><strong>${L.grandTotal}</strong></span>
+                                <span style="font-weight: 800; font-size: 20px; color: #334155;">${money(quotation.total_amount)}</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Footer / Terms -->
                     <div style="display: flex; flex-direction: column; gap: 20px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
-                            <div style="font-size: 10px; color: #64748b;">
-                                <div style="font-weight: bold; color: #334155; margin-bottom: 5px;">Terms & Conditions</div>
-                                <div style="margin-bottom: 3px;">1. Prices are valid for 7 days only from issue date.</div>
-                                <div style="margin-bottom: 3px;">2. This is a computer generated quotation, signature not required.</div>
-                                <div style="margin-bottom: 3px;">3. Stock availability is subject to change at time of order.</div>
-                            </div>
-                            <div style="font-size: 10px; color: #64748b; text-align: right; direction: rtl;">
-                                <div style="font-weight: bold; color: #334155; margin-bottom: 5px;">الشروط والأحكام</div>
-                                <div style="margin-bottom: 3px;">١. الأسعار صالحة لمدة ٧ أيام فقط من تاريخ الإصدار.</div>
-                                <div style="margin-bottom: 3px;">٢. هذه تسعيرة معدة بواسطة الكمبيوتر ولا تتطلب توقيع.</div>
-                                <div style="margin-bottom: 3px;">٣. توفر المخزون عرضة للتغيير عند تأكيد الطلب.</div>
-                            </div>
+                        <div style="font-size: 10px; color: #64748b; text-align: ${alignStart};">
+                            <div style="font-weight: bold; color: #334155; margin-bottom: 5px;">${L.terms}</div>
+                            <div style="margin-bottom: 3px;">${L.term1}</div>
+                            <div style="margin-bottom: 3px;">${L.term2}</div>
+                            <div style="margin-bottom: 3px;">${L.term3}</div>
                         </div>
                         <div style="text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 12px; font-weight: bold; color: #334155;">
-                            THANK YOU FOR CHOOSING MARIOT
+                            ${L.thankyou}
                         </div>
                     </div>
                 ` : `
                     <div style="margin-top: auto; text-align: center; font-size: 10px; color: #64748b; padding-top: 20px;">
-                        Continued on next page...
+                        ${L.continued}
                     </div>
                 `}
             </div>
         `;
     };
 
-    // Split items into chunks
+    // Split items into chunks. Page 1 carries the tall header (contact block) + totals +
+    // terms, so it holds fewer items than continuation pages — keeps everything on one A4
+    // at full size instead of getting scaled down to fit.
     const chunks: any[][] = [];
-    const ITEMS_PAGE_1 = 6;
-    const ITEMS_PAGE_REST = 12;
+    const ITEMS_PAGE_1 = 3;
+    const ITEMS_PAGE_REST = 8;
 
     if (items.length <= ITEMS_PAGE_1) {
         chunks.push(items);
@@ -330,15 +342,27 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
             pageContainer.style.position = 'absolute';
             pageContainer.style.top = '-10000px';
             pageContainer.style.left = '0';
-            // Force LTR so the bilingual layout renders identically regardless of the site
-            // language. On the Arabic site the page is dir="rtl", which would otherwise mirror
-            // the whole quotation (columns/alignment flip). Arabic text keeps its own rtl spans.
-            pageContainer.setAttribute('dir', 'ltr');
-            pageContainer.style.direction = 'ltr';
+            // Direction follows the quotation language (monolingual): rtl for Arabic, ltr for English.
+            pageContainer.setAttribute('dir', dir);
+            pageContainer.style.direction = dir;
             pageContainer.innerHTML = getPageHTML(chunks[i], startIndex, isFirst, isLast);
             document.body.appendChild(pageContainer);
 
-            await new Promise(r => setTimeout(r, 300));
+            // Make sure the embedded Dirham font is ready before capturing.
+            try { if (dirhamFontFace) await (document as any).fonts.load("16px 'DirhamPDF'"); await (document as any).fonts.ready; } catch (e) { /* ignore */ }
+
+            // Wait for every image (logo + product images, all base64) to finish decoding so
+            // html2canvas never captures a half-painted page (intermittent missing image/price).
+            const imgEls = Array.from(pageContainer.querySelectorAll('img')) as HTMLImageElement[];
+            await Promise.all(imgEls.map(img => (img.complete && img.naturalWidth > 0)
+                ? Promise.resolve()
+                : new Promise<void>(res => {
+                    const done = () => res();
+                    img.addEventListener('load', done, { once: true });
+                    img.addEventListener('error', done, { once: true });
+                    setTimeout(done, 4000); // safety cap so a stuck image can't hang the PDF
+                })));
+            await new Promise(r => setTimeout(r, 200));
 
             const canvas = await html2canvas(pageContainer, {
                 scale: 2,
@@ -351,10 +375,13 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
             });
 
             const imgData = canvas.toDataURL('image/jpeg', 0.95);
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            // Always full page width (so every page has the same width); only cap the height
+            // to one A4 so an overflowing page can't push the totals/footer off the bottom.
+            const renderHeight = Math.min((canvas.height * pdfWidth) / canvas.width, pageHeight);
 
             if (i > 0) pdf.addPage();
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, renderHeight);
 
             document.body.removeChild(pageContainer);
         }
