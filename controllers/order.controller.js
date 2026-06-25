@@ -608,6 +608,30 @@ exports.updateOrderStatus = async (req, res, next) => {
                     console.error('[Admin Update] Failed to send status update email:', emailErr.message);
                 }
             }
+
+            // After delivery, invite the customer to review the product(s) they bought.
+            // One email listing every purchased (non-gift) product, each with a button to
+            // its own review section. Sent in the customer's preferred language.
+            if (status === 'delivered') {
+                try {
+                    const order = await Order.findById(req.params.id);
+                    if (order && Array.isArray(order.items) && order.items.length > 0) {
+                        const u = await User.findById(order.user_id);
+                        const toEmail = u?.email || order.billing_email || order.user_email;
+                        const toName = u?.name || order.billing_name || order.user_name || 'Customer';
+                        const reviewProducts = order.items
+                            .filter(it => Number(it.is_free_gift) !== 1 && it.slug)
+                            .map(it => ({ name: it.name, name_ar: it.name_ar, slug: it.slug, image: it.image }));
+                        if (toEmail && reviewProducts.length > 0) {
+                            const { sendReviewRequestEmail } = require('../utils/sendEmail');
+                            const rLocale = await User.getPreferredLocale(order.user_id);
+                            await sendReviewRequestEmail(toEmail, toName, reviewProducts, req.params.id, rLocale);
+                        }
+                    }
+                } catch (emailErr) {
+                    console.error('[Admin Update] Failed to send review request email:', emailErr.message);
+                }
+            }
         }
 
         if (payment_status) {

@@ -362,6 +362,9 @@ class Product {
                         if (swatchOptionsByProduct[p.id]) p.swatch_options = swatchOptionsByProduct[p.id];
                         const v = chosenByProduct[p.id];
                         if (!v) return;
+                        // Expose the default variant's id so a card "add to cart" adds that
+                        // variant (with its image/price) instead of a variantless line.
+                        p.default_variant_id = v.id;
                         const parts = (labelByVariantId[v.id] || []).filter(Boolean);
                         if (parts.length > 0) p.variant_label = parts.join(' / ').slice(0, 255);
                         if (v.price !== null && v.price !== undefined) p.price = v.price;

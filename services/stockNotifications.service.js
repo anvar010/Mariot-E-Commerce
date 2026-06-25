@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { sendEmail } = require('./email.service');
+const { sendBackInStockEmail } = require('../utils/sendEmail');
 
 const FROM_NAME = 'Mariot Store';
 const SITE_URL = process.env.PUBLIC_SITE_URL || 'https://mariotstore.com';
@@ -269,12 +270,19 @@ exports.dispatchForVariant = async ({ productId, variantLabel = '', productName,
     );
     if (pending.length === 0) return 0;
 
-    const { subject, html } = buildEmail({ productName, productSlug, productImage, price, variantLabel });
+    // Use the design-system "Back in stock" email (logo + hero inlined as cid).
+    const dsImage = absolutizeImage(productImage);
 
     let sent = 0;
     for (const row of pending) {
         try {
-            await sendEmail(row.email, subject, html);
+            await sendBackInStockEmail(row.email, {
+                name: productName,
+                slug: productSlug,
+                image: dsImage,
+                price,
+                variantLabel
+            });
             await db.query('UPDATE stock_notifications SET notified_at = NOW() WHERE id = ?', [row.id]);
             sent++;
         } catch (err) {

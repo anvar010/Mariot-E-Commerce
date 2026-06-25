@@ -143,17 +143,45 @@ const LOGO_EN_PATH = resolveAsset(
     path.join(__dirname, '../../frontend/public/assets/mariot-logo.png')
 );
 const LOGO_AR_PATH = resolveAsset(
+    path.join(__dirname, '../assets/mariot-logo-ar.png'),
     path.join(__dirname, '../assets/MARIOT-A.png'),
     path.join(__dirname, '../../frontend/public/MARIOT-A.png')
 );
-
-// Inline logo as a `cid:` attachment. Email clients (Gmail, Outlook) don't render
-// .webp, so a referenced webp URL shows as a broken image. The PNG attachment
-// renders reliably everywhere. Reference it in HTML via <img src="cid:mariotEmailLogo">.
-// Returns null when the file is missing so the mail still sends (logo just won't inline).
-const emailLogoAttachment = () => (
-    LOGO_EN_PATH ? { filename: 'mariot-logo.png', path: LOGO_EN_PATH, cid: 'mariotEmailLogo' } : null
+// Editorial hero photo at the top of every design-system email card — per language.
+// Arabic → email-hero-ar.png, English → email-hero-en.png. Each falls back to the
+// shared email-hero.png (then the frontend copy) if the locale-specific file is absent.
+const HERO_EN_PATH = resolveAsset(
+    path.join(__dirname, '../assets/email-hero-en.png'),
+    path.join(__dirname, '../assets/email-hero.png'),
+    path.join(__dirname, '../../frontend/public/assets/email-hero.png')
 );
+const HERO_AR_PATH = resolveAsset(
+    path.join(__dirname, '../assets/email-hero-ar.png'),
+    path.join(__dirname, '../assets/email-hero.png'),
+    path.join(__dirname, '../../frontend/public/assets/email-hero.png')
+);
+
+// (Logo cid attachment is provided per-locale by dsEmailAttachments() below.)
+
+// Resolve a stored product image to an absolute URL email clients can fetch.
+// Handles full URLs, data URIs, protocol-relative, /assets, Windows backslashes,
+// public/ prefixes and bare uploads paths. Mirrors abandonedCart/stockNotifications
+// so every email renders the same image. Returns '' when there's nothing usable
+// (callers then fall back to a neutral placeholder, never a broken image).
+const EMAIL_MEDIA_BASE = (process.env.MEDIA_BASE_URL || 'https://mariot-backend.onrender.com').replace(/\/+$/, '');
+const absolutizeEmailImage = (raw) => {
+    if (!raw || typeof raw !== 'string') return '';
+    let s = raw.trim().replace(/\\/g, '/');
+    if (!s) return '';
+    if (/^data:/i.test(s)) return s;
+    s = s.replace(/^(\/)?public\//, '');
+    if (/^https?:\/\//i.test(s)) return s.replace(/ /g, '%20');
+    if (s.startsWith('//')) return `https:${s}`.replace(/ /g, '%20');
+    if (s.startsWith('/assets/')) return `https://mariotstore.com${s}`.replace(/ /g, '%20');
+    if (!s.startsWith('/') && /^(brands|products|slides|posters)\//.test(s)) s = `uploads/${s}`;
+    if (!s.startsWith('/')) s = `/${s}`;
+    return `${EMAIL_MEDIA_BASE}${s}`.replace(/ /g, '%20');
+};
 
 // --- Email localization helpers ---
 // Emails are sent in the recipient's chosen site language (en | ar).
@@ -162,98 +190,166 @@ const isAr = (locale) => String(locale || 'en').toLowerCase().startsWith('ar');
 const dirAttr = (ar) => (ar ? 'rtl' : 'ltr');
 const alignStart = (ar) => (ar ? 'right' : 'left');
 
-// Shared email footer — "Get in touch / Email / Website" + copyright + socials
-// (same design as the invoice mail). Standalone, centered, 600px. Single source
-// so every mail uses the same footer. The .container class (mobile width) only
-// applies when the email's <head> includes the responsive <style> block;
-// without it the footer still renders fine on desktop and degrades gracefully.
-const emailFooter = () => {
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
-    return `
-    <table role="presentation" width="100%" class="email-footer" cellpadding="0" cellspacing="0" style="width:100%;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
-        <tr>
-            <td class="email-footer-pad" style="padding:30px 40px;">
-                <!-- Fluid-hybrid columns: sit side-by-side on desktop, stack on mobile
-                     (inline-block wraps when container narrower than the two max-widths).
-                     Works without a media query, so it also stacks in mails that have no <style>. -->
-                <div style="text-align:left;font-size:0;margin-bottom:10px;">
-                    <!-- Get in touch -->
-                    <div style="display:inline-block;width:100%;max-width:260px;vertical-align:top;text-align:left;margin-bottom:16px;">
-                        <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td width="45" style="vertical-align:top;">
-                                    <div style="background:#e0f2fe;width:32px;height:32px;border-radius:6px;text-align:center;">
-                                        <img src="https://cdn-icons-png.flaticon.com/32/724/724664.png" style="width:16px;margin-top:8px;opacity:0.8;">
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:4px;">Get in touch</div>
-                                    <div style="font-size:12px;color:#666;line-height:1.7;">
-                                        <a href="tel:0428882777" style="color:#666;text-decoration:none;">0428882777</a><br>
-                                        <a href="tel:0503114080" style="color:#666;text-decoration:none;">0503114080</a>
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    <!-- Email + Website -->
-                    <div style="display:inline-block;width:100%;max-width:260px;vertical-align:top;text-align:left;">
-                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:15px;">
-                            <tr>
-                                <td width="45" style="vertical-align:top;">
-                                    <div style="background:#e0f2fe;width:32px;height:32px;border-radius:6px;text-align:center;">
-                                        <img src="https://cdn-icons-png.flaticon.com/32/732/732200.png" style="width:16px;margin-top:8px;opacity:0.8;">
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:2px;">Email</div>
-                                    <a href="mailto:support@mariotstore.com" style="font-size:12px;color:#3b82f6;text-decoration:none;">support@mariotstore.com</a>
-                                </td>
-                            </tr>
-                        </table>
-                        <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td width="45" style="vertical-align:top;">
-                                    <div style="background:#e0f2fe;width:32px;height:32px;border-radius:6px;text-align:center;">
-                                        <img src="https://cdn-icons-png.flaticon.com/32/1006/1006771.png" style="width:16px;margin-top:8px;opacity:0.8;">
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:2px;">Website</div>
-                                    <a href="${SITE}" style="font-size:12px;color:#3b82f6;text-decoration:none;">www.mariotstore.com</a>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-
-                <div style="text-align:center;border-top:1px solid #e2e8f0;padding-top:20px;">
-                    <p style="margin:0 0 10px;font-size:11px;color:#888;">© ${new Date().getFullYear()} Mariot Kitchen Equipment. All rights reserved.</p>
-                    <div>
-                        <a href="https://www.facebook.com/mariotuae" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145802.png" alt="Facebook" style="width:18px;opacity:0.8;"></a>
-                        <a href="https://www.instagram.com/mariotuae/" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png" alt="Instagram" style="width:18px;opacity:0.8;"></a>
-                        <a href="https://x.com/MariotUae" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/5969/5969020.png" alt="X (Twitter)" style="width:18px;opacity:0.8;"></a>
-                        <a href="https://www.youtube.com/channel/UCUCWktTJNpRzUEJ58JHLu_g" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/1384/1384060.png" alt="YouTube" style="width:18px;opacity:0.8;"></a>
-                        <a href="https://www.tiktok.com/@mariotmedia" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/3046/3046121.png" alt="TikTok" style="width:18px;opacity:0.8;"></a>
-                        <a href="https://ae.linkedin.com/in/mariot-kitchen-equipment-8a34a4108" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145807.png" alt="LinkedIn" style="width:18px;opacity:0.8;"></a>
-                        <a href="https://www.pinterest.com/mariotkitchen/" target="_blank" style="text-decoration:none;margin:0 4px;"><img src="https://cdn-icons-png.flaticon.com/32/733/733564.png" alt="Pinterest" style="width:18px;opacity:0.8;"></a>
-                    </div>
-                </div>
-            </td>
-        </tr>
-    </table>
-`;
+// Build a localized variant label for an order line, e.g. "Color: Red / Size: Large"
+// (Arabic uses the *_ar fields when present). Handles both shapes the order items can take:
+//  • variant_options as an array of {name,name_ar,value,value_ar} — cart-sourced emails
+//    (order confirmation): full, localized "Name: Value" pairs.
+//  • variant_options as an options_signature string "optionId:value|optionId:value" —
+//    order-sourced emails (status updates): only the readable values are available, so we
+//    strip the leading "id:" and join the values.
+// Falls back to custom_label (customizable products). Returns '' when there's nothing to show.
+const buildVariantLabel = (item, ar) => {
+    const opts = item && item.variant_options;
+    if (Array.isArray(opts) && opts.length > 0) {
+        return opts.map(o => {
+            const n = (ar && o.name_ar) ? o.name_ar : (o.name || '');
+            const v = (ar && o.value_ar) ? o.value_ar : (o.value || '');
+            return n ? `${n}: ${v}` : v;
+        }).filter(Boolean).join(' / ');
+    }
+    if (typeof opts === 'string' && opts.trim()) {
+        return opts.split('|')
+            .map(part => {
+                const idx = part.indexOf(':');
+                return (idx !== -1 ? part.slice(idx + 1) : part).trim();
+            })
+            .filter(Boolean)
+            .join(' / ');
+    }
+    return (item && item.custom_label) ? String(item.custom_label).trim() : '';
 };
 
-// Standalone footer for the table-layout mails (order / status / cart / offer),
-// where the body is a stack of separate 600px cards. Wraps emailFooter() in a
-// centered 600 table so it sits as its own card and lines up with the others.
-// The .container class lets it shrink to full width on mobile.
-const emailFooterBlock = () => `
-    <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" align="center" style="max-width:600px;margin:0 auto;padding:30px 0;">
-        <tr><td>${emailFooter()}</td></tr>
+// ============================================================================
+// Mariot Design System email shell (editorial redesign)
+// ----------------------------------------------------------------------------
+// Every transactional email shares one shell: warm #ffffff canvas → white card
+// with an 18px radius → red→blue 4px signature bar → centered logo → editorial
+// hero photo → content → attached #ffffff footer (logo, address, contacts,
+// socials). Type is Spectral (serif headlines) + Public Sans (body) in English,
+// Alexandria in Arabic. Logo + hero are inlined as cid: attachments so Gmail/
+// Outlook render them reliably. See `frontend/test/Mariot Design System`.
+// ============================================================================
+
+// Inline font stacks. Email clients that can't load the web font fall back to
+// the platform serif/sans, which is expected and on-brand.
+const DS_SANS = "'Public Sans','Segoe UI',Helvetica,Arial,sans-serif";
+const DS_SERIF = "'Spectral',Georgia,'Times New Roman',serif";
+// Spectral/Public Sans have no Arabic glyphs — Alexandria covers both roles.
+const DS_SANS_AR = "'Alexandria','Segoe UI',Tahoma,Arial,sans-serif";
+const DS_SERIF_AR = "'Alexandria','Segoe UI',Tahoma,Arial,sans-serif";
+
+// <link> for the right web fonts per language.
+const dsFontLink = (ar) => (ar
+    ? `<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700;800&display=swap" rel="stylesheet">`
+    : `<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;0,700;1,500&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">`);
+
+// cid attachments every DS email needs: the (locale-aware) logo + the hero photo.
+// Both header and footer reference the single `mariotEmailLogo` cid.
+const dsEmailAttachments = (ar) => {
+    const out = [];
+    const logoPath = (ar && LOGO_AR_PATH) ? LOGO_AR_PATH : LOGO_EN_PATH;
+    if (logoPath) out.push({ filename: 'mariot-logo.png', path: logoPath, cid: 'mariotEmailLogo' });
+    const heroPath = ar ? HERO_AR_PATH : HERO_EN_PATH;
+    if (heroPath) out.push({ filename: 'email-hero.png', path: heroPath, cid: 'mariotEmailHero' });
+    return out;
+};
+
+// The attached footer card (logo · address · contacts · copyright · socials),
+// mirrored for RTL. Pulls the live site URL from FRONTEND_URL.
+const dsFooter = (ar) => {
+    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const sans = ar ? DS_SANS_AR : DS_SANS;
+    const dir = ar ? 'rtl' : 'ltr';
+    const endAlign = ar ? 'left' : 'right'; // contacts / socials sit at the line end
+    const company = ar ? 'ماريوت لتجارة معدات المطابخ ش.ذ.م.م' : 'Mariot Kitchen Equipment Trading LLC';
+    const city = ar ? 'دبي، الإمارات العربية المتحدة' : 'Dubai, United Arab Emirates';
+    const rights = ar
+        ? `© ${new Date().getFullYear()} ماريوت لمعدات المطابخ. جميع الحقوق محفوظة.`
+        : `© ${new Date().getFullYear()} Mariot Kitchen Equipment. All rights reserved.`;
+    const activity = ar
+        ? 'لقد تلقيت هذا البريد الإلكتروني نتيجة لنشاط على حسابك في متجر ماريوت.'
+        : 'You are receiving this email because of activity on your Mariot Store account.';
+    return `
+<table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" align="center" style="max-width:600px;width:100%;margin:0 auto;">
+  <tr><td style="padding:0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="${dir}" style="background:#ffffff;border:1px solid #e9e7e2;border-top:0;border-radius:0 0 18px 18px;overflow:hidden;">
+      <tr><td style="font-size:0;line-height:0;padding:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td width="38%" style="background:#e62127;height:4px;line-height:4px;font-size:0;">&nbsp;</td><td style="background:#16a1db;height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr></table></td></tr>
+      <tr><td class="content-pad" style="padding:30px 48px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="vertical-align:top;">
+            <img src="cid:mariotEmailLogo" alt="Mariot Kitchen Equipment" style="height:28px;width:auto;display:block;margin-bottom:14px;">
+            <p style="margin:0 0 2px;font-family:${sans};font-size:12px;line-height:1.7;color:#17181c;">${company}</p>
+            <p style="margin:0;font-family:${sans};font-size:12px;line-height:1.7;color:#17181c;">${city}</p>
+          </td>
+          <td align="${endAlign}" style="vertical-align:top;font-family:${sans};font-size:12px;line-height:1.9;color:#17181c;" dir="ltr">
+            <a href="tel:+97142882777" style="color:#17181c;text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/455/455705.png" alt="Phone" width="12" height="12" style="vertical-align:middle;margin-right:6px;border:0;">+971 4 288 2777</a><br>
+            <a href="https://wa.me/971503114080" style="color:#17181c;text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/733/733585.png" alt="WhatsApp" width="12" height="12" style="vertical-align:middle;margin-right:6px;border:0;">+971 50 311 4080</a><br>
+            <a href="mailto:support@mariotstore.com" style="color:#1488c0;text-decoration:none;font-weight:600;">support@mariotstore.com</a><br>
+            <a href="${SITE}" style="color:#1488c0;text-decoration:none;font-weight:600;">www.mariotstore.com</a>
+          </td>
+        </tr></table>
+        <div style="border-top:1px solid #ecedef;margin:20px 0 16px;"></div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="font-family:${sans};font-size:11px;color:#17181c;">${rights}</td>
+          <td align="${endAlign}">
+            <a href="https://www.facebook.com/mariotuae" style="text-decoration:none;margin:0 3px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145802.png" alt="Facebook" width="18" height="18" style="opacity:.55;"></a>
+            <a href="https://www.instagram.com/mariotuae/" style="text-decoration:none;margin:0 3px;"><img src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png" alt="Instagram" width="18" height="18" style="opacity:.55;"></a>
+            <a href="https://x.com/MariotUae" style="text-decoration:none;margin:0 3px;"><img src="https://cdn-icons-png.flaticon.com/32/5969/5969020.png" alt="X" width="18" height="18" style="opacity:.55;"></a>
+            <a href="https://ae.linkedin.com/in/mariot-kitchen-equipment-8a34a4108" style="text-decoration:none;margin:0 3px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145807.png" alt="LinkedIn" width="18" height="18" style="opacity:.55;"></a>
+          </td>
+        </tr></table>
+      </td></tr>
     </table>
-`;
+    <p style="margin:16px 4px 0;font-family:${sans};font-size:11px;line-height:1.6;color:#17181c;text-align:center;">${activity}</p>
+  </td></tr>
+</table>`;
+};
+
+// Wrap a body fragment (the per-email content) in the full DS document: head +
+// fonts + card + signature bar + logo + hero + content cell + attached footer.
+//   ar        — Arabic (RTL) when true
+//   preheader — hidden inbox-preview line
+//   hero      — include the editorial hero photo (default true)
+//   content   — the inner HTML for the content cell (built per email)
+const dsShell = ({ ar = false, preheader = '', hero = true, content = '' }) => {
+    const dir = ar ? 'rtl' : 'ltr';
+    const align = ar ? 'right' : 'left';
+    const heroRow = hero
+        ? `<tr><td style="padding:14px 0 0;font-size:0;line-height:0;"><img src="cid:mariotEmailHero" alt="Mariot — professional kitchen equipment" width="600" style="display:block;width:100%;height:auto;border:0;"></td></tr>`
+        : '';
+    return `<!DOCTYPE html>
+<html lang="${ar ? 'ar' : 'en'}" dir="${dir}"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="x-apple-disable-message-reformatting"><title>Mariot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+${dsFontLink(ar)}
+<style>
+@media only screen and (max-width:600px){.container{width:100%!important;max-width:100%!important;}.content-pad{padding-left:26px!important;padding-right:26px!important;}.cta-btn{display:block!important;}}
+</style></head>
+<body style="margin:0;padding:0;background:#ffffff;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${preheader}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:42px 14px;"><tr><td align="center">
+  <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #e9e7e2;border-radius:18px 18px 0 0;overflow:hidden;box-shadow:0 1px 2px rgba(23,24,28,.04),0 18px 48px rgba(23,24,28,.07);">
+    <tr><td style="font-size:0;line-height:0;padding:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td width="38%" style="background:#e62127;height:4px;line-height:4px;font-size:0;">&nbsp;</td><td style="background:#16a1db;height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr></table></td></tr>
+    <tr><td align="center" style="padding:30px 30px 4px;"><img src="cid:mariotEmailLogo" alt="Mariot Kitchen Equipment" style="height:34px;width:auto;display:inline-block;"></td></tr>
+    ${heroRow}
+    <tr><td class="content-pad" dir="${dir}" style="padding:42px 48px 44px;text-align:${align};">
+${content}
+    </td></tr>
+  </table>
+  ${dsFooter(ar)}
+</td></tr></table></body></html>`;
+};
+
+// A reusable dark pill CTA button matching the design system (#17181c, 9px radius).
+const dsButton = (href, label, ar) => {
+    const sans = ar ? DS_SANS_AR : DS_SANS;
+    return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td align="center" style="border-radius:9px;background:#17181c;"><a href="${href}" class="cta-btn" style="display:inline-block;padding:15px 38px;font-family:${sans};font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:9px;letter-spacing:.01em;">${label}</a></td></tr></table>`;
+};
+
+// (Legacy "Get in touch" footer removed — every email now uses the design-system
+//  footer via dsShell()/dsFooter() above.)
 
 // Verify SMTP connection on first use
 const verifySmtpConnection = async () => {
@@ -308,82 +404,55 @@ const sendEmail = async (to, subject, html) => {
 const sendPasswordResetEmail = async (toEmail, userName, resetUrl, locale = 'en') => {
     const transporter = createTransporter();
     const ar = isAr(locale);
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
     const L = ar ? {
         subject: 'إعادة تعيين كلمة المرور — متجر ماريوت',
-        sub: 'طلب إعادة تعيين كلمة المرور',
-        hi: 'مرحباً',
-        intro: 'تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك في متجر ماريوت. اضغط الزر أدناه لتعيين كلمة مرور جديدة.',
+        preheader: 'أعد تعيين كلمة مرور ماريوت — الرابط صالح لمدة 15 دقيقة.',
+        eyebrow: 'أمان الحساب',
+        title: 'إعادة تعيين كلمة المرور',
+        intro: 'تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك في ماريوت. اضغط الزر أدناه لاختيار كلمة مرور جديدة. هذا الرابط صالح لمدة 15 دقيقة.',
         cta: 'إعادة تعيين كلمة المرور',
-        expiry: '⏱ ستنتهي صلاحية هذا الرابط خلال 15 دقيقة',
-        ignore: 'إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذه الرسالة بأمان. ستبقى كلمة مرورك دون تغيير.',
-        fallback: 'إذا لم يعمل الزر، انسخ هذا الرابط والصقه في المتصفح:',
+        expiry: 'لأمانك، تنتهي صلاحية هذا الرابط خلال 15 دقيقة.',
+        ignore: 'إذا لم تطلب إعادة تعيين كلمة المرور، فلا حاجة لأي إجراء — ستبقى كلمة مرورك كما هي.',
+        fallback: 'إذا لم يعمل الزر، الصق هذا الرابط في متصفحك:',
         text: `مرحباً ${userName}،\n\nطلبت إعادة تعيين كلمة المرور لحسابك في متجر ماريوت.\n\nاضغط الرابط أدناه لتعيين كلمة مرور جديدة. ينتهي الرابط خلال 15 دقيقة.\n\n${resetUrl}\n\nإذا لم تطلب ذلك، تجاهل هذه الرسالة.\n\nفريق متجر ماريوت`
     } : {
-        subject: 'Reset Your Password — Mariot Store',
-        sub: 'Password Reset Request',
-        hi: 'Hi',
-        intro: 'We received a request to reset the password associated with your Mariot Store account. Click the button below to set a new password.',
-        cta: 'Reset My Password',
-        expiry: '⏱ This link will expire in 15 minutes',
-        ignore: "If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.",
-        fallback: "If the button doesn't work, copy and paste this link into your browser:",
+        subject: 'Reset your password — Mariot Store',
+        preheader: 'Reset your Mariot password — link valid for 15 minutes.',
+        eyebrow: 'Account security',
+        title: 'Reset your password',
+        intro: 'We received a request to reset the password for your Mariot account. Click the button below to choose a new one. This link is valid for 15 minutes.',
+        cta: 'Reset my password',
+        expiry: 'For your security, this link expires in 15 minutes.',
+        ignore: "If you didn't request a password reset, no action is needed — your password will stay the same.",
+        fallback: "If the button doesn't work, paste this link into your browser:",
         text: `Hi ${userName},\n\nYou requested a password reset for your Mariot Store account.\n\nPlease click the link below to set a new password. This link will expire in 15 minutes.\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.\n\nBest regards,\nMariot Store Team`
     };
+
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1488c0;">${L.eyebrow}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:34px;line-height:1.16;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
+<div style="height:6px;"></div>
+${dsButton(resetUrl, L.cta, ar)}
+<div style="height:24px;"></div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;"><tr><td style="background:#fff7ed;border-radius:10px;padding:13px 16px;">
+  <p style="margin:0;font-family:${SANS};font-size:13px;font-weight:600;color:#9a3412;">${L.expiry}</p>
+</td></tr></table>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.ignore}</p>
+<div style="border-top:1px solid #ecedef;padding-top:18px;">
+  <p style="margin:0 0 8px;font-family:${SANS};font-size:12px;color:#17181c;">${L.fallback}</p>
+  <p style="margin:0;font-family:${SANS};font-size:12px;word-break:break-all;color:#1488c0;" dir="ltr">${resetUrl}</p>
+</div>`;
 
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
         subject: L.subject,
         text: L.text,
-        html: `
-            <div dir="${dirAttr(ar)}" class="container" style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: ${alignStart(ar)};">
-                <!-- Header -->
-                <div class="content-pad" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px 30px; text-align: center;">
-                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Mariot Store</h1>
-                    <p style="color: #94a3b8; margin: 8px 0 0; font-size: 14px;">${L.sub}</p>
-                </div>
-
-                <!-- Body -->
-                <div class="content-pad" style="padding: 40px 30px; background-color: #ffffff;">
-                    <p style="color: #334155; font-size: 16px; margin-top: 0;">${L.hi} <strong>${userName}</strong>,</p>
-                    <p style="color: #475569; font-size: 15px; line-height: 1.6;">
-                        ${L.intro}
-                    </p>
-
-                    <!-- CTA Button -->
-                    <div style="text-align: center; margin: 35px 0;">
-                        <a href="${resetUrl}"
-                           style="display: inline-block; background: linear-gradient(135deg, #56cfe1, #4abccb); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-size: 16px; font-weight: 700; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(86, 207, 225, 0.4);">
-                            ${L.cta}
-                        </a>
-                    </div>
-
-                    <!-- Expiry notice -->
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 16px; border-${alignStart(ar)}: 4px solid #f59e0b; margin: 20px 0;">
-                        <p style="color: #92400e; font-size: 13px; margin: 0; font-weight: 600;">
-                            ${L.expiry}
-                        </p>
-                    </div>
-
-                    <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-                        ${L.ignore}
-                    </p>
-
-                    <!-- Fallback link -->
-                    <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
-                        <p style="color: #94a3b8; font-size: 12px; margin: 0 0 8px;">
-                            ${L.fallback}
-                        </p>
-                        <p style="color: #56cfe1; font-size: 12px; word-break: break-all; margin: 0;" dir="ltr">
-                            ${resetUrl}
-                        </p>
-                    </div>
-                </div>
-
-            </div>
-            <!-- Footer as its own full-width block -->
-            ${emailFooterBlock()}
-        `
+        html: dsShell({ ar, preheader: L.preheader, content }),
+        attachments: dsEmailAttachments(ar)
     };
 
     try {
@@ -426,34 +495,34 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
     // /signin?redirectTo=… → returns to orders tab → download invoice).
     const orderSummaryUrl = `${SITE}/${ar ? 'ar' : 'en'}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
 
+    const firstName = String(userName || '').split(' ')[0] || (ar ? 'عميلنا' : 'there');
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    const endAlign = ar ? 'left' : 'right'; // amounts / prices sit at the line end
+    const padStart = ar ? 'right' : 'left';
+
     const L = ar ? {
-        subjectPaid: `✅ تم تأكيد الدفع — طلب #${orderId} — متجر ماريوت`,
-        subjectNew: `🛒 تأكيد الطلب #${orderId} — متجر ماريوت`,
-        thankTitle: 'شكراً لطلبك!',
-        dear: 'عزيزي',
-        thankBody: `شكراً لتقديمك الطلب <strong>#${orderId}</strong> لدى ماريوت!`,
-        received: 'لقد استلمنا طلبك وسنرسل لك تأكيد التسليم بمجرد شحنه.',
-        invoice: `يمكنك <a href="${orderSummaryUrl}" style="color:#16A1DB;text-decoration:underline;">عرض ملخص الطلب وتحميل الفاتورة من هنا.</a>`,
-        regards: 'مع خالص التحية،<br><strong>فريق ماريوت</strong>',
-        orderDetail: 'تفاصيل الطلب', orderNo: 'رقم الطلب', dateL: 'التاريخ', totalL: 'الإجمالي',
-        by: 'بواسطة:', delivery: 'توصيل ماريوت (قياسي)',
-        summary: 'الملخص', itemsL: 'المنتجات', shipping: 'رسوم الشحن', discountL: 'الخصم', vatL: 'إجمالي ضريبة القيمة المضافة',
-        totalVat: 'الإجمالي', vatIncl: 'شامل الضريبة',
-        deliveryAddr: 'عنوان التوصيل', billingAddr: 'عنوان الفوترة', paymentL: 'الدفع'
+        subjectPaid: `تم تأكيد الدفع — طلب #${orderId} — متجر ماريوت`,
+        subjectNew: `تأكيد الطلب #${orderId} — متجر ماريوت`,
+        preheader: `تم تأكيد الطلب #${orderId} — الإجمالي AED ${total}.`,
+        eyebrow: 'تم تأكيد الطلب',
+        title: `شكراً لطلبك، ${firstName}.`,
+        intro: `لقد استلمنا الطلب <strong style="color:#17181c;font-weight:600;">#${orderId}</strong> وسنراسلك مجدداً فور شحنه.`,
+        mOrder: 'الطلب', mDate: 'التاريخ', mTotal: 'الإجمالي',
+        subtotalL: 'المجموع الفرعي', shippingL: 'الشحن', discountL: 'الخصم', vatL: 'ضريبة القيمة المضافة (5%، شاملة)', totalL: 'الإجمالي',
+        free: 'مجاني', cta: 'عرض الطلب والفاتورة',
+        deliveryAddr: 'عنوان التوصيل', paymentL: 'الدفع', paidLine: (p) => `${p} · مدفوع`
     } : {
-        subjectPaid: `✅ Payment Confirmed — Order #${orderId} — Mariot Store`,
-        subjectNew: `🛒 Order Confirmation #${orderId} — Mariot Store`,
-        thankTitle: 'Thank you for your order!',
-        dear: 'Dear',
-        thankBody: `Thank you for placing your order <strong>#${orderId}</strong> with us at Mariot!`,
-        received: 'We have received your order and we will send you a delivery confirmation as soon as it has been dispatched.',
-        invoice: `You can <a href="${orderSummaryUrl}" style="color:#16A1DB;text-decoration:underline;">view your order summary and download the invoice here.</a>`,
-        regards: 'Kind regards,<br><strong>Your Mariot Team</strong>',
-        orderDetail: 'Order Detail', orderNo: 'Order #', dateL: 'Date', totalL: 'Total',
-        by: 'by:', delivery: 'Mariot Delivery (Standard)',
-        summary: 'Summary', itemsL: 'Items', shipping: 'Shipping fees', discountL: 'Discount', vatL: 'Total VAT amount',
-        totalVat: 'Total', vatIncl: 'VAT included',
-        deliveryAddr: 'Delivery Address', billingAddr: 'Billing Address', paymentL: 'Payment'
+        subjectPaid: `Payment confirmed — Order #${orderId} — Mariot Store`,
+        subjectNew: `Order confirmation #${orderId} — Mariot Store`,
+        preheader: `Order #${orderId} confirmed — total AED ${total}.`,
+        eyebrow: 'Order confirmed',
+        title: `Thanks for your order, ${firstName}.`,
+        intro: `We've received order <strong style="color:#17181c;font-weight:600;">#${orderId}</strong> and will email you again the moment it ships.`,
+        mOrder: 'Order', mDate: 'Date', mTotal: 'Total',
+        subtotalL: 'Subtotal', shippingL: 'Shipping', discountL: 'Discount', vatL: 'VAT (5%, included)', totalL: 'Total',
+        free: 'Free', cta: 'View order &amp; invoice',
+        deliveryAddr: 'Delivery address', paymentL: 'Payment', paidLine: (p) => `${p} · Paid`
     };
     const freeLabel = ar ? 'مجاني' : 'FREE';
     const freeGiftWith = ar ? 'هدية مجانية مع' : 'Free gift with';
@@ -470,176 +539,90 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
         'card': 'Credit/Debit Card'
     })[orderData.payment_method] || orderData.payment_method || 'N/A';
 
-    const itemRows = orderItems.map(item => {
+    const itemRows = orderItems.map((item, i) => {
         const isFree = Number(item.is_free_gift) === 1;
         const lineTotal = Number((item.price_at_purchase || item.price || 0) * item.quantity).toFixed(2);
-        const parentName = item.bundle_parent_name || '';
-        const nameBlock = isFree
-            ? `<p style="margin:0;font-size:13px;color:#475569;line-height:1.4;">${item.name}
-                   <span style="display:inline-block;margin-left:6px;padding:2px 6px;background-color:#10b981;color:#fff;font-size:10px;font-weight:700;border-radius:4px;letter-spacing:0.4px;">${freeLabel}</span>
-               </p>
-               ${parentName ? `<p style="margin:3px 0 0;font-size:11px;color:#94a3b8;">${freeGiftWith} ${parentName}</p>` : ''}`
-            : `<p style="margin:0;font-size:13px;color:#475569;line-height:1.4;">${item.name}</p>`;
-        const priceBlock = isFree
-            ? `<p style="margin:0;font-size:13px;font-weight:700;color:#10b981;">${freeLabel}</p>`
-            : `<p style="margin:0;font-size:13px;font-weight:700;color:#0f172a;">AED ${lineTotal}</p>`;
+        const parentName = (ar && item.bundle_parent_name_ar) ? item.bundle_parent_name_ar : (item.bundle_parent_name || '');
+        const itemName = (ar && item.name_ar) ? item.name_ar : (item.name || '');
+        const variantLabel = buildVariantLabel(item, ar);
+        const variantLine = variantLabel ? `<p style="margin:4px 0 0;font-family:${SANS};font-size:12px;color:#17181c;line-height:1.3;">${variantLabel}</p>` : '';
+        const freeBadge = isFree ? ` <span style="display:inline-block;margin-inline-start:6px;padding:2px 7px;background:#ecfdf5;color:#10b981;font-size:10px;font-weight:700;border-radius:5px;letter-spacing:.04em;">${freeLabel}</span>` : '';
+        const parentLine = (isFree && parentName) ? `<p style="margin:4px 0 0;font-family:${SANS};font-size:12px;color:#17181c;">${freeGiftWith} ${parentName}</p>` : '';
+        const imgUrl = absolutizeEmailImage(item.image);
+        const thumb = imgUrl
+            ? `<img src="${imgUrl}" width="48" height="48" style="width:48px;height:48px;border-radius:8px;object-fit:contain;background:#ffffff;border:1px solid #e9e7e2;">`
+            : `<div style="width:48px;height:48px;border-radius:8px;background:#ffffff;border:1px solid #e9e7e2;"></div>`;
+        const priceText = isFree ? `<span style="color:#10b981;">${L.free}</span>` : `AED ${lineTotal}`;
         return `
-        <div style="padding:15px;border-bottom:1px solid #f1f5f9;">
-             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td width="60" style="vertical-align:middle;">
-                        <img src="${item.image || 'cid:mariotEmailLogo'}" width="50" height="50" style="border-radius:4px;object-fit:contain;background-color:#ffffff;">
-                    </td>
-                    <td style="padding-left:15px;vertical-align:middle;">
-                        ${nameBlock}
-                    </td>
-                    <td width="40" align="center" style="vertical-align:middle;">
-                        <span style="display:inline-block;padding:2px 6px;background-color:#f1f5f9;color:#64748b;font-size:11px;font-weight:700;border-radius:4px;">x${item.quantity}</span>
-                    </td>
-                    <td align="right" style="vertical-align:middle;width:80px;">
-                        ${priceBlock}
-                    </td>
-                </tr>
-             </table>
-        </div>`;
+<tr><td style="padding:${i === 0 ? '0 0 16px' : '16px 0'};border-bottom:1px solid #ecedef;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+    <td width="60" style="vertical-align:middle;">${thumb}</td>
+    <td style="vertical-align:middle;padding-${padStart}:16px;"><p style="margin:0;font-family:${SANS};font-size:14px;font-weight:600;color:#17181c;line-height:1.4;">${itemName}${freeBadge}</p><p style="margin:4px 0 0;font-family:${SANS};font-size:12px;color:#17181c;">${ar ? 'الكمية' : 'Qty'} ${item.quantity}</p>${variantLine}${parentLine}</td>
+    <td align="${endAlign}" style="vertical-align:middle;white-space:nowrap;"><p style="margin:0;font-family:${SANS};font-size:14px;font-weight:600;color:#17181c;">${priceText}</p></td>
+  </tr></table>
+</td></tr>`;
     }).join('');
 
-    const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            @media only screen and (max-width: 600px) {
-                .container { width: 100% !important; padding: 20px 10px !important; }
-                .footer-col { width: 100% !important; padding: 10px 0 !important; display: block !important; }
-                .cta-btn { display: block !important; width: 100% !important; padding: 16px 12px !important; font-size: 15px !important; box-sizing: border-box !important; }
-            }
-        </style>
-    </head>
-    <body dir="${dirAttr(ar)}" style="margin:0;padding:0;background-color:#f4f7f9;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;text-align:${alignStart(ar)};">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7f9;padding:40px 0;">
-            <tr>
-                <td align="center">
-                    <!-- Top Card -->
-                    <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;margin-bottom:25px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                        <tr>
-                            <td align="center" style="padding:30px 0;border-bottom:1px solid #f1f5f9;">
-                                <img src="cid:mariotEmailLogo" alt="Mariot" style="height:45px;">
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="content-pad" style="padding:40px 45px;">
-                                ${isAdminCopy ? `
-                                <h1 style="margin:0 0 25px;font-size:20px;font-weight:600;color:#0f172a;">🔔 New Order Received</h1>
-                                <p style="margin:0 0 15px;font-size:14px;color:#475569;line-height:1.6;">
-                                    A new order <strong>#${orderId}</strong> has just been placed on Mariot Store.
-                                </p>
-                                <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;background:#f8fafc;border-radius:8px;">
-                                    <tr><td style="padding:14px 16px;font-size:13px;color:#475569;line-height:1.8;">
-                                        <strong>Customer:</strong> ${userName}<br>
-                                        ${billing.email ? `<strong>Email:</strong> ${billing.email}<br>` : ''}
-                                        ${(shipping.phone || billing.phone) ? `<strong>Phone:</strong> ${shipping.phone || billing.phone}<br>` : ''}
-                                        <strong>Payment:</strong> ${paymentDisplay}${isPaid ? ' (Paid)' : ''}<br>
-                                        <strong>Total:</strong> AED ${total}
-                                    </td></tr>
-                                </table>
-                                <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">
-                                    Review and process it in the <strong>admin dashboard</strong>. Full order details below.
-                                </p>
-                                ` : `
-                                <h1 style="margin:0 0 25px;font-size:20px;font-weight:600;color:#334155;">${L.thankTitle}</h1>
-                                <p style="margin:0 0 20px;font-size:14px;color:#475569;">${L.dear} ${userName},</p>
-                                <p style="margin:0 0 15px;font-size:14px;color:#475569;line-height:1.6;">
-                                    ${L.thankBody}
-                                </p>
-                                <p style="margin:0 0 15px;font-size:14px;color:#475569;line-height:1.6;">
-                                    ${L.received}
-                                </p>
-                                <p style="margin:0 0 25px;font-size:14px;color:#475569;line-height:1.6;">
-                                    ${L.invoice}
-                                </p>
-                                <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">
-                                    ${L.regards}
-                                </p>
-                                `}
-                            </td>
-                        </tr>
-                    </table>
+    const totalRow = (label, value, opts = {}) => `<tr><td style="padding:5px 0;font-family:${SANS};font-size:13px;color:${opts.danger ? '#ef4444' : '#17181c'};">${label}</td><td align="${endAlign}" style="padding:5px 0;font-family:${SANS};font-size:13px;font-weight:600;color:${opts.danger ? '#ef4444' : '#17181c'};">${value}</td></tr>`;
 
-                    <!-- Order Detail Card -->
-                    <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                        <tr>
-                            <td class="content-pad" style="padding:40px 45px;">
-                                <h2 style="margin:0 0 35px;font-size:18px;font-weight:600;color:#64748b;text-align:center;">${L.orderDetail}</h2>
+    const customerContent = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1488c0;">${L.eyebrow}</p>
+<h1 style="margin:0 0 14px;font-family:${SERIF};font-size:34px;line-height:1.14;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 30px;font-family:${SANS};font-size:16px;line-height:1.65;color:#17181c;">${L.intro}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ecedef;border-bottom:1px solid #ecedef;margin-bottom:30px;"><tr>
+  <td style="padding:16px 0;text-align:center;border-${ar ? 'left' : 'right'}:1px solid #ecedef;"><p style="margin:0 0 5px;font-family:${SANS};font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#17181c;">${L.mOrder}</p><p style="margin:0;font-family:${SANS};font-size:14px;font-weight:600;color:#17181c;">#${orderId}</p></td>
+  <td style="padding:16px 0;text-align:center;border-${ar ? 'left' : 'right'}:1px solid #ecedef;"><p style="margin:0 0 5px;font-family:${SANS};font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#17181c;">${L.mDate}</p><p style="margin:0;font-family:${SANS};font-size:14px;font-weight:600;color:#17181c;">${date}</p></td>
+  <td style="padding:16px 0;text-align:center;"><p style="margin:0 0 5px;font-family:${SANS};font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#17181c;">${L.mTotal}</p><p style="margin:0;font-family:${SANS};font-size:14px;font-weight:600;color:#17181c;">AED ${total}</p></td>
+</tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${itemRows}</table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+  ${totalRow(L.subtotalL, `AED ${subtotal}`)}
+  ${totalRow(L.shippingL, deliveryNum > 0 ? `AED ${delivery}` : L.free)}
+  ${Number(discount) > 0 ? totalRow(L.discountL, `-AED ${discount}`, { danger: true }) : ''}
+  ${totalRow(L.vatL, `AED ${vat}`)}
+  <tr><td colspan="2" style="border-top:1px solid #d9dade;padding-top:6px;"></td></tr>
+  <tr><td style="padding:6px 0;font-family:${SERIF};font-size:17px;font-weight:600;color:#17181c;">${L.totalL}</td><td align="${endAlign}" style="padding:6px 0;font-family:${SERIF};font-size:20px;font-weight:700;color:#17181c;">AED ${total}</td></tr>
+</table>
+<div style="height:30px;"></div>
+${dsButton(orderSummaryUrl, L.cta, ar)}
+<div style="border-top:1px solid #ecedef;margin-top:34px;padding-top:28px;"></div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+  <td width="50%" style="vertical-align:top;padding-${ar ? 'left' : 'right'}:18px;">
+    <p style="margin:0 0 8px;font-family:${SANS};font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#17181c;">${L.deliveryAddr}</p>
+    <p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.7;color:#17181c;">${shipping.firstName || userName} ${shipping.lastName || ''}<br>${shipping.streetAddress || ''}<br>${shipping.city || ''}<br>${shipping.phone || ''}</p>
+  </td>
+  <td width="50%" style="vertical-align:top;border-${ar ? 'right' : 'left'}:1px solid #ecedef;padding-${ar ? 'right' : 'left'}:26px;">
+    <p style="margin:0 0 8px;font-family:${SANS};font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#17181c;">${L.paymentL}</p>
+    <p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.7;color:#17181c;">${paymentDisplay}<br>${isPaid ? L.paidLine(`AED ${total}`) : `AED ${total}`}</p>
+  </td>
+</tr></table>`;
 
-                                <!-- Meta Row -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;border-top:1px solid #e2e8f0;padding:15px 0;">
-                                    <tr>
-                                        <td style="text-align:${alignStart(ar)};"><span style="font-size:11px;color:#94a3b8;text-transform:uppercase;">${L.orderNo}</span><br><span style="font-size:13px;color:#334155;font-weight:600;">${orderId}</span></td>
-                                        <td align="center"><span style="font-size:11px;color:#94a3b8;text-transform:uppercase;">${L.dateL}</span><br><span style="font-size:13px;color:#334155;font-weight:600;">${date}</span></td>
-                                        <td style="text-align:${ar ? 'left' : 'right'};"><span style="font-size:11px;color:#94a3b8;text-transform:uppercase;">${L.totalL}</span><br><span style="font-size:13px;color:#334155;font-weight:600;">AED ${total}</span></td>
-                                    </tr>
-                                </table>
+    const adminContent = `
+<p style="margin:0 0 14px;font-family:${DS_SANS};font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e62127;">New order received</p>
+<h1 style="margin:0 0 14px;font-family:${DS_SERIF};font-size:32px;line-height:1.14;font-weight:600;letter-spacing:-.01em;color:#17181c;">Order #${orderId}</h1>
+<p style="margin:0 0 24px;font-family:${DS_SANS};font-size:15px;line-height:1.65;color:#17181c;">A new order has just been placed on Mariot Store. Review and process it in the admin dashboard.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #ecedef;border-radius:12px;margin-bottom:24px;"><tr><td style="padding:18px 20px;font-family:${DS_SANS};font-size:13px;line-height:1.9;color:#17181c;">
+  <span style="color:#17181c;">Customer</span> <strong style="color:#17181c;">${userName}</strong><br>
+  ${billing.email ? `<span style="color:#17181c;">Email</span> <strong style="color:#17181c;">${billing.email}</strong><br>` : ''}
+  ${(shipping.phone || billing.phone) ? `<span style="color:#17181c;">Phone</span> <strong style="color:#17181c;">${shipping.phone || billing.phone}</strong><br>` : ''}
+  <span style="color:#17181c;">Payment</span> <strong style="color:#17181c;">${paymentDisplay}${isPaid ? ' (Paid)' : ''}</strong><br>
+  <span style="color:#17181c;">Total</span> <strong style="color:#17181c;">AED ${total}</strong>
+</td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${itemRows}</table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+  ${totalRow(L.subtotalL, `AED ${subtotal}`)}
+  ${totalRow(L.shippingL, deliveryNum > 0 ? `AED ${delivery}` : L.free)}
+  ${Number(discount) > 0 ? totalRow(L.discountL, `-AED ${discount}`, { danger: true }) : ''}
+  ${totalRow(L.vatL, `AED ${vat}`)}
+  <tr><td colspan="2" style="border-top:1px solid #d9dade;padding-top:6px;"></td></tr>
+  <tr><td style="padding:6px 0;font-family:${DS_SERIF};font-size:17px;font-weight:600;color:#17181c;">${L.totalL}</td><td align="right" style="padding:6px 0;font-family:${DS_SERIF};font-size:20px;font-weight:700;color:#17181c;">AED ${total}</td></tr>
+</table>`;
 
-                                <!-- Products -->
-                                <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:30px;">
-                                    <div style="padding:10px 15px;background-color:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;">
-                                        ${L.by} <span style="color:#334155;font-weight:600;">${L.delivery}</span>
-                                    </div>
-                                    ${itemRows}
-                                </div>
-
-                                <!-- Summary Table -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:35px;border-bottom:1px solid #e2e8f0;padding-bottom:15px;">
-                                    <tr><td colspan="2" style="padding-bottom:15px;font-size:14px;font-weight:700;color:#334155;text-align:${alignStart(ar)};">${L.summary}</td></tr>
-                                    <tr><td style="padding:5px 0;font-size:13px;color:#64748b;">${L.itemsL}</td><td style="padding:5px 0;font-size:13px;color:#334155;text-align:${ar ? 'left' : 'right'};">AED ${subtotal}</td></tr>
-                                    <tr><td style="padding:5px 0;font-size:13px;color:#64748b;">${L.shipping}</td><td style="padding:5px 0;font-size:13px;color:#334155;text-align:${ar ? 'left' : 'right'};">${deliveryNum > 0 ? `AED ${delivery}` : (ar ? 'مجاني' : 'FREE')}</td></tr>
-                                    ${Number(discount) > 0 ? `<tr><td style="padding:5px 0;font-size:13px;color:#64748b;">${L.discountL}</td><td style="padding:5px 0;font-size:13px;color:#ef4444;text-align:${ar ? 'left' : 'right'};">-AED ${discount}</td></tr>` : ''}
-                                    <tr><td style="padding:5px 0;font-size:13px;color:#64748b;">${L.vatL}</td><td style="padding:5px 0;font-size:13px;color:#334155;text-align:${ar ? 'left' : 'right'};">AED ${vat}</td></tr>
-                                    <tr style="font-weight:700;"><td style="padding:15px 0 5px;font-size:15px;color:#0f172a;">${L.totalVat} <span style="font-size:11px;font-weight:400;color:#64748b;">${L.vatIncl}</span></td><td style="padding:15px 0 5px;font-size:18px;color:#0f172a;text-align:${ar ? 'left' : 'right'};">AED ${total}</td></tr>
-                                </table>
-
-                                <!-- Addresses -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
-                                    <tr>
-                                        <td width="50%" style="vertical-align:top;padding-${ar ? 'left' : 'right'}:20px;">
-                                            <h4 style="margin:0 0 12px;font-size:15px;color:#64748b;font-weight:600;">${L.deliveryAddr}</h4>
-                                            <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">
-                                                ${shipping.firstName || userName} ${shipping.lastName || ''}<br>
-                                                ${shipping.streetAddress || ''}<br>
-                                                ${shipping.city || ''}<br>
-                                                ${shipping.phone || ''}
-                                            </p>
-                                        </td>
-                                        <td width="50%" style="vertical-align:top;">
-                                            <h4 style="margin:0 0 12px;font-size:15px;color:#64748b;font-weight:600;">${L.billingAddr}</h4>
-                                            <p style="margin:0 0 15px;font-size:13px;color:#475569;line-height:1.6;">
-                                                ${billing.firstName || userName} ${billing.lastName || ''}<br>
-                                                ${billing.streetAddress || ''}<br>
-                                                ${billing.city || ''}
-                                            </p>
-                                            <h4 style="margin:0 0 8px;font-size:15px;color:#64748b;font-weight:600;">${L.paymentL}</h4>
-                                            <p style="margin:0;font-size:13px;color:#475569;">${paymentDisplay}</p>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <!-- Footer -->
-                    ${emailFooterBlock()}
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    `;
+    const html = dsShell({ ar, preheader: isAdminCopy ? `New order #${orderId} — AED ${total}` : L.preheader, content: isAdminCopy ? adminContent : customerContent });
 
     try {
-        await transporter.sendMail({ from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`, to: toEmail, subject: isAdminCopy ? `🔔 NEW ORDER RECEIVED — #${orderId}` : (isPaid ? L.subjectPaid : L.subjectNew), html, attachments: [emailLogoAttachment()].filter(Boolean) });
+        const subject = isAdminCopy ? `New order received — #${orderId}` : (isPaid ? L.subjectPaid : L.subjectNew);
+        await transporter.sendMail({ from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`, to: toEmail, subject, html, attachments: dsEmailAttachments(ar) });
         console.log(`[EMAIL] ✅ Order confirmation email sent to ${toEmail}`);
     } catch (error) {
         console.error(`[EMAIL] ❌ Failed to send order confirmation email to ${toEmail}:`, error.message);
@@ -653,77 +636,70 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
 const sendWelcomeEmail = async (toEmail, userName, locale = 'en') => {
     const transporter = createTransporter();
     const ar = isAr(locale);
+    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    const firstName = String(userName || '').split(' ')[0] || (ar ? 'صديقنا' : 'there');
     const L = ar ? {
-        subject: `مرحباً بك في متجر ماريوت، ${userName.split(' ')[0]}! 🥳`,
-        text: `مرحباً ${userName}،\n\nأهلاً بك في متجر ماريوت! سعداء بانضمامك إلينا.\n\nفريق متجر ماريوت`,
-        welcomeTitle: 'مرحباً بك في',
-        hi: 'مرحباً',
-        intro: 'يسعدنا انضمامك إلى عائلة <strong>متجر ماريوت</strong>! لقد فتحت عالماً من معدات المطابخ الفاخرة ومكافآت الأعضاء الحصرية.',
-        whatsNext: 'ما التالي؟',
-        li1: '<strong>تسوّق الأفضل</strong>: استكشف أحدث مجموعتنا من معدات المطابخ الاحترافية.',
-        li2: '<strong>اكسب المكافآت</strong>: حصلت بالفعل على <strong>1,000 نقطة ترحيبية</strong>! استخدمها في طلبك الأول.',
-        li3: '<strong>دفع سريع</strong>: احفظ عناوينك لتجربة تسوق فائقة السرعة.',
-        cta: 'ابدأ التسوق الآن',
-        support: 'إذا كان لديك أي سؤال، فريق الدعم متواجد دائماً على',
+        subject: `مرحباً بك في ماريوت، ${firstName} — نقاطك الترحيبية جاهزة`,
+        text: `مرحباً ${userName}،\n\nأهلاً بك في ماريوت! لقد حصلت على 1,000 نقطة ترحيبية.\n\nفريق ماريوت`,
+        preheader: 'مرحباً بك في ماريوت — نقاطك الترحيبية البالغة 1,000 نقطة جاهزة.',
+        eyebrow: 'مرحباً بك في ماريوت',
+        title: 'مطبخك،<br>مجهّز بالكامل.',
+        intro: `مرحباً <strong style="color:#17181c;font-weight:600;">${firstName}</strong> — أهلاً بك في ماريوت، وجهة الإمارات لمعدات المطابخ الاحترافية من أكثر من <strong style="color:#17181c;font-weight:600;">80 علامة تجارية عالمية</strong> بما في ذلك Rational وHoshizaki وVitamix وLa Marzocco.`,
+        items: [
+            ['تسوّق الأفضل', 'أفران وتبريد ومعدات تحضير وقهوة يثق بها المحترفون.'],
+            ['1,000 نقطة ترحيبية', 'أُضيفت بالفعل إلى حسابك — استخدمها في طلبك الأول.'],
+            ['دفع أسرع', 'احفظ عناوينك ووسائل الدفع لإعادة الطلب بنقرة واحدة.'],
+        ],
+        cta: 'ابدأ التسوق',
+        help: 'هل تحتاج مساعدة في اختيار المعدات؟ يردّ مختصونا خلال يوم عمل واحد على',
     } : {
-        subject: `Welcome to Mariot Store, ${userName.split(' ')[0]}! 🥳`,
-        text: `Hi ${userName},\n\nWelcome to Mariot Store! We're thrilled to have you with us.\n\nBest regards,\nMariot Store Team`,
-        welcomeTitle: 'Welcome to',
-        hi: 'Hi',
-        intro: "We're absolutely thrilled to have you join the <strong>Mariot Store</strong> family! You've just unlocked a world of premium kitchen equipment and exclusive member rewards.",
-        whatsNext: "What's next?",
-        li1: '<strong>Shop Premium</strong>: Explore our latest collection of professional kitchen gear.',
-        li2: "<strong>Earn Rewards</strong>: You've already earned <strong>1,000 welcome points</strong>! Use them on your first order.",
-        li3: '<strong>Fast Checkout</strong>: Save your addresses for a lightning-fast shopping experience.',
-        cta: 'Start Shopping Now',
-        support: 'If you have any questions, our support team is always here for you at',
+        subject: `Welcome to Mariot, ${firstName} — your welcome points are ready`,
+        text: `Hi ${userName},\n\nWelcome to Mariot! You've been credited with 1,000 welcome points.\n\nThe Mariot Team`,
+        preheader: "Welcome to Mariot — your 1,000 welcome points are ready.",
+        eyebrow: 'Welcome to Mariot',
+        title: 'Your kitchen,<br>fully equipped.',
+        intro: `Hi <strong style="color:#17181c;font-weight:600;">${firstName}</strong> — welcome to Mariot, the UAE's destination for professional kitchen equipment from <strong style="color:#17181c;font-weight:600;">80+ world-class brands</strong> including Rational, Hoshizaki, Vitamix and La Marzocco.`,
+        items: [
+            ['Shop the very best', 'Ovens, refrigeration, prep &amp; coffee equipment trusted by professionals.'],
+            ['1,000 welcome points', 'Already credited to your account — redeem them on your first order.'],
+            ['Faster checkout', 'Save addresses &amp; payment for one-tap reordering of your essentials.'],
+        ],
+        cta: 'Start shopping',
+        help: 'Need help choosing equipment? Our specialists reply within one business day at',
     };
+
+    const listRows = L.items.map(([h, d], i) => `
+  <tr><td style="padding:18px 0;border-bottom:1px solid #ecedef;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td width="52" style="vertical-align:top;"><span style="font-family:${SERIF};font-size:20px;font-weight:600;font-style:italic;color:#16a1db;">0${i + 1}</span></td>
+      <td style="vertical-align:top;">
+        <p style="margin:0 0 3px;font-family:${SANS};font-size:15px;font-weight:600;color:#17181c;">${h}</p>
+        <p style="margin:0;font-family:${SANS};font-size:14px;line-height:1.6;color:#17181c;">${d}</p>
+      </td>
+    </tr></table>
+  </td></tr>`).join('');
+
+    const content = `
+<p style="margin:0 0 16px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1488c0;">${L.eyebrow}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:38px;line-height:1.12;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 30px;font-family:${SANS};font-size:16px;line-height:1.68;color:#17181c;">${L.intro}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ecedef;">${listRows}</table>
+<div style="height:34px;"></div>
+${dsButton(SITE, L.cta, ar)}
+<div style="height:34px;"></div>
+<div style="border-top:1px solid #ecedef;padding-top:22px;">
+  <p style="margin:0;font-family:${SANS};font-size:14px;line-height:1.65;color:#17181c;">${L.help} <a href="mailto:support@mariotstore.com" style="color:#1488c0;text-decoration:none;font-weight:600;">support@mariotstore.com</a>.</p>
+</div>`;
 
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
         subject: L.subject,
         text: L.text,
-        html: `
-            <div dir="${dirAttr(ar)}" style="background-color: #f4f4f4; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                <div class="container content-pad" style="max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; color: #000000; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: ${alignStart(ar)};">
-
-                    <!-- Logo -->
-                    <div style="text-align: center; margin-bottom: 30px;">
-                        <img src="https://mariotstore.com/wp-content/uploads/2024/10/kitchen-equipment-store.png" alt="MARIOT" style="width: 220px; height: auto;">
-                        <h2 style="font-size: 24px; color: #000000; margin: 20px 0 5px; font-weight: 700;">${L.welcomeTitle} <span style="background-color: #fff9c4; padding: 0 4px;">Mariot</span>!</h2>
-                    </div>
-
-                    <p style="font-size: 16px; color: #000000; font-weight: 600;">${L.hi} ${userName},</p>
-
-                    <p style="font-size: 15px; color: #000000; line-height: 1.6;">
-                        ${L.intro}
-                    </p>
-
-                    <div style="background-color: #fafafa; border-radius: 8px; padding: 25px; margin: 30px 0; border: 1px solid #eeeeee;">
-                        <h3 style="margin-top: 0; color: #000000; font-size: 16px;">${L.whatsNext}</h3>
-                        <ul style="padding-${alignStart(ar)}: 20px; color: #1e293b; font-size: 14px; line-height: 1.6;">
-                            <li style="margin-bottom: 10px;">${L.li1}</li>
-                            <li style="margin-bottom: 10px;">${L.li2}</li>
-                            <li>${L.li3}</li>
-                        </ul>
-                    </div>
-
-                    <div style="text-align: center; margin-top: 30px;">
-                        <a href="https://mariotkitchen.com" style="background-color: #0ea5e9; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block;">${L.cta}</a>
-                    </div>
-
-                    <div style="margin-top: 40px; text-align: center; border-top: 2px solid #000000; padding-top: 25px; color: #000000; font-size: 15px; line-height: 1.6;">
-                        <p>${L.support} <a href="mailto:admin@mariotkitchen.com" style="color: #0ea5e9; text-decoration: underline;" dir="ltr">admin@mariotkitchen.com</a>.</p>
-                    </div>
-
-                    <div style="margin-top: 30px; text-align: center; color: #1e293b; font-size: 12px; font-weight: bold;">
-                        — Mariot Store —
-                    </div>
-                </div> <!-- Close inner white container -->
-                ${emailFooterBlock()}
-            </div> <!-- Close outer gray background -->
-        `
+        html: dsShell({ ar, preheader: L.preheader, content }),
+        attachments: dsEmailAttachments(ar)
     };
 
     try {
@@ -740,112 +716,83 @@ const sendWelcomeEmail = async (toEmail, userName, locale = 'en') => {
 const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, items = [], locale = 'en', totals = {}) => {
     const transporter = createTransporter();
     const ar = isAr(locale);
+    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    const endAlign = ar ? 'left' : 'right';
+    const firstName = String(userName || '').split(' ')[0] || (ar ? 'عميلنا' : 'there');
+    const validUntil = new Date(Date.now() + 15 * 86400000).toLocaleDateString(ar ? 'ar-AE' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const L = ar ? {
         subject: `عرض السعر من متجر ماريوت — ${quotationRef}`,
-        title: `عرض سعر #${quotationRef}`,
-        dear: 'عزيزي',
-        intro: 'شكراً لاختيارك ماريوت لمعدات المطابخ. فيما يلي عرض السعر الذي طلبته لمعدات مطبخك التجاري.',
-        product: 'المنتج', qty: 'الكمية', price: 'السعر',
-        subtotal: 'الإجمالي الفرعي', couponL: 'خصم القسيمة', pointsL: 'خصم النقاط', vatL: 'ضريبة القيمة المضافة (5%)',
-        finalTotal: 'الإجمالي النهائي:',
-        note: '<strong>ملاحظة:</strong> هذا العرض صالح لمدة 15 يوماً من تاريخ الإصدار. الأسعار لا تشمل ضريبة القيمة المضافة؛ تُضاف 5% ضريبة على الإجمالي.',
-        contact: 'إذا كان لديك أي استفسار أو ترغب بالمتابعة، يرجى الرد على هذه الرسالة أو الاتصال بنا على',
-        copyright: '© متجر ماريوت — حلول المطابخ الاحترافية'
+        eyebrow: 'عرض سعر',
+        title: 'عرض سعرك جاهز',
+        intro: `شكراً على استفسارك، ${firstName}. تجد أدناه عرض السعر الرسمي <strong style="color:#17181c;font-weight:600;">#${quotationRef}</strong>. الأسعار مثبّتة لمدة 15 يوماً.`,
+        validLine: 'عرض السعر صالح حتى', ref: 'المرجع',
+        item: 'المنتج', qty: 'الكمية', unit: 'سعر الوحدة',
+        subtotal: 'المجموع الفرعي', couponL: 'خصم القسيمة', pointsL: 'خصم النقاط', vatL: 'ضريبة القيمة المضافة (5%)', estTotal: 'الإجمالي التقديري',
+        free: 'مجاني', cta: 'مراجعة العرض وقبوله',
+        note: 'هذا عرض سعر وليس فاتورة. لا يُستحق أي دفع حتى تؤكد الطلب. تُؤكَّد مدة التوصيل عند القبول.'
     } : {
-        subject: `Your Quotation from Mariot Store — ${quotationRef}`,
-        title: `Quotation #${quotationRef}`,
-        dear: 'Dear',
-        intro: 'Thank you for choosing Mariot Kitchen Equipment. Below is the quotation you requested for your commercial kitchen equipment.',
-        product: 'Product', qty: 'Qty', price: 'Price',
-        subtotal: 'Subtotal', couponL: 'Coupon discount', pointsL: 'Reward points', vatL: 'VAT (5%)',
-        finalTotal: 'Final Total:',
-        note: '<strong>Note:</strong> This quotation is valid for 15 days from the date of issue. Prices are exclusive of VAT; 5% VAT is added to the total.',
-        contact: 'If you have any questions or would like to proceed with this quotation, please reply to this email or call us at',
-        copyright: '© Mariot Store — Professional Kitchen Solutions'
+        subject: `Your quotation from Mariot Store — ${quotationRef}`,
+        eyebrow: 'Quotation',
+        title: 'Your quote is ready',
+        intro: `Thank you for your enquiry, ${firstName}. Please find your formal quotation <strong style="color:#17181c;font-weight:600;">#${quotationRef}</strong> below. Prices are held for 15 days.`,
+        validLine: 'Quotation valid until', ref: 'Ref',
+        item: 'Item', qty: 'Qty', unit: 'Unit price',
+        subtotal: 'Subtotal', couponL: 'Coupon discount', pointsL: 'Reward points', vatL: 'VAT (5%)', estTotal: 'Estimated total',
+        free: 'FREE', cta: 'Review &amp; accept quote',
+        note: 'This is a quotation, not an invoice. No payment is due until you confirm the order. Delivery lead times are confirmed on acceptance.'
     };
 
-    // Map items to rows
-    const itemRows = items.map(item => `
-        <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: ${ar ? 'left' : 'right'};">${Number(item.price).toFixed(2)} AED</td>
-        </tr>
-    `).join('');
+    const itemRows = items.map(item => {
+        const itemName = (ar && item.name_ar) ? item.name_ar : (item.name || '');
+        const isFree = Number(item.is_free_gift) === 1;
+        const priceCell = isFree ? L.free : `AED ${Number(item.price || 0).toFixed(2)}`;
+        return `<tr><td style="padding:11px 0;border-bottom:1px solid #ecedef;font-family:${SANS};font-size:13px;color:#17181c;">${itemName}</td><td align="center" style="padding:11px 0;border-bottom:1px solid #ecedef;font-family:${SANS};font-size:13px;color:#17181c;">${item.quantity}</td><td align="${endAlign}" style="padding:11px 0;border-bottom:1px solid #ecedef;font-family:${SANS};font-size:13px;font-weight:600;color:#17181c;">${priceCell}</td></tr>`;
+    }).join('');
 
-    // Totals breakdown — show the coupon / reward-points discount when one was applied.
     const subtotalNum = Number(totals.subtotal || 0);
     const couponNum = Number(totals.coupon_discount || 0);
     const pointsNum = Number(totals.points_discount || 0);
     const vatNum = Number(totals.tax_amount || 0);
     const couponCode = totals.coupon_code ? ` (${totals.coupon_code})` : '';
     const pointsUsed = Number(totals.points_used || 0);
-    const endAlign = ar ? 'left' : 'right';
-    const summaryCell = (label, value, color) =>
-        `<tr>
-            <td colspan="2" style="padding: 6px 10px; text-align: ${endAlign}; color: #475569;">${label}</td>
-            <td style="padding: 6px 10px; text-align: ${endAlign}; font-weight: 600; color: ${color || '#334155'};">${value}</td>
-        </tr>`;
+    const sumRow = (label, value, color) => `<tr><td style="padding:6px 0;font-family:${SANS};font-size:13px;font-weight:400;color:#17181c;">${label}</td><td align="${endAlign}" style="padding:6px 0;font-family:${SANS};font-size:13px;font-weight:600;color:${color || '#17181c'};">${value}</td></tr>`;
     const summaryRows = `
-        ${subtotalNum > 0 ? summaryCell(L.subtotal, `${subtotalNum.toFixed(2)} AED`) : ''}
-        ${couponNum > 0 ? summaryCell(`${L.couponL}${couponCode}`, `- ${couponNum.toFixed(2)} AED`, '#16a34a') : ''}
-        ${pointsNum > 0 ? summaryCell(`${L.pointsL}${pointsUsed > 0 ? ` (${pointsUsed} pts)` : ''}`, `- ${pointsNum.toFixed(2)} AED`, '#16a34a') : ''}
-        ${vatNum > 0 ? summaryCell(L.vatL, `${vatNum.toFixed(2)} AED`) : ''}
-    `;
+  ${subtotalNum > 0 ? sumRow(L.subtotal, `AED ${subtotalNum.toFixed(2)}`) : ''}
+  ${couponNum > 0 ? sumRow(`${L.couponL}${couponCode}`, `- AED ${couponNum.toFixed(2)}`, '#10b981') : ''}
+  ${pointsNum > 0 ? sumRow(`${L.pointsL}${pointsUsed > 0 ? ` (${pointsUsed} pts)` : ''}`, `- AED ${pointsNum.toFixed(2)}`, '#10b981') : ''}
+  ${vatNum > 0 ? sumRow(L.vatL, `AED ${vatNum.toFixed(2)}`) : ''}`;
+
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1488c0;">${L.eyebrow}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:34px;line-height:1.16;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #e9e7e2;border-radius:12px;margin:4px 0 24px;"><tr>
+  <td style="padding:14px 18px;font-family:${SANS};font-size:13px;color:#1488c0;font-weight:600;">${L.validLine} <strong style="color:#17181c;">${validUntil}</strong></td>
+  <td align="${endAlign}" style="padding:14px 18px;font-family:${SANS};font-size:13px;color:#1488c0;font-weight:600;">${L.ref}: ${quotationRef}</td>
+</tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:6px;"><tr>
+  <td style="padding:0 0 8px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;border-bottom:2px solid #ecedef;">${L.item}</td>
+  <td align="center" style="padding:0 0 8px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;border-bottom:2px solid #ecedef;">${L.qty}</td>
+  <td align="${endAlign}" style="padding:0 0 8px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;border-bottom:2px solid #ecedef;">${L.unit}</td>
+</tr>${itemRows}</table>
+<table role="presentation" width="60%" cellpadding="0" cellspacing="0" align="${endAlign}" style="margin-top:14px;">
+  ${summaryRows}
+  <tr><td colspan="2" style="border-top:2px solid #ecedef;padding-top:6px;"></td></tr>
+  <tr><td style="padding:6px 0;font-family:${SANS};font-size:15px;font-weight:700;color:#17181c;">${L.estTotal}</td><td align="${endAlign}" style="padding:6px 0;font-family:${SANS};font-size:18px;font-weight:800;color:#17181c;">AED ${Number(finalAmount).toFixed(2)}</td></tr>
+</table>
+<div style="clear:both;height:28px;"></div>
+${dsButton(`${SITE}/${ar ? 'ar' : 'en'}/profile?tab=quotations`, L.cta, ar)}
+<div style="height:22px;"></div>
+<p style="margin:0;font-family:${SANS};font-size:12px;line-height:1.6;color:#17181c;">${L.note}</p>`;
 
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
         subject: L.subject,
-        html: `
-            <div dir="${dirAttr(ar)}" class="container" style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px; text-align: ${alignStart(ar)};">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <img src="https://mariotstore.com/wp-content/uploads/2024/10/kitchen-equipment-store.png" alt="MARIOT" style="width: 180px;">
-                </div>
-                <h2 style="color: #333; text-align: center;">${L.title}</h2>
-                <p>${L.dear} <strong>${userName}</strong>,</p>
-                <p>${L.intro}</p>
-
-                <table style="width: 100%; border-collapse: collapse; margin: 25px 0;">
-                    <thead>
-                        <tr style="background: #f8f8f8;">
-                            <th style="padding: 10px; text-align: ${alignStart(ar)}; border-bottom: 2px solid #ddd;">${L.product}</th>
-                            <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">${L.qty}</th>
-                            <th style="padding: 10px; text-align: ${ar ? 'left' : 'right'}; border-bottom: 2px solid #ddd;">${L.price}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${itemRows}
-                    </tbody>
-                    <tfoot>
-                        ${summaryRows}
-                        <tr>
-                            <td colspan="2" style="padding: 15px 10px; text-align: ${ar ? 'left' : 'right'}; font-weight: bold; border-top: 1px solid #eee;">${L.finalTotal}</td>
-                            <td style="padding: 15px 10px; text-align: ${ar ? 'left' : 'right'}; font-weight: bold; color: #e11d48; font-size: 18px; border-top: 1px solid #eee;">${Number(finalAmount).toFixed(2)} AED</td>
-                        </tr>
-                    </tfoot>
-                </table>
-
-                <div style="background: #fef2f2; padding: 15px; border-radius: 6px; border-${alignStart(ar)}: 4px solid #e11d48; margin-bottom: 20px;">
-                    <p style="margin: 0; color: #991b1b; font-size: 14px;">
-                        ${L.note}
-                    </p>
-                </div>
-
-                <p style="font-size: 14px; color: #666; line-height: 1.8;">
-                    ${L.contact}
-                    <span dir="ltr"><a href="tel:+97142882777" style="color: #0ea5e9;">+971 4 288 2777</a> / <a href="tel:+971503114080" style="color: #0ea5e9;">+971 50 311 4080</a></span><br>
-                    <a href="mailto:Admin@mariotkitchen.com" style="color: #0ea5e9;" dir="ltr">Admin@mariotkitchen.com</a> &nbsp;|&nbsp;
-                    <a href="mailto:Support@mariot-group.com" style="color: #0ea5e9;" dir="ltr">Support@mariot-group.com</a><br>
-                    <a href="https://www.mariotstore.com" style="color: #0ea5e9;" dir="ltr">www.mariotstore.com</a>
-                </p>
-
-                <div style="text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; color: #999; font-size: 12px;">
-                    <p>${L.copyright}</p>
-                </div>
-            </div>
-            ${emailFooterBlock()}
-        `
+        html: dsShell({ ar, preheader: `${ar ? 'عرض السعر' : 'Quotation'} ${quotationRef} — ${ar ? 'صالح حتى' : 'valid until'} ${validUntil}`, content }),
+        attachments: dsEmailAttachments(ar)
     };
 
     try {
@@ -895,206 +842,109 @@ const sendOrderStatusUpdateEmail = async (toEmail, userName, orderId, status, or
     const statusTitle = statusTitles[status.toLowerCase()] || (status.charAt(0).toUpperCase() + status.slice(1));
     const friendlyStatus = statusMessages[status.toLowerCase()] || (ar ? `أصبح ${status}` : `is now ${status}`);
 
+    const isCancelled = status.toLowerCase() === 'cancelled';
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    const endAlign = ar ? 'left' : 'right';
+    const padStart = ar ? 'right' : 'left';
+    // Estimated delivery ≈ 3 days out (display only).
+    const estDate = new Date(Date.now() + 3 * 86400000).toLocaleDateString(ar ? 'ar-AE' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+    // Per-status eyebrow + headline + intro, matching the DS shipment voice.
+    const byStatus = (ar ? {
+        processing: ['تحديث الطلب', 'يتم تجهيز طلبك', `أخبار جيدة، ${userName.split(' ')[0]} — طلبك <strong style="color:#17181c;">#${orderId}</strong> قيد التجهيز الآن.`],
+        shipped: ['تحديث الشحنة', 'طلبك في الطريق إليك', `أخبار جيدة، ${userName.split(' ')[0]} — تم شحن طلبك <strong style="color:#17181c;">#${orderId}</strong> وهو في طريقه إليك الآن.`],
+        delivered: ['تم التوصيل', 'تم توصيل طلبك', `تم توصيل طلبك <strong style="color:#17181c;">#${orderId}</strong>. نتمنى أن تستمتع به!`],
+        pending: ['تحديث الطلب', 'تم استلام طلبك', `استلمنا طلبك <strong style="color:#17181c;">#${orderId}</strong> وهو قيد الانتظار.`]
+    } : {
+        processing: ['Order update', 'Your order is being prepared', `Good news, ${userName.split(' ')[0]} — order <strong style="color:#17181c;">#${orderId}</strong> is being prepared now.`],
+        shipped: ['Shipment update', 'Your order is on its way', `Good news, ${userName.split(' ')[0]} — order <strong style="color:#17181c;">#${orderId}</strong> has been dispatched and is heading to you now.`],
+        delivered: ['Delivered', 'Your order has been delivered', `Order <strong style="color:#17181c;">#${orderId}</strong> has been delivered. We hope you enjoy it!`],
+        pending: ['Order update', 'Your order is received', `We've received order <strong style="color:#17181c;">#${orderId}</strong> and it's pending.`]
+    });
+    const [eyebrowTxt, titleTxt, introTxt] = isCancelled
+        ? (ar ? ['تم الإلغاء', 'تم إلغاء طلبك', `نؤكد أنه تم إلغاء طلبك <strong style="color:#17181c;">#${orderId}</strong>.`]
+              : ['Order cancelled', 'Your order has been cancelled', `We're writing to confirm that order <strong style="color:#17181c;">#${orderId}</strong> has been cancelled.`])
+        : (byStatus[status.toLowerCase()] || byStatus.processing);
+
     const L = ar ? {
         subject: orderData.subject || `طلبك #${orderId} ${friendlyStatus} — متجر ماريوت`,
-        heading: `تم تحديث حالة طلبك!`,
-        dear: 'عزيزي',
-        body: `يسعدنا إبلاغك أن طلبك <strong>${orderId}</strong> ${friendlyStatus}!`,
-        below: 'تجد تفاصيل الشحن أدناه.',
-        thanks: 'شكراً لتسوقك معنا،<br><strong>فريق ماريوت</strong>',
-        orderDetail: 'تفاصيل الطلب', orderNo: 'رقم الطلب', dateL: 'التاريخ', totalL: 'الإجمالي',
-        deliveryAddr: 'عنوان التوصيل', billingAddr: 'عنوان الفوترة', paymentL: 'الدفع',
-        shipmentNo: 'الشحنة رقم 1', trackingId: 'رقم التتبع:', by: 'بواسطة:', delivery: 'توصيل ماريوت (قياسي)',
-        estDelivery: 'تاريخ التوصيل المتوقع:', deliveryWord: 'التوصيل',
-        viewOrder: 'تحميل الفاتورة',
-        cod: 'الدفع عند الاستلام', tabby: 'تابي (أقساط)', card: 'بطاقة ائتمان', freeLabel: 'مجاني', freeGiftWith: 'هدية مجانية مع'
+        eyebrow: eyebrowTxt, title: titleTxt, intro: introTxt,
+        cancelNote: 'تم استرداد أي نقاط مكافآت استخدمتها في هذا الطلب، وتم عكس النقاط المكتسبة. إذا تم خصمك، فسيتم رد المبلغ وفقاً لطريقة الدفع.',
+        s1: 'تم الطلب', s2: 'تم التجهيز', s3: 'تم الشحن', s4: 'تم التوصيل',
+        trackingNo: 'رقم التتبع', estDelivery: 'التوصيل المتوقع',
+        inShipment: 'في هذه الشحنة', orderItemsL: 'عناصر الطلب',
+        cta: isCancelled ? 'عرض الطلب' : (status.toLowerCase() === 'delivered' ? 'عرض الطلب' : 'تتبّع طلبي'),
+        freeLabel: 'مجاني', freeGiftWith: 'هدية مجانية مع'
     } : {
         subject: orderData.subject || `Your order #${orderId} ${friendlyStatus} — Mariot Store`,
-        heading: `Your order has been ${status}!`,
-        dear: 'Dear',
-        body: `We're happy to let you know that your order <strong>${orderId}</strong> ${friendlyStatus}!`,
-        below: 'Please find your order details for shipment below.',
-        thanks: 'Thank you for shopping with us,<br><strong>Mariot Team</strong>',
-        orderDetail: 'Order Detail', orderNo: 'Order #', dateL: 'Date', totalL: 'Total',
-        deliveryAddr: 'Delivery Address', billingAddr: 'Billing Address', paymentL: 'Payment',
-        shipmentNo: 'Shipment No. 1', trackingId: 'Tracking ID:', by: 'by:', delivery: 'Mariot Delivery (Standard)',
-        estDelivery: 'Estimated delivery date:', deliveryWord: 'Delivery',
-        viewOrder: 'Download Invoice',
-        cod: 'Cash on Delivery', tabby: 'Tabby (Installments)', card: 'Credit Card', freeLabel: 'FREE', freeGiftWith: 'Free gift with'
+        eyebrow: eyebrowTxt, title: titleTxt, intro: introTxt,
+        cancelNote: 'Any reward points redeemed on this order have been refunded, and points earned have been reversed. If you were charged, a refund will follow per your payment method.',
+        s1: 'Ordered', s2: 'Packed', s3: 'Shipped', s4: 'Delivered',
+        trackingNo: 'Tracking number', estDelivery: 'Estimated delivery',
+        inShipment: 'In this shipment', orderItemsL: 'Order items',
+        cta: isCancelled ? 'View order' : (status.toLowerCase() === 'delivered' ? 'View order' : 'Track my order'),
+        freeLabel: 'FREE', freeGiftWith: 'Free gift with'
     };
 
-    // Cancellation reads differently from a shipment update: drop the delivery
-    // framing, confirm the cancel, and tell the user about their points.
-    const isCancelled = status.toLowerCase() === 'cancelled';
-    if (isCancelled) {
-        if (ar) {
-            L.heading = 'تم إلغاء طلبك';
-            L.body = `نؤكد لك أنه تم إلغاء طلبك <strong>#${orderId}</strong>.`;
-            L.below = 'تم استرداد أي نقاط مكافآت استخدمتها في هذا الطلب، وتم عكس النقاط المكتسبة. إذا تم خصم أي مبلغ، فسيُرد إليك وفقاً لطريقة الدفع.';
-            L.viewOrder = 'عرض الطلب';
-            L.shipmentNo = 'عناصر الطلب';
-        } else {
-            L.heading = 'Your order has been cancelled';
-            L.body = `We're writing to confirm that your order <strong>#${orderId}</strong> has been cancelled.`;
-            L.below = 'Any reward points redeemed on this order have been refunded, and points earned have been reversed. If you were charged, a refund will follow per your payment method.';
-            L.viewOrder = 'View Order';
-            L.shipmentNo = 'Order Items';
-        }
-    }
+    // Progress timeline (Ordered → Packed → Shipped → Delivered) reflecting status.
+    const stage = ({ pending: 0, processing: 1, shipped: 2, delivered: 3 })[status.toLowerCase()] ?? 1;
+    const stepLabels = [L.s1, L.s2, L.s3, L.s4];
+    const timelineCells = stepLabels.map((label, s) => {
+        const done = s <= stage;
+        const circle = done
+            ? `<div style="width:22px;height:22px;border-radius:50%;background:#16a1db;border:2px solid #16a1db;margin:0 auto;line-height:18px;text-align:center;"><span style="color:#fff;font-size:11px;font-weight:700;">&#10003;</span></div>`
+            : `<div style="width:22px;height:22px;border-radius:50%;background:#ffffff;border:2px solid #ecedef;margin:0 auto;line-height:18px;text-align:center;"></div>`;
+        const connector = s > 0 ? `<div style="position:absolute;top:12px;left:-50%;width:100%;height:2px;background:${s <= stage ? '#16a1db' : '#ecedef'};z-index:1;"></div>` : '';
+        const labelStyle = `font-family:${SANS};font-size:11px;font-weight:${s === stage ? 700 : 500};color:${done ? '#17181c' : '#17181c'};`;
+        return `<td width="25%" style="text-align:center;vertical-align:top;"><div style="position:relative;">${connector}<div style="position:relative;z-index:2;">${circle}</div></div><p style="margin:8px 0 0;${labelStyle}">${label}</p></td>`;
+    }).join('');
+    const timeline = isCancelled ? '' : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #ecedef;border-radius:14px;margin:6px 0 24px;"><tr><td style="padding:24px 20px 18px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${timelineCells}</tr></table></td></tr></table>`;
 
-    // Generate product highlight rows for the Shipment Box
-    const itemRows = orderItems.map(item => `
-        <div style="padding:15px;display:flex;align-items:center;">
-             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td width="70" style="vertical-align:middle;">
-                        <img src="${item.image || 'cid:mariotEmailLogo'}" width="50" height="50" style="border-radius:4px;object-fit:contain;background-color:#ffffff;">
-                    </td>
-                    <td style="padding-left:15px;vertical-align:middle;">
-                        <p style="margin:0;font-size:13px;color:#475569;line-height:1.4;">${item.name}${Number(item.is_free_gift) === 1 ? ` <span style="display:inline-block;margin-left:6px;padding:2px 6px;background-color:#10b981;color:#fff;font-size:10px;font-weight:700;border-radius:4px;letter-spacing:0.4px;">${L.freeLabel}</span>` : ''}</p>
-                        ${Number(item.is_free_gift) === 1 && item.bundle_parent_name ? `<p style="margin:3px 0 0;font-size:11px;color:#94a3b8;">${L.freeGiftWith} ${item.bundle_parent_name}</p>` : ''}
-                    </td>
-                    <td align="right" style="vertical-align:middle;width:40px;">
-                        <span style="display:inline-block;padding:4px 8px;background-color:#f1f5f9;color:#64748b;font-size:12px;font-weight:700;border-radius:4px;">x${item.quantity}</span>
-                    </td>
-                </tr>
-             </table>
-        </div>
-    `).join('');
+    const trackingRow = isCancelled ? '' : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr>
+  <td width="50%" style="vertical-align:top;"><p style="margin:0 0 4px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;">${L.trackingNo}</p><p style="margin:0;font-family:${SANS};font-size:15px;font-weight:700;color:#1488c0;">${orderId}</p></td>
+  <td width="50%" style="vertical-align:top;"><p style="margin:0 0 4px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;">${L.estDelivery}</p><p style="margin:0;font-family:${SANS};font-size:15px;font-weight:700;color:#17181c;">${estDate}</p></td>
+</tr></table>`;
 
-    const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            @media only screen and (max-width: 600px) {
-                .container { width: 100% !important; padding: 20px 10px !important; }
-                .footer-col { width: 100% !important; padding: 10px 0 !important; display: block !important; }
-                .cta-btn { display: block !important; width: 100% !important; padding: 16px 12px !important; font-size: 15px !important; box-sizing: border-box !important; }
-            }
-        </style>
-    </head>
-    <body dir="${dirAttr(ar)}" style="margin:0;padding:0;background-color:#f4f7f9;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;text-align:${alignStart(ar)};">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7f9;padding:40px 0;">
-            <tr>
-                <td align="center">
-                    <!-- Top Card -->
-                    <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;margin-bottom:25px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                        <tr>
-                            <td align="center" style="padding:30px 0;border-bottom:1px solid #f1f5f9;">
-                                <img src="cid:mariotEmailLogo" alt="Mariot" style="height:45px;">
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="content-pad" style="padding:40px 45px;">
-                                <h1 style="margin:0 0 25px;font-size:20px;font-weight:600;color:#334155;">${L.heading}</h1>
-                                <p style="margin:0 0 20px;font-size:14px;color:#475569;">${L.dear} ${userName},</p>
-                                <p style="margin:0 0 15px;font-size:14px;color:#475569;line-height:1.6;">
-                                    ${L.body}
-                                </p>
-                                <p style="margin:0 0 25px;font-size:14px;color:#475569;line-height:1.6;">
-                                    ${L.below}
-                                </p>
-                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 25px;"><tr><td align="center">
-                                    <a href="${orderSummaryUrl}" class="cta-btn" style="display:inline-block;background-color:#0ea5e9;color:#ffffff;padding:13px 28px;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;">${L.viewOrder}<img src="https://img.icons8.com/material-rounded/48/ffffff/download.png" alt="" width="18" height="18" style="vertical-align:middle;margin-inline-start:10px;"></a>
-                                </td></tr></table>
-                                <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">
-                                    ${L.thanks}
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
+    const cancelNote = isCancelled ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 24px;"><tr><td style="background:#fdeaea;border-radius:12px;padding:16px 18px;"><p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.6;color:#9a1c1c;">${L.cancelNote}</p></td></tr></table>` : '';
 
-                    <!-- Order Detail Card -->
-                    <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                        <tr>
-                            <td class="content-pad" style="padding:40px 45px;">
-                                <h2 style="margin:0 0 35px;font-size:18px;font-weight:600;color:#64748b;text-align:center;">${L.orderDetail}</h2>
+    const itemRows = orderItems.map(item => {
+        const itemName = (ar && item.name_ar) ? item.name_ar : (item.name || '');
+        const parentName = (ar && item.bundle_parent_name_ar) ? item.bundle_parent_name_ar : (item.bundle_parent_name || '');
+        const variantLabel = buildVariantLabel(item, ar);
+        const variantLine = variantLabel ? `<p style="margin:4px 0 0;font-family:${SANS};font-size:12px;color:#17181c;line-height:1.3;">${variantLabel}</p>` : '';
+        const freeBadge = Number(item.is_free_gift) === 1 ? ` <span style="display:inline-block;margin-inline-start:6px;padding:2px 7px;background:#ecfdf5;color:#10b981;font-size:10px;font-weight:700;border-radius:5px;letter-spacing:.04em;">${L.freeLabel}</span>` : '';
+        const parentLine = (Number(item.is_free_gift) === 1 && parentName) ? `<p style="margin:4px 0 0;font-family:${SANS};font-size:12px;color:#17181c;">${L.freeGiftWith} ${parentName}</p>` : '';
+        const imgUrl = absolutizeEmailImage(item.image);
+        const thumb = imgUrl
+            ? `<img src="${imgUrl}" width="44" height="44" style="width:44px;height:44px;border-radius:8px;object-fit:contain;background:#ffffff;border:1px solid #ecedef;">`
+            : `<div style="width:44px;height:44px;border-radius:8px;background:#ffffff;border:1px solid #ecedef;"></div>`;
+        return `
+<tr><td style="padding:12px 0;border-bottom:1px solid #ecedef;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+  <td width="52" style="vertical-align:middle;">${thumb}</td>
+  <td style="vertical-align:middle;padding-${padStart}:14px;"><p style="margin:0;font-family:${SANS};font-size:14px;font-weight:600;color:#17181c;">${itemName}${freeBadge}</p>${variantLine}${parentLine}</td>
+  <td align="${endAlign}" style="vertical-align:middle;"><span style="display:inline-block;padding:3px 9px;background:#ffffff;border:1px solid #ecedef;border-radius:6px;font-family:${SANS};font-size:12px;font-weight:700;color:#17181c;">x${item.quantity}</span></td>
+</tr></table></td></tr>`;
+    }).join('');
 
-                                <!-- Meta Row -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:35px;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:15px 0;">
-                                    <tr>
-                                        <td style="text-align:${alignStart(ar)};"><span style="font-size:11px;color:#94a3b8;text-transform:uppercase;">${L.orderNo}</span><br><span style="font-size:13px;color:#334155;font-weight:600;">${orderId}</span></td>
-                                        <td align="center"><span style="font-size:11px;color:#94a3b8;text-transform:uppercase;">${L.dateL}</span><br><span style="font-size:13px;color:#334155;font-weight:600;">${date}</span></td>
-                                        <td style="text-align:${ar ? 'left' : 'right'};"><span style="font-size:11px;color:#94a3b8;text-transform:uppercase;">${L.totalL}</span><br><span style="font-size:13px;color:#334155;font-weight:600;">AED ${total}</span></td>
-                                    </tr>
-                                </table>
-
-                                <!-- Addresses -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:35px;">
-                                    <tr>
-                                        <td width="50%" style="vertical-align:top;padding-${ar ? 'left' : 'right'}:20px;">
-                                            <h4 style="margin:0 0 12px;font-size:15px;color:#64748b;font-weight:600;">${L.deliveryAddr}</h4>
-                                            <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">
-                                                ${shipping.firstName || userName} ${shipping.lastName || ''}<br>
-                                                ${shipping.streetAddress || ''}<br>
-                                                ${shipping.city || ''}<br>
-                                                ${shipping.phone || ''}
-                                            </p>
-                                        </td>
-                                        <td width="50%" style="vertical-align:top;">
-                                            <h4 style="margin:0 0 12px;font-size:15px;color:#64748b;font-weight:600;">${L.billingAddr}</h4>
-                                            <p style="margin:0 0 15px;font-size:13px;color:#475569;line-height:1.6;">
-                                                ${billing.firstName || userName} ${billing.lastName || ''}<br>
-                                                ${billing.streetAddress || ''}<br>
-                                                ${billing.city || ''}
-                                            </p>
-                                            <h4 style="margin:0 0 8px;font-size:15px;color:#64748b;font-weight:600;">${L.paymentL}</h4>
-                                            <p style="margin:0;font-size:13px;color:#475569;">
-                                                ${orderData.payment_method === 'cod' ? L.cod : orderData.payment_method === 'tabby' ? L.tabby : L.card}
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-
-                                <!-- Shipment Box -->
-                                <div style="border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;">
-                                    <div style="padding:15px 20px;border-bottom:1px solid #f1f5f9;">
-                                        <table width="100%" cellpadding="0" cellspacing="0">
-                                            <tr>
-                                                <td style="text-align:${alignStart(ar)};">
-                                                    <span style="font-size:14px;font-weight:600;color:#334155;">${L.shipmentNo}</span>
-                                                    <span style="margin:0 10px;padding:2px 10px;background-color:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:12px;text-transform:uppercase;vertical-align:middle;">${statusTitle}</span>
-                                                </td>
-                                                <td style="text-align:${ar ? 'left' : 'right'};">
-                                                    ${isCancelled ? '' : `<span style="font-size:12px;color:#16A1DB;font-weight:600;">${L.trackingId} ${orderId}</span>`}
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    ${isCancelled ? '' : `<div style="padding:10px 20px;background-color:#f8fafc;border-bottom:1px solid #f1f5f9;">
-                                        <table width="100%" cellpadding="0" cellspacing="0">
-                                            <tr>
-                                                <td style="font-size:12px;color:#64748b;text-align:${alignStart(ar)};">${L.by} <span style="color:#334155;font-weight:600;">${L.delivery}</span></td>
-                                                <td style="font-size:12px;color:#64748b;text-align:${ar ? 'left' : 'right'};">
-                                                    ${L.estDelivery} <span style="color:#334155;font-weight:700;">${L.deliveryWord} ${new Date().toLocaleDateString(ar ? 'ar-AE' : 'en-GB')}</span>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>`}
-                                    ${itemRows}
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <!-- Footer -->
-                    ${emailFooterBlock()}
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    `;
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${isCancelled ? '#e62127' : '#1488c0'};">${L.eyebrow}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:34px;line-height:1.16;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
+${cancelNote}
+${timeline}
+${trackingRow}
+${dsButton(orderSummaryUrl, L.cta, ar)}
+<div style="height:26px;"></div>
+<p style="margin:0 0 12px;font-family:${SANS};font-size:13px;font-weight:700;color:#17181c;">${isCancelled ? L.orderItemsL : L.inShipment}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${itemRows}</table>`;
 
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
         subject: L.subject,
-        html,
-        attachments: [emailLogoAttachment()].filter(Boolean)
+        html: dsShell({ ar, preheader: `${L.title} — #${orderId}`, content }),
+        attachments: dsEmailAttachments(ar)
     };
 
     try {
@@ -1117,146 +967,71 @@ const sendAbandonedCartEmail = async (toEmail, userName, cartItems = [], reminde
     const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
     const ar = isAr(locale);
 
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    const endAlign = ar ? 'left' : 'right';
+    const padStart = ar ? 'right' : 'left';
     const L = ar ? {
-        headline1: 'لا تنسَ منتجاتك!',
-        headline2: 'نأمل أن تكون لا تزال مهتماً\nبالمنتجات التي تركتها.',
-        cta: 'أكمل طلبك الآن',
-        oneClick: 'أنت على بُعد نقرة واحدة من أفضل عرض',
-        summary: 'الملخص', itemsL: 'المنتجات', shipping: 'رسوم الشحن', free: 'مجاني',
-        taxable: 'إجمالي المبلغ الخاضع للضريبة', vatL: 'إجمالي ضريبة القيمة المضافة',
-        totalL: 'الإجمالي', vatIncl: '(شامل الضريبة)',
-        checkout: 'أكمل الدفع الآن واستمتع بالتوفير مع <strong>ماريوت</strong>',
-        estBy: 'التوصيل المتوقع بحلول:',
-        subject1: '🛒 لا تنسَ منتجاتك! — متجر ماريوت',
-        subject2: '🛒 لا تزال مهتماً؟ أكمل طلبك — متجر ماريوت'
+        eyebrow: 'تركت شيئاً خلفك',
+        title1: 'ما زلت تفكر في الأمر؟',
+        title2: 'سلّتك لا تزال بانتظارك',
+        intro: 'سلّتك محفوظة وبانتظارك. المعدات أدناه متوفرة الآن — أكمل طلبك قبل نفادها.',
+        incentiveTitle: 'إليك خصم 5% ليساعدك على اتخاذ القرار',
+        incentiveCode: 'استخدم الرمز <strong style="color:#17181c;letter-spacing:.04em;">COMEBACK5</strong> عند الدفع',
+        cta: 'العودة إلى سلّتي',
+        note: 'قد تتغير الأسعار والتوفّر. السلة محفوظة لمدة 7 أيام.',
+        subject1: 'سلّتك في ماريوت بانتظارك — خصم 5% بالداخل',
+        subject2: 'لا تزال مهتماً؟ أكمل طلبك — متجر ماريوت'
     } : {
-        headline1: "Don't forget your items!",
-        headline2: "We hope you're still interested in\nthe items you left behind.",
-        cta: 'Complete your order now',
-        oneClick: 'You are one click away from the best offer',
-        summary: 'Summary', itemsL: 'Items', shipping: 'Shipping fees', free: 'Free',
-        taxable: 'Total taxable amount', vatL: 'Total VAT amount',
-        totalL: 'Total', vatIncl: '(VAT included)',
-        checkout: 'Checkout Now and enjoy saving with <strong>Mariot</strong>',
-        estBy: 'Estimated delivery by:',
-        subject1: `🛒 Don't forget your items! — Mariot Store`,
-        subject2: `🛒 Still interested? Complete your order — Mariot Store`
+        eyebrow: 'You left something behind',
+        title1: 'Still thinking it over?',
+        title2: 'Your cart is still waiting',
+        intro: 'Your cart is saved and waiting. The equipment below is in stock now — complete your order before it sells out.',
+        incentiveTitle: "Here's 5% off to help you decide",
+        incentiveCode: 'Use code <strong style="color:#17181c;letter-spacing:.04em;">COMEBACK5</strong> at checkout',
+        cta: 'Return to my cart',
+        note: 'Prices and availability may change. Cart held for 7 days.',
+        subject1: 'Your Mariot cart is waiting — 5% off inside',
+        subject2: 'Still interested? Complete your order — Mariot Store'
     };
-
-    const headline = reminderNumber === 1 ? L.headline1 : L.headline2;
-
-    const subtotal = cartItems.reduce((sum, item) => {
-        const p = Number(item.offer_price || item.price || 0);
-        return sum + (p * item.quantity);
-    }, 0);
-    const vat = subtotal * 0.05;
-    const total = subtotal + vat;
 
     const itemRows = cartItems.map(item => {
         const effectivePrice = Number(item.offer_price || item.price || 0);
         const originalPrice = Number(item.price || 0);
         const hasDiscount = item.offer_price && item.offer_price < item.price;
+        const itemName = (ar && item.name_ar) ? item.name_ar : (item.name || '');
+        const imgUrl = absolutizeEmailImage(item.image);
+        const thumb = imgUrl
+            ? `<img src="${imgUrl}" width="52" height="52" style="width:52px;height:52px;border-radius:8px;object-fit:contain;background:#ffffff;border:1px solid #ecedef;">`
+            : `<div style="width:52px;height:52px;border-radius:8px;background:#ffffff;border:1px solid #ecedef;"></div>`;
+        const priceCell = hasDiscount
+            ? `<p style="margin:0;font-family:${SANS};font-size:14px;font-weight:700;color:#17181c;">AED ${(effectivePrice * item.quantity).toFixed(2)}</p><p style="margin:2px 0 0;font-family:${SANS};font-size:12px;color:#17181c;text-decoration:line-through;">AED ${(originalPrice * item.quantity).toFixed(2)}</p>`
+            : `<p style="margin:0;font-family:${SANS};font-size:14px;font-weight:700;color:#17181c;">AED ${(effectivePrice * item.quantity).toFixed(2)}</p>`;
         return `
-        <div style="padding:20px 15px;border-bottom:1px solid #f1f5f9;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td width="80" style="vertical-align:top;">
-                        <a href="${SITE}/product/${item.slug || ''}" style="text-decoration:none;">
-                            <img src="${item.image || 'cid:mariotEmailLogo'}" width="70" height="70" style="border-radius:6px;object-fit:contain;border:1px solid #f1f5f9;background-color:#ffffff;">
-                        </a>
-                    </td>
-                    <td style="padding-inline-start:15px;vertical-align:top;">
-                        <a href="${SITE}/product/${item.slug || ''}" style="text-decoration:none;font-size:14px;font-weight:600;color:#334155;line-height:1.4;display:block;margin-bottom:8px;">${item.name}</a>
-                        <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">${L.estBy} ${new Date(Date.now() + 7 * 86400000).toLocaleDateString(ar ? 'ar-AE' : 'en-GB', { day: 'numeric', month: 'short' })} - ${new Date(Date.now() + 14 * 86400000).toLocaleDateString(ar ? 'ar-AE' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                        <p style="margin:6px 0 0;">
-                            <span style="display:inline-block;padding:2px 8px;background-color:#f1f5f9;color:#64748b;font-size:11px;font-weight:700;border-radius:4px;">x${item.quantity}</span>
-                            <span style="margin:0 10px;font-size:14px;font-weight:700;color:#16A1DB;">AED ${(effectivePrice * item.quantity).toFixed(2)}</span>
-                            ${hasDiscount ? `<span style="margin:0 6px;font-size:12px;color:#94a3b8;text-decoration:line-through;">AED ${(originalPrice * item.quantity).toFixed(2)}</span>` : ''}
-                        </p>
-                    </td>
-                </tr>
-            </table>
-        </div>`;
+<tr><td style="padding:14px 0;border-bottom:1px solid #ecedef;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+  <td width="60" style="vertical-align:middle;"><a href="${SITE}/product/${item.slug || ''}" style="text-decoration:none;">${thumb}</a></td>
+  <td style="vertical-align:middle;padding-${padStart}:14px;"><a href="${SITE}/product/${item.slug || ''}" style="text-decoration:none;font-family:${SANS};font-size:14px;font-weight:600;color:#17181c;line-height:1.4;display:block;">${itemName}</a><p style="margin:4px 0 0;font-family:${SANS};font-size:12px;color:#17181c;">${ar ? 'الكمية' : 'Qty'} ${item.quantity}</p></td>
+  <td align="${endAlign}" style="vertical-align:middle;white-space:nowrap;">${priceCell}</td>
+</tr></table></td></tr>`;
     }).join('');
 
-    const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            @media only screen and (max-width: 600px) {
-                .container { width: 100% !important; padding: 20px 10px !important; }
-                .footer-col { width: 100% !important; padding: 10px 0 !important; display: block !important; }
-                .cta-btn { display: block !important; width: 100% !important; padding: 16px 12px !important; font-size: 15px !important; box-sizing: border-box !important; }
-            }
-        </style>
-    </head>
-    <body dir="${dirAttr(ar)}" style="margin:0;padding:0;background-color:#f4f7f9;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;text-align:${alignStart(ar)};">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7f9;padding:40px 0;">
-            <tr>
-                <td align="center">
-                    <!-- Top Card -->
-                    <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;margin-bottom:25px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                        <tr>
-                            <td align="center" style="padding:30px 0;border-bottom:1px solid #f1f5f9;">
-                                <img src="cid:mariotEmailLogo" alt="Mariot" style="height:45px;">
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="content-pad" style="padding:40px 45px;text-align:center;">
-                                <h1 style="margin:0 0 30px;font-size:22px;font-weight:600;color:#334155;white-space:pre-line;line-height:1.4;">${headline}</h1>
-                                <a href="${SITE}/cart" class="cta-btn" style="display:inline-block;padding:16px 50px;background-color:#16A1DB;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:16px;letter-spacing:0.3px;">${L.cta}</a>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <!-- Products Card -->
-                    <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                        <tr>
-                            <td style="padding:25px 45px 10px;text-align:center;border-bottom:1px solid #e2e8f0;">
-                                <p style="margin:0;font-size:13px;color:#f59e0b;font-weight:600;">${L.oneClick}</p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding:0 30px;">
-                                ${itemRows}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding:25px 45px;">
-                                <!-- Summary -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e2e8f0;padding-top:15px;">
-                                    <tr><td colspan="2" style="padding-bottom:12px;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;text-align:${alignStart(ar)};">${L.summary}</td></tr>
-                                    <tr><td style="padding:4px 0;font-size:13px;color:#64748b;">${L.itemsL}</td><td style="padding:4px 0;font-size:13px;color:#334155;text-align:${ar ? 'left' : 'right'};">AED ${subtotal.toFixed(2)}</td></tr>
-                                    <tr><td style="padding:4px 0;font-size:13px;color:#64748b;">${L.shipping}</td><td style="padding:4px 0;font-size:13px;color:#16a34a;font-weight:600;text-align:${ar ? 'left' : 'right'};">${L.free}</td></tr>
-                                    <tr><td style="padding:4px 0;font-size:13px;color:#64748b;">${L.taxable}</td><td style="padding:4px 0;font-size:13px;color:#334155;text-align:${ar ? 'left' : 'right'};">AED ${subtotal.toFixed(2)}</td></tr>
-                                    <tr><td style="padding:4px 0;font-size:13px;color:#64748b;">${L.vatL}</td><td style="padding:4px 0;font-size:13px;color:#334155;text-align:${ar ? 'left' : 'right'};">AED ${vat.toFixed(2)}</td></tr>
-                                    <tr><td style="padding:15px 0 5px;font-size:15px;font-weight:700;color:#0f172a;">${L.totalL} <span style="font-size:11px;font-weight:400;color:#64748b;">${L.vatIncl}</span></td><td style="padding:15px 0 5px;font-size:18px;font-weight:700;color:#0f172a;text-align:${ar ? 'left' : 'right'};">AED ${total.toFixed(2)}</td></tr>
-                                </table>
-
-                                <div style="text-align:center;margin:30px 0 10px;">
-                                    <p style="margin:0 0 15px;font-size:14px;color:#475569;">${L.checkout}</p>
-                                    <a href="${SITE}/cart" class="cta-btn" style="display:inline-block;padding:16px 50px;background-color:#16A1DB;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:16px;letter-spacing:0.3px;box-sizing:border-box;text-align:center;">${L.cta}</a>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <!-- Footer -->
-                    ${emailFooterBlock()}
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    `;
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1488c0;">${L.eyebrow}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:34px;line-height:1.16;font-weight:600;letter-spacing:-.01em;color:#17181c;">${reminderNumber === 1 ? L.title1 : L.title2}</h1>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">${itemRows}</table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:14px 0 24px;"><tr><td style="background:#fdeaea;border-radius:12px;padding:16px 18px;text-align:center;">
+  <p style="margin:0 0 2px;font-family:${SANS};font-size:13px;font-weight:700;color:#e62127;">${L.incentiveTitle}</p>
+  <p style="margin:0;font-family:${SANS};font-size:13px;color:#17181c;">${L.incentiveCode}</p>
+</td></tr></table>
+${dsButton(`${SITE}/cart`, L.cta, ar)}
+<div style="height:22px;"></div>
+<p style="margin:0;text-align:center;font-family:${SANS};font-size:12px;color:#17181c;">${L.note}</p>`;
 
     const subject = reminderNumber === 1 ? L.subject1 : L.subject2;
 
     try {
-        await transporter.sendMail({ from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`, to: toEmail, subject, html, attachments: [emailLogoAttachment()].filter(Boolean) });
+        await transporter.sendMail({ from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`, to: toEmail, subject, html: dsShell({ ar, preheader: subject, content }), attachments: dsEmailAttachments(ar) });
         console.log(`[EMAIL] ✅ Abandoned cart reminder #${reminderNumber} sent to ${toEmail}`);
     } catch (error) {
         console.error(`[EMAIL] ❌ Failed to send abandoned cart email to ${toEmail}:`, error.message);
@@ -1275,135 +1050,68 @@ const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel
     const ar = isAr(locale);
     const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
     const productUrl = `${SITE}/${ar ? 'ar' : 'en'}/product/${product.slug}`;
-    const imageUrl = product.primaryImage || 'cid:mariotEmailLogo';
+    const imageUrl = absolutizeEmailImage(product.primaryImage);
     const productName = (ar && product.name_ar) ? product.name_ar : product.name;
     const hasDiscount = product.offer_price && Number(product.offer_price) < Number(product.price);
     const displayPrice = hasDiscount ? Number(product.offer_price).toFixed(2) : Number(product.price).toFixed(2);
     const originalPrice = Number(product.price).toFixed(2);
 
-    const badgeColors = ar ? {
-        'Limited Offer': { bg: '#ef4444', text: '🔥 عرض محدود — أسرع!' },
-        'Daily Offer': { bg: '#f59e0b', text: '⚡ عرض اليوم — اليوم فقط!' },
-        'Weekly Deal': { bg: '#8b5cf6', text: '🏷️ صفقة الأسبوع — لا تفوتها!' },
-        'Featured': { bg: '#0ea5e9', text: '⭐ منتج مميز' },
-        'Best Seller': { bg: '#10b981', text: '🏆 الأكثر مبيعاً' },
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    const discountPct = hasDiscount ? Math.round((1 - Number(product.offer_price) / Number(product.price)) * 100) : 0;
+    // Eyebrow label per offer type (no emoji) + accent color.
+    const labels = ar ? {
+        'Limited Offer': 'عرض محدود', 'Daily Offer': 'عرض اليوم', 'Weekly Deal': 'صفقة الأسبوع', 'Featured': 'منتج مميز', 'Best Seller': 'الأكثر مبيعاً'
     } : {
-        'Limited Offer': { bg: '#ef4444', text: '🔥 LIMITED OFFER — Hurry Up!' },
-        'Daily Offer': { bg: '#f59e0b', text: '⚡ DAILY OFFER — Today Only!' },
-        'Weekly Deal': { bg: '#8b5cf6', text: '🏷️ WEEKLY DEAL — Don\'t Miss It!' },
-        'Featured': { bg: '#0ea5e9', text: '⭐ FEATURED PRODUCT' },
-        'Best Seller': { bg: '#10b981', text: '🏆 BEST SELLER' },
+        'Limited Offer': 'Limited offer', 'Daily Offer': 'Daily offer', 'Weekly Deal': 'Weekly deal', 'Featured': 'Featured', 'Best Seller': 'Best seller'
     };
-    const badge = badgeColors[offerLabel] || { bg: '#ef4444', text: `🔥 ${offerLabel.toUpperCase()}` };
-    const urgencyText = ar ? '⏰ هذا العرض متاح لفترة محدودة فقط. سارع قبل نفاده!' : "⏰ This offer is available for a limited time only. Act fast before it's gone!";
-    const shopNow = ar ? 'تسوق الآن ←' : 'Shop Now →';
+    const eyebrow = labels[offerLabel] || offerLabel;
+    const accent = (offerLabel === 'Featured') ? '#1488c0' : (offerLabel === 'Best Seller') ? '#10b981' : '#e62127';
+    const L = ar ? {
+        title: hasDiscount ? `وفّر ${discountPct}% على ${productName}` : productName,
+        intro: hasDiscount ? `لفترة محدودة، احصل على خصم ${discountPct}% على ${productName} — موثوق به في المطابخ الاحترافية في المنطقة.` : `اكتشف ${productName} — مختار بعناية من ماريوت لمعدات المطابخ الاحترافية.`,
+        cta: 'تسوّق العرض',
+        note: 'بينما تدوم الكمية.'
+    } : {
+        title: hasDiscount ? `Save ${discountPct}% on ${productName}` : productName,
+        intro: hasDiscount ? `For a limited time, take ${discountPct}% off the ${productName} — trusted in professional kitchens across the region.` : `Discover the ${productName} — hand-picked from Mariot's professional kitchen range.`,
+        cta: 'Shop the offer',
+        note: 'While stocks last.'
+    };
 
-    const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            @media only screen and (max-width: 600px) {
-                .container { width: 100% !important; padding: 20px 10px !important; }
-            }
-        </style>
-    </head>
-    <body dir="${ar ? 'rtl' : 'ltr'}" style="margin:0;padding:0;background-color:#f4f7f9;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7f9;padding:40px 0;">
-            <tr>
-                <td align="center">
-                    <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    const thumb = imageUrl
+        ? `<img src="${imageUrl}" alt="${productName}" width="96" height="96" style="width:96px;height:96px;border-radius:12px;background:#ffffff;border:1px solid #ecedef;object-fit:contain;margin:0 auto;display:block;">`
+        : `<div style="width:96px;height:96px;border-radius:12px;background:#ffffff;border:1px solid #ecedef;margin:0 auto;"></div>`;
+    const priceBlock = hasDiscount
+        ? `<p style="margin:0;font-family:${SANS};font-size:13px;color:#17181c;text-decoration:line-through;">AED ${originalPrice}</p><p style="margin:2px 0 0;font-family:${SANS};font-size:22px;font-weight:800;color:${accent};">AED ${displayPrice}</p>`
+        : `<p style="margin:0;font-family:${SANS};font-size:22px;font-weight:800;color:#17181c;">AED ${displayPrice}</p>`;
+    const discountBadge = hasDiscount
+        ? `<span style="display:inline-block;padding:4px 10px;background:${accent};color:#fff;border-radius:6px;font-family:${SANS};font-size:11px;font-weight:800;letter-spacing:.04em;margin-bottom:10px;">-${discountPct}%</span>`
+        : '';
 
-                        <!-- Logo Header -->
-                        <tr>
-                            <td align="center" style="padding:28px 0 20px;border-bottom:1px solid #f1f5f9;">
-                                <img src="cid:mariotEmailLogo" alt="Mariot" style="height:40px;">
-                            </td>
-                        </tr>
-
-                        <!-- Offer Badge Banner -->
-                        <tr>
-                            <td align="center" style="background-color:${badge.bg};padding:14px 20px;">
-                                <span style="color:#ffffff;font-size:17px;font-weight:800;letter-spacing:0.5px;">${badge.text}</span>
-                            </td>
-                        </tr>
-
-                        <!-- Product Image (clickable) -->
-                        <tr>
-                            <td align="center" style="padding:32px 40px 16px;">
-                                <a href="${productUrl}" style="display:inline-block;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
-                                    <img src="${imageUrl}" alt="${productName}" width="320" style="display:block;max-width:320px;height:auto;object-fit:contain;">
-                                </a>
-                            </td>
-                        </tr>
-
-                        <!-- Product Name -->
-                        <tr>
-                            <td align="center" style="padding:0 40px 10px;">
-                                <a href="${productUrl}" style="text-decoration:none;">
-                                    <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;line-height:1.4;text-align:center;">${productName}</h2>
-                                </a>
-                            </td>
-                        </tr>
-
-                        <!-- Price -->
-                        <tr>
-                            <td align="center" style="padding:0 40px 24px;">
-                                ${hasDiscount ? `
-                                <p style="margin:0;">
-                                    <span style="font-size:26px;font-weight:800;color:${badge.bg};">AED ${displayPrice}</span>
-                                    <span style="margin-left:10px;font-size:16px;color:#94a3b8;text-decoration:line-through;">AED ${originalPrice}</span>
-                                </p>` : `
-                                <p style="margin:0;">
-                                    <span style="font-size:26px;font-weight:800;color:#0f172a;">AED ${displayPrice}</span>
-                                </p>`}
-                            </td>
-                        </tr>
-
-                        <!-- Urgency message -->
-                        <tr>
-                            <td align="center" style="padding:0 40px 28px;">
-                                <div style="background-color:#fef3c7;border-radius:8px;padding:12px 20px;display:inline-block;border-left:4px solid ${badge.bg};">
-                                    <p style="margin:0;font-size:13px;color:#92400e;font-weight:600;">${urgencyText}</p>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <!-- CTA Button -->
-                        <tr>
-                            <td align="center" style="padding:0 40px 40px;">
-                                <a href="${productUrl}" style="display:inline-block;background-color:#16A1DB;color:#ffffff;text-decoration:none;padding:16px 50px;border-radius:8px;font-size:16px;font-weight:700;letter-spacing:0.3px;">
-                                    ${shopNow}
-                                </a>
-                            </td>
-                        </tr>
-
-                        <!-- Footer -->
-                        <tr>
-                            <td style="background-color:#0f172a;padding:20px 30px;text-align:center;">
-                                <p style="color:#64748b;margin:0 0 4px;font-size:12px;">© ${new Date().getFullYear()} Mariot Store. All rights reserved.</p>
-                                <p style="color:#475569;margin:0;font-size:11px;">Salah Al Din St, Dubai, UAE</p>
-                            </td>
-                        </tr>
-
-                    </table>
-                    ${emailFooterBlock()}
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    `;
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${accent};">${eyebrow}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:34px;line-height:1.16;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #ecedef;border-radius:14px;overflow:hidden;margin:6px 0 24px;"><tr>
+  <td width="180" style="background:#ffffff;padding:0;vertical-align:middle;text-align:center;height:160px;">${thumb}</td>
+  <td style="padding:22px 24px;vertical-align:middle;">
+    ${discountBadge}
+    <p style="margin:0 0 6px;font-family:${SANS};font-size:16px;font-weight:700;color:#17181c;line-height:1.35;">${productName}</p>
+    ${priceBlock}
+  </td>
+</tr></table>
+${dsButton(productUrl, L.cta, ar)}
+<div style="height:18px;"></div>
+<p style="margin:0;text-align:center;font-family:${SANS};font-size:12px;color:#17181c;">${L.note}</p>`;
 
     try {
         await transporter.sendMail({
             from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
             to: toEmail,
-            subject: `${badge.text} — ${productName} | Mariot Store`,
-            html,
-            attachments: [emailLogoAttachment()].filter(Boolean)
+            subject: `${L.title} | Mariot Store`,
+            html: dsShell({ ar, preheader: L.title, content }),
+            attachments: dsEmailAttachments(ar)
         });
     } catch (error) {
         console.error(`[EMAIL] ❌ Failed to send offer notification to ${toEmail}:`, error.message);
@@ -1422,179 +1130,71 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
 
     const invoiceDate = new Date().toLocaleDateString(ar ? 'ar-AE' : 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    const endAlign = ar ? 'left' : 'right';
+    // VAT-inclusive total → derive the 5% VAT and net subtotal for display.
+    const totalNum = Number(totalAmount || 0);
+    const subtotalNum = totalNum / 1.05;
+    const vatNum = totalNum - subtotalNum;
+
     const L = ar ? {
         subject: `الفاتورة #${invoiceNumber} — الطلب #${orderId} | ماريوت لمعدات المطابخ`,
-        hello: `مرحباً ${userName || 'عميلنا العزيز'}،`,
-        deliveredTitle: 'تم توصيل طلبك!',
-        thanks1: 'شكراً لاختيارك ماريوت لمعدات المطابخ.',
-        deliveredBody: `يسعدنا إبلاغك بأنه تم توصيل طلبك #${orderId} بنجاح.`,
-        invoiceNo: 'رقم الفاتورة', orderNo: 'رقم الطلب', dateL: 'التاريخ', totalAmount: 'المبلغ الإجمالي',
-        attached: `الفاتورة مرفقة بهذا البريد باسم <strong>Invoice-${invoiceNumber}.pdf</strong>.<br>يرجى تنزيلها للاحتفاظ بها.`,
-        questions: 'إذا كان لديك أي استفسار بخصوص الفاتورة أو الطلب،<br>فلا تتردد في التواصل معنا.',
-        btn: 'تحميل الفاتورة'
+        eyebrow: 'فاتورة ضريبية', title: `فاتورة ${invoiceNumber}`, paid: 'مدفوعة',
+        billedTo: 'الفاتورة باسم', invoiceNo: 'رقم الفاتورة', orderNo: 'رقم الطلب', issue: 'تاريخ الإصدار',
+        desc: 'الوصف', qty: 'الكمية', amount: 'المبلغ',
+        subtotal: 'المجموع الفرعي', vatL: 'ضريبة القيمة المضافة (5%)', totalPaid: 'الإجمالي المدفوع',
+        cta: 'تحميل الفاتورة PDF',
+        attachedNote: 'نسخة من هذه الفاتورة مرفقة بصيغة PDF لسجلاتك.'
     } : {
         subject: `Invoice #${invoiceNumber} — Order #${orderId} | Mariot Kitchen Equipment`,
-        hello: `Hello ${userName || 'Customer'},`,
-        deliveredTitle: 'Your order has been delivered!',
-        thanks1: 'Thank you for choosing Mariot Kitchen Equipment.',
-        deliveredBody: `We're pleased to inform you that your order #${orderId} has been successfully delivered.`,
-        invoiceNo: 'Invoice Number', orderNo: 'Order Number', dateL: 'Date', totalAmount: 'Total Amount',
-        attached: `Your invoice is attached to this email as <strong>Invoice-${invoiceNumber}.pdf</strong>.<br>Please download it for your records.`,
-        questions: "If you have any questions regarding your invoice or order,<br>please don't hesitate to contact us.",
-        btn: 'Download Invoice'
+        eyebrow: 'Tax invoice', title: `Invoice ${invoiceNumber}`, paid: 'PAID',
+        billedTo: 'Billed to', invoiceNo: 'Invoice #', orderNo: 'Order #', issue: 'Issue date',
+        desc: 'Description', qty: 'Qty', amount: 'Amount',
+        subtotal: 'Subtotal', vatL: 'VAT (5%)', totalPaid: 'Total paid',
+        cta: 'Download PDF invoice',
+        attachedNote: 'A copy of this invoice is attached as a PDF for your records.'
     };
 
-    const html = `<!DOCTYPE html>
-<html lang="${ar ? 'ar' : 'en'}" dir="${ar ? 'rtl' : 'ltr'}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-        .info-row { border-bottom: 1px dashed #e2e8f0; }
-        .info-row:last-child { border-bottom: none; }
-    </style>
-</head>
-<body style="margin:0;padding:0;background:#f4f7f9;font-family:Arial,Helvetica,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7f9;padding:40px 0;">
-<tr><td align="center">
+    const itemRows = (items || []).map(item => {
+        const itemName = (ar && item.name_ar) ? item.name_ar : (item.name || '');
+        const qty = item.quantity || 1;
+        const amount = Number((item.price_at_purchase || item.price || 0) * qty).toFixed(2);
+        return `<tr><td style="padding:11px 0;border-bottom:1px solid #ecedef;font-family:${SANS};font-size:13px;color:#17181c;">${itemName}</td><td align="center" style="padding:11px 0;border-bottom:1px solid #ecedef;font-family:${SANS};font-size:13px;color:#17181c;">${qty}</td><td align="${endAlign}" style="padding:11px 0;border-bottom:1px solid #ecedef;font-family:${SANS};font-size:13px;font-weight:600;color:#17181c;">AED ${amount}</td></tr>`;
+    }).join('');
 
-<table width="600" class="container" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;max-width:600px;box-shadow:0 4px 15px rgba(0,0,0,0.05);">
-
-    <!-- Header -->
-    <tr>
-        <td style="background:#111827;padding:20px 32px;border-bottom:4px solid #16a1db;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td style="vertical-align:middle;text-align:left;">
-                        <img src="cid:mariotLogoEn" alt="MARIOT" style="height:35px;object-fit:contain;">
-                    </td>
-                    <td style="vertical-align:middle;text-align:right;">
-                        <img src="cid:mariotLogoAr" alt="ماريوت" style="height:35px;object-fit:contain;">
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-
-    <!-- Body -->
-    <tr>
-        <td class="content-pad" style="padding:40px 32px 30px;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-                <tr>
-                    <td width="70" style="vertical-align:top;">
-                        <div style="background:#e0f2fe;width:55px;height:55px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;">
-                            <img src="https://cdn-icons-png.flaticon.com/64/2933/2933116.png" style="width:30px;height:30px;margin-top:12px;">
-                        </div>
-                    </td>
-                    <td style="vertical-align:middle;">
-                        <p style="margin:0 0 5px;font-size:16px;font-weight:700;color:#333;">${L.hello}</p>
-                        <h1 style="margin:0;font-size:24px;font-weight:800;color:#111;">${L.deliveredTitle}</h1>
-                    </td>
-                </tr>
-            </table>
-
-            <p style="margin:0 0 5px;font-size:14px;color:#444;line-height:1.6;">
-                ${L.thanks1}
-            </p>
-            <p style="margin:0 0 25px;font-size:14px;color:#444;line-height:1.6;">
-                ${L.deliveredBody}
-            </p>
-
-            <!-- Order summary box -->
-            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:24px;overflow:hidden;">
-                <tr>
-                    <td style="padding:15px 20px;border-bottom: 1px dashed #e2e8f0;">
-                        <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td width="30"><img src="https://cdn-icons-png.flaticon.com/32/2956/2956485.png" style="width:16px;opacity:0.6;"></td>
-                                <td style="font-size:14px;color:#333;font-weight:600;">${L.invoiceNo}</td>
-                                <td style="font-size:14px;color:#111;font-weight:700;text-align:${ar ? 'left' : 'right'};">${invoiceNumber}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding:15px 20px;border-bottom: 1px dashed #e2e8f0;">
-                        <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td width="30"><img src="https://cdn-icons-png.flaticon.com/32/679/679821.png" style="width:16px;opacity:0.6;"></td>
-                                <td style="font-size:14px;color:#333;font-weight:600;">${L.orderNo}</td>
-                                <td style="font-size:14px;color:#111;font-weight:700;text-align:${ar ? 'left' : 'right'};">#${orderId}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding:15px 20px;">
-                        <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td width="30"><img src="https://cdn-icons-png.flaticon.com/32/2838/2838779.png" style="width:16px;opacity:0.6;"></td>
-                                <td style="font-size:14px;color:#333;font-weight:600;">${L.dateL}</td>
-                                <td style="font-size:14px;color:#111;font-weight:700;text-align:${ar ? 'left' : 'right'};">${invoiceDate}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding:15px 20px;background:#f0f9ff;">
-                        <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td width="30">
-                                    <div style="background:#16a1db;color:#fff;width:20px;height:20px;border-radius:50%;text-align:center;line-height:20px;font-size:12px;font-weight:bold;">$</div>
-                                </td>
-                                <td style="font-size:14px;color:#111;font-weight:700;">${L.totalAmount}</td>
-                                <td style="font-size:18px;color:#16a1db;font-weight:800;text-align:${ar ? 'left' : 'right'};">AED ${Number(totalAmount).toFixed(2)}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-
-            <!-- Blue info box -->
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #eef2f6;border-radius:8px;margin-bottom:24px;">
-                <tr>
-                    <td style="padding:15px 20px;">
-                        <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td width="50" style="vertical-align:middle;">
-                                    <div style="background:#e0f2fe;width:35px;height:35px;border-radius:6px;display:flex;align-items:center;justify-content:center;text-align:center;">
-                                        <img src="https://cdn-icons-png.flaticon.com/32/2956/2956485.png" style="width:18px;opacity:0.7;margin-top:8px;">
-                                    </div>
-                                </td>
-                                <td style="font-size:13px;color:#444;line-height:1.5;">
-                                    ${L.attached}
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-
-            <p style="margin:0 0 20px;font-size:13px;color:#666;line-height:1.5;">
-                ${L.questions}
-            </p>
-
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-                <a href="${orderSummaryUrl}" style="display:inline-block;background:#16a1db;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:700;font-size:15px;">
-                    ${L.btn}<img src="https://img.icons8.com/material-rounded/48/ffffff/download.png" alt="" width="18" height="18" style="vertical-align:middle;margin-inline-start:10px;">
-                </a>
-            </td></tr></table>
-        </td>
-    </tr>
-
-    <!-- Footer (shared, responsive) -->
-    <tr>
-        <td style="padding:0;">${emailFooter()}</td>
-    </tr>
-
+    const content = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr>
+  <td style="vertical-align:top;"><p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1488c0;">${L.eyebrow}</p><h1 style="margin:0;font-family:${SERIF};font-size:31px;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1></td>
+  <td align="${endAlign}" style="vertical-align:top;"><span style="display:inline-block;padding:7px 14px;background:#ecfdf5;color:#10b981;border-radius:999px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.04em;">${L.paid}</span></td>
+</tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #ecedef;border-radius:12px;margin-bottom:24px;"><tr>
+  <td style="padding:16px 18px;vertical-align:top;width:50%;border-${ar ? 'left' : 'right'}:1px solid #ecedef;">
+    <p style="margin:0 0 8px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;">${L.billedTo}</p>
+    <p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.7;color:#17181c;">${userName || (ar ? 'عميلنا العزيز' : 'Customer')}</p>
+  </td>
+  <td style="padding:16px 18px;vertical-align:top;width:50%;font-family:${SANS};font-size:13px;line-height:1.9;color:#17181c;">
+    <span style="color:#17181c;">${L.invoiceNo}</span> <strong style="color:#17181c;">${invoiceNumber}</strong><br>
+    <span style="color:#17181c;">${L.orderNo}</span> <strong style="color:#17181c;">${orderId}</strong><br>
+    <span style="color:#17181c;">${L.issue}</span> <strong style="color:#17181c;">${invoiceDate}</strong>
+  </td>
+</tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:6px;"><tr>
+  <td style="padding:0 0 8px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;border-bottom:2px solid #ecedef;">${L.desc}</td>
+  <td align="center" style="padding:0 0 8px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;border-bottom:2px solid #ecedef;">${L.qty}</td>
+  <td align="${endAlign}" style="padding:0 0 8px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;border-bottom:2px solid #ecedef;">${L.amount}</td>
+</tr>${itemRows}</table>
+<table role="presentation" width="60%" cellpadding="0" cellspacing="0" align="${endAlign}" style="margin-top:14px;">
+  <tr><td style="padding:6px 0;font-family:${SANS};font-size:13px;font-weight:400;color:#17181c;">${L.subtotal}</td><td align="${endAlign}" style="padding:6px 0;font-family:${SANS};font-size:13px;font-weight:600;color:#17181c;">AED ${subtotalNum.toFixed(2)}</td></tr>
+  <tr><td style="padding:6px 0;font-family:${SANS};font-size:13px;font-weight:400;color:#17181c;">${L.vatL}</td><td align="${endAlign}" style="padding:6px 0;font-family:${SANS};font-size:13px;font-weight:600;color:#17181c;">AED ${vatNum.toFixed(2)}</td></tr>
+  <tr><td colspan="2" style="border-top:2px solid #ecedef;padding-top:6px;"></td></tr>
+  <tr><td style="padding:6px 0;font-family:${SANS};font-size:15px;font-weight:700;color:#17181c;">${L.totalPaid}</td><td align="${endAlign}" style="padding:6px 0;font-family:${SANS};font-size:18px;font-weight:800;color:#10b981;">AED ${totalNum.toFixed(2)}</td></tr>
 </table>
+<div style="clear:both;height:30px;"></div>
+${dsButton(orderSummaryUrl, L.cta, ar)}
+<div style="height:20px;"></div>
+<p style="margin:0;text-align:center;font-family:${SANS};font-size:12px;color:#17181c;">${L.attachedNote}</p>`;
 
-</td></tr>
-</table>
-</body>
-</html>`;
-
-    const path = require('path');
     const invoicePdfAttachment = pdfBuffer ? [{
         filename: `Invoice-${invoiceNumber}.pdf`,
         content: pdfBuffer,
@@ -1605,12 +1205,8 @@ const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, total
         from: `"Mariot Kitchen Equipment" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
         subject: L.subject,
-        html,
-        attachments: [
-            ...invoicePdfAttachment,
-            LOGO_EN_PATH ? { filename: 'mariot-logo.png', path: LOGO_EN_PATH, cid: 'mariotLogoEn' } : null,
-            LOGO_AR_PATH ? { filename: 'MARIOT-A.png', path: LOGO_AR_PATH, cid: 'mariotLogoAr' } : null
-        ].filter(Boolean)
+        html: dsShell({ ar, preheader: `${L.title} — AED ${totalNum.toFixed(2)} ${ar ? 'مدفوعة' : 'paid'}`, content }),
+        attachments: [...invoicePdfAttachment, ...dsEmailAttachments(ar)]
     };
 
     try {
@@ -1638,63 +1234,52 @@ const sendOtpEmail = async (toEmail, userName, otp, opts = {}) => {
     const digits = String(otp).split('');
     const helpCentreUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/${ar ? 'ar' : 'en'}/contact`;
 
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    // Display the code in readable groups (e.g. 6 digits → "284 915").
+    const codeDisplay = String(otp).length === 6 ? `${String(otp).slice(0, 3)} ${String(otp).slice(3)}` : String(otp);
     const L = ar ? {
-        heading: purpose === 'email-change' ? 'تأكيد بريدك الإلكتروني الجديد' : 'تأكيد الحساب',
         subject: purpose === 'email-change' ? `ماريوت — تأكيد بريدك الإلكتروني الجديد (${otp})` : `ماريوت — رمز التحقق الخاص بك (${otp})`,
-        hi: `مرحباً${firstName ? ' ' + firstName : ''}،`,
-        otpLabel: 'كلمة المرور لمرة واحدة (OTP) الخاصة بك هي',
-        expire: 'يرجى ملاحظة أن هذه كلمة مرور مؤقتة وستنتهي صلاحيتها خلال <strong>5 دقائق</strong>. إذا حدث خطأ، يرجى التواصل مع فريق الدعم على',
-        thanks: 'شكراً لك،', team: 'فريق ماريوت',
-        help: 'هل تحتاج مزيداً من المساعدة؟ زر', helpLink: 'مركز المساعدة',
+        preheader: `رمز التحقق الخاص بك في ماريوت هو ${codeDisplay}.`,
+        eyebrow: purpose === 'email-change' ? 'تأكيد البريد الإلكتروني' : 'تأكيد بريدك الإلكتروني',
+        title: purpose === 'email-change' ? 'أكّد بريدك الإلكتروني الجديد' : 'تأكّد أنه أنت فعلاً',
+        intro: 'أدخل رمز التحقق أدناه لإكمال إعداد حسابك في ماريوت. الرمز صالح خلال الدقائق الخمس القادمة.',
+        codeLabel: 'رمز التحقق الخاص بك',
+        warn: 'تنتهي صلاحية هذا الرمز خلال 5 دقائق.',
+        ignore: 'إذا لم تطلب هذا الرمز، يمكنك تجاهل هذه الرسالة بأمان — لا يمكن لأحد الوصول إلى حسابك بدون الرمز. لا تشاركه مع أي أحد، بما في ذلك موظفو ماريوت.',
         textBody: `مرحباً${firstName ? ' ' + firstName : ''}،\n\nرمز التحقق لمرة واحدة (OTP) الخاص بك في ماريوت هو: ${otp}\n\nتنتهي صلاحية هذا الرمز خلال 5 دقائق.\n\nإذا لم تطلب ذلك، يمكنك تجاهل هذا البريد.\n\n— فريق ماريوت`
     } : {
-        heading: purpose === 'email-change' ? 'Verify your new email' : 'Account verification',
         subject: purpose === 'email-change' ? `Mariot — Verify your new email (${otp})` : `Mariot — Your verification code (${otp})`,
-        hi: `Hi${firstName ? ' ' + firstName : ''},`,
-        otpLabel: 'Your one time password (OTP) is',
-        expire: "Please note this is a temporary password and will expire in <strong>5 minutes</strong>. If there's been a mistake, please contact our customer support team at",
-        thanks: 'Thank you,', team: 'Team Mariot',
-        help: 'Need more help? Visit our', helpLink: 'Help Centre',
+        preheader: `Your Mariot verification code is ${codeDisplay}.`,
+        eyebrow: purpose === 'email-change' ? 'Verify your email' : 'Verify your email',
+        title: purpose === 'email-change' ? 'Confirm your new email' : "Confirm it's really you",
+        intro: 'Enter the verification code below to finish setting up your Mariot account. The code is valid for the next 5 minutes.',
+        codeLabel: 'Your verification code',
+        warn: 'This code expires in 5 minutes.',
+        ignore: "If you didn't request this, you can safely ignore this email — nobody can access your account without the code. Never share it with anyone, including Mariot staff.",
         textBody: `Hi${firstName ? ' ' + firstName : ''},\n\nYour Mariot one-time password (OTP) is: ${otp}\n\nThis code expires in 5 minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n— Team Mariot`
     };
-    const alignCss = ar ? 'right' : 'left';
+
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1488c0;">${L.eyebrow}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:34px;line-height:1.16;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 22px;"><tr><td align="center" style="background:#ffffff;border:1px solid #e9e7e2;border-radius:14px;padding:26px 20px;">
+  <p style="margin:0 0 8px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1488c0;">${L.codeLabel}</p>
+  <p dir="ltr" style="margin:0;font-family:${SANS};font-size:40px;font-weight:800;letter-spacing:.18em;color:#17181c;">${codeDisplay}</p>
+</td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;"><tr><td style="background:#fff7ed;border-radius:10px;padding:13px 16px;">
+  <p style="margin:0;font-family:${SANS};font-size:13px;font-weight:600;color:#9a3412;">${L.warn}</p>
+</td></tr></table>
+<p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.ignore}</p>`;
 
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
         subject: L.subject,
         text: L.textBody,
-        html: `
-            <div dir="${ar ? 'rtl' : 'ltr'}" style="background-color: #f4f4f4; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                <div class="container content-pad" style="max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; color: #000000; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: ${alignCss};">
-                    <div style="margin-bottom: 24px;">
-                        <img src="https://mariotstore.com/wp-content/uploads/2024/10/kitchen-equipment-store.png" alt="MARIOT" style="width: 180px; height: auto;">
-                    </div>
-
-                    <h1 style="font-size: 32px; color: #0f172a; margin: 12px 0 28px; font-weight: 800; line-height: 1.15;">${L.heading}</h1>
-
-                    <p style="font-size: 15px; color: #0f172a; font-weight: 700; margin: 0 0 8px;">${L.hi}</p>
-                    <p style="font-size: 14px; color: #1e293b; margin: 0 0 18px;">${L.otpLabel}</p>
-
-                    <div style="background-color: #fef9c3; border-radius: 8px; padding: 22px 16px; margin: 0 0 22px; text-align: center;">
-                        <div dir="ltr" style="display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: 18px; padding-inline-start: 18px;">${digits.join('')}</div>
-                    </div>
-
-                    <p style="font-size: 13px; color: #334155; line-height: 1.6; margin: 0 0 14px;">
-                        ${L.expire}
-                        <a href="mailto:admin@mariotkitchen.com" style="color: #16a1db; text-decoration: underline;">admin@mariotkitchen.com</a>.
-                    </p>
-
-                    <p style="font-size: 13px; color: #334155; margin: 24px 0 0;">${L.thanks}</p>
-                    <p style="font-size: 13px; color: #0f172a; font-weight: 700; margin: 0;">${L.team}</p>
-
-                    <div style="margin-top: 32px; padding-top: 18px; border-top: 1px solid #e5e7eb; text-align: center; color: #64748b; font-size: 12px;">
-                        ${L.help} <a href="${helpCentreUrl}" style="color: #16a1db; text-decoration: underline;">${L.helpLink}</a>.
-                    </div>
-                </div>
-                ${emailFooterBlock()}
-            </div>
-        `
+        html: dsShell({ ar, preheader: L.preheader, content }),
+        attachments: dsEmailAttachments(ar)
     };
 
     try {
@@ -1725,98 +1310,60 @@ const sendMonthlyStatementEmail = async (toEmail, userName, stats = {}, locale =
     const fmtInt = (n) => Number(n || 0).toLocaleString(ar ? 'ar-EG' : 'en-US');
     const month = ar ? (stats.monthLabelAr || stats.monthLabel) : stats.monthLabel;
 
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    const monthLabel = month || (ar ? 'هذا الشهر' : 'this month');
     const L = ar ? {
-        subject: `كشف نقاط مكافآتك — ${month}`,
-        preview: `ملخص نقاط مكافآت ماريوت لشهر ${month}`,
-        statement: 'كشف حسابك الإلكتروني',
-        dear: `عزيزي ${firstName}،`,
-        intro: `نحرص على إبقائك على اطلاع برحلة نقاط مكافآت ماريوت الخاصة بك. إليك ملخص حركة نقاطك لشهر <strong>${month}</strong>:`,
-        earned: 'النقاط المكتسبة',
-        pending: 'النقاط المعلّقة',
-        redeemed: 'النقاط المستبدلة',
-        expiring: 'النقاط المنتهية الشهر القادم',
-        balance: 'رصيد النقاط الحالي',
-        pts: 'نقطة',
-        cta: 'تحقق من حسابك',
-        note: 'هذا الكشف يُرسل تلقائياً في أول كل شهر. لإدارة نقاطك في أي وقت، افتح قسم المكافآت في حسابك.',
+        subject: `كشف نقاط مكافآتك — ${monthLabel}`,
+        preheader: `ملخص نقاط مكافآت ماريوت لشهر ${monthLabel} جاهز.`,
+        eyebrow: 'ملخصك الشهري',
+        title: `${monthLabel} باختصار`,
+        intro: `إليك لمحة سريعة عن نشاط مكافآت ماريوت الخاص بك هذا الشهر، ${firstName}.`,
+        earned: 'النقاط المكتسبة', pending: 'النقاط المعلّقة', redeemed: 'النقاط المستبدلة', balance: 'رصيد النقاط',
+        expiringTitle: (n) => `${n} نقطة تنتهي صلاحيتها الشهر القادم`,
+        expiringSub: 'استبدلها قبل انتهائها لتحقيق أقصى استفادة.',
+        cta: 'عرض حسابي',
+        note: 'يُرسل هذا الكشف تلقائياً في أول كل شهر.',
     } : {
-        subject: `Your Rewards Statement — ${month}`,
-        preview: `Your Mariot loyalty points summary for ${month}`,
-        statement: 'YOUR E-STATEMENT',
-        dear: `Dear ${firstName},`,
-        intro: `We are committed to keeping you informed about your Mariot loyalty points journey. Here's a summary of your points transactions for <strong>${month}</strong>:`,
-        earned: 'Earned Points',
-        pending: 'Pending Points',
-        redeemed: 'Redeemed Points',
-        expiring: 'Points Expiring Next Month',
-        balance: 'Current Points Balance',
-        pts: 'points',
-        cta: 'Check Your Account',
-        note: 'This statement is sent automatically on the first of every month. To manage your points anytime, open the Rewards section of your account.',
+        subject: `Your rewards statement — ${monthLabel}`,
+        preheader: `Your Mariot ${monthLabel} rewards summary is ready.`,
+        eyebrow: 'Your monthly summary',
+        title: `${monthLabel} at a glance`,
+        intro: `Here's a snapshot of your Mariot rewards activity this month, ${firstName}.`,
+        earned: 'Points earned', pending: 'Pending points', redeemed: 'Redeemed points', balance: 'Points balance',
+        expiringTitle: (n) => `${n} points expiring next month`,
+        expiringSub: 'Redeem them before they expire to make the most of your rewards.',
+        cta: 'View my account',
+        note: 'This statement is sent automatically on the first of every month.',
     };
 
-    const align = alignStart(ar);
-    const rowsHtml = `
-        <tr>
-            <td style="padding:14px 22px;font-size:14px;color:#334155;text-align:${align};">${L.earned}</td>
-            <td style="padding:14px 22px;font-size:14px;color:#334155;font-weight:600;text-align:${ar ? 'left' : 'right'};" dir="ltr">${fmt(stats.earned)} ${L.pts}</td>
-        </tr>
-        <tr style="background:#f1f5f9;">
-            <td style="padding:14px 22px;font-size:14px;color:#334155;text-align:${align};">${L.pending}</td>
-            <td style="padding:14px 22px;font-size:14px;color:#334155;font-weight:600;text-align:${ar ? 'left' : 'right'};" dir="ltr">${fmt(stats.pending)} ${L.pts}</td>
-        </tr>
-        <tr>
-            <td style="padding:14px 22px;font-size:14px;color:#334155;text-align:${align};">${L.redeemed}</td>
-            <td style="padding:14px 22px;font-size:14px;color:#334155;font-weight:600;text-align:${ar ? 'left' : 'right'};" dir="ltr">${fmt(stats.redeemed)} ${L.pts}</td>
-        </tr>
-        <tr style="background:#f1f5f9;">
-            <td style="padding:14px 22px;font-size:14px;color:#334155;text-align:${align};">${L.expiring}</td>
-            <td style="padding:14px 22px;font-size:14px;color:#334155;font-weight:600;text-align:${ar ? 'left' : 'right'};" dir="ltr">${fmt(stats.expiringNextMonth)} ${L.pts}</td>
-        </tr>
-        <tr style="background:#cdeefb;">
-            <td style="padding:16px 22px;font-size:15px;color:#0f172a;font-weight:800;text-align:${align};">${L.balance}</td>
-            <td style="padding:16px 22px;font-size:15px;color:#0f172a;font-weight:800;text-align:${ar ? 'left' : 'right'};" dir="ltr">${fmtInt(stats.balance)} ${L.pts}</td>
-        </tr>`;
+    const card = (label, value) => `<td width="50%" style="padding:6px;"><div style="background:#ffffff;border:1px solid #ecedef;border-radius:12px;padding:18px 20px;"><p style="margin:0 0 6px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;">${label}</p><p style="margin:0;font-family:${SANS};font-size:24px;font-weight:800;color:#17181c;" dir="ltr">${value}</p></div></td>`;
+
+    const expiringNum = Number(stats.expiringNextMonth || 0);
+    const expiringBand = expiringNum > 0 ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 24px;"><tr><td style="background:#ffffff;border-radius:12px;padding:16px 18px;">
+  <p style="margin:0 0 2px;font-family:${SANS};font-size:13px;font-weight:700;color:#17181c;">${L.expiringTitle(fmtInt(expiringNum))}</p>
+  <p style="margin:0;font-family:${SANS};font-size:13px;color:#1488c0;">${L.expiringSub}</p>
+</td></tr></table>` : '<div style="height:6px;"></div>';
+
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1488c0;">${L.eyebrow}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:34px;line-height:1.16;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 8px;">
+  <tr>${card(L.earned, fmtInt(stats.earned))}${card(L.pending, fmtInt(stats.pending))}</tr>
+  <tr>${card(L.redeemed, fmtInt(stats.redeemed))}${card(L.balance, fmtInt(stats.balance))}</tr>
+</table>
+${expiringBand}
+${dsButton(rewardsUrl, L.cta, ar)}
+<div style="height:18px;"></div>
+<p style="margin:0;text-align:center;font-family:${SANS};font-size:12px;color:#17181c;">${L.note}</p>`;
 
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
         subject: L.subject,
-        html: `
-            <div dir="${dirAttr(ar)}" style="background-color:#f4f4f4;padding:40px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                <div class="container content-pad" style="max-width:600px;box-sizing:border-box;margin:0 auto;padding:40px;background-color:#ffffff;color:#0f172a;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);text-align:${align};">
-
-                    <!-- Logo -->
-                    <div style="text-align:center;margin-bottom:24px;">
-                        <img src="cid:mariotEmailLogo" alt="MARIOT" style="width:170px;height:auto;">
-                    </div>
-
-                    <!-- Reward band -->
-                    <div style="background:#e0f7fa;border-radius:10px;padding:16px 22px;margin-bottom:26px;text-align:center;">
-                        <div style="font-size:13px;color:#0e7490;font-weight:700;letter-spacing:0.4px;">${L.preview}</div>
-                    </div>
-
-                    <h2 style="text-align:center;font-size:18px;color:#0f172a;margin:0 0 24px;font-weight:800;letter-spacing:0.5px;">${L.statement}: ${month}</h2>
-
-                    <p style="font-size:15px;color:#0f172a;font-weight:600;margin:0 0 12px;">${L.dear}</p>
-                    <p style="font-size:14px;color:#334155;line-height:1.7;margin:0 0 26px;">${L.intro}</p>
-
-                    <!-- Statement table -->
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:30px;">
-                        ${rowsHtml}
-                    </table>
-
-                    <!-- CTA -->
-                    <div style="text-align:center;margin:6px 0 8px;">
-                        <a href="${rewardsUrl}" class="cta-btn" style="display:inline-block;padding:14px 40px;background-color:#16A1DB;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;letter-spacing:0.3px;">${L.cta}</a>
-                    </div>
-
-                    <p style="font-size:12px;color:#94a3b8;line-height:1.6;text-align:center;margin:24px 0 0;">${L.note}</p>
-                </div>
-                ${emailFooterBlock()}
-            </div>
-        `,
-        attachments: emailLogoAttachment() ? [emailLogoAttachment()] : []
+        html: dsShell({ ar, preheader: L.preheader, content }),
+        attachments: dsEmailAttachments(ar)
     };
 
     try {
@@ -1824,6 +1371,158 @@ const sendMonthlyStatementEmail = async (toEmail, userName, stats = {}, locale =
         console.log(`[EMAIL] ✅ Monthly statement sent to ${toEmail}`);
     } catch (error) {
         console.error(`[EMAIL] ❌ Failed to send monthly statement to ${toEmail}:`, error.message);
+        throw error;
+    }
+};
+
+/**
+ * Back-in-stock alert for a watched product (DS "Back in stock" design).
+ * @param {string} toEmail
+ * @param {{ name, name_ar, slug, price, image, variantLabel }} product
+ * @param {string} locale 'en' | 'ar'
+ */
+const sendBackInStockEmail = async (toEmail, product = {}, locale = 'en') => {
+    const transporter = createTransporter();
+    const ar = isAr(locale);
+    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    const productName = (ar && product.name_ar) ? product.name_ar : (product.name || '');
+    const productUrl = `${SITE}/${ar ? 'ar' : 'en'}/product/${product.slug || ''}`;
+    const variantLabel = product.variantLabel || '';
+    const headline = variantLabel ? `${productName} — ${variantLabel}` : productName;
+    const priceTxt = product.price ? `AED ${Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
+
+    const L = ar ? {
+        subject: `عاد إلى المخزون: ${headline}`,
+        eyebrow: 'عاد إلى المخزون', title: 'أصبح متوفراً من جديد',
+        intro: 'أخبار جيدة — منتج كنت تنتظره عاد إلى المخزون. اطلبه الآن قبل نفاده مجدداً.',
+        inStock: 'متوفر', cta: 'اشترِ الآن', note: 'لقد طلبت أن نخبرك عند توفر هذا المنتج.'
+    } : {
+        subject: `Back in stock: ${headline}`,
+        eyebrow: 'Back in stock', title: "It's available again",
+        intro: 'Good news — an item you wanted is back in stock. Order now before it sells out again.',
+        inStock: 'IN STOCK', cta: 'Buy it now', note: 'You asked to be notified when this product became available.'
+    };
+
+    const bisImg = absolutizeEmailImage(product.image);
+    const thumb = bisImg
+        ? `<img src="${bisImg}" alt="${productName}" width="90" height="90" style="width:90px;height:90px;border-radius:12px;background:#ffffff;border:1px solid #ecedef;object-fit:contain;margin:0 auto;display:block;">`
+        : `<div style="width:90px;height:90px;border-radius:12px;background:#ffffff;border:1px solid #ecedef;margin:0 auto;"></div>`;
+
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#10b981;">${L.eyebrow}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:34px;line-height:1.16;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #ecedef;border-radius:14px;overflow:hidden;margin:6px 0 24px;"><tr>
+  <td width="160" style="background:#ffffff;vertical-align:middle;text-align:center;height:150px;">${thumb}</td>
+  <td style="padding:22px 24px;vertical-align:middle;">
+    <span style="display:inline-block;padding:4px 10px;background:#ecfdf5;color:#10b981;border-radius:6px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.04em;margin-bottom:10px;">${L.inStock}</span>
+    <p style="margin:0 0 6px;font-family:${SANS};font-size:16px;font-weight:700;color:#17181c;line-height:1.35;">${headline}</p>
+    ${priceTxt ? `<p style="margin:0;font-family:${SANS};font-size:20px;font-weight:800;color:#17181c;">${priceTxt}</p>` : ''}
+  </td>
+</tr></table>
+${dsButton(productUrl, L.cta, ar)}
+<div style="height:18px;"></div>
+<p style="margin:0;text-align:center;font-family:${SANS};font-size:12px;color:#17181c;">${L.note}</p>`;
+
+    await transporter.sendMail({
+        from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
+        to: toEmail,
+        subject: L.subject,
+        html: dsShell({ ar, preheader: L.subject, content }),
+        attachments: dsEmailAttachments(ar)
+    });
+    console.log(`[EMAIL] ✅ Back-in-stock email sent to ${toEmail}`);
+};
+
+/**
+ * Review-request email — sent after an order is delivered, inviting the customer to
+ * review the product(s) they purchased. Each product shows its image + title and a
+ * "Write a review" button that links straight to that product's review section
+ * (/[locale]/product/<slug>#reviews-section). Works for one product or many. EN/AR.
+ *
+ * @param {string} toEmail
+ * @param {string} userName
+ * @param {Array<{name, name_ar, slug, image|primaryImage|image_url}>} products
+ * @param {string} orderId  (optional — used only in the preheader/subject context)
+ * @param {string} locale   'en' | 'ar'
+ */
+const sendReviewRequestEmail = async (toEmail, userName, products = [], orderId = '', locale = 'en') => {
+    const transporter = createTransporter();
+    const ar = isAr(locale);
+    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+
+    // Keep only renderable products (need a slug to link to). De-dupe by slug so the
+    // same product bought twice in one order doesn't appear as two review cards.
+    const seen = new Set();
+    const list = (Array.isArray(products) ? products : []).filter(p => {
+        if (!p || !p.slug || seen.has(p.slug)) return false;
+        seen.add(p.slug);
+        return true;
+    });
+    if (list.length === 0) return; // nothing reviewable
+    const multi = list.length > 1;
+
+    const L = ar ? {
+        eyebrow: 'تم توصيل طلبك',
+        title: multi ? 'كيف كانت منتجاتك؟' : 'كيف كان منتجك؟',
+        intro: 'نأمل أن تكون راضياً عن مشترياتك. شاركنا رأيك — تقييمك يساعد طهاة آخرين على الاختيار بثقة.',
+        cta: 'اكتب تقييماً',
+        note: 'يستغرق الأمر أقل من دقيقة. شكراً لاختيارك ماريوت.'
+    } : {
+        eyebrow: 'Your order was delivered',
+        title: multi ? 'How were your products?' : 'How was your product?',
+        intro: "We hope you're enjoying your purchase. Share your experience — your review helps other chefs buy with confidence.",
+        cta: 'Write a review',
+        note: 'It takes less than a minute. Thank you for choosing Mariot.'
+    };
+
+    // Small dark pill button used per product (matches dsButton styling, smaller).
+    const reviewBtn = (href, label) => `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0;"><tr><td style="border-radius:8px;background:#17181c;"><a href="${href}" style="display:inline-block;padding:10px 22px;font-family:${SANS};font-size:13px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;letter-spacing:.01em;">${label}</a></td></tr></table>`;
+
+    const productRows = list.map(p => {
+        const name = (ar && p.name_ar) ? p.name_ar : (p.name || '');
+        const url = `${SITE}/${ar ? 'ar' : 'en'}/product/${p.slug}#reviews-section`;
+        const img = absolutizeEmailImage(p.primaryImage || p.image || p.image_url);
+        const thumb = img
+            ? `<img src="${img}" alt="${String(name).replace(/"/g, '&quot;')}" width="72" height="72" style="width:72px;height:72px;border-radius:10px;object-fit:contain;background:#ffffff;border:1px solid #ecedef;display:block;">`
+            : `<div style="width:72px;height:72px;border-radius:10px;background:#ffffff;border:1px solid #ecedef;"></div>`;
+        return `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #ecedef;border-radius:14px;margin:0 0 14px;"><tr>
+  <td width="88" style="padding:16px;vertical-align:middle;">${thumb}</td>
+  <td style="padding:16px;vertical-align:middle;">
+    <p style="margin:0 0 12px;font-family:${SANS};font-size:15px;font-weight:600;color:#17181c;line-height:1.4;">${name}</p>
+    ${reviewBtn(url, L.cta)}
+  </td>
+</tr></table>`;
+    }).join('');
+
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#16a1db;">${L.eyebrow}</p>
+<h1 style="margin:0 0 16px;font-family:${SERIF};font-size:32px;line-height:1.16;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 26px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
+${productRows}
+<div style="height:8px;"></div>
+<p style="margin:0;font-family:${SANS};font-size:12px;color:#17181c;">${L.note}</p>`;
+
+    const subject = ar
+        ? `${L.title} شاركنا تقييمك — متجر ماريوت`
+        : `${L.title} Leave a quick review — Mariot Store`;
+
+    try {
+        await transporter.sendMail({
+            from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
+            to: toEmail,
+            subject,
+            html: dsShell({ ar, preheader: L.title, content }),
+            attachments: dsEmailAttachments(ar)
+        });
+        console.log(`[EMAIL] ✅ Review request email sent to ${toEmail}`);
+    } catch (error) {
+        console.error(`[EMAIL] ❌ Failed to send review request to ${toEmail}:`, error.message);
         throw error;
     }
 };
@@ -1840,7 +1539,9 @@ module.exports = {
     sendOfferNotificationEmail,
     sendInvoiceEmail,
     sendOtpEmail,
-    sendMonthlyStatementEmail
+    sendMonthlyStatementEmail,
+    sendBackInStockEmail,
+    sendReviewRequestEmail
 };
 
 

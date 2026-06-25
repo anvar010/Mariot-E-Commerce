@@ -32,16 +32,48 @@ exports.createQuotation = async (req, res, next) => {
         // Prefer user from auth middleware (optionalProtect), fallback to body, then null
         const user_id = req.user?.id || req.body.user_id || null;
 
-        // Generate Quotation Ref (EQT-{Random 6 digits})
-        const quotation_ref = `EQT-${Math.floor(100000 + Math.random() * 900000)}`;
+        // Sequential ref derived from the row id (assigned after insert). A temp placeholder
+        // satisfies the NOT NULL UNIQUE column; we set the real EQT-{id} right after.
+        const tempRef = `EQT-TMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        // Enrich each line with the product's short description so the quotation PDF can
+        // show it under the title/brand. Cart items don't carry it, so look it up here.
+        try {
+            const ids = [...new Set((items || []).map(i => i.id).filter(Boolean))];
+            if (ids.length > 0) {
+                const [rows] = await db.query(
+                    'SELECT id, model, specifications, specifications_ar FROM products WHERE id IN (?)',
+                    [ids]
+                );
+                const byId = {};
+                rows.forEach(r => { byId[r.id] = r; });
+                (items || []).forEach(it => {
+                    const p = byId[it.id];
+                    if (p) {
+                        // Show the product specifications (like the product detail page) in the quotation.
+                        it.specifications = p.specifications || '';
+                        it.specifications_ar = p.specifications_ar || '';
+                        // Cart lines may not carry the model — fall back to the product's model.
+                        if (!it.model && p.model) it.model = p.model;
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('[Quotation] short description enrich failed:', e.message);
+        }
 
         const [result] = await db.execute(
             `INSERT INTO quotations (quotation_ref, customer_name, customer_email, customer_phone, vat_number, items, subtotal, discount_amount, tax_amount, total_amount, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [quotation_ref, customer_name, customer_email, customer_phone, vat_number, JSON.stringify(items), subtotal, discount_amount, tax_amount, total_amount, user_id]
+            [tempRef, customer_name, customer_email, customer_phone, vat_number, JSON.stringify(items), subtotal, discount_amount, tax_amount, total_amount, user_id]
         );
 
+        // Sequential ref from the new row id, e.g. EQT-00042.
+        const newId = result.insertId;
+        const quotation_ref = `EQT-${String(newId).padStart(5, '0')}`;
+        await db.execute('UPDATE quotations SET quotation_ref = ? WHERE id = ?', [quotation_ref, newId]);
+
         const newQuotation = {
-            id: result.insertId,
+            id: newId,
             quotation_ref,
             customer_name,
             customer_email,

@@ -83,7 +83,7 @@ class Cart {
                 p.name, p.name_ar, p.price, p.offer_price, p.offer_start, p.offer_end, p.slug, p.stock_quantity, p.track_inventory, p.delivery_charge,
                 p.is_customizable, p.custom_dimensions AS product_custom_dims, p.base_dimensions,
                 b.name as brand_name,
-                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
+                (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image,
                 pv.sku AS variant_sku,
                 pv.price AS variant_price,
                 pv.offer_price AS variant_offer_price,
@@ -164,6 +164,16 @@ class Cart {
             return total;
         };
 
+        // Resolve a stored image (which may be a full URL or a relative /uploads path) to an
+        // absolute URL so the cart image is stable regardless of the page locale/path.
+        const MEDIA = process.env.MEDIA_BASE_URL || process.env.FRONTEND_URL || 'https://mariotstore.com';
+        const resolveImg = (u) => {
+            if (!u || typeof u !== 'string') return null;
+            if (u.startsWith('http') || u.startsWith('data:')) return u;
+            if (u.startsWith('/assets/')) return u;
+            return `${MEDIA}${u.startsWith('/') ? '' : '/'}${u}`;
+        };
+
         const now = Date.now();
         return items.map(it => {
             const hasVariant = it.variant_id != null;
@@ -211,7 +221,7 @@ class Cart {
                 is_free_gift: isFreeGift,
                 bundle_parent_id: it.bundle_parent_id !== null && it.bundle_parent_id !== undefined ? Number(it.bundle_parent_id) : null,
                 stock_quantity: hasVariant ? Number(it.variant_stock) : Number(it.stock_quantity),
-                image: (hasVariant && !usePrimary && it.variant_image) ? it.variant_image : it.primary_image,
+                image: resolveImg((hasVariant && !usePrimary && it.variant_image) ? it.variant_image : it.primary_image),
                 variant_sku: it.variant_sku,
                 variant_options: labelsByVariant[it.variant_id] || null,
                 custom_dimensions: parsedDims,

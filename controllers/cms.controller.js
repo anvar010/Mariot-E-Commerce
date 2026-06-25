@@ -1,5 +1,20 @@
 const db = require('../config/db');
 
+// One-time, idempotent migration: add mobile hero-image columns to an existing
+// hero_slides table. CREATE TABLE IF NOT EXISTS won't alter a table that already
+// exists, so older installs need this. Guarded by a flag + try/catch so it runs
+// at most once per process and silently no-ops when the columns already exist.
+let heroMobileColsEnsured = false;
+const ensureHeroMobileColumns = async () => {
+    if (heroMobileColsEnsured) return;
+    for (const col of ['image_mobile', 'image_mobile_ar']) {
+        try { await db.query(`ALTER TABLE hero_slides ADD COLUMN ${col} TEXT`); }
+        catch (e) { /* column already exists — ignore */ }
+    }
+    heroMobileColsEnsured = true;
+};
+exports.ensureHeroMobileColumns = ensureHeroMobileColumns;
+
 /**
  * @desc    Get homepage CMS content
  * @route   GET /api/v1/cms/homepage
@@ -19,6 +34,8 @@ exports.getHomepageCms = async (req, res, next) => {
                 description_ar TEXT,
                 image TEXT,
                 image_ar TEXT,
+                image_mobile TEXT,
+                image_mobile_ar TEXT,
                 accent VARCHAR(50) DEFAULT '#3b82f6',
                 btnText VARCHAR(100) DEFAULT 'Shop Now',
                 btnText_ar VARCHAR(100),
@@ -55,6 +72,9 @@ exports.getHomepageCms = async (req, res, next) => {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
         `);
+
+        // Ensure mobile image columns exist on older installs before reading.
+        await ensureHeroMobileColumns();
 
         // Get hero slides
         const [heroSlides] = await db.query('SELECT * FROM hero_slides WHERE is_active = 1 ORDER BY order_index ASC');

@@ -140,7 +140,7 @@ const getCartItemsForEmail = async (userId) => {
             ci.is_free_gift,
             ci.custom_dimensions,
             ci.product_id,
-            p.name, p.price, p.offer_price, p.slug,
+            p.name, p.name_ar, p.price, p.offer_price, p.slug,
             p.is_customizable, p.custom_dimensions AS product_custom_dims, p.base_dimensions,
             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image,
             pv.price AS variant_price,
@@ -155,6 +155,16 @@ const getCartItemsForEmail = async (userId) => {
     `, [userId]);
 
     const MEDIA = process.env.MEDIA_BASE_URL || 'https://mariot-backend.onrender.com';
+
+    // Resolve a stored image to an absolute URL. Mirrors Cart.getCartItems' resolveImg so the
+    // abandoned-cart email and the order/cart emails render the same product image identically.
+    // Handles values that already include /uploads (no double-prefix) and bare relative paths.
+    const resolveImg = (u) => {
+        if (!u || typeof u !== 'string') return 'https://mariotstore.com/assets/mariot-logo.webp';
+        if (u.startsWith('http') || u.startsWith('data:')) return u;
+        if (u.startsWith('/assets/')) return u;
+        return `${MEDIA}${u.startsWith('/') ? '' : '/'}${u}`;
+    };
 
     // Tier pricing for customizable products (same calc as Cart.getCartItems) so the
     // reminder email shows the real configured price, not the 0 base price.
@@ -199,9 +209,7 @@ const getCartItemsForEmail = async (userId) => {
         const hasVariant = item.variant_id != null;
         const usePrimary = hasVariant && Number(item.variant_use_primary) === 1;
         const rawImg = (hasVariant && !usePrimary && item.variant_image) ? item.variant_image : item.image;
-        const fullImage = rawImg
-            ? (rawImg.startsWith('http') ? rawImg : `${MEDIA}/uploads/${rawImg}`)
-            : 'https://mariotstore.com/assets/mariot-logo.webp';
+        const fullImage = resolveImg(rawImg);
 
         // Variant price wins ONLY when it's a real positive value; many variants
         // inherit the base price (variant price stored as NULL or 0) — fall back to
@@ -220,6 +228,7 @@ const getCartItemsForEmail = async (userId) => {
 
         return {
             name: item.name,
+            name_ar: item.name_ar,
             quantity: item.quantity,
             // Free-gift = 0; customizable = tier price; else resolved variant/base price.
             price: isFree ? 0 : (customPrice != null ? customPrice : price),

@@ -410,10 +410,24 @@ exports.updateHomepageCMS = async (req, res, next) => {
     }
 };
 
+// One-time, idempotent migration: add mobile hero-image columns to an existing
+// hero_slides table (older installs created it without them). Guarded so it runs
+// at most once per process and no-ops when the columns already exist.
+let heroMobileColsEnsured = false;
+const ensureHeroMobileColumns = async () => {
+    if (heroMobileColsEnsured) return;
+    for (const col of ['image_mobile', 'image_mobile_ar']) {
+        try { await db.query(`ALTER TABLE hero_slides ADD COLUMN ${col} TEXT`); }
+        catch (e) { /* column already exists — ignore */ }
+    }
+    heroMobileColsEnsured = true;
+};
+
 // @desc    Get all hero slides
 // @route   GET /api/v1/admin/cms/hero-slides
 exports.getHeroSlides = async (req, res, next) => {
     try {
+        await ensureHeroMobileColumns();
         const [slides] = await db.query('SELECT * FROM hero_slides ORDER BY order_index ASC');
         res.json({ success: true, data: slides });
     } catch (error) {
@@ -425,12 +439,13 @@ exports.getHeroSlides = async (req, res, next) => {
 // @route   POST /api/v1/admin/cms/hero-slides
 exports.addHeroSlide = async (req, res, next) => {
     try {
-        const { tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, accent, btnText, btnText_ar, link, order_index } = req.body;
+        await ensureHeroMobileColumns();
+        const { tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, image_mobile, image_mobile_ar, accent, btnText, btnText_ar, link, order_index } = req.body;
 
         const [result] = await db.query(`
-            INSERT INTO hero_slides (tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, accent, btnText, btnText_ar, link, order_index)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar || null, accent || '#ff3b30', btnText || 'Shop Now', btnText_ar, link || '/shopnow', order_index || 0]);
+            INSERT INTO hero_slides (tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, image_mobile, image_mobile_ar, accent, btnText, btnText_ar, link, order_index)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar || null, image_mobile || null, image_mobile_ar || null, accent || '#ff3b30', btnText || 'Shop Now', btnText_ar, link || '/shopnow', order_index || 0]);
 
         res.status(201).json({ success: true, message: 'Slide added successfully', data: { id: result.insertId } });
     } catch (error) {
@@ -442,13 +457,14 @@ exports.addHeroSlide = async (req, res, next) => {
 // @route   PUT /api/v1/admin/cms/hero-slides/:id
 exports.updateHeroSlide = async (req, res, next) => {
     try {
-        const { tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, accent, btnText, btnText_ar, link, order_index, is_active } = req.body;
+        await ensureHeroMobileColumns();
+        const { tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, image_mobile, image_mobile_ar, accent, btnText, btnText_ar, link, order_index, is_active } = req.body;
 
         await db.query(`
             UPDATE hero_slides
-            SET tagline = ?, tagline_ar = ?, title = ?, title_ar = ?, description = ?, description_ar = ?, image = ?, image_ar = ?, accent = ?, btnText = ?, btnText_ar = ?, link = ?, order_index = ?, is_active = ?
+            SET tagline = ?, tagline_ar = ?, title = ?, title_ar = ?, description = ?, description_ar = ?, image = ?, image_ar = ?, image_mobile = ?, image_mobile_ar = ?, accent = ?, btnText = ?, btnText_ar = ?, link = ?, order_index = ?, is_active = ?
             WHERE id = ?
-        `, [tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar || null, accent, btnText, btnText_ar, link, order_index, is_active, req.params.id]);
+        `, [tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar || null, image_mobile || null, image_mobile_ar || null, accent, btnText, btnText_ar, link, order_index, is_active, req.params.id]);
 
         res.json({ success: true, message: 'Slide updated successfully' });
     } catch (error) {
