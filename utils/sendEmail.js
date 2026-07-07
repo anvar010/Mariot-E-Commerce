@@ -254,6 +254,14 @@ const dsEmailAttachments = (ar) => {
     return out;
 };
 
+// Outlook's Word engine ignores CSS width/height on images and paints them at
+// natural PNG size, so the logo must also carry HTML width/height attributes.
+// Ratios match the shipped assets: EN 883x282, AR 4260x903.
+const dsLogoAttrs = (ar, height) => {
+    const ratio = ar ? 4260 / 903 : 883 / 282;
+    return `width="${Math.round(height * ratio)}" height="${height}"`;
+};
+
 // The attached footer card (logo · address · contacts · copyright · socials),
 // mirrored for RTL. Pulls the live site URL from FRONTEND_URL.
 const dsFooter = (ar) => {
@@ -277,12 +285,12 @@ const dsFooter = (ar) => {
       <tr><td class="content-pad" style="padding:30px 48px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
           <td style="vertical-align:top;">
-            <img src="cid:mariotEmailLogo" alt="Mariot Kitchen Equipment" style="height:28px;width:auto;display:block;margin-bottom:14px;">
+            <img src="cid:mariotEmailLogo" alt="Mariot Kitchen Equipment" ${dsLogoAttrs(ar, 28)} style="height:28px;width:auto;display:block;margin-bottom:14px;border:0;">
             <p style="margin:0 0 2px;font-family:${sans};font-size:12px;line-height:1.7;color:#17181c;">${company}</p>
             <p style="margin:0;font-family:${sans};font-size:12px;line-height:1.7;color:#17181c;">${city}</p>
           </td>
           <td align="${endAlign}" style="vertical-align:top;font-family:${sans};font-size:12px;line-height:1.9;color:#17181c;" dir="ltr">
-            <a href="tel:+97142882777" style="color:#17181c;text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/455/455705.png" alt="Phone" width="12" height="12" style="vertical-align:middle;margin-right:6px;border:0;">+971 4 288 2777</a><br>
+            <a href="tel:+97142882777" style="color:#17181c;text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/724/724664.png" alt="Phone" width="13" height="13" style="vertical-align:middle;margin-right:6px;border:0;">+971 4 288 2777</a><br>
             <a href="https://wa.me/971503114080" style="color:#17181c;text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/733/733585.png" alt="WhatsApp" width="12" height="12" style="vertical-align:middle;margin-right:6px;border:0;">+971 50 311 4080</a><br>
             <a href="mailto:support@mariotstore.com" style="color:#1488c0;text-decoration:none;font-weight:600;">support@mariotstore.com</a><br>
             <a href="${SITE}" style="color:#1488c0;text-decoration:none;font-weight:600;">www.mariotstore.com</a>
@@ -290,12 +298,15 @@ const dsFooter = (ar) => {
         </tr></table>
         <div style="border-top:1px solid #ecedef;margin:20px 0 16px;"></div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-          <td style="font-family:${sans};font-size:11px;color:#17181c;">${rights}</td>
-          <td align="${endAlign}">
-            <a href="https://www.facebook.com/mariotuae" style="text-decoration:none;margin:0 3px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145802.png" alt="Facebook" width="18" height="18" style="opacity:.55;"></a>
-            <a href="https://www.instagram.com/mariotuae/" style="text-decoration:none;margin:0 3px;"><img src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png" alt="Instagram" width="18" height="18" style="opacity:.55;"></a>
-            <a href="https://x.com/MariotUae" style="text-decoration:none;margin:0 3px;"><img src="https://cdn-icons-png.flaticon.com/32/5969/5969020.png" alt="X" width="18" height="18" style="opacity:.55;"></a>
-            <a href="https://ae.linkedin.com/in/mariot-kitchen-equipment-8a34a4108" style="text-decoration:none;margin:0 3px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145807.png" alt="LinkedIn" width="18" height="18" style="opacity:.55;"></a>
+          <td class="ft-copy" style="font-family:${sans};font-size:11px;color:#17181c;">${rights}</td>
+          <td class="ft-social" align="${endAlign}">
+            <a href="https://www.facebook.com/mariotuae" style="text-decoration:none;margin:0 2px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145802.png" alt="Facebook" width="18" height="18" style="opacity:1;border:0;"></a>
+            <a href="https://www.instagram.com/mariotuae/" style="text-decoration:none;margin:0 2px;"><img src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png" alt="Instagram" width="18" height="18" style="opacity:1;border:0;"></a>
+            <a href="https://x.com/MariotUae" style="text-decoration:none;margin:0 2px;"><img src="https://cdn-icons-png.flaticon.com/32/5969/5969020.png" alt="X" width="18" height="18" style="opacity:1;border:0;"></a>
+            <a href="https://www.youtube.com/channel/UCUCWktTJNpRzUEJ58JHLu_g" style="text-decoration:none;margin:0 2px;"><img src="https://cdn-icons-png.flaticon.com/32/1384/1384060.png" alt="YouTube" width="18" height="18" style="opacity:1;border:0;"></a>
+            <a href="https://www.tiktok.com/@mariotmedia" style="text-decoration:none;margin:0 2px;"><img src="https://cdn-icons-png.flaticon.com/32/3046/3046121.png" alt="TikTok" width="18" height="18" style="opacity:1;border:0;"></a>
+            <a href="https://ae.linkedin.com/in/mariot-kitchen-equipment-8a34a4108" style="text-decoration:none;margin:0 2px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145807.png" alt="LinkedIn" width="18" height="18" style="opacity:1;border:0;"></a>
+            <a href="https://www.pinterest.com/mariotkitchen/" style="text-decoration:none;margin:0 2px;"><img src="https://cdn-icons-png.flaticon.com/32/145/145808.png" alt="Pinterest" width="18" height="18" style="opacity:1;border:0;"></a>
           </td>
         </tr></table>
       </td></tr>
@@ -325,14 +336,14 @@ const dsShell = ({ ar = false, preheader = '', hero = true, content = '' }) => {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 ${dsFontLink(ar)}
 <style>
-@media only screen and (max-width:600px){.container{width:100%!important;max-width:100%!important;}.content-pad{padding-left:26px!important;padding-right:26px!important;}.cta-btn{display:block!important;}}
+@media only screen and (max-width:600px){.container{width:100%!important;max-width:100%!important;}.content-pad{padding-left:26px!important;padding-right:26px!important;}.cta-btn{display:block!important;}.ft-copy{display:block!important;width:100%!important;text-align:center!important;font-size:10px!important;white-space:nowrap!important;padding-bottom:14px!important;}.ft-social{display:block!important;width:100%!important;text-align:center!important;}}
 </style></head>
 <body style="margin:0;padding:0;background:#ffffff;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${preheader}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:42px 14px;"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:42px 14px 0;"><tr><td align="center">
   <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #e9e7e2;border-radius:18px 18px 0 0;overflow:hidden;box-shadow:0 1px 2px rgba(23,24,28,.04),0 18px 48px rgba(23,24,28,.07);">
     <tr><td style="font-size:0;line-height:0;padding:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td width="38%" style="background:#e62127;height:4px;line-height:4px;font-size:0;">&nbsp;</td><td style="background:#16a1db;height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr></table></td></tr>
-    <tr><td align="center" style="padding:30px 30px 4px;"><img src="cid:mariotEmailLogo" alt="Mariot Kitchen Equipment" style="height:34px;width:auto;display:inline-block;"></td></tr>
+    <tr><td align="center" style="padding:30px 30px 4px;"><img src="cid:mariotEmailLogo" alt="Mariot Kitchen Equipment" ${dsLogoAttrs(ar, 34)} style="height:34px;width:auto;display:inline-block;border:0;"></td></tr>
     ${heroRow}
     <tr><td class="content-pad" dir="${dir}" style="padding:42px 48px 44px;text-align:${align};">
 ${content}
@@ -713,7 +724,7 @@ ${dsButton(SITE, L.cta, ar)}
 /**
  * Send a quotation email to the customer
  */
-const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, items = [], locale = 'en', totals = {}) => {
+const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, items = [], locale = 'en', totals = {}, pdfBuffer = null) => {
     const transporter = createTransporter();
     const ar = isAr(locale);
     const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
@@ -787,17 +798,26 @@ ${dsButton(`${SITE}/${ar ? 'ar' : 'en'}/profile?tab=quotations`, L.cta, ar)}
 <div style="height:22px;"></div>
 <p style="margin:0;font-family:${SANS};font-size:12px;line-height:1.6;color:#17181c;">${L.note}</p>`;
 
+    const attachments = [
+        ...dsEmailAttachments(ar),
+        ...(pdfBuffer ? [{
+            filename: `${quotationRef}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+        }] : [])
+    ];
+
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
         subject: L.subject,
         html: dsShell({ ar, preheader: `${ar ? 'عرض السعر' : 'Quotation'} ${quotationRef} — ${ar ? 'صالح حتى' : 'valid until'} ${validUntil}`, content }),
-        attachments: dsEmailAttachments(ar)
+        attachments
     };
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL] ✅ Quotation email sent to ${toEmail}`);
+        console.log(`[EMAIL] ✅ Quotation email sent to ${toEmail}${pdfBuffer ? ' (with PDF)' : ''}`);
     } catch (error) {
         console.error(`[EMAIL] ❌ Failed to send quotation email to ${toEmail}:`, error.message);
         throw error;
@@ -1319,9 +1339,10 @@ const sendMonthlyStatementEmail = async (toEmail, userName, stats = {}, locale =
         eyebrow: 'ملخصك الشهري',
         title: `${monthLabel} باختصار`,
         intro: `إليك لمحة سريعة عن نشاط مكافآت ماريوت الخاص بك هذا الشهر، ${firstName}.`,
-        earned: 'النقاط المكتسبة', pending: 'النقاط المعلّقة', redeemed: 'النقاط المستبدلة', balance: 'رصيد النقاط',
+        opening: 'الرصيد الافتتاحي', earned: 'إجمالي النقاط المكتسبة', redeemed: 'النقاط المستبدلة', balance: 'رصيد النقاط',
         expiringTitle: (n) => `${n} نقطة تنتهي صلاحيتها الشهر القادم`,
         expiringSub: 'استبدلها قبل انتهائها لتحقيق أقصى استفادة.',
+        colActivity: 'النشاط', colPoints: 'النقاط',
         cta: 'عرض حسابي',
         note: 'يُرسل هذا الكشف تلقائياً في أول كل شهر.',
     } : {
@@ -1330,14 +1351,40 @@ const sendMonthlyStatementEmail = async (toEmail, userName, stats = {}, locale =
         eyebrow: 'Your monthly summary',
         title: `${monthLabel} at a glance`,
         intro: `Here's a snapshot of your Mariot rewards activity this month, ${firstName}.`,
-        earned: 'Points earned', pending: 'Pending points', redeemed: 'Redeemed points', balance: 'Points balance',
+        opening: 'Opening balance', earned: 'Total points earned', redeemed: 'Points redeemed', balance: 'Points balance',
         expiringTitle: (n) => `${n} points expiring next month`,
         expiringSub: 'Redeem them before they expire to make the most of your rewards.',
+        colActivity: 'Activity', colPoints: 'Points',
         cta: 'View my account',
         note: 'This statement is sent automatically on the first of every month.',
     };
 
-    const card = (label, value) => `<td width="50%" style="padding:6px;"><div style="background:#ffffff;border:1px solid #ecedef;border-radius:12px;padding:18px 20px;"><p style="margin:0 0 6px;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#17181c;">${label}</p><p style="margin:0;font-family:${SANS};font-size:24px;font-weight:800;color:#17181c;" dir="ltr">${value}</p></div></td>`;
+    const startAlign = ar ? 'right' : 'left';
+    const endAlign = ar ? 'left' : 'right';
+
+    // One statement row. opts.emphasis styles the closing balance distinctly;
+    // opts.sign prefixes a +/− so the table reads like a real statement
+    // (opening + earned − redeemed = balance); opts.color overrides the figure colour.
+    const row = (label, value, opts = {}) => {
+        const { emphasis = false, sign = '', color } = opts;
+        const valColor = color || (emphasis ? '#1488c0' : '#17181c');
+        const bg = emphasis ? 'background:#f6fafd;' : '';
+        return `<tr>
+  <td align="${startAlign}" style="padding:14px 20px;border-top:1px solid #ecedef;font-family:${SANS};font-size:14px;font-weight:${emphasis ? 700 : 400};color:#17181c;${bg}">${label}</td>
+  <td align="${endAlign}" dir="ltr" style="padding:14px 20px;border-top:1px solid #ecedef;font-family:${SANS};font-size:${emphasis ? 18 : 15}px;font-weight:${emphasis ? 800 : 600};color:${valColor};${bg}">${sign}${value}</td>
+</tr>`;
+    };
+
+    const statementTable = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 8px;border:1px solid #ecedef;border-radius:12px;border-collapse:separate;overflow:hidden;">
+  <tr>
+    <td align="${startAlign}" style="padding:12px 20px;background:#17181c;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#ffffff;">${L.colActivity}</td>
+    <td align="${endAlign}" style="padding:12px 20px;background:#17181c;font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#ffffff;">${L.colPoints}</td>
+  </tr>
+  ${row(L.opening, fmtInt(stats.opening))}
+  ${row(L.earned, fmtInt(stats.earned), { sign: '+ ', color: '#1a7f4f' })}
+  ${row(L.redeemed, fmtInt(stats.redeemed), { sign: '− ' })}
+  ${row(L.balance, fmtInt(stats.balance), { emphasis: true })}
+</table>`;
 
     const expiringNum = Number(stats.expiringNextMonth || 0);
     const expiringBand = expiringNum > 0 ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 24px;"><tr><td style="background:#ffffff;border-radius:12px;padding:16px 18px;">
@@ -1349,10 +1396,7 @@ const sendMonthlyStatementEmail = async (toEmail, userName, stats = {}, locale =
 <p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1488c0;">${L.eyebrow}</p>
 <h1 style="margin:0 0 18px;font-family:${SERIF};font-size:34px;line-height:1.16;font-weight:600;letter-spacing:-.01em;color:#17181c;">${L.title}</h1>
 <p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 8px;">
-  <tr>${card(L.earned, fmtInt(stats.earned))}${card(L.pending, fmtInt(stats.pending))}</tr>
-  <tr>${card(L.redeemed, fmtInt(stats.redeemed))}${card(L.balance, fmtInt(stats.balance))}</tr>
-</table>
+${statementTable}
 ${expiringBand}
 ${dsButton(rewardsUrl, L.cta, ar)}
 <div style="height:18px;"></div>
