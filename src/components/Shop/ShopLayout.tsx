@@ -22,6 +22,26 @@ import CategoryGrid from './CategoryGrid';
 import BrandBio from './BrandBio';
 import ShopBreadcrumbs from './ShopBreadcrumbs';
 
+// Scoped, title/description-based filters for specific categories.
+// (Products aren't sub-categorised, so we match on the product name + description.)
+const hasShelf = (text: string) => /\bshel(f|ves|ve)\b/.test(text);
+const hasOverShelf = (text: string) => /over[\s-]*shel(f|ves|ve)/.test(text);
+type TitleFilter = { key: string; label: string; label_ar: string; test: (text: string) => boolean };
+const CATEGORY_TITLE_FILTERS: Record<string, TitleFilter[]> = {
+    'work-tables': [
+        { key: 'shelves', label: 'Shelves', label_ar: 'أرفف', test: (t) => hasShelf(t) || hasOverShelf(t) },
+        // A single shelf: has a shelf, but not an over-shelf and not both a middle AND bottom shelf.
+        { key: 'single-shelve', label: 'Single Shelve', label_ar: 'رف واحد', test: (t) => hasShelf(t) && !hasOverShelf(t) && !(t.includes('middle') && t.includes('bottom')) },
+        { key: 'no-shelve', label: 'No Shelve', label_ar: 'بدون رف', test: (t) => !hasShelf(t) && !hasOverShelf(t) },
+        { key: 'over-shelves', label: 'Worktable with Over Shelves', label_ar: 'طاولة عمل مع رفوف علوية', test: (t) => hasOverShelf(t) },
+    ],
+    'cabinet': [
+        { key: 'wall-cabinet', label: 'Wall Cabinet', label_ar: 'خزانة جدارية', test: (t) => /wall[\s-]*cabinet/.test(t) },
+        { key: 'base-cabinet', label: 'Base Cabinet', label_ar: 'خزانة سفلية', test: (t) => /base[\s-]*cabinet/.test(t) },
+        { key: 'corner-cabinet', label: 'Corner Cabinet', label_ar: 'خزانة زاوية', test: (t) => /corner/.test(t) },
+    ],
+};
+
 interface ShopLayoutProps {
     filterType?: 'default' | 'brand' | 'category';
     defaultCategory?: string;
@@ -77,24 +97,41 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     );
     const [brandCategories, setBrandCategories] = useState<any[]>([]);
     const [totalProducts, setTotalProducts] = useState(initialTotal);
-    const [expandedSections, setExpandedSections] = useState<string[]>(['brand', 'price', 'categories']);
+    const [expandedSections, setExpandedSections] = useState<string[]>(['brand', 'price', 'categories', 'extrafilter']);
     const [apiCategories, setApiCategories] = useState<any[]>(initialCategories);
 
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+    const [selectedTitleFilters, setSelectedTitleFilters] = useState<string[]>([]);
     const [minPrice, setMinPrice] = useState<number>(0);
     const [maxPrice, setMaxPrice] = useState<number>(99999);
     const [inStockOnly, setInStockOnly] = useState(false);
-    const [sortBy, setSortBy] = useState<string>('relevance');
+    const [sortBy, setSortBy] = useState<string>(
+        ['price_asc', 'price_desc', 'newest', 'best_offer'].includes(searchParams.get('sort') || '')
+            ? (searchParams.get('sort') as string)
+            : 'relevance'
+    );
     const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
     const productsPerPage = 24;
 
     const locale = useLocale();
     const isArabic = locale === 'ar';
 
+    // Scoped title/description filter for certain categories (Work Tables, Cabinet).
+    // Kept in local state (like the brand/price filters) so toggling applies in place
+    // without a route change — i.e. no scroll-to-top jump.
+    const activeTitleFilters = (activeCategory && CATEGORY_TITLE_FILTERS[activeCategory]) || null;
+    const hasTitleFilter = !!activeTitleFilters;
+    const titleFilterKeys = hasTitleFilter ? selectedTitleFilters : [];
+
     useEffect(() => {
         if (brandParam) setSelectedBrands(brandParam.split(','));
         else setSelectedBrands([]);
     }, [brandParam]);
+
+    // Clear the scoped type filter when switching categories
+    useEffect(() => {
+        setSelectedTitleFilters([]);
+    }, [activeCategory]);
 
     useEffect(() => {
         if (!isSortOpen) return;
@@ -269,7 +306,10 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const fetchProducts = useCallback(async () => {
         setFetchingProducts(true);
         try {
-            let url = `${API_BASE_URL}/products?page=${currentPage}&limit=${productsPerPage}`;
+            // For title/description-filtered categories we filter client-side, so pull
+            // the whole category in one page to keep filtering + pagination accurate.
+            const fetchAll = !!(activeCategory && CATEGORY_TITLE_FILTERS[activeCategory]);
+            let url = `${API_BASE_URL}/products?page=${fetchAll ? 1 : currentPage}&limit=${fetchAll ? 1000 : productsPerPage}`;
             if (activeCategory) url += `&category=${activeCategory}`;
             if (selectedBrands.length > 0) url += `&brand=${selectedBrands.join(',')}`;
             if (minPrice > 0) url += `&minPrice=${minPrice}`;
@@ -313,6 +353,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         setMaxPrice(99999);
         setInStockOnly(false);
         setSortBy('relevance');
+        setSelectedTitleFilters([]);
         setSelectedBrands(brandParam ? brandParam.split(',') : []);
         const newParams = new URLSearchParams();
         if (brandParam) newParams.set('brand', brandParam);
@@ -357,6 +398,18 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
     };
 
+    // Local-state toggle (no navigation) so the list updates in place. We also pin the
+    // viewport: shrinking the result set makes the page shorter, which otherwise snaps
+    // the scroll position up to the top — applying a filter should stay put.
+    const toggleTitleFilter = (key: string) => {
+        const scrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+        setSelectedTitleFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+        setCurrentPage(1);
+        if (typeof window !== 'undefined') {
+            requestAnimationFrame(() => window.scrollTo(0, scrollY));
+        }
+    };
+
     const renderSidebar = () => {
         const commonProps = {
             inStockOnly, setInStockOnly, brands, selectedBrands,
@@ -366,7 +419,14 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             },
             allCategories, brandCategories, subCategories: subCategoriesToShow, activeCategory, minPrice, setMinPrice, maxPrice, setMaxPrice,
             resetFilters, toggleSection, expandedSections,
-            onCategoryChange: (slug: string) => { handleCategoryChange(slug); setIsMobileFilterOpen(false); }
+            onCategoryChange: (slug: string) => { handleCategoryChange(slug); setIsMobileFilterOpen(false); },
+            // Scoped title/description filter options (Work Tables / Cabinet)
+            ...(activeTitleFilters ? {
+                extraFilterTitle: isArabic ? 'النوع' : 'Type',
+                extraFilterOptions: activeTitleFilters.map(f => ({ key: f.key, label: isArabic ? f.label_ar : f.label })),
+                selectedExtraFilters: titleFilterKeys,
+                onExtraFilterToggle: (key: string) => { toggleTitleFilter(key); setIsMobileFilterOpen(false); },
+            } : {}),
         };
         if (brandParam) return <FilterShopByBrand {...commonProps} />;
         if (searchQuery) return <DefaultShopFilter {...commonProps} />;
@@ -380,6 +440,20 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         }
         return <DefaultShopFilter {...commonProps} />;
     };
+
+    // Apply the scoped title/description filter (client-side) and paginate the result
+    // locally. For every other listing the server already filtered + paged.
+    const activeSelectedFilters = activeTitleFilters ? activeTitleFilters.filter(f => titleFilterKeys.includes(f.key)) : [];
+    const filteredProducts = (hasTitleFilter && activeSelectedFilters.length > 0)
+        ? products.filter(p => {
+            const text = `${p.name || ''} ${p.description || ''}`.toLowerCase();
+            return activeSelectedFilters.some(f => f.test(text));
+        })
+        : products;
+    const effectiveTotal = hasTitleFilter ? filteredProducts.length : totalProducts;
+    const displayedProducts = hasTitleFilter
+        ? filteredProducts.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
+        : filteredProducts;
 
     if (loading) return <div style={{ minHeight: '600px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>;
 
@@ -469,7 +543,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
 
                     <div className={styles.resultsHeader}>
                         <span className={styles.resultsCount}>
-                            <div>{formattedCategoryName}: {totalProducts} {tc("results-found")}
+                            <div>{formattedCategoryName}: {effectiveTotal} {tc("results-found")}
                                 {fetchingProducts && <span style={{ marginInlineStart: '10px', fontSize: '12px', color: '#666' }}> ({tc('updating')})</span>}</div>
                             {didYouMean && totalProducts === 0 && (
                                 <div style={{ marginTop: '10px', color: '#2563eb', cursor: 'pointer', fontSize: '16px' }} onClick={() => {
@@ -506,8 +580,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                     <div className={styles.productGrid}>
                         {fetchingProducts ? (
                             Array(12).fill(0).map((_, i) => <ProductCardSkeleton key={i} />)
-                        ) : products.length > 0 ? (
-                            products.map((p) => (
+                        ) : displayedProducts.length > 0 ? (
+                            displayedProducts.map((p) => (
                                 <ProductCardPromotion
                                     key={p.id}
                                     product={{ ...p, price: Number(p.offer_price) > 0 ? Number(p.offer_price) : Number(p.price), old_price: Number(p.offer_price) > 0 ? Number(p.price) : (Number(p.old_price) || Number(p.originalPrice) || 0) }}
@@ -520,7 +594,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
 
                     <ShopPagination
                         currentPage={currentPage}
-                        totalProducts={totalProducts}
+                        totalProducts={effectiveTotal}
                         productsPerPage={productsPerPage}
                         onPageChange={handlePageChange}
                     />

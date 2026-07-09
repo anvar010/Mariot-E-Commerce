@@ -72,10 +72,12 @@ const AdminSidebar = () => {
     return (
         <aside className={styles.sidebar}>
             <div className={styles.logoSection}>
-                <div className={styles.logoDots}>
-                    <span className={styles.dotBlue}></span>
-                    <span className={styles.dotTeal}></span>
-                    <span className={styles.dotGreen}></span>
+                <div className={styles.flowLogo}>
+                    <div className={styles.logoIcon}>M</div>
+                    <div className={styles.logoTextWrap}>
+                        <span className={styles.logoText}>MARIOT</span>
+                        <span className={styles.logoTag}>Admin Panel</span>
+                    </div>
                 </div>
             </div>
 

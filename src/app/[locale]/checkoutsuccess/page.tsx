@@ -78,6 +78,18 @@ const SuccessContent = () => {
                         </div>
                     </div>
 
+                    {/* Action Buttons — directly under the order progress */}
+                    <div className={styles.actions}>
+                        <Link href="/shopnow" className={styles.continueBtn}>
+                            <ShoppingBag size={20} />
+                            {t('continueShopping')}
+                        </Link>
+                        <Link href="/profile?tab=yourOrders" className={styles.ordersBtn}>
+                            {t('viewOrders')}
+                            <ArrowRight size={18} />
+                        </Link>
+                    </div>
+
                     <div className={styles.infoGrid}>
                         {/* Next Steps */}
                         <div className={styles.card}>
@@ -107,18 +119,6 @@ const SuccessContent = () => {
                                 <span dir="ltr">Phone: +971 4 288 2777</span>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className={styles.actions}>
-                        <Link href="/shopnow" className={styles.continueBtn}>
-                            <ShoppingBag size={20} />
-                            {t('continueShopping')}
-                        </Link>
-                        <Link href="/profile?tab=yourOrders" className={styles.ordersBtn}>
-                            {t('viewOrders')}
-                            <ArrowRight size={18} />
-                        </Link>
                     </div>
                 </div>
             </main>

@@ -112,11 +112,11 @@ const nextConfig = {
         return [
             {
                 source: '/api/v1/:path*',
-                destination: 'https://mariot-backend.onrender.com/api/v1/:path*',
+                destination: 'https://api.mariotstore.com/api/v1/:path*',
             },
             {
                 source: '/uploads/:path*',
-                destination: 'https://mariot-backend.onrender.com/uploads/:path*',
+                destination: 'https://api.mariotstore.com/uploads/:path*',
             },
         ];
     },

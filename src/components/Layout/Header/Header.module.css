@@ -405,6 +405,26 @@
     color: #ef4444 !important;
 }
 
+.desktopDealLink {
+    color: #16a1db !important;
+}
+
+/* Small "SALE" pill next to Weekly Deals on desktop */
+.dealPill {
+    display: inline-block;
+    margin-inline-start: 6px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.6;
+    letter-spacing: 0.3px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #16a1db, #0e7fb0);
+    border-radius: 20px;
+    vertical-align: middle;
+    text-transform: uppercase;
+}
+
 .wordsScroller {
     height: 20px;
     overflow: hidden;
@@ -917,7 +937,7 @@
     left: 0px;
     bottom: 0px;
     right: 0px;
-    border: 2px solid var(--primary-teal);
+    border: none;
     background-color: transparent;
     border-radius: 60px;
 }
@@ -1563,6 +1583,12 @@
         border-color: #ffe4e6;
     }
 
+    .deal .navItemContent svg {
+        color: #16a1db;
+        background: #eff8fc;
+        border-color: #d4eefa;
+    }
+
 
     .adminMobileLink {
         color: #2563eb !important;
@@ -1630,6 +1656,7 @@
     }
 
     .hotBadge,
+    .dealBadge,
     .pointsBadge {
         font-size: 11px;
         font-weight: 700;
@@ -1642,6 +1669,11 @@
     .hotBadge {
         background-color: #fee2e2;
         color: #ef4444;
+    }
+
+    .dealBadge {
+        background-color: #e0f3fb;
+        color: #16a1db;
     }
 
     .pointsBadge {

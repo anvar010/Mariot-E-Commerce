@@ -55,7 +55,9 @@ const AdminInvoices = () => {
                 const a = document.createElement('a');
                 a.href = blobUrl;
                 a.download = `Invoice-${inv.invoice_number}.pdf`;
+                document.body.appendChild(a);
                 a.click();
+                document.body.removeChild(a);
             }
             setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
         } catch (error: any) {
@@ -97,7 +99,9 @@ const AdminInvoices = () => {
             const a = document.createElement('a');
             a.href = blobUrl;
             a.download = `Invoice-${inv.invoice_number}.pdf`;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
         } catch (error: any) {
             console.error('[Invoice Download] Failed:', error?.message || error);

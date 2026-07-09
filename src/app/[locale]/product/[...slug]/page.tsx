@@ -148,7 +148,10 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
     let jsonLd = null;
 
     try {
-        const res = await fetch(`${API_BASE_URL_SERVER}/products/${encodeURIComponent(slug)}`, { cache: 'no-store' });
+        const res = await fetch(`${API_BASE_URL_SERVER}/products/${encodeURIComponent(slug)}`, {
+            next: { revalidate: 60 },
+            signal: AbortSignal.timeout(8000),
+        });
         const data = await res.json();
 
         if (data.success && data.data) {

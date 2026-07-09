@@ -193,6 +193,9 @@
 .actions {
     display: flex;
     gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 56px;
 }
 
 .continueBtn {

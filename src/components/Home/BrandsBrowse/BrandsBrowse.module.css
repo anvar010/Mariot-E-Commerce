@@ -149,8 +149,9 @@
 
 
 .logoBox {
-    width: 190px;
-    height: 110px;
+    /* Fill the slide; 2:1 matches the normalized 600x300 logo assets. */
+    width: 100%;
+    aspect-ratio: 2 / 1;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
@@ -164,10 +165,9 @@
 }
 
 .logoImg {
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
-    transform: scale(1.05);
 }
 
 .brandName {
@@ -303,7 +303,8 @@
 
     .logoBox {
         width: 100%;
-        height: 75px;
+        height: auto;
+        aspect-ratio: 2 / 1;
         border: 1px solid #f4f4f4;
         border-radius: 10px;
         padding: 6px;

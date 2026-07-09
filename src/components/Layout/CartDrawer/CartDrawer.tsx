@@ -226,7 +226,17 @@ const CartDrawer = () => {
             const data = await res.json();
             if (data.success) {
                 // 2. Generate PDF using the returned quotation ref/data
-                await generateQuotationPDF(data.data, true, isArabic);
+                const pdfDataUri = await generateQuotationPDF(data.data, true, isArabic);
+
+                // 3. Send the generated PDF to the backend so the email includes it as attachment
+                if (pdfDataUri) {
+                    fetch(`${API_BASE_URL}/quotations/${data.data.id}/send-email`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pdf_base64: pdfDataUri, locale })
+                    }).catch(err => console.error('[Quotation] Failed to send email with PDF:', err));
+                }
+
                 showNotification(tNotif('quotationSuccess'));
                 setShowQuotationPopup(false);
             } else {

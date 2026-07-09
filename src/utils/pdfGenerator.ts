@@ -19,51 +19,63 @@ const resolveImageUrl = (url?: string) => {
     return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
-// Convert an image URL to a base64 data URI using a server-side proxy
+// 1x1 transparent PNG — safe fallback that html2canvas can render without any HTTP fetch
+const EMPTY_IMG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII=';
+
+// Convert an image URL to a base64 data URI.
+// Same-origin assets are fetched directly by the browser (no proxy round-trip).
+// Cross-origin images (e.g. the QR code API) go through the server-side proxy.
 const imageToBase64 = async (url: string): Promise<string> => {
     try {
-        // Provide current window origin so API handles relative URLs flawlessly
         const fullUrl = url.startsWith('http') ? url : new URL(url, window.location.origin).toString();
+        const isSameOrigin = fullUrl.startsWith(window.location.origin + '/');
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const response = await fetch(`/api/proxy-image?url=${encodeURIComponent(fullUrl)}`, {
-            signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-            console.warn(`imageToBase64: proxy failed with ${response.status} for ${url}`);
-            return '/assets/placeholder-image.webp';
-        }
-
-        const data = await response.json();
-        if (data.success && data.base64) {
-            return data.base64;
+        if (isSameOrigin) {
+            // Direct fetch — no server round-trip needed for local public assets
+            const response = await fetch(fullUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (!response.ok) return EMPTY_IMG;
+            const blob = await response.blob();
+            return await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve((reader.result as string) || EMPTY_IMG);
+                reader.onerror = () => resolve(EMPTY_IMG);
+                reader.readAsDataURL(blob);
+            });
+        } else {
+            // Cross-origin (QR code API, CDN images, etc.) — route through proxy to avoid canvas taint
+            const response = await fetch(`/api/proxy-image?url=${encodeURIComponent(fullUrl)}`, {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                console.warn(`imageToBase64: proxy failed with ${response.status} for ${url}`);
+                return EMPTY_IMG;
+            }
+            const data = await response.json();
+            if (data.success && data.base64) return data.base64;
         }
     } catch (error: any) {
         if (error.name === 'AbortError') {
             console.error('imageToBase64 timed out for URL:', url);
         } else {
-            console.error('imageToBase64 fell back to placeholder due to error:', error, 'for URL:', url);
+            console.error('imageToBase64 error:', error, 'for URL:', url);
         }
     }
 
-    return '/assets/placeholder-image.webp';
+    return EMPTY_IMG;
 };
 
-export const generateQuotationPDF = async (quotation: any, shouldDownload = false, isArabic = false) => {
+export const generateQuotationPDF = async (quotation: any, shouldDownload = false, isArabic = false): Promise<string> => {
     const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
 
-    const formatDate = (dateStr: any) => {
-        return new Date(dateStr || new Date()).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
+    const formatDate = (dateStr: any) =>
+        new Date(dateStr || new Date()).toLocaleDateString('en-GB', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
         });
-    };
 
     // Pre-convert all images to base64 to avoid CORS issues in html2canvas.
     // Use the Arabic logo on the Arabic quotation.
@@ -108,7 +120,10 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
     // dirham symbol. English uses the symbol; Arabic uses the word "درهم" (matches the site).
     let dirhamFontFace = '';
     try {
-        const fontRes = await fetch('/fonts/dirham.woff2');
+        const fontCtrl = new AbortController();
+        const fontTimeout = setTimeout(() => fontCtrl.abort(), 5000);
+        const fontRes = await fetch('/fonts/dirham.woff2', { signal: fontCtrl.signal });
+        clearTimeout(fontTimeout);
         const buf = await fontRes.arrayBuffer();
         let bin = '';
         const bytes = new Uint8Array(buf);
@@ -126,30 +141,166 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
 
     const { jsPDF } = await import('jspdf');
     const html2canvas = (await import('html2canvas')).default;
-    const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-    });
-
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pdfWidth = pdf.internal.pageSize.getWidth();
 
-    // Helper to generate a single page HTML
-    const getPageHTML = (itemChunk: any[], chunkStartIndex: number, isFirstPage: boolean, isLastPage: boolean) => {
+    // ── Spec line processor (reused by measurement probe + page renderer) ─
+    const buildSpecLines = (item: any): string[] =>
+        String((isArabic && item.specifications_ar) ? item.specifications_ar : (item.specifications || ''))
+            .replace(/â€¢/g, '\n').replace(/â€"/g, '-').replace(/Â/g, '')
+            .replace(/\[[^\]]*\]/g, ' ')
+            .replace(/<\/?(p|div|br|li|ul|ol|tr|td)[^>]*>/gi, '\n')
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/&nbsp;/g, ' ')
+            .split(/\n|•|·/)
+            .map((s: string) => s.replace(/\s+/g, ' ').replace(/^[•·\-•\s]+/, '').trim())
+            .filter((s: string) => s.length > 0)
+            .slice(0, 6);
+
+    // ── Single item <tr> builder (reused by measurement probe + page renderer) ─
+    const buildItemRowHTML = (item: any, imgSrc: string, displayNum: number): string => {
+        const dims = item.custom_dimensions && typeof item.custom_dimensions === 'object'
+            ? Object.entries(item.custom_dimensions)
+                .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}cm`).join(' · ')
+            : '';
+        const variantLabel = item.variant_label || '';
+        const itemName = (isArabic && item.name_ar) ? item.name_ar : item.name;
+        const specLines = buildSpecLines(item);
+        return `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart};" dir="ltr">${displayNum}</td>
+                <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart}; width: 35%;">
+                    <div style="font-weight: bold; color: #1e293b;">${itemName}</div>
+                    <div style="color: #64748b; font-size: 10px;">${L.brand}: ${item.brand || 'Standard'}</div>
+                    ${specLines.length ? `<div style="color: #475569; font-size: 9.5px; margin-top: 4px; line-height: 1.5;">${specLines.map((s: string) => `<div>• ${s}</div>`).join('')}</div>` : ''}
+                    ${item.model ? `<div style="color: #64748b; font-size: 10px; margin-top: 4px;">${L.model}: ${item.model}</div>` : ''}
+                    ${(variantLabel && !dims) ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
+                    ${dims ? `<div style="color: #334155; font-size: 10px; margin-top: 4px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${dims}</div>` : ''}
+                </td>
+                <td style="padding: 15px 10px; text-align: center;">
+                    <img src="${imgSrc}" style="height: 80px; width: 80px; object-fit: contain;">
+                </td>
+                <td style="padding: 15px 10px; text-align: center; font-size: 12px;">${item.quantity}</td>
+                <td style="padding: 15px 10px; text-align: ${alignEnd}; font-size: 12px;">${money(item.price)}</td>
+                <td style="padding: 15px 10px; text-align: ${alignEnd}; font-size: 12px; font-weight: bold;">${money(Number(item.price) * item.quantity)}</td>
+            </tr>`;
+    };
+
+    // ── Measure each item's actual rendered row height ─────────────────────
+    // Render all rows together in a hidden table at the correct inner width
+    // (794px container − 2×40px padding = 714px) so text wraps identically to
+    // the final page, then read each <tr>'s offsetHeight.
+    const measureItemHeights = async (): Promise<number[]> => {
+        const probe = document.createElement('div');
+        probe.setAttribute('dir', dir);
+        probe.style.cssText =
+            'position:absolute;top:-20000px;left:0;width:714px;' +
+            'font-family:"Inter","Segoe UI",Tahoma,Geneva,Verdana,sans-serif;';
+        const tbl = document.createElement('table');
+        tbl.style.cssText = 'width:100%;border-collapse:collapse;';
+        probe.appendChild(tbl);
+        document.body.appendChild(probe);
+
+        for (let i = 0; i < items.length; i++) {
+            const tmp = document.createElement('tbody');
+            tmp.innerHTML = buildItemRowHTML(items[i], itemImageBase64s[i], i + 1);
+            const tr = tmp.querySelector('tr');
+            if (tr) tbl.appendChild(tr);
+        }
+
+        const imgs = Array.from(tbl.querySelectorAll('img')) as HTMLImageElement[];
+        await Promise.all(imgs.map(img =>
+            (img.complete && img.naturalWidth > 0) ? Promise.resolve() :
+            new Promise<void>(res => {
+                img.addEventListener('load', () => res(), { once: true });
+                img.addEventListener('error', () => res(), { once: true });
+                setTimeout(res, 3000);
+            })
+        ));
+        await new Promise(r => requestAnimationFrame(r)); // one layout tick
+
+        const heights = (Array.from(tbl.querySelectorAll('tr')) as HTMLTableRowElement[])
+            .map(r => r.offsetHeight);
+        document.body.removeChild(probe);
+        return heights;
+    };
+
+    // ── Greedy page packer ─────────────────────────────────────────────────
+    // Usable height inside the 794×1122px page container (40px padding each side).
+    const PAGE_H = 1042;
+    const SAFETY = 20; // px guard against sub-pixel rounding
+
+    // Overhead = everything on the page that is NOT item rows.
+    // OH_PAGE1  : top-bar + ref/date + from/to block + note box + table header
+    // OH_CONT   : top-bar + "continued ref" banner   + table header
+    // OH_TOTALS : totals block + terms + thank-you line (last page only)
+    // OH_CFOOTER: "continued on next page" text      (non-last pages)
+    const OH_PAGE1   = 390;
+    const OH_CONT    = 110;
+    const OH_TOTALS  = 330;
+    const OH_CFOOTER =  50;
+
+    const itemBudget = (isFirst: boolean, isLast: boolean) =>
+        PAGE_H - (isFirst ? OH_PAGE1 : OH_CONT) - (isLast ? OH_TOTALS : OH_CFOOTER) - SAFETY;
+
+    const packItemsGreedy = (heights: number[]): number[][] => {
+        if (heights.length === 0) return [[]];
+
+        const chunks: number[][] = [];
+        let chunk: number[] = [];
+        let used = 0;
+
+        for (let i = 0; i < heights.length; i++) {
+            const budget = itemBudget(chunks.length === 0, false); // forward pass: assume not last
+            if (chunk.length === 0 || used + heights[i] <= budget) {
+                chunk.push(i);
+                used += heights[i];
+            } else {
+                chunks.push(chunk);
+                chunk = [i];
+                used = heights[i];
+            }
+        }
+        if (chunk.length > 0) chunks.push(chunk);
+
+        // Retroactive last-page correction: the last chunk now needs OH_TOTALS instead of
+        // OH_CFOOTER. Move items off the end until it fits (or only one item remains).
+        let guard = heights.length;
+        while (guard-- > 0) {
+            const li   = chunks.length - 1;
+            const last = chunks[li];
+            const lastH = last.reduce((s, i) => s + heights[i], 0);
+            if (lastH <= itemBudget(li === 0, true) || last.length <= 1) break;
+            const moved = last.pop()!;
+            chunks.push([moved]);
+        }
+
+        return chunks;
+    };
+
+    // ── Measure then pack ─────────────────────────────────────────────────
+    const itemHeights  = await measureItemHeights();
+    const chunkIndices = packItemsGreedy(itemHeights); // arrays of original item indices
+
+    // ── Full-page HTML builder ────────────────────────────────────────────
+    const getPageHTML = (idxChunk: number[], isFirstPage: boolean, isLastPage: boolean): string => {
+        const itemRowsHTML = idxChunk
+            .map(origIdx => buildItemRowHTML(items[origIdx], itemImageBase64s[origIdx], origIdx + 1))
+            .join('');
+
         return `
             <div dir="${dir}" style="width: 794px; min-height: 1122px; background: white; padding: 40px; font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; line-height: 1.5; box-sizing: border-box; display: flex; flex-direction: column;">
                 <style>${dirhamFontFace}</style>
-                <!-- Header -->
+                <!-- Header bar (every page) -->
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; padding-bottom: 10px; margin-bottom: 20px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                         <div style="width: 12px; height: 12px; background: #334155;"></div>
-                         <span style="font-size: 24px; font-weight: bold; color: #334155;">${L.quotation}</span>
+                        <div style="width: 12px; height: 12px; background: #334155;"></div>
+                        <span style="font-size: 24px; font-weight: bold; color: #334155;">${L.quotation}</span>
                     </div>
                     <img src="${logoBase64}" alt="Logo" style="height: 50px;">
                 </div>
 
                 ${isFirstPage ? `
-                    <!-- Ref & Date: reference at the start, date at the end -->
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; font-size: 14px;">
                         <div style="text-align: ${alignStart};">
                             <div style="color: #64748b; margin-bottom: 4px;">${L.ref}</div>
@@ -160,8 +311,6 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                             <div style="font-weight: bold; font-size: 16px;">${formatDate(quotation.created_at)}</div>
                         </div>
                     </div>
-
-                    <!-- Issued From / To -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px;">
                         <div style="padding: 15px; border-${alignEnd}: 1px solid #e2e8f0; text-align: ${alignStart};">
                             <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">${L.issuedFrom}</div>
@@ -184,13 +333,9 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                             <div style="font-size: 13px; color: #334155; text-align:${alignStart};" dir="ltr">${quotation.customer_email || ''}</div>
                         </div>
                     </div>
-
-                    <!-- Note Box -->
                     <div style="display: flex; align-items: center; gap: 15px; padding: 12px 20px; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 30px;">
-                         <div style="width: 24px; height: 24px; min-width: 24px; border: 2px solid #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">i</div>
-                         <div style="flex: 1; font-size: 12px; color: #334155; text-align: ${alignStart};">
-                            ${L.note}
-                         </div>
+                        <div style="width: 24px; height: 24px; min-width: 24px; border: 2px solid #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">i</div>
+                        <div style="flex: 1; font-size: 12px; color: #334155; text-align: ${alignStart};">${L.note}</div>
                     </div>
                 ` : `
                     <div style="margin-bottom: 20px; font-size: 14px; color: #64748b; text-align: ${alignStart};">
@@ -198,7 +343,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                     </div>
                 `}
 
-                <!-- Items Table -->
+                <!-- Items table -->
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
                     <thead>
                         <tr style="border-bottom: 2px solid #e2e8f0; background: #f8fafc; font-size: 10px; color: #64748b;">
@@ -210,49 +355,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                             <th style="padding: 10px; text-align: ${alignEnd};">${L.thTotal}</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        ${itemChunk.map((item: any, idx: number) => {
-                            const dims = item.custom_dimensions && typeof item.custom_dimensions === 'object'
-                                ? Object.entries(item.custom_dimensions)
-                                    .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}cm`)
-                                    .join(' · ')
-                                : '';
-                            const variantLabel = item.variant_label || '';
-                            const itemName = (isArabic && item.name_ar) ? item.name_ar : item.name;
-                            // Product specifications (same source as the product detail specs area). Strip
-                            // HTML/shortcodes, split into lines, keep the first few so the row stays compact.
-                            const specsRaw = (isArabic && item.specifications_ar) ? item.specifications_ar : (item.specifications || '');
-                            const specLines = String(specsRaw)
-                                .replace(/â€¢/g, '\n').replace(/â€"/g, '-').replace(/Â/g, '')
-                                .replace(/\[[^\]]*\]/g, ' ')
-                                .replace(/<\/?(p|div|br|li|ul|ol|tr|td)[^>]*>/gi, '\n')
-                                .replace(/<[^>]*>/g, ' ')
-                                .replace(/&nbsp;/g, ' ')
-                                .split(/\n|•|·/)
-                                .map((s: string) => s.replace(/\s+/g, ' ').replace(/^[•·\-•\s]+/, '').trim())
-                                .filter((s: string) => s.length > 0)
-                                .slice(0, 6);
-                            return `
-                            <tr style="border-bottom: 1px solid #f1f5f9;">
-                                <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart};" dir="ltr">${chunkStartIndex + idx + 1}</td>
-                                <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart};">
-                                    <div style="font-weight: bold; color: #1e293b;">${itemName}</div>
-                                    <div style="color: #64748b; font-size: 10px;">${L.brand}: ${item.brand || 'Standard'}</div>
-                                    ${specLines.length ? `<div style="color: #475569; font-size: 9.5px; margin-top: 4px; line-height: 1.5;">${specLines.map((s: string) => `<div>• ${s}</div>`).join('')}</div>` : ''}
-                                    ${item.model ? `<div style="color: #64748b; font-size: 10px; margin-top: 4px;">${L.model}: ${item.model}</div>` : ''}
-                                    ${(variantLabel && !dims) ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
-                                    ${dims ? `<div style="color: #334155; font-size: 10px; margin-top: 4px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${dims}</div>` : ''}
-                                </td>
-                                <td style="padding: 15px 10px; text-align: center;">
-                                    <img src="${itemImageBase64s[chunkStartIndex + idx]}" style="height: 80px; width: 80px; object-fit: contain;">
-                                </td>
-                                <td style="padding: 15px 10px; text-align: center; font-size: 12px;">${item.quantity}</td>
-                                <td style="padding: 15px 10px; text-align: ${alignEnd}; font-size: 12px;">${money(item.price)}</td>
-                                <td style="padding: 15px 10px; text-align: ${alignEnd}; font-size: 12px; font-weight: bold;">${money(Number(item.price) * item.quantity)}</td>
-                            </tr>
-                        `;
-                        }).join('')}
-                    </tbody>
+                    <tbody>${itemRowsHTML}</tbody>
                 </table>
 
                 ${isLastPage ? `
@@ -263,8 +366,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <div style="display: flex; justify-content: space-between; font-size: 13px;">
-                                <span>${L.subtotal}</span>
-                                <span style="font-weight: bold;">${money(quotation.subtotal)}</span>
+                                <span>${L.subtotal}</span><span style="font-weight: bold;">${money(quotation.subtotal)}</span>
                             </div>
                             ${Number(quotation.coupon_discount) > 0 ? `
                             <div style="display: flex; justify-content: space-between; font-size: 13px; color: #16a34a;">
@@ -282,8 +384,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                                 <span style="font-weight: bold;">- ${money(quotation.discount_amount)}</span>
                             </div>` : ''}
                             <div style="display: flex; justify-content: space-between; font-size: 13px;">
-                                <span>${L.vatLine}</span>
-                                <span style="font-weight: bold;">${money(quotation.tax_amount)}</span>
+                                <span>${L.vatLine}</span><span style="font-weight: bold;">${money(quotation.tax_amount)}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 16px; margin-top: 10px; padding-top: 10px; border-top: 2px solid #e2e8f0; color: #334155;">
                                 <span><strong>${L.grandTotal}</strong></span>
@@ -291,8 +392,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                             </div>
                         </div>
                     </div>
-
-                    <!-- Footer / Terms -->
+                    <!-- Terms -->
                     <div style="display: flex; flex-direction: column; gap: 20px;">
                         <div style="font-size: 10px; color: #64748b; text-align: ${alignStart};">
                             <div style="font-weight: bold; color: #334155; margin-bottom: 5px;">${L.terms}</div>
@@ -313,46 +413,23 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
         `;
     };
 
-    // Split items into chunks. Page 1 carries the tall header (contact block) + totals +
-    // terms, so it holds fewer items than continuation pages — keeps everything on one A4
-    // at full size instead of getting scaled down to fit.
-    const chunks: any[][] = [];
-    const ITEMS_PAGE_1 = 3;
-    const ITEMS_PAGE_REST = 8;
-
-    if (items.length <= ITEMS_PAGE_1) {
-        chunks.push(items);
-    } else {
-        chunks.push(items.slice(0, ITEMS_PAGE_1));
-        let remaining = items.slice(ITEMS_PAGE_1);
-        while (remaining.length > 0) {
-            chunks.push(remaining.slice(0, ITEMS_PAGE_REST));
-            remaining = remaining.slice(ITEMS_PAGE_REST);
-        }
-    }
-
-    // Process each chunk
+    // ── Render each chunk as one PDF page ─────────────────────────────────
     try {
-        for (let i = 0; i < chunks.length; i++) {
+        for (let i = 0; i < chunkIndices.length; i++) {
             const isFirst = i === 0;
-            const isLast = i === chunks.length - 1;
-            const startIndex = isFirst ? 0 : ITEMS_PAGE_1 + (i - 1) * ITEMS_PAGE_REST;
+            const isLast  = i === chunkIndices.length - 1;
 
             const pageContainer = document.createElement('div');
             pageContainer.style.position = 'absolute';
             pageContainer.style.top = '-10000px';
             pageContainer.style.left = '0';
-            // Direction follows the quotation language (monolingual): rtl for Arabic, ltr for English.
             pageContainer.setAttribute('dir', dir);
             pageContainer.style.direction = dir;
-            pageContainer.innerHTML = getPageHTML(chunks[i], startIndex, isFirst, isLast);
+            pageContainer.innerHTML = getPageHTML(chunkIndices[i], isFirst, isLast);
             document.body.appendChild(pageContainer);
 
-            // Make sure the embedded Dirham font is ready before capturing.
             try { if (dirhamFontFace) await (document as any).fonts.load("16px 'DirhamPDF'"); await (document as any).fonts.ready; } catch (e) { /* ignore */ }
 
-            // Wait for every image (logo + product images, all base64) to finish decoding so
-            // html2canvas never captures a half-painted page (intermittent missing image/price).
             const imgEls = Array.from(pageContainer.querySelectorAll('img')) as HTMLImageElement[];
             await Promise.all(imgEls.map(img => (img.complete && img.naturalWidth > 0)
                 ? Promise.resolve()
@@ -360,43 +437,61 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                     const done = () => res();
                     img.addEventListener('load', done, { once: true });
                     img.addEventListener('error', done, { once: true });
-                    setTimeout(done, 4000); // safety cap so a stuck image can't hang the PDF
+                    setTimeout(done, 4000);
                 })));
             await new Promise(r => setTimeout(r, 200));
 
             const canvas = await html2canvas(pageContainer, {
-                scale: 2,
-                useCORS: false,
-                allowTaint: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                width: 794,
-                windowWidth: 794
+                scale: 2, useCORS: false, allowTaint: true, logging: false,
+                backgroundColor: '#ffffff', width: 794, windowWidth: 794
             });
 
             const imgData = canvas.toDataURL('image/jpeg', 0.95);
             const pageHeight = pdf.internal.pageSize.getHeight();
-            // Always full page width (so every page has the same width); only cap the height
-            // to one A4 so an overflowing page can't push the totals/footer off the bottom.
-            const renderHeight = Math.min((canvas.height * pdfWidth) / canvas.width, pageHeight);
+            const naturalRenderHeight = (canvas.height * pdfWidth) / canvas.width;
+            // If content still overflows (e.g. one very-long-spec item), scale both
+            // dimensions proportionally so items are uniformly smaller, never squished.
+            let renderWidth = pdfWidth;
+            let renderHeight = naturalRenderHeight;
+            if (naturalRenderHeight > pageHeight) {
+                const scale = pageHeight / naturalRenderHeight;
+                renderWidth = pdfWidth * scale;
+                renderHeight = pageHeight;
+            }
+            const xOffset = (pdfWidth - renderWidth) / 2;
 
             if (i > 0) pdf.addPage();
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, renderHeight);
+            pdf.addImage(imgData, 'JPEG', xOffset, 0, renderWidth, renderHeight);
 
             document.body.removeChild(pageContainer);
         }
+
+        const dataUri = pdf.output('datauristring');
 
         if (shouldDownload) {
             pdf.save(`${quotation.quotation_ref || 'Quotation'}.pdf`);
         } else {
             const blob = pdf.output('blob');
             const url = URL.createObjectURL(blob);
-            window.open(url, '_blank');
+            const win = window.open(url, '_blank');
+            if (!win) {
+                // Popup blocked — fall back to download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${quotation.quotation_ref || 'Quotation'}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
         }
+
+        return dataUri;
     } catch (error) {
         console.error('PDF Generation Error:', error);
         throw error;
     }
+    return '';
 };
 
 // Brand logo paths that match the physical Mariot invoice header
@@ -704,9 +799,20 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
         container.innerHTML = pageHtml;
         document.body.appendChild(container);
 
-        await new Promise(r => setTimeout(r, 200));
+        // Wait for every image in the container to finish decoding before capturing.
+        // All srcs are base64 data URIs at this point so this is typically instant.
+        const invoiceImgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[];
+        await Promise.all(invoiceImgs.map(img =>
+            (img.complete && img.naturalWidth > 0)
+                ? Promise.resolve()
+                : new Promise<void>(res => {
+                    img.addEventListener('load', () => res(), { once: true });
+                    img.addEventListener('error', () => res(), { once: true });
+                    setTimeout(res, 4000);
+                })
+        ));
+        await new Promise(r => setTimeout(r, 100));
 
-        // Note: For chunked rendering, each page container should map exactly or slightly above 1123 unless text really spans heavily.
         const renderedHeight = container.firstElementChild ? (container.firstElementChild as HTMLElement).offsetHeight + 40 : 1250;
 
         const canvas = await html2canvas(container, {

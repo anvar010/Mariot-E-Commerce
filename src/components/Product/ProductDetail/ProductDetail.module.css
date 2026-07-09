@@ -180,6 +180,12 @@
         z-index: 10;
     }
 
+    .shareBtn {
+        top: 68px;
+        inset-inline-end: 20px;
+        z-index: 10;
+    }
+
     .expandBtn {
         bottom: 20px;
         inset-inline-end: 20px;
@@ -271,9 +277,30 @@
     transition: transform 0.2s;
 }
 
+.shareBtn {
+    position: absolute;
+    top: 58px;
+    inset-inline-end: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: transform 0.2s;
+}
+
 @media (hover: hover) {
 
     .wishlistBtn:hover {
+        transform: scale(1.05);
+    }
+
+    .shareBtn:hover {
         transform: scale(1.05);
     }
 }
@@ -438,6 +465,10 @@
     align-items: center;
     transition: all 0.2s ease;
     cursor: pointer;
+    /* min-width:0 lets this flex item shrink below the logo's intrinsic width so
+       a wide brand logo can't push the row past the viewport (horizontal overflow). */
+    min-width: 0;
+    max-width: 100%;
 }
 
 @media (hover: hover) {
@@ -449,6 +480,7 @@
 .brandLogo {
     max-height: 70px;
     height: auto;
+    max-width: 100%;
     display: block;
     object-fit: contain;
 }

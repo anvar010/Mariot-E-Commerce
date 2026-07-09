@@ -14,6 +14,7 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
     selectedBrands,
     handleBrandToggle,
     allCategories,
+    subCategories = [],
     activeCategory,
     minPrice,
     setMinPrice,
@@ -23,6 +24,10 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
     toggleSection,
     expandedSections,
     onCategoryChange,
+    extraFilterTitle = '',
+    extraFilterOptions = [],
+    selectedExtraFilters = [],
+    onExtraFilterToggle,
     enableBrandFilter = true,
     enableCategoryFilter = true,
     title = ''
@@ -52,8 +57,17 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
                 </button>
             </div>
 
-            {/* PRODUCT CATEGORIES */}
-            {enableCategoryFilter && (
+            {/* PRODUCT CATEGORIES
+                On a category / sub-category page show only that page's child
+                (sub-sub) categories, never the full top-level list. Off a
+                category page (search / weekly / all products) show every main
+                category as before. */}
+            {enableCategoryFilter && (() => {
+                const onCategoryPage = !!activeCategory;
+                const categoryList = onCategoryPage ? subCategories : allCategories;
+                // Leaf category with no children — nothing to scope to, hide section.
+                if (onCategoryPage && categoryList.length === 0) return null;
+                return (
                 <div className={styles.filterSection}>
                     <div className={styles.sectionHeader} onClick={() => toggleSection('categories')}>
                         <h3>{t("categories") || 'Product Categories'}</h3>
@@ -61,8 +75,8 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
                     </div>
                     {expandedSections.includes('categories') && (
                         <div className={styles.sectionContent}>
-                            {allCategories.length > 0 ? (
-                                allCategories.map(cat => (
+                            {categoryList.length > 0 ? (
+                                categoryList.map(cat => (
                                     <label key={cat.id} className={styles.checkboxLabel}>
                                         <input
                                             type="checkbox"
@@ -81,6 +95,31 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
                             ) : (
                                 <p style={{ fontSize: '12px', color: '#999' }}>{t("no-categories-found")}</p>
                             )}
+                        </div>
+                    )}
+                </div>
+                );
+            })()}
+
+            {/* EXTRA TITLE/DESCRIPTION FILTER (e.g. Work Tables type) */}
+            {extraFilterOptions.length > 0 && (
+                <div className={styles.filterSection}>
+                    <div className={styles.sectionHeader} onClick={() => toggleSection('extrafilter')}>
+                        <h3>{extraFilterTitle || t('categories')}</h3>
+                        <ChevronDown size={14} className={expandedSections.includes('extrafilter') ? styles.rotateIcon : styles.collapsedIcon} />
+                    </div>
+                    {expandedSections.includes('extrafilter') && (
+                        <div className={styles.sectionContent}>
+                            {extraFilterOptions.map(opt => (
+                                <label key={opt.key} className={styles.checkboxLabel}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedExtraFilters.includes(opt.key)}
+                                        onChange={() => onExtraFilterToggle?.(opt.key)}
+                                    />
+                                    <span><span>{opt.label}</span></span>
+                                </label>
+                            ))}
                         </div>
                     )}
                 </div>

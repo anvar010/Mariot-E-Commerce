@@ -24,4 +24,11 @@ export interface FilterProps {
     title?: string;
     enableBrandFilter?: boolean;
     enableCategoryFilter?: boolean;
+
+    // Optional extra checkbox group (e.g. Work Tables type, matched on product
+    // title/description rather than category). Rendered only when options exist.
+    extraFilterTitle?: string;
+    extraFilterOptions?: { key: string; label: string }[];
+    selectedExtraFilters?: string[];
+    onExtraFilterToggle?: (key: string) => void;
 }

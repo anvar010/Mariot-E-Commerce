@@ -488,7 +488,15 @@
 }
 
 .brandLogoImgOverlay {
+    /* width:auto derives the width from the logo's real aspect ratio, which for
+       wide brand logos exceeds the container and gets clipped by .card's
+       overflow:hidden (pronounced on high-DPR/large phones like Galaxy Ultra +
+       Samsung Internet). max-width:100% keeps it inside without changing the
+       rendered size of logos that already fit — object-fit:contain then scales
+       the wide ones down in place. (Don't add height:auto here: it releases the
+       60px height the img's height attr pins, enlarging every logo.) */
     max-height: 90px;
+    max-width: 100%;
     width: auto;
     object-fit: contain;
     display: block;

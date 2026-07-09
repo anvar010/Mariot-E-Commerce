@@ -9,6 +9,7 @@ const Reveal = dynamic(() => import('@/components/shared/Reveal/Reveal'), { ssr:
 import { sortByOrderIndex } from '@/utils/sortByOrderIndex';
 
 // Below-fold sections — deferred to keep initial CSS bundle small
+const NewArrivals = dynamic(() => import('@/components/Home/NewArrivals/NewArrivals'));
 const LimitedOffers = dynamic(() => import('@/components/Home/LimitedOffers/LimitedOffers'));
 const WeeklyDeals = dynamic(() => import('@/components/Home/WeeklyDeals/WeeklyDeals'));
 const CategoryHomeSection = dynamic(() => import('@/components/Home/CategoryHomeSection/CategoryHomeSection'));
@@ -20,17 +21,19 @@ const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://loca
 async function getHomeData(locale: string) {
     const isRtl = locale === 'ar';
     try {
-        const [cmsRes, limitedRes, weeklyRes, categoriesRes, brandsRes] = await Promise.all([
-            fetch(`${API_BASE_URL_SERVER}/cms/homepage`, { next: { revalidate: 30 } }),
-            fetch(`${API_BASE_URL_SERVER}/products?is_limited_offer=true&limit=8`, { next: { revalidate: 60 } }),
-            fetch(`${API_BASE_URL_SERVER}/products?is_weekly_deal=true`, { next: { revalidate: 60 } }),
-            fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 60 } }),
-            fetch(`${API_BASE_URL_SERVER}/brands?all=1`, { next: { revalidate: 3600 } })
+        const [cmsRes, limitedRes, weeklyRes, newArrivalsRes, categoriesRes, brandsRes] = await Promise.all([
+            fetch(`${API_BASE_URL_SERVER}/cms/homepage`, { next: { revalidate: 30 }, signal: AbortSignal.timeout(8000) }),
+            fetch(`${API_BASE_URL_SERVER}/products?is_limited_offer=true&limit=8`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(8000) }),
+            fetch(`${API_BASE_URL_SERVER}/products?is_weekly_deal=true`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(8000) }),
+            fetch(`${API_BASE_URL_SERVER}/products?sort=newest&limit=12`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(8000) }),
+            fetch(`${API_BASE_URL_SERVER}/categories`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(8000) }),
+            fetch(`${API_BASE_URL_SERVER}/brands?all=1`, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) })
         ]);
 
         const cmsData = await cmsRes.json();
         const limitedData = await limitedRes.json();
         const weeklyData = await weeklyRes.json();
+        const newArrivalsData = await newArrivalsRes.json();
         const categoriesData = await categoriesRes.json();
         const brandsData = await brandsRes.json();
 
@@ -73,7 +76,7 @@ async function getHomeData(locale: string) {
             flaggedSections.map(async (c: any) => {
                 let products = [];
                 try {
-                    const res = await fetch(`${API_BASE_URL_SERVER}/products?category=${encodeURIComponent(c.slug)}&limit=12`, { next: { revalidate: 60 } });
+                    const res = await fetch(`${API_BASE_URL_SERVER}/products?category=${encodeURIComponent(c.slug)}&limit=12`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(8000) });
                     const data = await res.json();
                     products = data.success ? data.data : [];
                 } catch {
@@ -95,13 +98,14 @@ async function getHomeData(locale: string) {
             heroPosters,
             limitedProducts: limitedData.success ? limitedData.data : [],
             weeklyProducts: weeklyData.success ? weeklyData.data : [],
+            newArrivals: newArrivalsData.success ? newArrivalsData.data : [],
             homeSections,
             categories: mainCategories,
             brands: allBrands
         };
     } catch (e) {
         console.error("Home server fetch failed", e);
-        return { heroSlides: [], heroPosters: [], limitedProducts: [], weeklyProducts: [], homeSections: [], categories: [], brands: [] };
+        return { heroSlides: [], heroPosters: [], limitedProducts: [], weeklyProducts: [], newArrivals: [], homeSections: [], categories: [], brands: [] };
     }
 }
 
@@ -159,6 +163,7 @@ export default async function Home(props: { params: Promise<{ locale: string }> 
             <Hero initialSlides={data.heroSlides} />
             <Reveal key="reveal-brands"><BrandsBrowse initialBrands={data.brands} /></Reveal>
             <Reveal key="reveal-categories"><CategoryBrowse initialCategories={data.categories} /></Reveal>
+            <Reveal key="reveal-new-arrivals"><NewArrivals initialProducts={data.newArrivals} /></Reveal>
             <Reveal key="reveal-limited"><LimitedOffers initialProducts={data.limitedProducts} /></Reveal>
             <Reveal key="reveal-weekly"><WeeklyDeals initialProducts={data.weeklyProducts} /></Reveal>
             {data.homeSections.map((section: any) => (

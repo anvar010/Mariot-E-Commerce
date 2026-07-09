@@ -17,6 +17,7 @@
     "allCategories": "ALL CATEGORIES",
     "todayOffers": "TODAY OFFERS",
     "weeklyDeals": "WEEKLY DEALS",
+    "saleBadge": "SALE",
     "shopByBrand": "SHOP BY BRAND",
     "kitchenEquipments": "KITCHEN EQUIPMENTS",
     "stainlessSteelFabrications": "STAINLESS STEEL FABRICATIONS",
@@ -99,6 +100,10 @@
     "loading": "Loading..."
   },
   "product": {
+    "share": "Share",
+    "shareText": "What do you think of this? Found it on Mariot Store!",
+    "linkCopied": "Link copied to clipboard",
+    "shareFailed": "Couldn't share, please try again",
     "inStock": "IN STOCK",
     "outOfStock": "OUT OF STOCK",
     "model": "MODEL",
@@ -659,6 +664,10 @@
     "title": "Weekly Deals",
     "viewAll": "View All",
     "noDeals": "No weekly deals available at the moment."
+  },
+  "newArrivals": {
+    "title": "New Arrivals",
+    "viewAll": "View All"
   },
   "limitedOffers": {
     "title": "Limited Time Offers",

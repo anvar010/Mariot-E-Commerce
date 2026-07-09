@@ -614,7 +614,9 @@ const UserDashboard = () => {
             const a = document.createElement('a');
             a.href = blobUrl;
             a.download = `Invoice-${selectedOrder.invoice.invoice_number}.pdf`;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
         } catch (error) {
             showNotification(t('orders.invoiceDownloadError'), 'error');

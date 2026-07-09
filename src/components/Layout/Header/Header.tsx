@@ -337,13 +337,13 @@ const Header = () => {
     // Traditional nav link configuration
     const navItems = [
         { label: t('todayOffers'), path: '/today-offers', isHot: true, icon: Flame },
-        { label: t('weeklyDeals'), path: '/shop?weekly=true', icon: Gift },
+        { label: t('weeklyDeals'), path: '/shop?weekly=true', isDeal: true, icon: Gift },
         { label: t('shopByBrand'), path: '/shop-by-brands', icon: Tag },
         { label: t('kitchenEquipments'), path: '/category/kitchen-equipment', icon: Utensils },
         { label: t('stainlessSteelFabrications'), path: '/category/stainless-steel-fabrications', icon: Hammer },
         { label: t('superMarket'), path: '/category/supermarket', icon: ShoppingCart },
         { label: t('laundry'), path: '/category/laundry', icon: Shirt },
-        { label: t('rewardPoints'), path: '/profile?tab=myRewards', icon: Trophy, hasBadge: true },
+        { label: t('rewardPoints'), path: '/profile?tab=myRewards', icon: Trophy, hasBadge: true, requiresAuth: true },
     ];
 
     return (
@@ -599,25 +599,26 @@ const Header = () => {
 
                             <ul className={styles.navLinks}>
                                 {navItems
-                                    .filter(item => item.path !== '/shop?weekly=true' && item.path !== '/profile?tab=myRewards')
+                                    .filter(item => item.path !== '/profile?tab=myRewards')
                                     .map((item, index) => (
                                         <li key={index}>
                                             <Link
                                                 href={item.path}
-                                                className={`${pathname === item.path ? styles.linkActive : ''} ${item.isHot ? styles.desktopHotLink : ''}`}
+                                                className={`${pathname === item.path ? styles.linkActive : ''} ${item.isHot ? styles.desktopHotLink : ''} ${item.isDeal ? styles.desktopDealLink : ''}`}
                                             >
-                                                {item.isHot && item.icon && (
+                                                {(item.isHot || item.isDeal) && item.icon && (
                                                     <item.icon
                                                         size={16}
                                                         style={{
                                                             marginInlineEnd: '4px',
                                                             verticalAlign: 'middle',
-                                                            color: '#ef4444',
+                                                            color: item.isHot ? '#ef4444' : '#16a1db',
                                                             display: 'inline-block'
                                                         }}
                                                     />
                                                 )}
                                                 {item.label}
+                                                {item.isDeal && <span className={styles.dealPill}>{t('saleBadge')}</span>}
                                             </Link>
                                         </li>
                                     ))}
@@ -698,9 +699,9 @@ const Header = () => {
                         {/* Traditional nav links */}
                         <ul className={styles.navLinks}>
                             {navItems.map((item, index) => (
-                                <li key={index} className={item.isHot ? styles.hot : ''}>
+                                <li key={index} className={`${item.isHot ? styles.hot : ''} ${item.isDeal ? styles.deal : ''}`}>
                                     <Link
-                                        href={item.path}
+                                        href={item.requiresAuth && !user ? `/signin?redirectTo=${encodeURIComponent(item.path)}` : item.path}
                                         className={pathname === item.path ? styles.linkActive : ''}
                                         onClick={() => setIsMenuOpen(false)}
                                     >
@@ -709,6 +710,7 @@ const Header = () => {
                                             {item.label}
                                         </div>
                                         {item.isHot && <span className={styles.hotBadge}>HOT</span>}
+                                        {item.isDeal && <span className={styles.dealBadge}>{t('saleBadge')}</span>}
                                         {item.hasBadge && (
                                             <span className={styles.pointsBadge} title={String(user?.reward_points || 0)}>
                                                 {formatPoints(user?.reward_points)} PTS

@@ -17,6 +17,7 @@
         "allCategories": "جميع الفئات",
         "todayOffers": "عروض اليوم",
         "weeklyDeals": "عروض الأسبوع",
+        "saleBadge": "تخفيض",
         "shopByBrand": "تسوق حسب العلامة",
         "kitchenEquipments": "معدات المطبخ",
         "stainlessSteelFabrications": "تصنيع الفولاذ المقاوم للصدأ",
@@ -99,6 +100,10 @@
         "loading": "جاري التحميل..."
     },
     "product": {
+        "share": "مشاركة",
+        "shareText": "ما رأيك في هذا؟ وجدته على متجر ماريوت!",
+        "linkCopied": "تم نسخ الرابط",
+        "shareFailed": "تعذّرت المشاركة، حاول مرة أخرى",
         "inStock": "متوفر",
         "outOfStock": "غير متوفر",
         "model": "الموديل",
@@ -659,6 +664,10 @@
         "title": "عروض أسبوعية",
         "viewAll": "عرض الكل",
         "noDeals": "لا توجد عروض أسبوعية متاحة حالياً."
+    },
+    "newArrivals": {
+        "title": "وصل حديثاً",
+        "viewAll": "عرض الكل"
     },
     "limitedOffers": {
         "title": "عروض لفترة محدودة",

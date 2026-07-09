@@ -33,7 +33,8 @@ import {
     MoveHorizontal,
     MoveVertical,
     BellRing,
-    Scale
+    Scale,
+    Share2
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
@@ -71,6 +72,13 @@ interface ProductDetailProps {
 // primary image). Matches the fallback used by ProductCard so the site logo
 // appears consistently instead of a blank/placeholder tile.
 const LOGO_FALLBACK = '/assets/mariot-logo2.webp';
+
+// Swap a broken <img> to the site logo, once — the endsWith guard stops an
+// error loop in case the logo asset itself ever fails to load.
+const swapToLogoOnError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (!img.src.endsWith(LOGO_FALLBACK)) img.src = LOGO_FALLBACK;
+};
 
 const TrustItem = ({ icon, title, text }: any) => (
     <div className={styles.trustItem}>
@@ -1096,18 +1104,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     // Units the user may pick. Untracked products aren't capped by stock_quantity.
     const maxQty = tracksInventory ? effectiveStock : 99;
 
-    const baseImages: string[] = product.images?.length > 0
-        ? product.images.map((img: any) => resolveUrl(img.image_url))
-        : [LOGO_FALLBACK];
+    // Mirror ProductCard's gallery build: primary image first, then the gallery
+    // rows, dropping empty URLs so a blank DB row can't render a broken <img>.
+    const galleryImages: string[] = Array.from(new Set([
+        resolveUrl(product.primary_image),
+        ...(Array.isArray(product.images) ? product.images.map((img: any) => resolveUrl(img.image_url)) : []),
+    ].filter(Boolean)));
+    const baseImages: string[] = galleryImages.length > 0 ? galleryImages : [LOGO_FALLBACK];
     // When a variant is selected with its own gallery, show ONLY that variant's images.
     const variantImageUrls: string[] = (selectedVariant && !selectedVariant.use_primary_image)
         ? (Array.isArray(selectedVariant.image_urls) && selectedVariant.image_urls.length > 0
             ? selectedVariant.image_urls
             : (selectedVariant.image_url ? [selectedVariant.image_url] : []))
         : [];
-    const images: string[] = variantImageUrls.length > 0
-        ? variantImageUrls.map((u: string) => resolveUrl(u))
-        : baseImages;
+    const resolvedVariantImages: string[] = variantImageUrls.map((u: string) => resolveUrl(u)).filter(Boolean);
+    const images: string[] = resolvedVariantImages.length > 0 ? resolvedVariantImages : baseImages;
 
     const variantLabel = selectedVariant
         ? productOptions
@@ -1132,6 +1143,35 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 image: images[0],
                 brand: product.brand_name
             });
+        }
+    };
+
+    // Native share sheet (Web Share API) on mobile; on desktop / unsupported
+    // browsers we fall back to copying the link. The rich preview shown by
+    // WhatsApp/Telegram/etc. comes from the page's Open Graph tags
+    // (see generateMetadata in product/[...slug]/page.tsx), so we only pass the
+    // localized title + message + URL here.
+    const handleShare = async () => {
+        const url = typeof window !== 'undefined' ? window.location.href : '';
+        const title = getLocalizedField('name', 'name_ar');
+        const text = `${t('shareText')}\n${title}`;
+        try {
+            if (typeof navigator !== 'undefined' && navigator.share) {
+                await navigator.share({ title, text, url });
+                return;
+            }
+            await navigator.clipboard.writeText(url);
+            showNotification(t('linkCopied'), 'success');
+        } catch (err: any) {
+            // AbortError = user dismissed the share sheet; not an error worth surfacing.
+            if (err?.name !== 'AbortError') {
+                try {
+                    await navigator.clipboard.writeText(url);
+                    showNotification(t('linkCopied'), 'success');
+                } catch {
+                    showNotification(t('shareFailed'), 'error');
+                }
+            }
         }
     };
 
@@ -1336,6 +1376,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 <button className={styles.wishlistBtn} onClick={toggleWishlist}>
                                     <Heart size={20} fill={isFav ? "#e31e24" : "none"} color={isFav ? "#e31e24" : "#999"} />
                                 </button>
+                                <button
+                                    className={styles.shareBtn}
+                                    onClick={handleShare}
+                                    aria-label={t('share')}
+                                    title={t('share')}
+                                >
+                                    <Share2 size={18} color="#555" />
+                                </button>
 
                                 <div className={styles.mainImageWrapper}>
                                     <Swiper
@@ -1358,6 +1406,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                     src={img}
                                                     alt={`${getLocalizedField('name', 'name_ar')} - ${idx + 1}`}
                                                     className={styles.mainImage}
+                                                    onError={swapToLogoOnError}
                                                 />
                                             </SwiperSlide>
                                         ))}
@@ -1395,7 +1444,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                 className={`${styles.thumbWrapper} ${currentImageIndex === idx ? styles.active : ''}`}
                                                 onClick={() => setCurrentImageIndex(idx)}
                                             >
-                                                <img src={img} alt={`Thumb ${idx}`} className={styles.thumbImage} />
+                                                <img src={img} alt={`Thumb ${idx}`} className={styles.thumbImage} onError={swapToLogoOnError} />
                                             </div>
                                         ))}
                                     </div>
@@ -1412,7 +1461,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             <div className={styles.infoSection}>
                                 {product.brand_image && (
                                     <div className={styles.brandLogoBox}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                                             <span className={styles.brandLabel}>{t('brand', { defaultValue: 'Brand' })}:</span>
                                             <Link
                                                 href={`/shop?brand=${encodeURIComponent(product.brand_slug || product.brand_name?.toLowerCase().replace(/ /g, '-'))}`}
@@ -1594,7 +1643,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                                         onClick={handleSelect}
                                                                     >
                                                                         <div className={styles.variantImageCardThumb}>
-                                                                            <img src={thumbSrc} alt={label} />
+                                                                            <img src={thumbSrc} alt={label} onError={swapToLogoOnError} />
                                                                         </div>
                                                                         <span className={styles.variantImageCardLabel}>{label}</span>
                                                                     </button>
@@ -3215,6 +3264,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 src={images[currentImageIndex]}
                                 alt={getLocalizedField('name', 'name_ar')}
                                 className={styles.fullscreenImage}
+                                onError={swapToLogoOnError}
                             />
                         </div>
                     </div>
