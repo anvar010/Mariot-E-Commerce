@@ -1,18 +1,22 @@
 /**
  * Monthly Reward-Points E-Statement Service
  *
- * On the 1st of each month, emails every user a statement of the PREVIOUS
- * calendar month's points activity (earned / pending / redeemed / expiring)
- * plus their current balance.
+ * On the 1st of each month, emails every user a reconciling statement of the
+ * PREVIOUS calendar month: opening balance + earned − redeemed = closing balance.
  *
- * Data sources (reward_points_history.transaction_type ENUM: earned|redeemed|expired):
- *   - Earned    = SUM(earned)   in the statement month
- *   - Redeemed  = SUM(redeemed) in the statement month
- *   - Pending   = SUM(earned) in the month tied to orders not yet delivered
- *                 (order status pending|processing|shipped) — points awaiting fulfilment
- *   - Expiring  = points whose 12-month lifetime ends next month. Disabled unless
- *                 POINTS_EXPIRY_MONTHS is set (>0); otherwise reported as 0.
- *   - Balance   = users.reward_points (live balance)
+ * Data sources (reward_points_history.transaction_type ENUM:
+ * earned|redeemed|expired|reversed|refunded):
+ *   - Earned   = points added to the balance in the month
+ *                = SUM('earned' + 'refunded')   (refunds return previously-spent points)
+ *   - Redeemed = points removed from the balance in the month
+ *                = SUM('redeemed' + 'reversed' + 'expired')
+ *                  ('reversed' = earn claw-back when an order is cancelled)
+ *   - Closing  = balance at the END of the statement month, derived by rewinding
+ *                the live users.reward_points back over all activity since month-end.
+ *   - Opening  = Closing − (Earned − Redeemed), i.e. the balance the month started with.
+ *
+ * Because Earned − Redeemed equals the month's true net balance change, the four
+ * figures always reconcile against the live balance.
  *
  * Sends are de-duplicated via points_statement_log (one row per user per period).
  */
@@ -74,53 +78,58 @@ const previousMonthRange = (ref = new Date()) => {
 const computeStats = async (range) => {
     const { startSql, endSql } = range;
 
-    // Earned & redeemed in the month, per user.
-    const [agg] = await db.query(`
-        SELECT user_id,
-               COALESCE(SUM(CASE WHEN transaction_type = 'earned'   THEN points ELSE 0 END), 0) AS earned,
-               COALESCE(SUM(CASE WHEN transaction_type = 'redeemed' THEN points ELSE 0 END), 0) AS redeemed
-        FROM reward_points_history
-        WHERE created_at >= ? AND created_at < ?
-        GROUP BY user_id
-    `, [startSql, endSql]);
+    // startSql/endSql are UAE wall-clock strings. reward_points_history.created_at
+    // is a TIMESTAMP (stored UTC, compared in the session time zone), so we pin
+    // THIS connection's session to UAE (+04:00). That makes the boundary
+    // comparisons correct regardless of the server's default time zone, and is
+    // released right after so no other query is affected.
+    const conn = await db.getConnection();
+    // Capture the connection's current zone so we can restore it before releasing
+    // back to the pool (mysql2 does not reset session vars on release).
+    const [[{ tz: prevTz }]] = await conn.query("SELECT @@session.time_zone AS tz");
+    try {
+        await conn.query("SET time_zone = '+04:00'");
 
-    // Pending = earned points in the month whose order is not yet delivered.
-    const [pendingRows] = await db.query(`
-        SELECT rph.user_id,
-               COALESCE(SUM(rph.points), 0) AS pending
-        FROM reward_points_history rph
-        JOIN orders o ON o.id = rph.order_id
-        WHERE rph.transaction_type = 'earned'
-          AND rph.created_at >= ? AND rph.created_at < ?
-          AND o.status IN ('pending', 'processing', 'shipped')
-        GROUP BY rph.user_id
-    `, [startSql, endSql]);
-
-    // Expiring next month (only if an expiry policy is configured).
-    let expiringRows = [];
-    if (POINTS_EXPIRY_MONTHS > 0) {
-        // Points earned in the lifetime-window that lands in NEXT month.
-        // Window: earned between (now - EXPIRY months) and (now - EXPIRY + 1 month).
-        const [rows] = await db.query(`
-            SELECT user_id, COALESCE(SUM(points), 0) AS expiring
+        // In-month ledger movement per user, expressed as the two statement columns:
+        //   earned   = points that ADDED to the balance     → 'earned' + 'refunded'
+        //   redeemed = points that LEFT the balance          → 'redeemed' + 'reversed' + 'expired'
+        // Defined this way (earned − redeemed = the month's net balance change), so
+        // the statement always reconciles: opening + earned − redeemed = closing.
+        // In the common case (no cancellations) refunded/reversed/expired are 0, so
+        // these are just plain earned and redeemed.
+        const [monthRows] = await conn.query(`
+            SELECT user_id,
+                   COALESCE(SUM(CASE WHEN transaction_type IN ('earned','refunded')            THEN points ELSE 0 END), 0) AS earned,
+                   COALESCE(SUM(CASE WHEN transaction_type IN ('redeemed','reversed','expired') THEN points ELSE 0 END), 0) AS redeemed
             FROM reward_points_history
-            WHERE transaction_type = 'earned'
-              AND created_at >= DATE_SUB(?, INTERVAL ? MONTH)
-              AND created_at <  DATE_SUB(?, INTERVAL ? MONTH)
+            WHERE created_at >= ? AND created_at < ?
             GROUP BY user_id
-        `, [endSql, POINTS_EXPIRY_MONTHS, endSql, POINTS_EXPIRY_MONTHS - 1]);
-        expiringRows = rows;
-    }
+        `, [startSql, endSql]);
 
-    const stats = new Map();
-    const ensure = (id) => {
-        if (!stats.has(id)) stats.set(id, { earned: 0, redeemed: 0, pending: 0, expiringNextMonth: 0 });
-        return stats.get(id);
-    };
-    for (const r of agg) { const s = ensure(r.user_id); s.earned = Number(r.earned); s.redeemed = Number(r.redeemed); }
-    for (const r of pendingRows) { ensure(r.user_id).pending = Number(r.pending); }
-    for (const r of expiringRows) { ensure(r.user_id).expiringNextMonth = Number(r.expiring); }
-    return stats;
+        // Net balance change AFTER the statement month (endSql → now). Lets us rewind
+        // the live users.reward_points back to the month-END closing balance, so the
+        // statement reflects the month it covers — not activity since.
+        const [afterRows] = await conn.query(`
+            SELECT user_id,
+                   COALESCE(SUM(CASE WHEN transaction_type IN ('earned','refunded') THEN points ELSE -points END), 0) AS net_after
+            FROM reward_points_history
+            WHERE created_at >= ?
+            GROUP BY user_id
+        `, [endSql]);
+
+        const stats = new Map();
+        const ensure = (id) => {
+            if (!stats.has(id)) stats.set(id, { earned: 0, redeemed: 0, netAfter: 0 });
+            return stats.get(id);
+        };
+        for (const r of monthRows) { const s = ensure(r.user_id); s.earned = Number(r.earned); s.redeemed = Number(r.redeemed); }
+        for (const r of afterRows) { ensure(r.user_id).netAfter = Number(r.net_after); }
+        return stats;
+    } finally {
+        // Restore the original zone so the pooled connection is reusable as-is.
+        try { await conn.query("SET time_zone = ?", [prevTz]); } catch (_) { /* ignore */ }
+        conn.release();
+    }
 };
 
 /**
@@ -150,16 +159,20 @@ const processMonthlyStatements = async (ref = new Date()) => {
         let sent = 0;
         for (const u of users) {
             try {
-                const s = statsMap.get(u.id) || { earned: 0, redeemed: 0, pending: 0, expiringNextMonth: 0 };
+                const s = statsMap.get(u.id) || { earned: 0, redeemed: 0, netAfter: 0 };
+                // Rewind the live balance to the statement month's close, then
+                // back out the month's net movement to get the opening balance.
+                const balanceNow = Number(u.reward_points) || 0;
+                const closing = balanceNow - s.netAfter;
+                const opening = closing - (s.earned - s.redeemed);
                 await sendMonthlyStatementEmail(
                     u.email,
                     u.name || '',
                     {
+                        opening,
                         earned: s.earned,
-                        pending: s.pending,
                         redeemed: s.redeemed,
-                        expiringNextMonth: s.expiringNextMonth,
-                        balance: Number(u.reward_points) || 0,
+                        balance: closing,
                         monthLabel,
                         monthLabelAr,
                     },

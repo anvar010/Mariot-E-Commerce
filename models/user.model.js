@@ -99,7 +99,18 @@ class User {
                 AND name IS NOT NULL AND name <> ''`,
             [bonus, userId]
         );
-        return result.affectedRows > 0;
+        const awarded = result.affectedRows > 0;
+        // Log the bonus so it appears in the rewards statement and matches the
+        // live balance. Only on the run that actually awarded it. Non-fatal.
+        if (awarded) {
+            try {
+                await db.execute(
+                    "INSERT INTO reward_points_history (user_id, points, transaction_type, description) VALUES (?, ?, 'earned', 'Profile completion bonus')",
+                    [userId, bonus]
+                );
+            } catch (e) { console.error('[Rewards] profile-bonus history insert failed:', e.message); }
+        }
+        return awarded;
     }
 
     static async clearEmailOtp(userId) {

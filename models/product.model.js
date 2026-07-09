@@ -57,7 +57,8 @@ class Product {
             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
             COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = p.id), 0) as average_rating,
             (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as total_reviews,
-            COALESCE((SELECT SUM(quantity) FROM order_items WHERE product_id = p.id), 0) as sold_count
+            COALESCE((SELECT SUM(quantity) FROM order_items WHERE product_id = p.id), 0) as sold_count,
+            (SELECT MIN(pv_min.price) FROM product_variants pv_min WHERE pv_min.product_id = p.id AND pv_min.is_active = 1 AND pv_min.price > 0) as min_variant_price
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN categories sc ON p.sub_category_id = sc.id
