@@ -4220,54 +4220,83 @@
     flex-direction: column;
 }
 
-.specsCardGrid {
+.specsTable {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0 24px;
     margin-top: 16px;
 }
 
-.specCard {
+.specTableCell {
     display: flex;
-    align-items: center;
-    padding: 10px 14px;
-    background-color: #ffffff;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    gap: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    min-width: 0;
 }
 
-.specIconWrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background-color: #f0f4f8; /* Light blue background */
-    border-radius: 8px;
-    color: #1a56db; /* Primary blue icon color */
-    flex-shrink: 0;
-}
-
-.specContent {
-    display: flex;
-    flex-direction: column;
-    gap: 0px;
-}
-
-.specCardLabel {
-    font-size: 13px;
-    color: #6b7280;
-}
-
-.specCardValue {
-    font-size: 15px;
-    font-weight: 600;
-    color: #111827;
-}
-
-.specCardSingle {
+.specTableCellSingle {
     grid-column: 1 / -1;
+}
+
+.desktopOdd {
+    background-color: #e8f0fe;
+}
+
+.desktopEven {
+    background-color: transparent;
+}
+
+.mobileOdd {
+    /* Set explicitly to override later if needed, but not necessary here */
+}
+
+.mobileEven {
+    /* Set explicitly to override later if needed, but not necessary here */
+}
+
+@media (max-width: 768px) {
+    .specsTable {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    /* On mobile, ignore desktop classes and use mobile classes */
+    .desktopOdd, .desktopEven {
+        background-color: transparent;
+    }
+    
+    .mobileOdd {
+        background-color: #e8f0fe;
+    }
+    
+    .mobileEven {
+        background-color: transparent;
+    }
+}
+
+.specTableLabel {
+    flex: 0 0 140px;
+    color: #666;
+}
+
+.specTableValue {
+    flex: 1;
+    color: #111;
+    font-weight: 500;
+}
+
+.specTableCellSingle {
+    flex: 1 1 100%;
+}
+
+@media (max-width: 768px) {
+    .specTableRowWrapper {
+        flex-direction: column;
+    }
+    
+    .specTableCell + .specTableCell {
+        margin-inline-start: 0;
+    }
 }
 
 .specItem {
@@ -5399,5 +5428,120 @@
     .customPriceValue {
         font-size: 18px;
         font-weight: 800;
+    }
+}
+
+/* Compatible Parts Grid */
+.linkedPartsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.linkedPartCard {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.linkedPartCard:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+}
+
+.partImageWrap {
+    width: 100%;
+    aspect-ratio: 1;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.partImageWrap img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.partInfo {
+    padding: 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.partName {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+}
+
+.partPriceRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.partPrice {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.partOldPrice {
+    font-size: 13px;
+    text-decoration: line-through;
+    color: #94a3b8;
+}
+
+.partAddBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    background: #f1f5f9;
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.partAddBtn:hover {
+    background: #e2e8f0;
+}
+
+@media (max-width: 500px) {
+    .linkedPartsGrid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+    }
+    .partName {
+        font-size: 13px;
+    }
+    .partPrice {
+        font-size: 14px;
+    }
+    .partAddBtn {
+        padding: 8px;
+        font-size: 12px;
     }
 }

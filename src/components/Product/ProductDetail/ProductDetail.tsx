@@ -45,7 +45,8 @@ import {
     IceCream,
     Package,
     Fan,
-    Weight
+    Weight,
+    Settings
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
@@ -532,15 +533,34 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 .filter(Boolean);
         }
         if (cleaned.includes('<p>')) {
-            return [...cleaned.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
+            const pLines = [...cleaned.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
                 .map(m => m[1].replace(/<[^>]+>/g, '').trim())
                 .filter(Boolean);
+            if (pLines.length > 1) return pLines;
+            // Single <p> with a long paragraph — fall through to sentence split
         }
 
-        return cleaned
+        const lines = cleaned
             .split(/(?:<br\s*\/?>|[\r\n])+/)
             .map(s => s.replace(/^[•\-‐\*✳️✅]\s*/, '').trim())
             .filter(Boolean);
+
+        if (lines.length > 1) return lines;
+
+        // If we still have a single block of text, split on sentence boundaries
+        // (period/comma followed by space) to create individual feature bullets.
+        // This handles continuous paragraph-style descriptions (e.g. Gelmatic).
+        if (lines.length === 1 && lines[0].length > 60) {
+            const plainText = lines[0].replace(/<[^>]+>/g, '');
+            // Split on period or comma followed by a space and an Arabic/Latin letter
+            const sentences = plainText
+                .split(/(?<=[.،,])\s+(?=[A-Za-z\u0600-\u06FF])/)
+                .map(s => s.trim().replace(/[.،,]+$/, '').trim())
+                .filter(s => s.length > 5);
+            if (sentences.length > 1) return sentences;
+        }
+
+        return lines;
     };
 
     // Compare-with-similar-products states
@@ -2208,48 +2228,57 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                                             if (lines.length > 1) {
                                                 return (
-                                                    <div className={styles.specsCardGrid}>
-                                                        {lines.map((line, idx) => {
-                                                            const trimmed = line.trim();
-                                                            // Prefer "Label: value" split. If no colon, fall back to first-whitespace
-                                                            // split so plain rows like "CAPICETY 12 TRAY" still render as a key/value pair.
-                                                            let label = '';
-                                                            let value = '';
-                                                            const colonIdx = trimmed.indexOf(':');
-                                                            if (colonIdx > 0) {
-                                                                label = trimmed.slice(0, colonIdx).trim();
-                                                                value = trimmed.slice(colonIdx + 1).trim();
-                                                            } else {
-                                                                const wsIdx = trimmed.search(/\s/);
-                                                                if (wsIdx > 0) {
-                                                                    label = trimmed.slice(0, wsIdx).trim();
-                                                                    value = trimmed.slice(wsIdx + 1).trim();
+                                                    <div className={styles.specsTable}>
+                                                        {(() => {
+                                                            const cells: any[] = [];
+                                                            let desktopRowIdx = 0;
+                                                            let mobileRowIdx = 0;
+                                                            let itemsInRow = 0;
+                                                            
+                                                            lines.forEach((line) => {
+                                                                const trimmed = line.trim();
+                                                                let label = '';
+                                                                let value = '';
+                                                                const colonIdx = trimmed.indexOf(':');
+                                                                if (colonIdx > 0) {
+                                                                    label = trimmed.slice(0, colonIdx).trim();
+                                                                    value = trimmed.slice(colonIdx + 1).trim();
+                                                                } else {
+                                                                    const wsIdx = trimmed.search(/\s/);
+                                                                    if (wsIdx > 0) {
+                                                                        label = trimmed.slice(0, wsIdx).trim();
+                                                                        value = trimmed.slice(wsIdx + 1).trim();
+                                                                    }
                                                                 }
-                                                            }
-                                                            if (label && value) {
-                                                                return (
-                                                                    <div key={idx} className={styles.specCard}>
-                                                                        <div className={styles.specIconWrapper}>
-                                                                            {getIconForLabel(label)}
-                                                                        </div>
-                                                                        <div className={styles.specContent}>
-                                                                            <span className={styles.specCardLabel}>{label}</span>
-                                                                            <span className={styles.specCardValue}>{value}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            }
-                                                            return (
-                                                                <div key={idx} className={`${styles.specCard} ${styles.specCardSingle}`}>
-                                                                    <div className={styles.specIconWrapper}>
-                                                                        <ListChecks size={20} />
-                                                                    </div>
-                                                                    <div className={styles.specContent}>
-                                                                        <span className={styles.specCardValue}>{trimmed}</span>
-                                                                    </div>
+                                                                if (label && value) {
+                                                                    cells.push({ label, value, isSingle: false, desktopRowIdx, mobileRowIdx });
+                                                                    itemsInRow++;
+                                                                    mobileRowIdx++;
+                                                                    if (itemsInRow === 2) {
+                                                                        desktopRowIdx++;
+                                                                        itemsInRow = 0;
+                                                                    }
+                                                                } else {
+                                                                    if (itemsInRow > 0) {
+                                                                        desktopRowIdx++;
+                                                                        itemsInRow = 0;
+                                                                    }
+                                                                    cells.push({ value: trimmed, isSingle: true, desktopRowIdx, mobileRowIdx });
+                                                                    desktopRowIdx++;
+                                                                    mobileRowIdx++;
+                                                                }
+                                                            });
+                                                            
+                                                            return cells.map((cell, idx) => (
+                                                                <div 
+                                                                    key={idx} 
+                                                                    className={`${styles.specTableCell} ${cell.isSingle ? styles.specTableCellSingle : ''} ${cell.desktopRowIdx % 2 === 0 ? styles.desktopOdd : styles.desktopEven} ${cell.mobileRowIdx % 2 === 0 ? styles.mobileOdd : styles.mobileEven}`}
+                                                                >
+                                                                    {!cell.isSingle && <div className={styles.specTableLabel}>{cell.label}</div>}
+                                                                    <div className={styles.specTableValue}>{cell.value}</div>
                                                                 </div>
-                                                            );
-                                                        })}
+                                                            ));
+                                                        })()}
                                                     </div>
                                                 );
                                             }
@@ -2379,6 +2408,49 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     );
                                 })()}
                             </AccordionItem>
+
+                            {Array.isArray(product.linked_parts_products) && product.linked_parts_products.length > 0 && (
+                                <AccordionItem
+                                    title={t('compatibleParts') || 'Compatible Parts'}
+                                    icon={<Settings size={20} />}
+                                    isOpen={!!expandedAccordions['parts']}
+                                    onToggle={() => toggleAccordion('parts')}
+                                >
+                                    {(() => {
+                                        const parts = product.linked_parts_products;
+                                    return (
+                                        <div className={styles.linkedPartsGrid}>
+                                            {parts.map((part: any, i: number) => (
+                                                <div key={i} className={styles.linkedPartCard}>
+                                                    <div className={styles.partImageWrap}>
+                                                        <img src={resolveUrl(part.primary_image) || '/logo.png'} alt={isArabic && part.name_ar ? part.name_ar : part.name} />
+                                                    </div>
+                                                    <div className={styles.partInfo}>
+                                                        <span className={styles.partName}>{isArabic && part.name_ar ? part.name_ar : part.name}</span>
+                                                        <div className={styles.partPriceRow}>
+                                                            <CurrencyPrice price={part.offer_price > 0 ? part.offer_price : part.price} className={styles.partPrice} />
+                                                            {part.offer_price > 0 && (
+                                                                <CurrencyPrice price={part.price} className={styles.partOldPrice} />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        className={styles.partAddBtn}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            addToCart({ ...part, image: part.primary_image, quantity: 1 });
+                                                        }}
+                                                    >
+                                                        <ShoppingCart size={16} />
+                                                        <span>{t('addToCart')}</span>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+                            </AccordionItem>
+                            )}
                         </div>
                     </div>
 
@@ -3204,7 +3276,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             placeholder={isArabic ? 'ابحث عن منتج' : 'Search for a product'}
                                             value={compareSearch}
                                             onChange={(e) => setCompareSearch(e.target.value)}
-                                            autoFocus
                                         />
                                     </form>
                                 </div>

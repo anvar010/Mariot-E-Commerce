@@ -432,6 +432,12 @@ const AdminProducts = () => {
     const [giftLoading, setGiftLoading] = useState(false);
     const [giftSelectedItems, setGiftSelectedItems] = useState<{ id: number; name: string }[]>([]);
 
+    // Linked Parts picker (only searches 'Parts' category)
+    const [partsSearch, setPartsSearch] = useState('');
+    const [partsResults, setPartsResults] = useState<any[]>([]);
+    const [partsLoading, setPartsLoading] = useState(false);
+    const [partsSelectedItems, setPartsSelectedItems] = useState<{ id: number; name: string }[]>([]);
+
     // Admin-curated Compare table — slots grow dynamically (admin can add as many as they want)
     const [compareEnabled, setCompareEnabled] = useState(false);
     const [compareSlots, setCompareSlots] = useState<Array<{ id: number; name: string }>>([]);
@@ -831,6 +837,28 @@ const AdminProducts = () => {
         }, 300);
         return () => clearTimeout(timer);
     }, [giftSearch, editingId]);
+
+    useEffect(() => {
+        if (!partsSearch.trim()) { setPartsResults([]); return; }
+        const timer = setTimeout(async () => {
+            setPartsLoading(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/products?search=${encodeURIComponent(partsSearch)}&limit=15&page=1&status=all&category=parts`, {
+                    credentials: 'include',
+                    headers: getAuthHeaders()
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setPartsResults(data.data.filter((p: any) => p.id !== editingId));
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setPartsLoading(false);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [partsSearch, editingId]);
 
     useEffect(() => {
         if (!compareSearch.trim()) { setCompareResults([]); return; }
@@ -1314,6 +1342,22 @@ const AdminProducts = () => {
         setGiftSearch('');
         setGiftResults([]);
 
+        let partsItems: { id: number; name: string }[] = [];
+        if (Array.isArray(product.linked_parts_products) && product.linked_parts_products.length > 0) {
+            partsItems = product.linked_parts_products.map((p: any) => ({ id: p.id, name: p.name }));
+        } else if (product.linked_parts) {
+            try {
+                const ids: number[] = JSON.parse(product.linked_parts);
+                partsItems = ids.map(id => ({
+                    id,
+                    name: products.find((p: any) => p.id === id)?.name || `Product #${id}`
+                }));
+            } catch (e) { }
+        }
+        setPartsSelectedItems(partsItems);
+        setPartsSearch('');
+        setPartsResults([]);
+
         // Hydrate admin Compare config
         let cmpCfg: any = product.compare_config;
         if (typeof cmpCfg === 'string') {
@@ -1482,6 +1526,9 @@ const AdminProducts = () => {
         setGiftSelectedItems([]);
         setGiftSearch('');
         setGiftResults([]);
+        setPartsSelectedItems([]);
+        setPartsSearch('');
+        setPartsResults([]);
         setCompareEnabled(false);
         setCompareSlots([]);
         setCompareRows([]);
@@ -1550,6 +1597,9 @@ const AdminProducts = () => {
                     : null,
                 free_gift_product_ids: giftSelectedItems.length > 0
                     ? JSON.stringify(giftSelectedItems.map(p => p.id))
+                    : null,
+                linked_parts: partsSelectedItems.length > 0
+                    ? JSON.stringify(partsSelectedItems.map(p => p.id))
                     : null,
                 compare_config: compareEnabled
                     ? JSON.stringify({
@@ -3132,6 +3182,129 @@ const AdminProducts = () => {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => setGiftSelectedItems(prev => prev.filter(p => p.id !== item.id))}
+                                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 4 }}
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Linked Parts */}
+                                            <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #e2e8f0' }}>
+                                                <div className={styles.paneHeader} style={{ marginBottom: '16px' }}>
+                                                    <h3>Linked Parts</h3>
+                                                    <p>
+                                                        Link compatible parts to this product. They will appear in a dedicated section on the product page.
+                                                    </p>
+                                                </div>
+                                                {partsSelectedItems.length > 0 && (
+                                                    <div style={{
+                                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                                        padding: '8px 12px', background: '#eff6ff', border: '1px solid #bfdbfe',
+                                                        borderRadius: '8px', marginBottom: '12px', fontSize: '12px', color: '#1e40af'
+                                                    }}>
+                                                        <Check size={14} />
+                                                        <span>{partsSelectedItems.length} linked part{partsSelectedItems.length !== 1 ? 's' : ''} attached</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setPartsSelectedItems([])}
+                                                            style={{ marginInlineStart: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#1e40af', fontSize: '12px', textDecoration: 'underline', padding: 0 }}
+                                                        >
+                                                            Remove all
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                <div className={styles.formGroup} style={{ maxWidth: '100%' }}>
+                                                    <label>Search & Add Linked Parts</label>
+                                                    <div style={{ position: 'relative', width: '100%' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={partsSearch}
+                                                            onChange={(e) => setPartsSearch(e.target.value)}
+                                                            placeholder="Search for parts..."
+                                                            autoComplete="off"
+                                                            style={{ width: '100%', paddingInlineEnd: '36px' }}
+                                                        />
+                                                        {partsSearch && (
+                                                            <button
+                                                                type="button"
+                                                                onMouseDown={(e) => { e.preventDefault(); setPartsSearch(''); setPartsResults([]); }}
+                                                                style={{
+                                                                    position: 'absolute', insetInlineEnd: '10px', top: '50%',
+                                                                    transform: 'translateY(-50%)', background: 'none', border: 'none',
+                                                                    cursor: 'pointer', color: '#ef4444', display: 'flex', padding: 2
+                                                                }}
+                                                            >
+                                                                <X size={16} />
+                                                            </button>
+                                                        )}
+                                                        {partsSearch.trim() && (partsResults.length > 0 || partsLoading) && (
+                                                            <div style={{
+                                                                position: 'absolute', top: '100%', left: 0, right: 0,
+                                                                background: 'white', border: '1px solid #e5e7eb',
+                                                                borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                                zIndex: 200, maxHeight: '280px', overflowY: 'auto', marginTop: '4px'
+                                                            }}>
+                                                                {partsLoading ? (
+                                                                    <div style={{ padding: '10px 14px', fontSize: '13px', color: '#64748b' }}>Searching parts...</div>
+                                                                ) : (
+                                                                    partsResults.map(p => {
+                                                                        const alreadyAdded = partsSelectedItems.some(s => s.id === p.id);
+                                                                        return (
+                                                                            <div
+                                                                                key={p.id}
+                                                                                style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px', background: alreadyAdded ? '#f0fdf4' : 'white', cursor: 'pointer' }}
+                                                                                onMouseDown={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (alreadyAdded) {
+                                                                                        setPartsSelectedItems(prev => prev.filter(s => s.id !== p.id));
+                                                                                    } else {
+                                                                                        setPartsSelectedItems(prev => [...prev, { id: p.id, name: p.name }]);
+                                                                                    }
+                                                                                    setPartsSearch('');
+                                                                                    setPartsResults([]);
+                                                                                }}
+                                                                            >
+                                                                                {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} onError={swapToLogoOnError} />}
+                                                                                <span style={{ flex: 1, color: alreadyAdded ? '#16a34a' : 'inherit' }}>{p.name}</span>
+                                                                                <div
+                                                                                    style={{
+                                                                                        flexShrink: 0, width: 28, height: 28,
+                                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                                        borderRadius: '50%',
+                                                                                        background: alreadyAdded ? '#16a34a' : '#3b82f6', color: 'white'
+                                                                                    }}
+                                                                                >
+                                                                                    {alreadyAdded ? <Check size={14} /> : <Plus size={14} />}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {partsSelectedItems.length === 0 ? (
+                                                    <div style={{ textAlign: 'center', padding: '24px 20px', color: '#94a3b8', fontSize: '13px', background: '#fafafa', borderRadius: '8px', border: '1px dashed #e2e8f0' }}>
+                                                        <p style={{ margin: 0 }}>No linked parts attached yet.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                                                        {partsSelectedItems.map((item, idx) => (
+                                                            <div key={item.id} style={{
+                                                                display: 'flex', alignItems: 'center', gap: '10px',
+                                                                padding: '10px 14px', background: '#f8fafc',
+                                                                border: '1px solid #e2e8f0', borderRadius: '10px'
+                                                            }}>
+                                                                <span style={{ fontSize: '12px', color: '#94a3b8', width: 20, textAlign: 'center', fontWeight: 700 }}>{idx + 1}</span>
+                                                                <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{item.name}</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPartsSelectedItems(prev => prev.filter(p => p.id !== item.id))}
                                                                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 4 }}
                                                                 >
                                                                     <X size={14} />
