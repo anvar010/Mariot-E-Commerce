@@ -639,6 +639,29 @@ class Product {
                 product.you_may_also_need_products = [];
             }
 
+            // Enrich linked_parts IDs with product data
+            let linkedPartsIds = [];
+            if (product.linked_parts) {
+                try {
+                    linkedPartsIds = JSON.parse(product.linked_parts);
+                } catch (e) { linkedPartsIds = []; }
+            }
+            if (Array.isArray(linkedPartsIds) && linkedPartsIds.length > 0) {
+                const placeholders = linkedPartsIds.map(() => '?').join(',');
+                const [partsRows] = await db.query(
+                    `SELECT p.id, p.name, p.name_ar, p.slug, p.price, p.offer_price, p.discount_percentage,
+                     p.stock_quantity,
+                     p.is_customizable, p.custom_dimensions, p.base_dimensions,
+                     (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
+                     FROM products p WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
+                    linkedPartsIds
+                );
+                await Product.applyCustomizableBasePrice(partsRows);
+                product.linked_parts_products = partsRows;
+            } else {
+                product.linked_parts_products = [];
+            }
+
             // Attach options + variants if any
             if (Number(product.has_variants) === 1) {
                 const { options, variants } = await ProductVariant.getByProductId(product.id);
@@ -791,11 +814,12 @@ class Product {
                 data.compare_config ? String(data.compare_config) : null,
                 (data.warranty !== undefined && data.warranty !== '' && data.warranty !== null) ? parseInt(data.warranty) : null,
                 (data.warranty_ar !== undefined && data.warranty_ar !== '' && data.warranty_ar !== null) ? parseInt(data.warranty_ar) : null,
-                is_customizable, custom_dimensions, base_dimensions, delivery_charge
+                is_customizable, custom_dimensions, base_dimensions, delivery_charge,
+                data.linked_parts ? String(data.linked_parts) : null
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions, delivery_charge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions, delivery_charge, linked_parts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -866,7 +890,7 @@ class Product {
             'is_best_seller', 'status', 'product_group', 'sub_category', 'model',
             'youtube_video_link', 'resources', 'offer_start', 'offer_end',
             'frequently_bought_together', 'you_may_also_need', 'free_gift_product_ids', 'compare_config', 'warranty', 'warranty_ar',
-            'is_customizable', 'custom_dimensions', 'base_dimensions', 'delivery_charge'
+            'is_customizable', 'custom_dimensions', 'base_dimensions', 'delivery_charge', 'linked_parts'
         ];
 
         const productId = parseInt(id);
