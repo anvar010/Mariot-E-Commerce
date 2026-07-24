@@ -71,15 +71,7 @@ const AdminSidebar = () => {
 
     return (
         <aside className={styles.sidebar}>
-            <div className={styles.logoSection}>
-                <div className={styles.flowLogo}>
-                    <div className={styles.logoIcon}>M</div>
-                    <div className={styles.logoTextWrap}>
-                        <span className={styles.logoText}>MARIOT</span>
-                        <span className={styles.logoTag}>Admin Panel</span>
-                    </div>
-                </div>
-            </div>
+
 
             <div className={styles.userProfile}>
                 <div className={styles.avatar}>

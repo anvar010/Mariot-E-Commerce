@@ -108,10 +108,10 @@
     margin-bottom: 12px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
     .topSection {
         grid-template-columns: 1fr;
-        gap: 30px;
+        gap: 6px;
         margin-bottom: 20px;
     }
 }
@@ -125,7 +125,7 @@
     z-index: 10;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1025px) {
     .gallerySection {
         position: sticky;
         top: 120px;
@@ -135,31 +135,33 @@
 .mainImageWrapper {
     position: relative;
     width: 100%;
-    height: 450px;
-    background: #fff;
-    border: 1px solid #f0f0f0;
-    border-radius: 4px;
+    height: 380px;
+    background: radial-gradient(circle at top right, #f8fafc, #ffffff, #f1f5f9);
+    border: 1px solid #eef1f5;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: 24px;
     margin-bottom: 20px;
     overflow: hidden;
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.05);
 }
 
 @media (max-width: 768px) {
     .gallerySection {
         position: relative;
-        left: 50%;
-        right: 50%;
-        margin-inline-start: -50vw;
-        margin-inline-end: -50vw;
+        /* Direction-agnostic full-bleed: symmetric physical margins work the
+           same in LTR and RTL (mixing `left: 50%` with logical margins broke
+           the Arabic layout width). */
         width: 100vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
         overflow: visible;
     }
 
     .mainImageWrapper {
-        margin-bottom: 25px;
+        margin-bottom: 0;
         border: none;
         padding: 0;
         background: transparent;
@@ -329,16 +331,19 @@
 .thumbWrapper {
     width: 60px;
     height: 60px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    background: #ffffff;
+    border: 1px solid #eef1f5;
+    border-radius: 10px;
     padding: 2px;
     cursor: pointer;
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     transition: all 0.2s;
 }
 
 .thumbWrapper.active {
-    border: 2px solid #333;
+    border: 2px solid #16a1db;
+    box-shadow: 0 2px 10px rgba(22, 161, 219, 0.2);
 }
 
 .thumbImage {
@@ -362,9 +367,14 @@
 .infoSection {
     display: flex;
     flex-direction: column;
+    /* Allow this grid/flex column to shrink to its track instead of being
+       forced wider than the viewport by a wide child (min-width defaults to
+       `auto`), which would let content bleed off-screen on Blink/Samsung. */
+    min-width: 0;
+    max-width: 100%;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1025px) {
     .infoSection {
         position: sticky;
         top: 120px;
@@ -411,25 +421,22 @@
     margin-bottom: 20px;
 }
 
+/* Rating now lives in the brand card above the title (.brandRatingMobile) */
 .titleRating {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    flex-shrink: 0;
-    padding-top: 4px;
+    display: none !important;
 }
 
 .titleStars {
     display: flex;
-    gap: 2px;
+    gap: 3px;
 }
 
 .titleReviewCount {
     font-size: 12px;
-    color: #6b7280;
+    color: #94a3b8;
     font-weight: 600;
     white-space: nowrap;
+    letter-spacing: 0.01em;
 }
 
 .stars {
@@ -438,51 +445,101 @@
     gap: 2px;
 }
 
-/* Mobile-only rating shown next to brand logo — hidden by default */
-.brandRatingMobile {
-    display: none;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 3px;
-}
-
-.brandLogoBox {
-    margin-bottom: -4px;
+/* Borderless meta strip: brand chip (left) + inline rating (right) */
+.brandBar {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: flex-start;
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #eef2f7;
 }
 
-.brandLabel {
-    font-size: 14px;
-    color: #64748b;
-    font-weight: 700;
-    text-transform: uppercase;
+/* Vertical separator after the logo */
+.brandSep {
+    align-self: center;
+    width: 1px;
+    height: 40px;
+    background: #e2e8f0;
+    flex: 0 0 auto;
 }
 
-.brandLogoWrapper {
+/* Push the rating to the far end */
+.ratingInline {
+    margin-inline-start: auto;
+}
+
+/* Brand logo in a soft, borderless tile */
+.brandChip {
     display: inline-flex;
     align-items: center;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    /* min-width:0 lets this flex item shrink below the logo's intrinsic width so
-       a wide brand logo can't push the row past the viewport (horizontal overflow). */
-    min-width: 0;
-    max-width: 100%;
+    justify-content: center;
+    height: 68px;
+    padding: 8px 22px;
+    background: #f6f8fb;
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.2s ease, transform 0.2s ease;
 }
 
 @media (hover: hover) {
-    .brandLogoWrapper:hover {
+    .brandChip:hover {
+        background: #eef2f7;
         transform: translateY(-1px);
     }
 }
 
 .brandLogo {
-    max-height: 70px;
-    height: auto;
-    max-width: 100%;
+    height: 100%;
+    width: auto;
+    max-width: 190px;
     display: block;
     object-fit: contain;
+}
+
+/* Inline rating: stars · score · reviews link */
+.ratingInline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+}
+
+.ratingInline:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 3px;
+    border-radius: 6px;
+}
+
+.brandRatingScore {
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.ratingDot {
+    color: #cbd5e1;
+    font-size: 12px;
+    line-height: 1;
+}
+
+@media (hover: hover) {
+    .ratingInline:hover .titleReviewCount {
+        color: #0f172a;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
 }
 
 .priceSection {
@@ -709,6 +766,9 @@
     margin-bottom: 15px;
     border-top: 1px dashed #eee;
     padding-top: 8px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .shortDescription {
@@ -720,19 +780,71 @@
     overflow: hidden;
     position: relative;
     transition: max-height 0.3s ease;
-    display: -webkit-box;
-    line-clamp: 5;
-    -webkit-box-orient: vertical;
+    /* Plain BLOCK clamp (max-height + overflow) instead of `-webkit-box`.
+       `-webkit-box` is a flex-like box that, on Blink/Samsung Internet, sizes
+       to its content and can grow WIDER than its container in RTL — so the
+       English description bled off the left edge (WebKit/iPhone didn't).
+       A block is always exactly the container width and clips its own
+       horizontal overflow, so it behaves identically on every engine.
+       `dir` is still set per-content in JSX so alignment stays correct. */
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    text-align: start;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
+
+/* Bottom fade cue for the collapsed 5-line state (replaces the old ellipsis) */
+
 
 .shortDescription.expanded {
     max-height: 1000px;
-    display: block;
-    -webkit-line-clamp: unset;
-    line-clamp: unset;
+}
+
+.keyFeaturesWrapper {
+    margin-bottom: 15px;
+    padding-top: 8px;
+    border-top: 1px dashed #eee;
+}
+
+.keyFeaturesTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 10px 0;
+}
+
+.keyFeaturesList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.keyFeatureItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14.5px;
+    color: #334155;
+    line-height: 1.5;
+}
+
+.keyFeatureCheck {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: #ffffff;
+    fill: #16a1db;
 }
 
 .readMoreBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     background: none;
     border: none;
     color: #e31e24;
@@ -753,14 +865,14 @@
 
 /* Tabby Area */
 .tabbyBox {
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
+    border: 1px solid #eef1f5;
+    border-radius: 12px;
     padding: 12px 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
-    background: #fdfdfd;
+    background: radial-gradient(circle at top right, #f8fafc, #ffffff, #f1f5f9);
     width: 100%;
     box-sizing: border-box;
 }
@@ -1532,6 +1644,7 @@
     gap: 15px;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.08);
 }
 
 .priceMatchCard::before {
@@ -1541,8 +1654,8 @@
     inset-inline-start: 0;
     width: 4px;
     height: 100%;
-    background: #334155;
-    /* Navy accent bar */
+    background: #16a1db;
+    /* Brand-blue accent bar */
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -1564,28 +1677,35 @@
     }
 }
 
-.priceMatchIcon {
-    color: #334155;
-    background: #ffffff;
-    width: 32px;
-    height: 32px;
+.priceMatchIconBox {
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    border: 1.5px solid #16a1db;
+    background: #e6f4fb;
+    transform: rotate(45deg);
     flex-shrink: 0;
-    padding: 8px;
     transition: all 0.3s ease;
     pointer-events: none;
 }
 
+.priceMatchIcon {
+    color: #16a1db;
+    transform: rotate(-45deg);
+    transition: color 0.3s ease;
+}
+
 @media (hover: hover) {
 
+    .priceMatchCard:hover .priceMatchIconBox {
+        background: #16a1db;
+    }
+
     .priceMatchCard:hover .priceMatchIcon {
-        background: #334155;
         color: #ffffff;
-        transform: rotate(-10deg);
     }
 }
 
@@ -1598,7 +1718,7 @@
 
 .priceMatchMain {
     font-size: 17px;
-    font-weight: 500;
+    font-weight: 700;
     color: #1e293b;
     /* Darker slate */
     letter-spacing: -0.01em;
@@ -1606,9 +1726,8 @@
 
 .priceMatchSub {
     font-size: 13px;
-    color: #64748b;
-    /* Lighter slate */
-    font-weight: 600;
+    color: #16a1db;
+    font-weight: 700;
 }
 
 /* Mobile: shrink so the heading stays on one line in the narrow card. */
@@ -1627,10 +1746,14 @@
         font-size: 11px;
     }
 
-    .priceMatchIcon {
+    .priceMatchIconBox {
         width: 28px;
         height: 28px;
-        padding: 6px;
+    }
+
+    .priceMatchIcon {
+        width: 16px;
+        height: 16px;
     }
 }
 
@@ -1657,10 +1780,6 @@
     z-index: 10;
 }
 
-:global(html[dir="rtl"]) .purchaseActions {
-    flex-direction: row-reverse;
-}
-
 .qtyWrapper {
     position: relative;
     width: 185px;
@@ -1680,8 +1799,8 @@
     font-weight: 700;
     color: #0f172a;
     background-color: #f1f5f9;
-    border: none;
-    border-radius: 100px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 14px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
@@ -1819,7 +1938,7 @@
     background: linear-gradient(135deg, #16a1db 0%, #1388b8 100%);
     color: #ffffff;
     border: none;
-    border-radius: 100px;
+    border-radius: 14px;
     font-weight: 700;
     font-size: 17px;
     display: flex;
@@ -1837,7 +1956,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 100px;
+    border-radius: 14px;
     box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.2);
     pointer-events: none;
 }
@@ -1859,10 +1978,10 @@
     flex: 1;
     width: 100%;
     height: 56px;
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    background: linear-gradient(135deg, #2b2b2b 0%, #1a1a1a 100%);
     color: #ffffff;
     border: none;
-    border-radius: 100px;
+    border-radius: 14px;
     font-weight: 700;
     font-size: 17px;
     display: flex;
@@ -1871,7 +1990,7 @@
     gap: 10px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
     position: relative;
     overflow: hidden;
 }
@@ -1880,7 +1999,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 100px;
+    border-radius: 14px;
     box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.2);
     pointer-events: none;
 }
@@ -1888,14 +2007,14 @@
 @media (hover: hover) {
     .whatsappBtn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.4);
-        background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        background: linear-gradient(135deg, #3a3a3a 0%, #222222 100%);
     }
 }
 
 .whatsappBtn:active {
     transform: translateY(1px);
-    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Bottom Section (Description) */
@@ -1923,9 +2042,9 @@
 .videoSection {
     width: 100%;
     margin-bottom: 30px;
-    background: #fdfdfd;
-    border-radius: 8px;
-    border: 1px solid #eaeaea;
+    background: radial-gradient(circle at top right, #f8fafc, #ffffff, #f1f5f9);
+    border-radius: 16px;
+    border: 1px solid #eef1f5;
     overflow: hidden;
 }
 
@@ -2017,6 +2136,11 @@
     font-size: 14px;
     color: #475569;
     line-height: 1.8;
+    /* Direction set per-content via the `dir` attribute in JSX so English text
+       on an Arabic page stays LTR and doesn't overflow the left edge. */
+    text-align: start;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .descriptionText h1,
@@ -2268,24 +2392,24 @@
 }
 
 .aboutBrandLogoBox {
-    width: 190px;
-    height: 110px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    width: 220px;
+    /* Matches the normalized 600x300 (2:1) logo assets. */
+    aspect-ratio: 2 / 1;
+    background: radial-gradient(circle at top right, #f8fafc, #ffffff, #f1f5f9);
+    border: 1px solid #eef1f5;
     border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 4px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
 .aboutBrandLogoImg {
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
-    transform: scale(1.45);
 }
 
 /* Accordion styles moved up or handled by shared class */
@@ -3265,11 +3389,9 @@
         margin-top: 40px;
         border-radius: 0;
         position: relative;
-        left: 50%;
-        right: 50%;
-        margin-inline-start: -50vw;
-        margin-inline-end: -50vw;
         width: 100vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
         border-inline-start: none;
         border-inline-end: none;
         background: #eff6ff;
@@ -3659,11 +3781,9 @@
         margin-top: 40px;
         border-radius: 0;
         position: relative;
-        left: 50%;
-        right: 50%;
-        margin-inline-start: -50vw;
-        margin-inline-end: -50vw;
         width: 100vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
         box-shadow: none;
         background: transparent;
     }
@@ -3929,7 +4049,8 @@
 
     .mainImageWrapper {
         aspect-ratio: auto;
-        height: 400px;
+        height: 360px;
+        padding: 24px;
     }
 }
 
@@ -3937,10 +4058,8 @@
     .sidebar {
         width: 100vw;
         position: relative;
-        left: 50%;
-        right: 50%;
-        margin-inline-start: -50vw;
-        margin-inline-end: -50vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
         background: #fff;
         border: none;
         border-top: 1px solid #ebebeb;
@@ -3977,9 +4096,8 @@
         line-height: 1.3;
     }
 
-    .mainImageWrapper {
-        height: 300px;
-    }
+    /* Height intentionally NOT set here — the ≤768 rule above uses
+       `aspect-ratio: 1` so the mobile image is a full-width square. */
 
     .title {
         font-size: 22px;
@@ -4006,23 +4124,27 @@
         min-width: 0;
     }
 
-    /* On mobile: stars move to brand row, hide them from titleRow */
-    .titleRating {
-        display: none !important;
-    }
-
     .titleRow {
         gap: 0;
     }
 
-    /* Stars shown inline with brand logo on mobile */
-    .brandLogoBox {
-        justify-content: space-between;
-        margin-bottom: 10px;
+    .brandBar {
+        gap: 12px;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
     }
 
-    .brandRatingMobile {
-        display: flex !important;
+    .brandChip {
+        height: 56px;
+        padding: 6px 16px;
+    }
+
+    .brandLogo {
+        max-width: 150px;
+    }
+
+    .ratingInline {
+        gap: 6px;
     }
 
     .currentPrice {
@@ -4098,41 +4220,54 @@
     flex-direction: column;
 }
 
-.specsTable {
-    width: 100%;
-    border-collapse: collapse;
-    border-radius: 0;
-    table-layout: fixed;
-    border: 1.5px solid #94a3b8;
+.specsCardGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
 }
 
-.specsTable tr:nth-child(odd) td {
-    background: #ffffff;
+.specCard {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    gap: 12px;
 }
 
-.specsTable tr:nth-child(even) td {
-    background: #f4f7fa;
+.specIconWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #f0f4f8; /* Light blue background */
+    border-radius: 8px;
+    color: #1a56db; /* Primary blue icon color */
+    flex-shrink: 0;
 }
 
-.specsTable td {
-    padding: 14px 16px;
-    border: none;
-    border-bottom: 1.5px solid #94a3b8;
-    vertical-align: middle;
-    word-break: break-word;
+.specContent {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
 }
 
-.specsTable td.specLabel {
-    border-inline-end: 1.5px solid #94a3b8;
+.specCardLabel {
+    font-size: 13px;
+    color: #6b7280;
 }
 
-.specsTable td.specLabel {
-    width: 35%;
-    min-width: 150px;
+.specCardValue {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
 }
 
-.specsTable td.specValue {
-    text-align: start;
+.specCardSingle {
+    grid-column: 1 / -1;
 }
 
 .specItem {
@@ -4212,14 +4347,13 @@
         font-size: 13px;
     }
 
-    .specsTable td {
-        padding: 10px 12px;
-        font-size: 13px;
+    .specsCardGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
-
-    .specsTable td.specLabel {
-        width: 40%;
-        min-width: 0;
+    .specCard {
+        padding: 8px;
+        gap: 8px;
     }
 }
 
@@ -4401,33 +4535,100 @@
 
 .fullscreenContent {
     position: relative;
-    width: 90%;
-    height: 90%;
+    width: 92vw;
+    height: 88vh;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: default;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
 }
 
 .fullscreenImage {
     max-width: 100%;
     max-height: 100%;
+    margin: auto;
     object-fit: contain;
     border-radius: 8px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     animation: zoomIn 0.3s ease-out;
 }
 
+/* Swipeable fullscreen gallery */
+.fullscreenSwiper {
+    width: 100%;
+    height: 100%;
+}
+
+.fullscreenSwiper :global(.swiper-wrapper) {
+    align-items: center;
+    height: 100%;
+}
+
+/* Force every slide to be a full-height flex box so the image is centered
+   both axes — matches the single-image (non-Swiper) path. */
+.fullscreenSwiper :global(.swiper-slide) {
+    height: 100%;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.fullscreenSlide {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fullscreenSwiper :global(.swiper-button-next),
+.fullscreenSwiper :global(.swiper-button-prev) {
+    color: #333333;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(6px);
+    transition: background 0.2s ease;
+}
+
+.fullscreenSwiper :global(.swiper-button-next):hover,
+.fullscreenSwiper :global(.swiper-button-prev):hover {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.fullscreenSwiper :global(.swiper-button-next)::after,
+.fullscreenSwiper :global(.swiper-button-prev)::after {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.fullscreenSwiper :global(.swiper-pagination-bullet) {
+    background: rgba(0, 0, 0, 0.3);
+    opacity: 1;
+}
+
+.fullscreenSwiper :global(.swiper-pagination-bullet-active) {
+    background: #e31e24;
+}
+
 .closeOverlayBtn {
-    position: absolute;
-    top: -40px;
-    inset-inline-end: 0;
-    background: none;
-    border: none;
-    color: white;
+    position: fixed;
+    top: 20px;
+    inset-inline-end: 20px;
+    z-index: 10002;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
     cursor: pointer;
-    transition: transform 0.2s;
-    padding: 8px;
+    transition: transform 0.2s, background 0.2s;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -4436,7 +4637,8 @@
 @media (hover: hover) {
 
     .closeOverlayBtn:hover {
-        transform: scale(1.1);
+        transform: scale(1.08);
+        background: rgba(255, 255, 255, 0.28);
         color: #ff4d4f;
     }
 }
@@ -4464,6 +4666,8 @@
     .fullscreenContent {
         width: 95%;
         height: 95%;
+        padding: 16px;
+        border-radius: 12px;
     }
 
     .closeOverlayBtn {

@@ -34,7 +34,18 @@ import {
     MoveVertical,
     BellRing,
     Scale,
-    Share2
+    Share2,
+    CheckCircle2,
+    ArrowRight,
+    Globe,
+    Box,
+    Server,
+    Store,
+    Gauge,
+    IceCream,
+    Package,
+    Fan,
+    Weight
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
@@ -60,9 +71,10 @@ import Script from 'next/script';
 
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination } from 'swiper/modules';
+import { Pagination, Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
+import 'swiper/css/navigation';
 
 interface ProductDetailProps {
     id: string;
@@ -91,6 +103,22 @@ const TrustItem = ({ icon, title, text }: any) => (
         </div>
     </div>
 );
+
+const getIconForLabel = (label: string) => {
+    const l = label.toLowerCase();
+    if (l.includes('brand')) return <Tag size={20} />;
+    if (l.includes('origin')) return <Globe size={20} />;
+    if (l.includes('model')) return <Box size={20} />;
+    if (l.includes('machine type') || l.includes('type')) return <Server size={20} />;
+    if (l.includes('suitable')) return <Store size={20} />;
+    if (l.includes('capacity')) return <Gauge size={20} />;
+    if (l.includes('flavour') || l.includes('flavor')) return <IceCream size={20} />;
+    if (l.includes('hopper quantity')) return <Package size={20} />;
+    if (l.includes('mixer')) return <Fan size={20} />;
+    if (l.includes('weight')) return <Weight size={20} />;
+    if (l.includes('dimension')) return <Ruler size={20} />;
+    return <ListChecks size={20} />;
+};
 
 const AccordionItem = ({ title, isOpen, onToggle, children }: any) => (
     <div className={`${styles.accordionItem} ${isOpen ? styles.accordionOpen : ''}`}>
@@ -439,6 +467,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         return product?.[enField] || '';
     };
 
+    // Detect the natural direction of a text block from its first strong letter.
+    // Product descriptions are often English even on the Arabic site (fallback),
+    // so we must not let them inherit the page's RTL — that pushes LTR text off
+    // the left edge (esp. inside -webkit-box line-clamp on Samsung Internet).
+    const detectDir = (raw: string): 'rtl' | 'ltr' => {
+        const text = (raw || '').replace(/<[^>]*>/g, '');
+        const match = text.match(/[A-Za-z؀-ۿ]/);
+        return match && /[؀-ۿ]/.test(match[0]) ? 'rtl' : 'ltr';
+    };
+
     // Helper to clean WooCommerce/Visual Composer shortcodes
     const cleanShortcodes = (content: string) => {
         if (!content) return '';
@@ -478,6 +516,31 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 ))}
             </ul>
         );
+    };
+
+    // Short descriptions are commonly authored as dash/bullet-prefixed lines
+    // (e.g. "‐ Ice Production: 900 kg / 24h\r\n‐ Ice Storage: 350 kg"). Extract
+    // each line as a standalone feature so it can render as a checklist instead
+    // of a single run-on paragraph.
+    const getFeatureLines = (rawContent: string): string[] => {
+        if (!rawContent) return [];
+        const cleaned = cleanShortcodes(rawContent);
+
+        if (cleaned.includes('<li>')) {
+            return [...cleaned.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
+                .map(m => m[1].replace(/<[^>]+>/g, '').trim())
+                .filter(Boolean);
+        }
+        if (cleaned.includes('<p>')) {
+            return [...cleaned.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
+                .map(m => m[1].replace(/<[^>]+>/g, '').trim())
+                .filter(Boolean);
+        }
+
+        return cleaned
+            .split(/(?:<br\s*\/?>|[\r\n])+/)
+            .map(s => s.replace(/^[•\-‐\*✳️✅]\s*/, '').trim())
+            .filter(Boolean);
     };
 
     // Compare-with-similar-products states
@@ -970,6 +1033,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
     const resolveUrlLocal = resolveUrl;
 
+    const featureLines = getFeatureLines(getLocalizedField('short_description', 'short_description_ar'));
+
     // ── Variant resolution ────────────────────────────────────────────────
     const hasVariants = product.has_variants === 1
         && Array.isArray(product.options) && product.options.length > 0
@@ -1388,7 +1453,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 <div className={styles.mainImageWrapper}>
                                     <Swiper
                                         onSwiper={(swiper: any) => (mainSwiperRef.current = swiper)}
-                                        spaceBetween={10}
+                                        spaceBetween={0}
                                         pagination={{
                                             clickable: true,
                                             el: `.${styles.swiperPagination}`,
@@ -1460,18 +1525,19 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             {/* Info */}
                             <div className={styles.infoSection}>
                                 {product.brand_image && (
-                                    <div className={styles.brandLogoBox}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                                            <span className={styles.brandLabel}>{t('brand', { defaultValue: 'Brand' })}:</span>
-                                            <Link
-                                                href={`/shop?brand=${encodeURIComponent(product.brand_slug || product.brand_name?.toLowerCase().replace(/ /g, '-'))}`}
-                                                className={styles.brandLogoWrapper}
-                                            >
-                                                <img src={resolveUrl(product.brand_image)} alt={getLocalizedField('brand_name', 'brand_name_ar')} className={styles.brandLogo} />
-                                            </Link>
-                                        </div>
-                                        <div
-                                            className={styles.brandRatingMobile}
+                                    <div className={styles.brandBar}>
+                                        <Link
+                                            href={`/shop?brand=${encodeURIComponent(product.brand_slug || product.brand_name?.toLowerCase().replace(/ /g, '-'))}`}
+                                            className={styles.brandChip}
+                                        >
+                                            <img src={resolveUrl(product.brand_image)} alt={getLocalizedField('brand_name', 'brand_name_ar')} className={styles.brandLogo} />
+                                        </Link>
+
+                                        <span className={styles.brandSep} aria-hidden="true" />
+
+                                        <button
+                                            type="button"
+                                            className={styles.ratingInline}
                                             onClick={() => {
                                                 const el = document.getElementById('reviews-section');
                                                 if (el) {
@@ -1479,7 +1545,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                     window.scrollTo({ top: y, behavior: 'smooth' });
                                                 }
                                             }}
-                                            style={{ cursor: 'pointer' }}
                                         >
                                             <div className={styles.titleStars}>
                                                 {[1, 2, 3, 4, 5].map((star) => {
@@ -1487,21 +1552,22 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                     const isHalf = !isFull && hasHalfTitle && star === fullStarsTitle + 1;
                                                     return (
                                                         <div key={`mobile-star-${star}`} style={{ position: 'relative', width: 16, height: 16 }}>
-                                                            <Star size={16} fill="none" color="#d1d5db" style={{ position: 'absolute', top: 0, insetInlineStart: 0 }} />
+                                                            <Star size={16} fill="#e2e8f0" color="#cbd5e1" strokeWidth={1.5} style={{ position: 'absolute', top: 0, insetInlineStart: 0 }} />
                                                             {(isFull || isHalf) && (
                                                                 <div style={{ position: 'absolute', top: 0, insetInlineStart: 0, width: isHalf ? '50%' : '100%', height: '100%', overflow: 'hidden' }}>
-                                                                    <Star size={16} fill="#f59e0b" color="#f59e0b" />
+                                                                    <Star size={16} fill="#f59e0b" color="#f59e0b" strokeWidth={1.5} />
                                                                 </div>
                                                             )}
                                                         </div>
                                                     );
                                                 })}
                                             </div>
+                                            <span className={styles.brandRatingScore}>{avgRatingRaw.toFixed(1)}</span>
+                                            <span className={styles.ratingDot} aria-hidden="true">•</span>
                                             <span className={styles.titleReviewCount}>
-                                                <span>{avgRatingRaw.toFixed(1)}</span>
-                                                <span>({reviewsCount} {reviewsCount === 1 ? t('review') : t('reviews')})</span>
+                                                {reviewsCount} {reviewsCount === 1 ? t('review') : t('reviews')}
                                             </span>
-                                        </div>
+                                        </button>
                                     </div>
                                 )}
 
@@ -1690,21 +1756,73 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 </div>
 
                                 {getLocalizedField('short_description', 'short_description_ar') && (
-                                    <div className={styles.shortDescriptionWrapper}>
-                                        <div
-                                            ref={shortDescRef}
-                                            className={`${styles.shortDescription} ${isShortDescExpanded ? styles.expanded : ''}`}
-                                            dangerouslySetInnerHTML={{ __html: cleanShortcodes(getLocalizedField('short_description', 'short_description_ar')) }}
-                                        />
-                                        {canShowReadMore && (
-                                            <button
-                                                className={styles.readMoreBtn}
-                                                onClick={() => setIsShortDescExpanded(!isShortDescExpanded)}
-                                            >
-                                                {isShortDescExpanded ? t('readLess') : t('readMore')}
-                                            </button>
-                                        )}
-                                    </div>
+                                    featureLines.length > 1 ? (
+                                        <div className={styles.keyFeaturesWrapper} dir={detectDir(getLocalizedField('short_description', 'short_description_ar'))}>
+                                            <h3 className={styles.keyFeaturesTitle}>{t('keyFeatures', { defaultValue: 'Key Features' })}</h3>
+                                            <ul className={styles.keyFeaturesList}>
+                                                {featureLines.slice(0, 5).map((line, idx) => (
+                                                    <li key={idx} className={styles.keyFeatureItem}>
+                                                        <CheckCircle2 size={18} className={styles.keyFeatureCheck} />
+                                                        <span>{line}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            {featureLines.length > 5 && (
+                                                <>
+                                                    <AnimatePresence initial={false}>
+                                                        {isShortDescExpanded && (
+                                                            <motion.div
+                                                                initial={{ height: 0, opacity: 0 }}
+                                                                animate={{ height: 'auto', opacity: 1 }}
+                                                                exit={{ height: 0, opacity: 0 }}
+                                                                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                                                style={{ overflow: 'hidden' }}
+                                                            >
+                                                                <ul className={styles.keyFeaturesList} style={{ marginTop: 8 }}>
+                                                                    {featureLines.slice(5).map((line, idx) => (
+                                                                        <li key={idx + 5} className={styles.keyFeatureItem}>
+                                                                            <CheckCircle2 size={18} className={styles.keyFeatureCheck} />
+                                                                            <span>{line}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                    <button
+                                                        className={styles.readMoreBtn}
+                                                        onClick={() => setIsShortDescExpanded(!isShortDescExpanded)}
+                                                    >
+                                                        {isShortDescExpanded ? t('readLess') : t('readMore')}
+                                                        <motion.span
+                                                            animate={{ rotate: isShortDescExpanded ? 180 : 0 }}
+                                                            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                                            style={{ display: 'inline-flex' }}
+                                                        >
+                                                            <ChevronDown size={14} />
+                                                        </motion.span>
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className={styles.shortDescriptionWrapper}>
+                                            <div
+                                                ref={shortDescRef}
+                                                dir={detectDir(getLocalizedField('short_description', 'short_description_ar'))}
+                                                className={`${styles.shortDescription} ${isShortDescExpanded ? styles.expanded : ''}`}
+                                                dangerouslySetInnerHTML={{ __html: cleanShortcodes(getLocalizedField('short_description', 'short_description_ar')) }}
+                                            />
+                                            {canShowReadMore && (
+                                                <button
+                                                    className={styles.readMoreBtn}
+                                                    onClick={() => setIsShortDescExpanded(!isShortDescExpanded)}
+                                                >
+                                                    {isShortDescExpanded ? t('readLess') : t('readMore')}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )
                                 )}
 
                                 {/* Tabby Area */}
@@ -1834,25 +1952,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 )}
 
                                 <div className={styles.purchaseActions}>
-                                    <button
-                                        className={styles.whatsappBtn}
-                                        onClick={() => {
-                                            const productUrl = typeof window !== 'undefined' ? window.location.href : '';
-                                            const msg = encodeURIComponent(t('whatsappMessage', {
-                                                url: productUrl,
-                                                name: getLocalizedField('name', 'name_ar'),
-                                                price: displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                                                model: product.model || product.slug?.toUpperCase() || product.id
-                                            }));
-                                            window.open(`https://wa.me/97142882777?text=${msg}`, '_blank');
-                                        }}
-                                    >
-                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style={{ marginInlineEnd: '8px' }}>
-                                            <path d="M12.03 2c-5.52 0-10 4.48-10 10a9.96 9.96 0 0 0 1.53 5.39L2.03 22l4.75-1.25c1.54.85 3.32 1.33 5.25 1.33 5.52 0 10-4.48 10-10S17.55 2 12.03 2zm6.3 14.54c-.27.76-1.55 1.48-2.14 1.57-.59.09-1.34.22-3.83-.82-2.92-1.21-4.74-4.22-4.88-4.42-.15-.2-1.18-1.56-1.18-2.98 0-1.42.74-2.12 1.01-2.4.27-.28.59-.35.79-.35.19 0 .38.01.54.02.17.01.4-.04.62.5.24.59.81 1.99.88 2.14.07.15.11.32.01.52-.09.20-.14.33-.28.5-.14.17-.3.38-.43.51-.15.15-.3.32-.13.62.17.3.74 1.23 1.59 1.99.85.76 1.56 1 1.86 1.15.3.15.47.13.65-.08.18-.21.76-.89.96-1.2.2-.31.4-.26.68-.15.28.11 1.77.84 2.08.99.31.15.51.22.59.35.08.13.08.73-.19 1.48z" />
-                                        </svg>
-                                        {t('whatsapp')}
-                                    </button>
-
                                     <div className={styles.qtyWrapper} ref={qtyRef}>
                                         <div
                                             className={`${styles.qtyCustomSelect} ${isQtyOpen ? styles.open : ''}`}
@@ -1910,6 +2009,25 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             </div>
                                         )}
                                     </div>
+
+                                    <button
+                                        className={styles.whatsappBtn}
+                                        onClick={() => {
+                                            const productUrl = typeof window !== 'undefined' ? window.location.href : '';
+                                            const msg = encodeURIComponent(t('whatsappMessage', {
+                                                url: productUrl,
+                                                name: getLocalizedField('name', 'name_ar'),
+                                                price: displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                model: product.model || product.slug?.toUpperCase() || product.id
+                                            }));
+                                            window.open(`https://wa.me/97142882777?text=${msg}`, '_blank');
+                                        }}
+                                    >
+                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style={{ marginInlineEnd: '8px' }}>
+                                            <path d="M12.03 2c-5.52 0-10 4.48-10 10a9.96 9.96 0 0 0 1.53 5.39L2.03 22l4.75-1.25c1.54.85 3.32 1.33 5.25 1.33 5.52 0 10-4.48 10-10S17.55 2 12.03 2zm6.3 14.54c-.27.76-1.55 1.48-2.14 1.57-.59.09-1.34.22-3.83-.82-2.92-1.21-4.74-4.22-4.88-4.42-.15-.2-1.18-1.56-1.18-2.98 0-1.42.74-2.12 1.01-2.4.27-.28.59-.35.79-.35.19 0 .38.01.54.02.17.01.4-.04.62.5.24.59.81 1.99.88 2.14.07.15.11.32.01.52-.09.20-.14.33-.28.5-.14.17-.3.38-.43.51-.15.15-.3.32-.13.62.17.3.74 1.23 1.59 1.99.85.76 1.56 1 1.86 1.15.3.15.47.13.65-.08.18-.21.76-.89.96-1.2.2-.31.4-.26.68-.15.28.11 1.77.84 2.08.99.31.15.51.22.59.35.08.13.08.73-.19 1.48z" />
+                                        </svg>
+                                        {t('talkToExpert')}
+                                    </button>
                                 </div>
 
                                 {outOfStock ? (
@@ -1949,12 +2067,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 {/* Extra Services — placed after Add to Cart */}
                                 <div className={styles.extraServicesSection}>
                                     <div className={styles.priceMatchCard} onClick={() => setShowPriceMatchModal(true)}>
-                                        <Tag className={styles.priceMatchIcon} size={24} fill="currentColor" />
+                                        <span className={styles.priceMatchIconBox}>
+                                            <Tag className={styles.priceMatchIcon} size={16} />
+                                        </span>
                                         <div className={styles.priceMatchInfo}>
-                                            <span className={styles.priceMatchMain}>{t('getPriceMatch') || 'Get A Price Match'}</span>
-                                            <span className={styles.priceMatchSub}>{t('priceMatchSub') || '+ 5% Store Credit'}</span>
+                                            <span className={styles.priceMatchMain}>{t('getPriceMatch')}</span>
+                                            <span className={styles.priceMatchSub}>{t('priceMatchSub')}</span>
                                         </div>
-                                        <ChevronRight size={20} className={styles.chevronIcon} />
+                                        <ChevronRight size={18} className={styles.chevronIcon} />
                                     </div>
                                 </div>
 
@@ -2065,7 +2185,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                     <div className={styles.accordionsColumn}>
                         <div className={styles.plainDescriptionSection}>
                             <h3 className={styles.plainDescriptionTitle}>{t('description')}</h3>
-                            <div className={styles.descriptionText}>
+                            <div className={styles.descriptionText} dir={detectDir(getLocalizedField('description', 'description_ar'))}>
                                 {renderFormattedContent(getLocalizedField('description', 'description_ar')) || <p>{t('noDescription')}</p>}
                             </div>
                         </div>
@@ -2088,44 +2208,52 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
                                             if (lines.length > 1) {
                                                 return (
-                                                    <table className={styles.specsTable}>
-                                                        <tbody>
-                                                            {lines.map((line, idx) => {
-                                                                const trimmed = line.trim();
-                                                                // Prefer "Label: value" split. If no colon, fall back to first-whitespace
-                                                                // split so plain rows like "CAPICETY 12 TRAY" still render as a key/value pair.
-                                                                let label = '';
-                                                                let value = '';
-                                                                const colonIdx = trimmed.indexOf(':');
-                                                                if (colonIdx > 0) {
-                                                                    label = trimmed.slice(0, colonIdx).trim();
-                                                                    value = trimmed.slice(colonIdx + 1).trim();
-                                                                } else {
-                                                                    const wsIdx = trimmed.search(/\s/);
-                                                                    if (wsIdx > 0) {
-                                                                        label = trimmed.slice(0, wsIdx).trim();
-                                                                        value = trimmed.slice(wsIdx + 1).trim();
-                                                                    }
+                                                    <div className={styles.specsCardGrid}>
+                                                        {lines.map((line, idx) => {
+                                                            const trimmed = line.trim();
+                                                            // Prefer "Label: value" split. If no colon, fall back to first-whitespace
+                                                            // split so plain rows like "CAPICETY 12 TRAY" still render as a key/value pair.
+                                                            let label = '';
+                                                            let value = '';
+                                                            const colonIdx = trimmed.indexOf(':');
+                                                            if (colonIdx > 0) {
+                                                                label = trimmed.slice(0, colonIdx).trim();
+                                                                value = trimmed.slice(colonIdx + 1).trim();
+                                                            } else {
+                                                                const wsIdx = trimmed.search(/\s/);
+                                                                if (wsIdx > 0) {
+                                                                    label = trimmed.slice(0, wsIdx).trim();
+                                                                    value = trimmed.slice(wsIdx + 1).trim();
                                                                 }
-                                                                if (label && value) {
-                                                                    return (
-                                                                        <tr key={idx}>
-                                                                            <td className={styles.specLabel}>{label}</td>
-                                                                            <td className={styles.specValue}>{value}</td>
-                                                                        </tr>
-                                                                    );
-                                                                }
+                                                            }
+                                                            if (label && value) {
                                                                 return (
-                                                                    <tr key={idx}>
-                                                                        <td className={styles.specItemSingle} colSpan={2}>{trimmed}</td>
-                                                                    </tr>
+                                                                    <div key={idx} className={styles.specCard}>
+                                                                        <div className={styles.specIconWrapper}>
+                                                                            {getIconForLabel(label)}
+                                                                        </div>
+                                                                        <div className={styles.specContent}>
+                                                                            <span className={styles.specCardLabel}>{label}</span>
+                                                                            <span className={styles.specCardValue}>{value}</span>
+                                                                        </div>
+                                                                    </div>
                                                                 );
-                                                            })}
-                                                        </tbody>
-                                                    </table>
+                                                            }
+                                                            return (
+                                                                <div key={idx} className={`${styles.specCard} ${styles.specCardSingle}`}>
+                                                                    <div className={styles.specIconWrapper}>
+                                                                        <ListChecks size={20} />
+                                                                    </div>
+                                                                    <div className={styles.specContent}>
+                                                                        <span className={styles.specCardValue}>{trimmed}</span>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 );
                                             }
-                                            return <div className={styles.descriptionText} dangerouslySetInnerHTML={{ __html: cleaned }} />;
+                                            return <div className={styles.descriptionText} dir={detectDir(cleaned)} dangerouslySetInnerHTML={{ __html: cleaned }} />;
                                         })()}
                                     </div>
                                 ) : (
@@ -2140,8 +2268,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             >
                                 <div className={styles.aboutBrandContainer}>
                                     {product.brand_image && (
-                                        <Link 
-                                            href={`/${locale}/shop?brand=${encodeURIComponent(product.brand_slug || (product.brand_name ? product.brand_name.toLowerCase().replace(/ /g, '-') : ''))}`} 
+                                        <Link
+                                            href={`/${locale}/shop?brand=${encodeURIComponent(product.brand_slug || (product.brand_name ? product.brand_name.toLowerCase().replace(/ /g, '-') : ''))}`}
                                             className={styles.aboutBrandLogoBox}
                                         >
                                             <img src={resolveUrl(product.brand_image)} alt={getLocalizedField('brand_name', 'brand_name_ar')} className={styles.aboutBrandLogoImg} />
@@ -3256,16 +3384,43 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             {
                 isFullScreen && (
                     <div className={styles.fullscreenOverlay} onClick={() => setIsFullScreen(false)}>
+                        <button
+                            className={styles.closeOverlayBtn}
+                            onClick={(e) => { e.stopPropagation(); setIsFullScreen(false); }}
+                            aria-label={isArabic ? 'إغلاق' : 'Close'}
+                        >
+                            <X size={28} />
+                        </button>
                         <div className={styles.fullscreenContent} onClick={e => e.stopPropagation()}>
-                            <button className={styles.closeOverlayBtn} onClick={() => setIsFullScreen(false)}>
-                                <X size={32} />
-                            </button>
-                            <img
-                                src={images[currentImageIndex]}
-                                alt={getLocalizedField('name', 'name_ar')}
-                                className={styles.fullscreenImage}
-                                onError={swapToLogoOnError}
-                            />
+                            {images.length > 1 ? (
+                                <Swiper
+                                    className={styles.fullscreenSwiper}
+                                    spaceBetween={24}
+                                    navigation={images.length > 1}
+                                    pagination={{ clickable: true }}
+                                    modules={[Navigation, Pagination]}
+                                    initialSlide={currentImageIndex}
+                                    onSlideChange={(swiper: any) => setCurrentImageIndex(swiper.activeIndex)}
+                                >
+                                    {images.map((img: string, idx: number) => (
+                                        <SwiperSlide key={idx} className={styles.fullscreenSlide}>
+                                            <img
+                                                src={img}
+                                                alt={`${getLocalizedField('name', 'name_ar')} - ${idx + 1}`}
+                                                className={styles.fullscreenImage}
+                                                onError={swapToLogoOnError}
+                                            />
+                                        </SwiperSlide>
+                                    ))}
+                                </Swiper>
+                            ) : (
+                                <img
+                                    src={images[currentImageIndex]}
+                                    alt={getLocalizedField('name', 'name_ar')}
+                                    className={styles.fullscreenImage}
+                                    onError={swapToLogoOnError}
+                                />
+                            )}
                         </div>
                     </div>
                 )
