@@ -28,7 +28,7 @@ const BrandsBrowse = ({ initialBrands = [] }: BrandsBrowseProps) => {
         direction: isRtl ? 'rtl' : 'ltr',
         align: 'start',
         skipSnaps: false,
-        dragFree: true,
+        dragFree: false,
         containScroll: 'trimSnaps',
     });
 

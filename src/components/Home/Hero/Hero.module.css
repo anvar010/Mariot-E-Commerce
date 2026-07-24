@@ -404,29 +404,56 @@
 @media (max-width: 576px) {
     .heroSection {
         height: 60vh;
-        min-height: 430px;
+        min-height: 390px;
         max-height: none;
     }
 
+    .textContent {
+        gap: 8px;
+    }
+
+    .tagline {
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        padding: 3px 10px;
+    }
+
     .title {
-        font-size: 28px;
-        font-weight: 900;
+        font-size: 21px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+    }
+
+    .description {
+        font-size: 12.5px;
+        line-height: 1.5;
     }
 
     .heroContent {
-        padding: 0 24px;
+        padding: 0 20px;
         align-items: flex-end;
-        padding-bottom: 60px;
+        padding-bottom: 40px;
         /* Aligned back to bottom */
     }
 
+    .buttonGroup {
+        gap: 10px;
+        margin-top: 4px;
+    }
+
     .buyBtn {
-        padding: 12px 24px;
-        font-size: 14px;
+        padding: 10px 20px;
+        font-size: 13px;
     }
 
     .whatsappBtn {
-        padding: 12px 24px;
-        font-size: 14px;
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+
+    .buyBtn svg,
+    .whatsappBtn svg {
+        width: 16px;
+        height: 16px;
     }
 }

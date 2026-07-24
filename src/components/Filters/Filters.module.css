@@ -325,7 +325,7 @@
     border: 1px solid #eaedf2;
     border-radius: 12px;
     background: #ffffff;
-    padding: 2px;
+    padding: 8px 14px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -365,7 +365,6 @@
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    transform: scale(1.1);
 }
 
 .brandLogoFallback {
@@ -386,7 +385,7 @@
 
     .brandLogoCard {
         height: 45px;
-        padding: 2px;
+        padding: 6px 10px;
         border-radius: 4px;
         border: 1px solid #e5e7eb;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);

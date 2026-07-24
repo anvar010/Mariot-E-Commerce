@@ -40,6 +40,17 @@ const CATEGORY_TITLE_FILTERS: Record<string, TitleFilter[]> = {
         { key: 'base-cabinet', label: 'Base Cabinet', label_ar: 'خزانة سفلية', test: (t) => /base[\s-]*cabinet/.test(t) },
         { key: 'corner-cabinet', label: 'Corner Cabinet', label_ar: 'خزانة زاوية', test: (t) => /corner/.test(t) },
     ],
+    'shelves': [
+        { key: 'over-shelves', label: 'Over Shelves', label_ar: 'أرفف علوية', test: (t) => hasOverShelf(t) },
+        { key: 'storage-shelves', label: 'Storage Shelves', label_ar: 'أرفف تخزين', test: (t) => /storage[\s-]*shel(f|ves|ve)/.test(t) },
+        { key: 'wall-shelves', label: 'Wall Shelves', label_ar: 'أرفف حائط', test: (t) => /wall[\s-]*shel(f|ves|ve)/.test(t) },
+    ],
+    'sink': [
+        { key: 'island-type', label: 'Island Type', label_ar: 'نوع جزيرة', test: (t) => /island/.test(t) },
+        { key: 'wall-type', label: 'Wall Type', label_ar: 'نوع حائط', test: (t) => /wall/.test(t) },
+        { key: 'single-skin', label: 'Single Skin', label_ar: 'طبقة واحدة', test: (t) => /single[\s-]*skin/.test(t) },
+        { key: 'double-skin', label: 'Double Skin', label_ar: 'طبقة مزدوجة', test: (t) => /double[\s-]*skin/.test(t) },
+    ],
 };
 
 interface ShopLayoutProps {
@@ -102,6 +113,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
 
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
     const [selectedTitleFilters, setSelectedTitleFilters] = useState<string[]>([]);
+    const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>([]);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [minPrice, setMinPrice] = useState<number>(0);
     const [maxPrice, setMaxPrice] = useState<number>(99999);
     const [inStockOnly, setInStockOnly] = useState(false);
@@ -128,9 +141,10 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         else setSelectedBrands([]);
     }, [brandParam]);
 
-    // Clear the scoped type filter when switching categories
+    // Clear the scoped type filter and child-category narrowing when switching categories
     useEffect(() => {
         setSelectedTitleFilters([]);
+        setSelectedSubCategories([]);
     }, [activeCategory]);
 
     useEffect(() => {
@@ -306,11 +320,13 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const fetchProducts = useCallback(async () => {
         setFetchingProducts(true);
         try {
-            // For title/description-filtered categories we filter client-side, so pull
-            // the whole category in one page to keep filtering + pagination accurate.
-            const fetchAll = !!(activeCategory && CATEGORY_TITLE_FILTERS[activeCategory]);
+            // For title/description-filtered categories, and categories with child
+            // categories to narrow by, we filter client-side — so pull the whole
+            // category in one page to keep filtering + pagination accurate.
+            const fetchAll = !!(activeCategory && (CATEGORY_TITLE_FILTERS[activeCategory] || subCategoriesToShow.length > 0));
             let url = `${API_BASE_URL}/products?page=${fetchAll ? 1 : currentPage}&limit=${fetchAll ? 1000 : productsPerPage}`;
             if (activeCategory) url += `&category=${activeCategory}`;
+            else if (selectedCategories.length > 0) url += `&category=${selectedCategories.join(',')}`;
             if (selectedBrands.length > 0) url += `&brand=${selectedBrands.join(',')}`;
             if (minPrice > 0) url += `&minPrice=${minPrice}`;
             if (maxPrice < 99999) url += `&maxPrice=${maxPrice}`;
@@ -337,7 +353,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             setLoading(false);
             setFetchingProducts(false);
         }
-    }, [activeCategory, selectedBrands, minPrice, maxPrice, inStockOnly, sortBy, currentPage, searchQuery, isFeatured, isLimited, isWeekly, sellerParam]);
+    }, [activeCategory, selectedCategories, selectedBrands, minPrice, maxPrice, inStockOnly, sortBy, currentPage, searchQuery, isFeatured, isLimited, isWeekly, sellerParam, subCategoriesToShow.length]);
 
     useEffect(() => {
         if (isInitialMount.current && initialProducts.length > 0) {
@@ -354,6 +370,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         setInStockOnly(false);
         setSortBy('relevance');
         setSelectedTitleFilters([]);
+        setSelectedSubCategories([]);
+        setSelectedCategories([]);
         setSelectedBrands(brandParam ? brandParam.split(',') : []);
         const newParams = new URLSearchParams();
         if (brandParam) newParams.set('brand', brandParam);
@@ -410,6 +428,27 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         }
     };
 
+    // Same in-place pattern as toggleTitleFilter: narrows the current category's
+    // listing by a child category, without navigating away from it.
+    const toggleSubCategory = (slug: string) => {
+        const scrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+        setSelectedSubCategories(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]);
+        setCurrentPage(1);
+        if (typeof window !== 'undefined') {
+            requestAnimationFrame(() => window.scrollTo(0, scrollY));
+        }
+    };
+
+    // In-place category toggle for the shop page (multi-select, no navigation).
+    const toggleCategory = (slug: string) => {
+        const scrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+        setSelectedCategories(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]);
+        setCurrentPage(1);
+        if (typeof window !== 'undefined') {
+            requestAnimationFrame(() => window.scrollTo(0, scrollY));
+        }
+    };
+
     const renderSidebar = () => {
         const commonProps = {
             inStockOnly, setInStockOnly, brands, selectedBrands,
@@ -420,6 +459,10 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             allCategories, brandCategories, subCategories: subCategoriesToShow, activeCategory, minPrice, setMinPrice, maxPrice, setMaxPrice,
             resetFilters, toggleSection, expandedSections,
             onCategoryChange: (slug: string) => { handleCategoryChange(slug); setIsMobileFilterOpen(false); },
+            selectedSubCategories,
+            onSubCategoryToggle: (slug: string) => toggleSubCategory(slug),
+            selectedCategories,
+            onCategoryToggle: (slug: string) => { toggleCategory(slug); setIsMobileFilterOpen(false); },
             // Scoped title/description filter options (Work Tables / Cabinet)
             ...(activeTitleFilters ? {
                 extraFilterTitle: isArabic ? 'النوع' : 'Type',
@@ -441,17 +484,26 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         return <DefaultShopFilter {...commonProps} />;
     };
 
-    // Apply the scoped title/description filter (client-side) and paginate the result
-    // locally. For every other listing the server already filtered + paged.
+    // Apply the scoped title/description filter and the child-category narrowing
+    // (both client-side) and paginate the result locally. For every other listing
+    // the server already filtered + paged.
     const activeSelectedFilters = activeTitleFilters ? activeTitleFilters.filter(f => titleFilterKeys.includes(f.key)) : [];
-    const filteredProducts = (hasTitleFilter && activeSelectedFilters.length > 0)
+    const hasSubCategoryFilter = selectedSubCategories.length > 0;
+    const hasClientFilter = (hasTitleFilter && activeSelectedFilters.length > 0) || hasSubCategoryFilter;
+    const filteredProducts = hasClientFilter
         ? products.filter(p => {
-            const text = `${p.name || ''} ${p.description || ''}`.toLowerCase();
-            return activeSelectedFilters.some(f => f.test(text));
+            const matchesTitle = !(hasTitleFilter && activeSelectedFilters.length > 0) || (() => {
+                const text = `${p.name || ''} ${p.description || ''}`.toLowerCase();
+                return activeSelectedFilters.some(f => f.test(text));
+            })();
+            const matchesSubCategory = !hasSubCategoryFilter || selectedSubCategories.some(slug =>
+                p.category_slug === slug || p.sub_category_slug === slug || p.sub_sub_category_slug === slug
+            );
+            return matchesTitle && matchesSubCategory;
         })
         : products;
-    const effectiveTotal = hasTitleFilter ? filteredProducts.length : totalProducts;
-    const displayedProducts = hasTitleFilter
+    const effectiveTotal = hasClientFilter ? filteredProducts.length : totalProducts;
+    const displayedProducts = hasClientFilter
         ? filteredProducts.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
         : filteredProducts;
 
@@ -537,7 +589,17 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                                 })}
                         </div>
                     )}
-                    {!hideCategoryGrid && !brandParam && (!searchParams.get('category') || subCategoriesToShow.length > 0) && <CategoryGrid subCategoriesToShow={subCategoriesToShow} t={t} tc={tc} brandParam={brandParam} />}
+                    {!hideCategoryGrid && !brandParam && (!searchParams.get('category') || subCategoriesToShow.length > 0) && (
+                        <CategoryGrid
+                            subCategoriesToShow={subCategoriesToShow}
+                            t={t}
+                            tc={tc}
+                            brandParam={brandParam}
+                            activeCategory={activeCategory}
+                            selectedSubCategories={selectedSubCategories}
+                            onSubCategoryToggle={toggleSubCategory}
+                        />
+                    )}
 
 
 

@@ -12,9 +12,14 @@ interface CategoryGridProps {
     t: any;
     tc: any;
     brandParam?: string | null;
+    // When set, cards narrow the current listing in place (like the sidebar's
+    // category checkboxes) instead of navigating to a new category page.
+    activeCategory?: string | null;
+    selectedSubCategories?: string[];
+    onSubCategoryToggle?: (slug: string) => void;
 }
 
-const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc, brandParam }) => {
+const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc, brandParam, activeCategory, selectedSubCategories = [], onSubCategoryToggle }) => {
     const locale = useLocale();
     const isArabic = locale === 'ar';
     const searchParams = useSearchParams();
@@ -58,6 +63,8 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc,
 
     if (subCategoriesToShow.length === 0) return null;
 
+    const onCategoryPage = !!activeCategory;
+
     return (
         <div className={styles.categoryGridWrapper}>
             <button className={styles.scrollBtn} onClick={scrollLeft} aria-label="Scroll left">
@@ -76,6 +83,36 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc,
                     const catName = (isArabic && cat.name_ar) ? cat.name_ar : cat.name;
                     const catImage = cat.image_url || '';
                     const slug = cat.slug || cat.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+
+                    const image = (
+                        <div className={styles.categoryImage}>
+                            <img
+                                src={catImage || '/assets/mariot-logo2.webp'}
+                                alt={catName}
+                                className={styles.demoImg}
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp';
+                                }}
+                            />
+                        </div>
+                    );
+
+                    // Already inside a category — narrow the current listing in place
+                    // instead of navigating away (matches the sidebar checkbox filter).
+                    if (onCategoryPage) {
+                        const isActive = selectedSubCategories.includes(slug);
+                        return (
+                            <div
+                                key={idx}
+                                className={`${styles.categoryCard} ${isActive ? styles.categoryCardActive : ''}`}
+                                onClick={() => onSubCategoryToggle?.(slug)}
+                            >
+                                {image}
+                                <p>{catName}</p>
+                            </div>
+                        );
+                    }
+
                     const params = new URLSearchParams();
                     if (brandParam) params.set('brand', brandParam);
                     params.set('category', slug);
@@ -89,16 +126,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc,
                             key={idx}
                             className={styles.categoryCard}
                         >
-                            <div className={styles.categoryImage}>
-                                <img
-                                    src={catImage || '/assets/mariot-logo2.webp'}
-                                    alt={catName}
-                                    className={styles.demoImg}
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp';
-                                    }}
-                                />
-                            </div>
+                            {image}
                             <p>{catName}</p>
                         </Link>
                     );

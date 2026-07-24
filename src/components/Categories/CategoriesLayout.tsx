@@ -72,7 +72,6 @@ const ICON_MAP: { [key: string]: any } = {
 };
 
 const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) => {
-    const t = useTranslations('categories');
     const tc = useTranslations('categoryContent');
     const locale = useLocale();
     const isArabic = locale === 'ar';
@@ -169,6 +168,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
     };
 
     const subcats = buildSubcatStructure();
+    const hasSubcats = subcats.left.length > 0 || subcats.right.length > 0;
     const Icon = ICON_MAP[activeCategory.slug] || ICON_MAP['default'];
 
     const renderNestedSubcats = (data: { left: any[], right: any[] }) => (
@@ -278,39 +278,56 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                                                 </div>
                                             )}
                                         </div>
-                                        <div className={styles.columnList}>
-                                            {renderNestedSubcats(subcats)}
-                                        </div>
+                                        {hasSubcats ? (
+                                            <div className={styles.columnList}>
+                                                {renderNestedSubcats(subcats)}
+                                            </div>
+                                        ) : (
+                                            // Categories without subcategories (e.g. Parts) would
+                                            // otherwise render an empty flyout — show a CTA straight
+                                            // to the filtered product listing instead.
+                                            <Link
+                                                href={`/shop?category=${activeCategory.slug}`}
+                                                onClick={onClose}
+                                                className={styles.viewAllCategoryCta}
+                                            >
+                                                <span>
+                                                    {isArabic
+                                                        ? `تصفّح جميع منتجات ${activeCategory.name_ar || activeCategory.name}`
+                                                        : `Browse all ${activeCategory.name}`}
+                                                </span>
+                                                <ChevronRight size={18} />
+                                            </Link>
+                                        )}
                                     </>
                                 )}
                             </div>
-                            <div className={styles.brandsColumn}>
-                                <h2 className={styles.brandsTitle}>{tc('top-brands')}</h2>
-                                <div className={styles.brandsGrid}>
-                                    {brands?.map((brand: any, idx: number) => (
-                                        <Link
-                                            href={`/shop?brand=${encodeURIComponent(brand.slug || brand.name.toLowerCase().replace(/ /g, '-'))}`}
-                                            key={idx}
-                                            className={styles.brandBox}
-                                            style={{ textDecoration: 'none', cursor: 'pointer' }}
-                                            onClick={onClose}
-                                        >
-                                            {brand.image_url ? (
-                                                <img
-                                                    src={brand.image_url}
-                                                    alt={(isArabic && brand.name_ar) ? brand.name_ar : brand.name}
-                                                    className={styles.brandLogoImg}
-                                                />
-                                            ) : (
-                                                <span className={styles.brandTextFallback}>{(isArabic && brand.name_ar) ? brand.name_ar : brand.name}</span>
-                                            )}
-                                        </Link>
-                                    ))}
-                                    {brands.length === 0 && (
-                                        <span style={{ fontSize: '13px', color: '#94a3b8' }}>{t('noBrandsAssigned')}</span>
-                                    )}
+                            {brands.length > 0 && (
+                                <div className={styles.brandsColumn}>
+                                    <h2 className={styles.brandsTitle}>{tc('top-brands')}</h2>
+                                    <div className={styles.brandsGrid}>
+                                        {brands.map((brand: any, idx: number) => (
+                                            <Link
+                                                href={`/shop?brand=${encodeURIComponent(brand.slug || brand.name.toLowerCase().replace(/ /g, '-'))}`}
+                                                key={idx}
+                                                className={styles.brandBox}
+                                                style={{ textDecoration: 'none', cursor: 'pointer' }}
+                                                onClick={onClose}
+                                            >
+                                                {brand.image_url ? (
+                                                    <img
+                                                        src={brand.image_url}
+                                                        alt={(isArabic && brand.name_ar) ? brand.name_ar : brand.name}
+                                                        className={styles.brandLogoImg}
+                                                    />
+                                                ) : (
+                                                    <span className={styles.brandTextFallback}>{(isArabic && brand.name_ar) ? brand.name_ar : brand.name}</span>
+                                                )}
+                                            </Link>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>

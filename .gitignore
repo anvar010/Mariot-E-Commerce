@@ -43,3 +43,9 @@ next-env.d.ts
 scratch/
 temp-scripts/
 build_full.log
+
+# Local DB dumps & connection/util scripts (never publish these)
+public/*.sql
+*.sql
+scripts/hostinger-connect.js
+scripts/normalize-brand-logos.js

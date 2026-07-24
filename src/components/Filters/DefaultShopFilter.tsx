@@ -24,6 +24,10 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
     toggleSection,
     expandedSections,
     onCategoryChange,
+    selectedSubCategories = [],
+    onSubCategoryToggle,
+    selectedCategories = [],
+    onCategoryToggle,
     extraFilterTitle = '',
     extraFilterOptions = [],
     selectedExtraFilters = [],
@@ -67,6 +71,11 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
                 const categoryList = onCategoryPage ? subCategories : allCategories;
                 // Leaf category with no children — nothing to scope to, hide section.
                 if (onCategoryPage && categoryList.length === 0) return null;
+
+                // When onCategoryToggle is provided (shop page, not a dedicated
+                // category page), categories act as multi-select in-place filters.
+                const useToggle = !onCategoryPage && !!onCategoryToggle;
+
                 return (
                 <div className={styles.filterSection}>
                     <div className={styles.sectionHeader} onClick={() => toggleSection('categories')}>
@@ -80,9 +89,19 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
                                     <label key={cat.id} className={styles.checkboxLabel}>
                                         <input
                                             type="checkbox"
-                                            checked={activeCategory === cat.slug}
+                                            checked={
+                                                onCategoryPage
+                                                    ? selectedSubCategories.includes(cat.slug)
+                                                    : useToggle
+                                                        ? selectedCategories.includes(cat.slug)
+                                                        : activeCategory === cat.slug
+                                            }
                                             onChange={() => {
-                                                if (activeCategory === cat.slug) {
+                                                if (onCategoryPage) {
+                                                    onSubCategoryToggle?.(cat.slug);
+                                                } else if (useToggle) {
+                                                    onCategoryToggle!(cat.slug);
+                                                } else if (activeCategory === cat.slug) {
                                                     onCategoryChange(''); // Deselect
                                                 } else {
                                                     onCategoryChange(cat.slug);

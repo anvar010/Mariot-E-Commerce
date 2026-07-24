@@ -1,10 +1,15 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import CategoryLanding from '@/components/Categories/CategoryLanding/CategoryLanding';
 import { Metadata } from 'next';
 import { API_BASE_URL } from '@/config';
 import { localeAlternates, ogLocale } from '@/lib/seo';
+
+// Categories that should skip the landing page and open the filtered product
+// listing directly (brand / price / in-stock filters). Add slugs here as needed.
+const DIRECT_TO_SHOP_SLUGS = ['parts', 'parts-accessories'];
 
 interface CategoryPageProps {
   params: Promise<{
@@ -53,6 +58,13 @@ export async function generateMetadata(props: CategoryPageProps): Promise<Metada
 
 const CategoryPage = async (props: CategoryPageProps) => {
   const params = await props.params;
+
+  // Parts (and any slug listed above) go straight to the shop listing with
+  // brand/price/in-stock filters instead of a category landing page.
+  if (DIRECT_TO_SHOP_SLUGS.includes(params.slug.toLowerCase())) {
+    redirect(`/${params.locale}/shop?category=${params.slug}`);
+  }
+
   return (
     <main>
       <Header />

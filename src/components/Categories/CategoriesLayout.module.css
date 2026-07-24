@@ -170,6 +170,51 @@
   flex: 2;
 }
 
+/* Shown for categories with no subcategories (e.g. Parts) instead of an empty
+   flyout — a clear CTA into the filtered product listing. */
+.viewAllCategoryCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+@media (hover: hover) {
+  .viewAllCategoryCta:hover {
+    background: #dbeafe;
+    transform: translateY(-1px);
+  }
+}
+
+.viewAllCategoryCta svg {
+  transition: transform 0.2s ease;
+}
+
+@media (hover: hover) {
+  .viewAllCategoryCta:hover svg {
+    transform: translateX(3px);
+  }
+}
+
+:global([dir="rtl"]) .viewAllCategoryCta svg {
+  transform: scaleX(-1);
+}
+
+@media (hover: hover) {
+  :global([dir="rtl"]) .viewAllCategoryCta:hover svg {
+    transform: scaleX(-1) translateX(3px);
+  }
+}
+
 .categoryHeader {
   display: flex;
   align-items: center;

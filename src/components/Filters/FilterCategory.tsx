@@ -24,6 +24,8 @@ const FilterCategory: React.FC<FilterProps> = ({
     toggleSection,
     expandedSections,
     onCategoryChange,
+    selectedSubCategories = [],
+    onSubCategoryToggle,
 }) => {
     const t = useTranslations('categoryContent');
     const locale = useLocale();
@@ -85,8 +87,8 @@ const FilterCategory: React.FC<FilterProps> = ({
                                 <label key={cat.id} className={styles.checkboxLabel}>
                                     <input
                                         type="checkbox"
-                                        checked={activeCategory === cat.slug}
-                                        onChange={() => onCategoryChange(activeCategory === cat.slug ? '' : cat.slug)}
+                                        checked={selectedSubCategories.includes(cat.slug)}
+                                        onChange={() => onSubCategoryToggle?.(cat.slug)}
                                     />
                                     <span><span>{isArabic && cat.name_ar ? cat.name_ar : cat.name}</span></span>
                                 </label>
