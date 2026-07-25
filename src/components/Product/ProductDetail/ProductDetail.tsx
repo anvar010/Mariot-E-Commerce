@@ -2428,9 +2428,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                     <div className={styles.partInfo}>
                                                         <span className={styles.partName}>{isArabic && part.name_ar ? part.name_ar : part.name}</span>
                                                         <div className={styles.partPriceRow}>
-                                                            <CurrencyPrice price={part.offer_price > 0 ? part.offer_price : part.price} className={styles.partPrice} />
+                                                            <CurrencyPrice amount={part.offer_price > 0 ? part.offer_price : part.price} className={styles.partPrice} />
                                                             {part.offer_price > 0 && (
-                                                                <CurrencyPrice price={part.price} className={styles.partOldPrice} />
+                                                                <CurrencyPrice amount={part.price} className={styles.partOldPrice} />
                                                             )}
                                                         </div>
                                                     </div>

@@ -843,7 +843,7 @@ const AdminProducts = () => {
         const timer = setTimeout(async () => {
             setPartsLoading(true);
             try {
-                const res = await fetch(`${API_BASE_URL}/products?search=${encodeURIComponent(partsSearch)}&limit=15&page=1&status=all&category=parts`, {
+                const res = await fetch(`${API_BASE_URL}/products?search=${encodeURIComponent(partsSearch)}&limit=15&page=1&status=all`, {
                     credentials: 'include',
                     headers: getAuthHeaders()
                 });
@@ -3269,7 +3269,9 @@ const AdminProducts = () => {
                                                                                 }}
                                                                             >
                                                                                 {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} onError={swapToLogoOnError} />}
-                                                                                <span style={{ flex: 1, color: alreadyAdded ? '#16a34a' : 'inherit' }}>{p.name}</span>
+                                                                                <span style={{ flex: 1, color: alreadyAdded ? '#16a34a' : 'inherit' }}>
+                                                                                    {p.name} {p.model ? <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '6px' }}>({p.model})</span> : null}
+                                                                                </span>
                                                                                 <div
                                                                                     style={{
                                                                                         flexShrink: 0, width: 28, height: 28,
