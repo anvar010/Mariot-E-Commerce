@@ -182,8 +182,10 @@ class Product {
                     for (const word of wordsToMatch) {
                         const wordParams = [];
                         for (let i = 0; i < 8; i++) {
-                            wordParams.push(`${word}%`, `% ${word}%`);
+                            wordParams.push(`%${word}%`, `% ${word}%`);
                         }
+                        // Also check if any linked part matches this word (by model or name)
+                        wordParams.push(`%${word}%`, `%${word}%`);
                         params.push(...wordParams);
                         subConditions.push('(' +
                             'p.name LIKE ? OR p.name LIKE ? OR ' +
@@ -193,7 +195,8 @@ class Product {
                             'p.sub_category LIKE ? OR p.sub_category LIKE ? OR ' +
                             'b.name LIKE ? OR b.name LIKE ? OR ' +
                             'b.name_ar LIKE ? OR b.name_ar LIKE ? OR ' +
-                            'p.model LIKE ? OR p.model LIKE ?' +
+                            'p.model LIKE ? OR p.model LIKE ? OR ' +
+                            'EXISTS (SELECT 1 FROM products p_part WHERE p.linked_parts LIKE CONCAT(\'%\', p_part.id, \'%\') AND (p_part.model LIKE ? OR p_part.name LIKE ?))' +
                             ')');
                     }
                     return '(' + subConditions.join(' OR ') + ')';
