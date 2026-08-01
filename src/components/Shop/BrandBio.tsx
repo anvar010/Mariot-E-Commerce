@@ -11,8 +11,9 @@ interface BrandBioProps {
 
 const BrandBio: React.FC<BrandBioProps> = ({ activeBrandInfo, isArabic, resolveUrl }) => {
     const brandLogo = isArabic && activeBrandInfo?.image_url_ar ? activeBrandInfo.image_url_ar : activeBrandInfo?.image_url;
+    const brandDescription = isArabic && activeBrandInfo?.description_ar ? activeBrandInfo.description_ar : activeBrandInfo?.description;
 
-    if (!activeBrandInfo || (!activeBrandInfo.description && !brandLogo)) {
+    if (!activeBrandInfo || (!brandDescription && !brandLogo)) {
         return null;
     }
 
@@ -23,7 +24,7 @@ const BrandBio: React.FC<BrandBioProps> = ({ activeBrandInfo, isArabic, resolveU
                     <div className={styles.brandBioLogoBox}>
                         <img
                             src={resolveUrl(brandLogo)}
-                            alt={activeBrandInfo.name}
+                            alt={isArabic && activeBrandInfo.name_ar ? activeBrandInfo.name_ar : activeBrandInfo.name}
                             className={styles.brandBioLogoImg}
                         />
                     </div>
@@ -32,9 +33,12 @@ const BrandBio: React.FC<BrandBioProps> = ({ activeBrandInfo, isArabic, resolveU
                     <h2 className={styles.brandBioTitle}>
                         {isArabic && activeBrandInfo.name_ar ? activeBrandInfo.name_ar : activeBrandInfo.name}
                     </h2>
-                    <div className={styles.brandBioDescription}>
-                        {isArabic && activeBrandInfo.description_ar ? activeBrandInfo.description_ar : activeBrandInfo.description}
-                    </div>
+                    {brandDescription && (
+                        <div 
+                            className={styles.brandBioDescription}
+                            dangerouslySetInnerHTML={{ __html: brandDescription }}
+                        />
+                    )}
                 </div>
             </div>
         </div>

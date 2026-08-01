@@ -1,5 +1,43 @@
-# Dependencies
+# General
 node_modules
+.next
+*/node_modules
+*/.next
+.vercel
+.env*
+*.log
+*.tsbuildinfo
+
+# Scratch / API response dumps
+frontend/cats.json
+
+# Project specific
+frontend/.next
+frontend/node_modules
+backend/node_modules
+backend/.env
+
+# Temp/Migration files (Sensitive - moved to backup)
+*.sql
+public/*.sql
+tmp.js
+copy-data.js
+import-sql.js
+test-import.js
+test-aiven.js
+power-import.js
+aiven-migrate.js
+*aiven*
+*Aiven*
+import_log.txt
+push_log.txt
+push_error*.txt
+migration-log.txt
+mariot_b2b.sql
+scripts/hostinger-connect.js
+scripts/normalize-brand-logos.js
+
+# Dependencies
 /.pnp
 .pnp.js
 
@@ -9,8 +47,6 @@ node_modules
 # Next.js
 /.next/
 /out/
-
-# Production
 /build
 
 # Misc
@@ -23,29 +59,16 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Local env files
-.env*.local
-
-# Vercel
-.vercel
-
 # Deploy artifacts
 *.zip
 
 # TypeScript
-*.tsbuildinfo
 next-env.d.ts
 
-# Claude
+# Claude / Agents
 .claude/
 .agent/
 .agents/
 scratch/
 temp-scripts/
 build_full.log
-
-# Local DB dumps & connection/util scripts (never publish these)
-public/*.sql
-*.sql
-scripts/hostinger-connect.js
-scripts/normalize-brand-logos.js
