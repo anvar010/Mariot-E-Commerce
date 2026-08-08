@@ -2,13 +2,15 @@ const express = require('express'); // Backend Sync - 2026-03-26 v1.0.1
 const cors = require('cors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const path = require('path');
 const errorHandler = require('./middlewares/error.middleware');
 const helmet = require('helmet');
 const hpp = require('hpp');
 const sanitize = require('./middlewares/sanitize.middleware');
 const rateLimit = require('express-rate-limit');
-// Load env vars
-dotenv.config();
+// Load env vars. Resolved next to this file rather than via process.cwd(), so a deploy that
+// starts node from a different working directory still finds .env (see server.js).
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Route files
 const authRoutes = require('./routes/auth.routes');
@@ -30,7 +32,6 @@ const contactRoutes = require('./routes/contact.routes');
 const cmsRoutes = require('./routes/cms.routes');
 const settingsRoutes = require('./routes/settings.routes');
 const verifyRoutes = require('./routes/verify.routes');
-const path = require('path');
 
 const cookieParser = require('cookie-parser');
 

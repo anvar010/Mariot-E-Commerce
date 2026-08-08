@@ -1,7 +1,11 @@
 const dotenv = require('dotenv');
+const path = require('path');
 // Load .env values, but do NOT override platform-injected env vars (Hostinger/Render/etc).
 // Production hosts inject vars at process start; in dev, .env fills in the gaps.
-dotenv.config();
+// Resolve .env next to this file, NOT via process.cwd(): build-based deploys (Hostinger
+// hbuilds) start node from a different working directory, so a bare dotenv.config()
+// silently finds nothing and the app dies on "Access denied for user ''@'127.0.0.1'".
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 console.log('[BOOT] cwd =', process.cwd());
 console.log('[BOOT] DB_USER =', JSON.stringify(process.env.DB_USER));
