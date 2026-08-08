@@ -14,6 +14,75 @@ const POPULAR_KEYWORDS = [
     'fryer', 'grill', 'toaster', 'waffle', 'kettle', 'meat', 'slicer', 'dishwasher', 'range'
 ];
 
+// "tecno dom" and "TECNO-DOM" are the same thing; " tecno  dom " is too.
+const normalizeSearch = (s) => String(s).toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+// Spacing-insensitive key, so "tecno dom" and "tecnodom" collapse to one another.
+const collapseSearch = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Vocabulary of things worth searching for, built from the real brands and categories.
+// `words` drives per-word typo correction; `collapsedIndex` maps a spacing-free key back to
+// the full canonical phrase, which is what lets a brand written as two words be found when
+// the shopper types it as one (or the reverse).
+const buildSearchDictionary = async () => {
+    const [cats] = await db.query('SELECT name FROM categories WHERE is_active = 1');
+    const [brs] = await db.query('SELECT name FROM brands');
+
+    const wordSet = new Set(POPULAR_KEYWORDS);
+    const collapsedIndex = new Map();
+
+    const addPhrase = (raw) => {
+        const phrase = normalizeSearch(raw);
+        if (!phrase) return;
+        const key = collapseSearch(phrase);
+        if (key.length > 3 && !collapsedIndex.has(key)) collapsedIndex.set(key, phrase);
+        phrase.split(' ').forEach(w => w.length > 3 && wordSet.add(w));
+    };
+
+    POPULAR_KEYWORDS.forEach(addPhrase);
+    cats.forEach(c => c.name && addPhrase(c.name));
+    brs.forEach(b => b.name && addPhrase(b.name));
+
+    return { words: Array.from(wordSet), wordSet, collapsedIndex };
+};
+
+// Returns a corrected query, or null when the search already looks right (or nothing is close
+// enough to be worth guessing at). Tried in order of confidence: exact-once-spacing-is-ignored,
+// then a typo across the whole phrase, then word-by-word typos.
+const autoCorrectSearch = (raw, dict) => {
+    const query = normalizeSearch(raw);
+    if (!query) return null;
+
+    // 1. Only the spaces are wrong: "tecno dom" / "tecno-dom" -> "tecnodom"
+    const key = collapseSearch(query);
+    const exact = dict.collapsedIndex.get(key);
+    if (exact) return exact === query ? null : exact;
+
+    // 2. Misspelled somewhere in the phrase: "technodom" -> "tecnodom". Compared spacing-free so
+    //    "techno dom" is caught by the same pass. The bar is higher here than for single words
+    //    because a whole-phrase match has more characters to agree on.
+    const keys = Array.from(dict.collapsedIndex.keys());
+    if (keys.length) {
+        const m = stringSimilarity.findBestMatch(key, keys);
+        if (m.bestMatch.rating >= 0.75) {
+            const corrected = dict.collapsedIndex.get(m.bestMatch.target);
+            if (corrected && corrected !== query) return corrected;
+        }
+    }
+
+    // 3. One bad word in an otherwise fine query: "technodom oven" -> "tecnodom oven"
+    let changed = false;
+    const words = query.split(' ').map(word => {
+        if (word.length <= 3 || dict.wordSet.has(word)) return word; // too short, or already valid
+        const m = stringSimilarity.findBestMatch(word, dict.words);
+        if (m.bestMatch.rating >= 0.6 && m.bestMatch.target !== word) {
+            changed = true;
+            return m.bestMatch.target;
+        }
+        return word;
+    });
+    return changed ? words.join(' ') : null;
+};
+
 
 exports.bulkImport = async (req, res, next) => {
     try {
@@ -246,17 +315,36 @@ exports.getProducts = async (req, res, next) => {
         });
 
         let didYouMean = null;
+        let autoCorrected = null;
+        let finalProducts = products;
+        let finalTotal = total;
+
         if (products.length === 0 && search && search.trim().length > 3) {
             try {
-                const [cats] = await db.query('SELECT name FROM categories WHERE is_active = 1');
-                const [brs] = await db.query('SELECT name FROM brands');
-                const dict = new Set(POPULAR_KEYWORDS);
-                cats.forEach(c => c.name && c.name.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).forEach(w => w.length > 3 && dict.add(w)));
-                brs.forEach(b => b.name && b.name.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).forEach(w => w.length > 3 && dict.add(w)));
+                const dict = await buildSearchDictionary();
+                const corrected = autoCorrectSearch(search, dict);
 
-                const matches = stringSimilarity.findBestMatch(search.trim().toLowerCase(), Array.from(dict));
-                if (matches.bestMatch.rating >= 0.5) {
-                    didYouMean = matches.bestMatch.target;
+                // Re-run the search with the correction so the shopper sees products rather than a
+                // dead end. Only adopt it if it actually found something.
+                if (corrected) {
+                    const retry = await Product.findAll({
+                        category, brand, seller, minPrice, maxPrice, search: corrected, sort, limit, offset,
+                        is_weekly_deal, is_limited_offer, is_featured, is_daily_offer, status, stockStatus
+                    });
+                    if (retry.products.length > 0) {
+                        finalProducts = retry.products;
+                        finalTotal = retry.total;
+                        autoCorrected = { from: search.trim(), to: corrected };
+                    }
+                }
+
+                // Only suggest when auto-correcting didn't rescue the search.
+                if (!autoCorrected) {
+                    const pool = dict.words.concat(Array.from(dict.collapsedIndex.values()));
+                    const matches = stringSimilarity.findBestMatch(normalizeSearch(search), pool);
+                    if (matches.bestMatch.rating >= 0.5) {
+                        didYouMean = matches.bestMatch.target;
+                    }
                 }
             } catch (err) {
                 const matches = stringSimilarity.findBestMatch(search.trim().toLowerCase(), POPULAR_KEYWORDS);
@@ -266,15 +354,16 @@ exports.getProducts = async (req, res, next) => {
 
         res.json({
             success: true,
-            count: products.length,
-            total,
+            count: finalProducts.length,
+            total: finalTotal,
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
-                totalPages: Math.ceil(total / limit)
+                totalPages: Math.ceil(finalTotal / limit)
             },
-            data: products,
-            didYouMean: didYouMean
+            data: finalProducts,
+            didYouMean: didYouMean,
+            autoCorrected: autoCorrected
         });
 
     } catch (error) {
