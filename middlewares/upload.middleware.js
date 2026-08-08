@@ -2,17 +2,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure upload directory exists.
-// UPLOAD_DIR lets uploads live OUTSIDE the project so they survive code updates/redeploys.
-// Resolved relative to the app root (so "../uploads" → a sibling folder of the app), or used
-// as-is if an absolute path is given. Falls back to the in-project ./uploads when unset.
-const appRoot = path.join(__dirname, '..');
-const uploadDir = process.env.UPLOAD_DIR
-    ? path.resolve(appRoot, process.env.UPLOAD_DIR)
-    : path.join(appRoot, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Resolved (and created if needed) in config/uploadsDir — must stay the same directory the
+// static handler in app.js serves from, so uploads and reads never drift apart.
+const uploadDir = require('../config/uploadsDir');
 
 // Configure storage
 const storage = multer.diskStorage({
