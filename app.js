@@ -97,22 +97,15 @@ app.use(helmet({
 // Prevent HTTP param pollution
 app.use(hpp());
 
-// Enable CORS
-const allowedOrigins = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://192.168.0.100:3000',
-    'https://uae.mariotstore.com',
-    'https://mariotstore.com',
-    'https://www.mariotstore.com',
-    'https://api.mariotstore.com',
-    ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(s => s.trim()) : [])
-].filter(Boolean);
+// Enable CORS. The allowlist lives in config/allowedOrigins so the media hotlink guard below
+// can enforce the same set of sites; add a domain there (or via ALLOWED_ORIGINS) and both
+// rules pick it up.
+const { isAllowedOrigin } = require('./config/allowedOrigins');
 
 app.use(cors({
     origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps or curl)
-        if (!origin || allowedOrigins.includes(origin) || (origin && origin.endsWith('.vercel.app'))) {
+        if (!origin || isAllowedOrigin(origin)) {
             callback(null, true);
         } else {
             console.warn(`[CORS] Rejected origin: ${origin}`);
@@ -124,7 +117,7 @@ app.use(cors({
 
 // Global Rate Limiting
 const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+                                                                                                                                                                                                                                                                                                                                windowMs: 15 * 60 * 1000, // 15 minutes
     max: 500, // Limit each IP to 500 requests per windowMs
     message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes.' },
     standardHeaders: true,
@@ -148,9 +141,28 @@ app.use(cookieParser());
 app.use(sanitize);
 
 
-// Serve static files from uploads directory with cross-origin policy
+// Serve static files from uploads directory with cross-origin policy, and refuse hotlinks.
+//
+// CORS does not cover this: browsers never apply it to <img src>, so without a Referer check
+// any site can embed our media and spend our bandwidth. A request with NO Referer is allowed
+// on purpose -- next/image fetches these server-side with no Referer, as do link previews
+// (WhatsApp/Facebook), Google Images, and anyone opening an image URL directly. Only a request
+// that openly names a site we do not allow is refused.
+//
+// Vary: Referer keeps the CDN from caching one visitor's answer for everyone: without it a
+// hotlinker's 403 could be served to our own shoppers, or vice versa.
+const { isAllowedReferer } = require('./config/allowedOrigins');
+
 app.use(['/uploads', '/product_images'], (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Vary', 'Referer');
+
+    const referer = req.get('referer');
+    if (referer && !isAllowedReferer(referer)) {
+        console.warn(`[hotlink] Refused ${req.originalUrl} for referer: ${referer}`);
+        return res.status(403).json({ success: false, message: 'Hotlinking is not allowed.' });
+    }
+
     next();
 });
 // Uploads live OUTSIDE the project so they survive code updates/redeploys; config/uploadsDir
