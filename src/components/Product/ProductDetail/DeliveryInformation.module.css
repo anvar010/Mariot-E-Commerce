@@ -1,9 +1,9 @@
 .deliveryBlock {
-    margin: 18px 0;
+    margin: 2px 0 12px;
 }
 
 .deliveryHeading {
-    margin: 0 0 8px;
+    margin: 0 0 6px;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -64,7 +64,7 @@
    the text is allowed to wrap rather than pushing the counter off screen. */
 @media (max-width: 600px) {
     .deliveryBlock {
-        margin: 14px 0;
+        margin: 2px 0 10px;
     }
 
     .deliveryCard {
