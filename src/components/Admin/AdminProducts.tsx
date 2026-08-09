@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminProducts.module.css';
+import { DELIVERY_PRESETS, DEFAULT_DELIVERY_DAYS, deliveryDateLabel, normalizeDeliveryDays } from '@/utils/delivery';
 import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag, Ruler, MoveHorizontal, MoveVertical, Scale, Info, GripVertical } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -711,7 +712,8 @@ const AdminProducts = () => {
         charge_delivery: false,
         delivery_charge: '',
         warranty: '',
-        warranty_ar: ''
+        warranty_ar: '',
+        delivery_days: ''
     });
 
     const searchParams = useSearchParams();
@@ -748,6 +750,7 @@ const AdminProducts = () => {
                 delivery_charge: '',
                 warranty: '',
                 warranty_ar: '',
+                delivery_days: '',
                 notify_users_on_save: false
             });
             setIsModalOpen(true);
@@ -1292,6 +1295,7 @@ const AdminProducts = () => {
             delivery_charge: Number(product.delivery_charge) > 0 ? String(product.delivery_charge) : '',
             warranty: product.warranty !== null && product.warranty !== undefined ? String(product.warranty) : '',
             warranty_ar: product.warranty_ar !== null && product.warranty_ar !== undefined ? String(product.warranty_ar) : '',
+            delivery_days: product.delivery_days !== null && product.delivery_days !== undefined ? String(product.delivery_days) : '',
             notify_users_on_save: false
         });
 
@@ -1515,6 +1519,7 @@ const AdminProducts = () => {
             delivery_charge: '',
             warranty: '',
             warranty_ar: '',
+            delivery_days: '',
             notify_users_on_save: false
         });
         setFbtSelectedItems([]);
@@ -2600,6 +2605,39 @@ const AdminProducts = () => {
                                                     <label>Warranty Arabic (Years)</label>
                                                     <input type="number" name="warranty_ar" min="0" value={formData.warranty_ar} dir="rtl" onChange={handleInputChange} />
                                                 </div>
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <label>Delivery Time</label>
+                                                <div className={styles.deliveryPresets}>
+                                                    {DELIVERY_PRESETS.map(preset => (
+                                                        <button
+                                                            key={preset.days}
+                                                            type="button"
+                                                            className={`${styles.deliveryPreset} ${Number(formData.delivery_days || DEFAULT_DELIVERY_DAYS) === preset.days ? styles.deliveryPresetActive : ''}`}
+                                                            onClick={() => setFormData(prev => ({ ...prev, delivery_days: String(preset.days) }))}
+                                                        >
+                                                            {preset.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <input
+                                                    type="number"
+                                                    name="delivery_days"
+                                                    min="1"
+                                                    max="365"
+                                                    placeholder={`${DEFAULT_DELIVERY_DAYS}`}
+                                                    value={formData.delivery_days}
+                                                    onChange={handleInputChange}
+                                                />
+                                                <small className={styles.fieldHint}>
+                                                    Shoppers see a date, not a number of days &mdash; today this reads{' '}
+                                                    <strong>
+                                                        {normalizeDeliveryDays(formData.delivery_days) === 1
+                                                            ? 'Get it Tomorrow'
+                                                            : `Get it by ${deliveryDateLabel(normalizeDeliveryDays(formData.delivery_days))}`}
+                                                    </strong>
+                                                    . Leave empty for the default of {DEFAULT_DELIVERY_DAYS} days.
+                                                </small>
                                             </div>
                                         </div>
                                     )}

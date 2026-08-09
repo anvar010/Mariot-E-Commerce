@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
+import DeliveryInformation from './DeliveryInformation';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import { resolveUrl } from '@/utils/resolveUrl';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -2097,6 +2098,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         <ChevronRight size={18} className={styles.chevronIcon} />
                                     </div>
                                 </div>
+
+                                <DeliveryInformation days={product?.delivery_days} locale={locale} />
 
                                 {/* Bundle Promo — inline card; customer picks ONE free gift */}
                                 {hasFreeGifts && (
