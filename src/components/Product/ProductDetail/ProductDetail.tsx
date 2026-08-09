@@ -1972,6 +1972,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </div>
                                 )}
 
+                                <DeliveryInformation days={product?.delivery_days} locale={locale} />
+
                                 <div className={styles.purchaseActions}>
                                     <div className={styles.qtyWrapper} ref={qtyRef}>
                                         <div
@@ -2098,8 +2100,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         <ChevronRight size={18} className={styles.chevronIcon} />
                                     </div>
                                 </div>
-
-                                <DeliveryInformation days={product?.delivery_days} locale={locale} />
 
                                 {/* Bundle Promo — inline card; customer picks ONE free gift */}
                                 {hasFreeGifts && (
