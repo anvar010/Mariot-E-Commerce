@@ -169,7 +169,10 @@ const initDb = async () => {
                 { name: 'youtube_video_link', definition: "JSON" },
                 { name: 'resources', definition: "JSON" },
                 { name: 'offer_start', definition: "DATETIME" },
-                { name: 'offer_end', definition: "DATETIME" }
+                { name: 'offer_end', definition: "DATETIME" },
+                // Working days until delivery, shown on the product page as a date. 3 is the
+                // house default, so existing rows read sensibly without a backfill.
+                { name: 'delivery_days', definition: "INT NOT NULL DEFAULT 3" }
             ];
 
             for (const col of productColumns) {

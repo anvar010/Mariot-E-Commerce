@@ -3,6 +3,18 @@ const slugify = require('slugify');
 const ProductVariant = require('./productVariant.model');
 const ProductSizeTier = require('./productSizeTier.model');
 
+// Days until delivery, as shown on the product page. Blank/invalid falls back to the house
+// default of 3 rather than null, because the storefront always has to promise something.
+// Capped at a year so a stray keystroke cannot render "Get it by 12 Aug 2085".
+const DEFAULT_DELIVERY_DAYS = 3;
+const MAX_DELIVERY_DAYS = 365;
+function normalizeDeliveryDays(value) {
+    if (value === '' || value === null || value === undefined) return DEFAULT_DELIVERY_DAYS;
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed < 1) return DEFAULT_DELIVERY_DAYS;
+    return Math.min(parsed, MAX_DELIVERY_DAYS);
+}
+
 let freeGiftColEnsured = false;
 async function ensureFreeGiftColumn() {
     if (freeGiftColEnsured) return;
@@ -818,11 +830,12 @@ class Product {
                 (data.warranty !== undefined && data.warranty !== '' && data.warranty !== null) ? parseInt(data.warranty) : null,
                 (data.warranty_ar !== undefined && data.warranty_ar !== '' && data.warranty_ar !== null) ? parseInt(data.warranty_ar) : null,
                 is_customizable, custom_dimensions, base_dimensions, delivery_charge,
-                data.linked_parts ? String(data.linked_parts) : null
+                data.linked_parts ? String(data.linked_parts) : null,
+                normalizeDeliveryDays(data.delivery_days)
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions, delivery_charge, linked_parts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions, delivery_charge, linked_parts, delivery_days) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -893,7 +906,8 @@ class Product {
             'is_best_seller', 'status', 'product_group', 'sub_category', 'model',
             'youtube_video_link', 'resources', 'offer_start', 'offer_end',
             'frequently_bought_together', 'you_may_also_need', 'free_gift_product_ids', 'compare_config', 'warranty', 'warranty_ar',
-            'is_customizable', 'custom_dimensions', 'base_dimensions', 'delivery_charge', 'linked_parts'
+            'is_customizable', 'custom_dimensions', 'base_dimensions', 'delivery_charge', 'linked_parts',
+            'delivery_days'
         ];
 
         const productId = parseInt(id);
@@ -965,6 +979,9 @@ class Product {
                         const parsed = parseInt(val);
                         cleanData[key] = isNaN(parsed) ? null : parsed;
                     }
+                } else if (key === 'delivery_days') {
+                    // Never null: the column is NOT NULL, and a blank field means "house default".
+                    cleanData[key] = normalizeDeliveryDays(data[key]);
                 } else if (['offer_start', 'offer_end'].includes(key)) {
                     // Handle datetime columns: empty string -> null (strict MySQL rejects '')
                     cleanData[key] = (data[key] && data[key] !== '') ? data[key] : null;
