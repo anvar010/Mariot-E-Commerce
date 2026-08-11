@@ -15,6 +15,27 @@ function normalizeDeliveryDays(value) {
     return Math.min(parsed, MAX_DELIVERY_DAYS);
 }
 
+// "Perfect for" tags, stored as a comma-separated string. Accepts either an array or a raw
+// string so the admin form and any bulk import can both post whatever is natural. Blanks and
+// duplicates are dropped here so search and the product page never deal with them.
+const MAX_TAGS = 12;
+function normalizeTags(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const parts = Array.isArray(value) ? value : String(value).split(',');
+    const seen = new Set();
+    const cleaned = [];
+    for (const part of parts) {
+        const tag = String(part).replace(/\s+/g, ' ').trim();
+        if (!tag) continue;
+        const key = tag.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        cleaned.push(tag);
+        if (cleaned.length >= MAX_TAGS) break;
+    }
+    return cleaned.length ? cleaned.join(', ') : null;
+}
+
 let freeGiftColEnsured = false;
 async function ensureFreeGiftColumn() {
     if (freeGiftColEnsured) return;
@@ -193,7 +214,10 @@ class Product {
                     const subConditions = [];
                     for (const word of wordsToMatch) {
                         const wordParams = [];
-                        for (let i = 0; i < 8; i++) {
+                        // One pair per searchable column listed below (each contributes two
+                        // placeholders). Keep this count in step with that list, or every
+                        // parameter after it silently shifts out of alignment.
+                        for (let i = 0; i < 10; i++) {
                             wordParams.push(`%${word}%`, `% ${word}%`);
                         }
                         // Also check if any linked part matches this word (by model or name)
@@ -208,6 +232,8 @@ class Product {
                             'b.name LIKE ? OR b.name LIKE ? OR ' +
                             'b.name_ar LIKE ? OR b.name_ar LIKE ? OR ' +
                             'p.model LIKE ? OR p.model LIKE ? OR ' +
+                            'p.tags LIKE ? OR p.tags LIKE ? OR ' +
+                            'p.tags_ar LIKE ? OR p.tags_ar LIKE ? OR ' +
                             'EXISTS (SELECT 1 FROM products p_part WHERE p.linked_parts LIKE CONCAT(\'%\', p_part.id, \'%\') AND (p_part.model LIKE ? OR p_part.name LIKE ?))' +
                             ')');
                     }
@@ -831,11 +857,13 @@ class Product {
                 (data.warranty_ar !== undefined && data.warranty_ar !== '' && data.warranty_ar !== null) ? parseInt(data.warranty_ar) : null,
                 is_customizable, custom_dimensions, base_dimensions, delivery_charge,
                 data.linked_parts ? String(data.linked_parts) : null,
-                normalizeDeliveryDays(data.delivery_days)
+                normalizeDeliveryDays(data.delivery_days),
+                normalizeTags(data.tags),
+                normalizeTags(data.tags_ar)
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions, delivery_charge, linked_parts, delivery_days) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions, delivery_charge, linked_parts, delivery_days, tags, tags_ar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -907,7 +935,7 @@ class Product {
             'youtube_video_link', 'resources', 'offer_start', 'offer_end',
             'frequently_bought_together', 'you_may_also_need', 'free_gift_product_ids', 'compare_config', 'warranty', 'warranty_ar',
             'is_customizable', 'custom_dimensions', 'base_dimensions', 'delivery_charge', 'linked_parts',
-            'delivery_days'
+            'delivery_days', 'tags', 'tags_ar'
         ];
 
         const productId = parseInt(id);
@@ -982,6 +1010,8 @@ class Product {
                 } else if (key === 'delivery_days') {
                     // Never null: the column is NOT NULL, and a blank field means "house default".
                     cleanData[key] = normalizeDeliveryDays(data[key]);
+                } else if (key === 'tags' || key === 'tags_ar') {
+                    cleanData[key] = normalizeTags(data[key]);
                 } else if (['offer_start', 'offer_end'].includes(key)) {
                     // Handle datetime columns: empty string -> null (strict MySQL rejects '')
                     cleanData[key] = (data[key] && data[key] !== '') ? data[key] : null;

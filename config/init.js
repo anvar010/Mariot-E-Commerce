@@ -172,7 +172,11 @@ const initDb = async () => {
                 { name: 'offer_end', definition: "DATETIME" },
                 // Working days until delivery, shown on the product page as a date. 3 is the
                 // house default, so existing rows read sensibly without a backfill.
-                { name: 'delivery_days', definition: "INT NOT NULL DEFAULT 3" }
+                { name: 'delivery_days', definition: "INT NOT NULL DEFAULT 3" },
+                // Comma-separated "perfect for" audience tags (e.g. "Restaurants, Hotels").
+                // Shown as chips on the product page and matched by product search.
+                { name: 'tags', definition: "TEXT" },
+                { name: 'tags_ar', definition: "TEXT" }
             ];
 
             for (const col of productColumns) {
