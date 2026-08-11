@@ -176,7 +176,12 @@ const initDb = async () => {
                 // Comma-separated "perfect for" audience tags (e.g. "Restaurants, Hotels").
                 // Shown as chips on the product page and matched by product search.
                 { name: 'tags', definition: "TEXT" },
-                { name: 'tags_ar', definition: "TEXT" }
+                { name: 'tags_ar', definition: "TEXT" },
+                // Shipping weight in kg. Carrier rate APIs quote on weight, so a product
+                // without one falls back to SHIPPING_FALLBACK_WEIGHT_KG rather than blocking
+                // checkout. Nullable on purpose: null means "not measured yet", which is
+                // different from a real 0.
+                { name: 'weight_kg', definition: "DECIMAL(10,3) NULL" }
             ];
 
             for (const col of productColumns) {
