@@ -68,13 +68,20 @@ exports.createQuotation = async (req, res, next) => {
         // satisfies the NOT NULL UNIQUE column; we set the real EQT-{id} right after.
         const tempRef = `EQT-TMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-        // Enrich each line with the product's short description so the quotation PDF can
-        // show it under the title/brand. Cart items don't carry it, so look it up here.
+        // Enrich each line from the product record so the quotation PDF has everything it
+        // needs. Cart lines are built for the cart drawer and carry only what that view
+        // showed, so anything missing is filled in here rather than trusted from the client.
         try {
             const ids = [...new Set((items || []).map(i => i.id).filter(Boolean))];
             if (ids.length > 0) {
                 const [rows] = await db.query(
-                    'SELECT id, model, specifications, specifications_ar FROM products WHERE id IN (?)',
+                    `SELECT p.id, p.model, p.description, p.description_ar,
+                            COALESCE(
+                                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
+                                (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY id LIMIT 1)
+                            ) AS primary_image
+                       FROM products p
+                      WHERE p.id IN (?)`,
                     [ids]
                 );
                 const byId = {};
@@ -82,16 +89,20 @@ exports.createQuotation = async (req, res, next) => {
                 (items || []).forEach(it => {
                     const p = byId[it.id];
                     if (p) {
-                        // Show the product specifications (like the product detail page) in the quotation.
-                        it.specifications = p.specifications || '';
-                        it.specifications_ar = p.specifications_ar || '';
-                        // Cart lines may not carry the model — fall back to the product's model.
+                        // Full description, not the short one — the quotation is the document a
+                        // customer decides from, so it carries the complete product text.
+                        it.description = p.description || '';
+                        it.description_ar = p.description_ar || '';
+                        // Cart lines may not carry these — fall back to the product record.
                         if (!it.model && p.model) it.model = p.model;
+                        // Without this the PDF silently renders a placeholder for any line whose
+                        // cart entry had no image (variants, older carts, quick-add flows).
+                        if (!it.image && p.primary_image) it.image = p.primary_image;
                     }
                 });
             }
         } catch (e) {
-            console.error('[Quotation] short description enrich failed:', e.message);
+            console.error('[Quotation] item enrich failed:', e.message);
         }
 
         const [result] = await db.execute(
