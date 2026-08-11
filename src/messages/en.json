@@ -143,6 +143,7 @@
     "deliveryTomorrow": "Get it <b>Tomorrow</b>",
     "deliveryByDate": "Get it by <b>{date}</b>",
     "deliveryOrderIn": "Order in {hours}h {minutes}m",
+    "perfectFor": "Perfect For",
     "weAcceptPayment": "We Accept Payment",
     "description": "Description",
     "noDescription": "No description available",

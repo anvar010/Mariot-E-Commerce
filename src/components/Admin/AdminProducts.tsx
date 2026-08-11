@@ -211,6 +211,70 @@ const serializeSpecRows = (rows: SpecRow[]): string =>
         .map(r => (r.value.trim() ? `${r.label.trim()}: ${r.value.trim()}` : r.label.trim()))
         .join('\n');
 
+// "Perfect for" tags. Stored as one comma-separated string (matching the DB column) but
+// edited as chips, so a comma inside the box can't silently create a malformed tag.
+const TagsInput: React.FC<{
+    value: string;
+    placeholder?: string;
+    dir?: 'ltr' | 'rtl';
+    onChange: (next: string) => void;
+}> = ({ value, placeholder, dir = 'ltr', onChange }) => {
+    const [draft, setDraft] = useState('');
+    const tags = (value || '').split(',').map(t => t.trim()).filter(Boolean);
+
+    const commit = (raw: string) => {
+        // Splitting on both comma types lets a pasted Arabic list work as-is.
+        const additions = raw.split(/[,،]/).map(t => t.replace(/\s+/g, ' ').trim()).filter(Boolean);
+        if (!additions.length) return;
+        const merged = [...tags];
+        for (const tag of additions) {
+            if (!merged.some(existing => existing.toLowerCase() === tag.toLowerCase())) merged.push(tag);
+        }
+        onChange(merged.join(', '));
+        setDraft('');
+    };
+
+    return (
+        <div className={styles.tagsInput} dir={dir}>
+            {tags.length > 0 && (
+                <div className={styles.tagsChips}>
+                    {tags.map(tag => (
+                        <span key={tag} className={styles.tagChip}>
+                            {tag}
+                            <button
+                                type="button"
+                                aria-label={`Remove ${tag}`}
+                                onClick={() => onChange(tags.filter(t => t !== tag).join(', '))}
+                            >
+                                ×
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            )}
+            <input
+                type="text"
+                value={draft}
+                dir={dir}
+                placeholder={placeholder}
+                onChange={(e) => {
+                    // Typing (or pasting) a comma finishes the tag rather than storing it.
+                    if (/[,،]/.test(e.target.value)) commit(e.target.value);
+                    else setDraft(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); commit(draft); }
+                    else if (e.key === 'Backspace' && !draft && tags.length) {
+                        onChange(tags.slice(0, -1).join(', '));
+                    }
+                }}
+                // Losing focus mid-word would otherwise discard what was typed.
+                onBlur={() => commit(draft)}
+            />
+        </div>
+    );
+};
+
 // Bilingual spec row: English pair + its Arabic counterpart, edited together.
 interface BiSpecRow { label: string; value: string; label_ar: string; value_ar: string; }
 
@@ -713,7 +777,9 @@ const AdminProducts = () => {
         delivery_charge: '',
         warranty: '',
         warranty_ar: '',
-        delivery_days: ''
+        delivery_days: '',
+        tags: '',
+        tags_ar: ''
     });
 
     const searchParams = useSearchParams();
@@ -751,6 +817,8 @@ const AdminProducts = () => {
                 warranty: '',
                 warranty_ar: '',
                 delivery_days: '',
+        tags: '',
+        tags_ar: '',
                 notify_users_on_save: false
             });
             setIsModalOpen(true);
@@ -1296,6 +1364,8 @@ const AdminProducts = () => {
             warranty: product.warranty !== null && product.warranty !== undefined ? String(product.warranty) : '',
             warranty_ar: product.warranty_ar !== null && product.warranty_ar !== undefined ? String(product.warranty_ar) : '',
             delivery_days: product.delivery_days !== null && product.delivery_days !== undefined ? String(product.delivery_days) : '',
+            tags: product.tags || '',
+            tags_ar: product.tags_ar || '',
             notify_users_on_save: false
         });
 
@@ -1520,6 +1590,8 @@ const AdminProducts = () => {
             warranty: '',
             warranty_ar: '',
             delivery_days: '',
+        tags: '',
+        tags_ar: '',
             notify_users_on_save: false
         });
         setFbtSelectedItems([]);
@@ -2638,6 +2710,34 @@ const AdminProducts = () => {
                                                     </strong>
                                                     . Leave empty for the default of {DEFAULT_DELIVERY_DAYS} days.
                                                 </small>
+                                            </div>
+                                            <div className={styles.formGrid}>
+                                                <div className={styles.formGroup}>
+                                                    <label>Perfect For (tags)</label>
+                                                    <TagsInput
+                                                        value={formData.tags}
+                                                        placeholder="Restaurants, Hotels, Cafés…"
+                                                        onChange={(next) => setFormData(prev => ({ ...prev, tags: next }))}
+                                                    />
+                                                    <small className={styles.fieldHint}>
+                                                        Who this product suits. Shown as chips on the product page, and
+                                                        searchable &mdash; a shopper searching &ldquo;bakery&rdquo; finds
+                                                        everything tagged for bakeries.
+                                                    </small>
+                                                </div>
+                                                <div className={styles.formGroup}>
+                                                    <label>Perfect For &mdash; Arabic (الوسوم)</label>
+                                                    <TagsInput
+                                                        value={formData.tags_ar}
+                                                        placeholder="مطاعم، فنادق، مقاهي…"
+                                                        dir="rtl"
+                                                        onChange={(next) => setFormData(prev => ({ ...prev, tags_ar: next }))}
+                                                    />
+                                                    <small className={styles.fieldHint}>
+                                                        Arabic wording for the same tags. Leave empty to show the English
+                                                        tags on the Arabic site.
+                                                    </small>
+                                                </div>
                                             </div>
                                         </div>
                                     )}

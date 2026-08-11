@@ -50,6 +50,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
 import DeliveryInformation from './DeliveryInformation';
+import ProductTags from './ProductTags';
 import { API_BASE_URL, BASE_URL } from '@/config';
 import { resolveUrl } from '@/utils/resolveUrl';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -1494,6 +1495,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         <ChevronRight size={32} />
                                     </button>
                                 </div>
+
+                                <ProductTags tags={product?.tags} tagsAr={product?.tags_ar} isArabic={isArabic} />
                             </div>
 
                             {/* Info */}

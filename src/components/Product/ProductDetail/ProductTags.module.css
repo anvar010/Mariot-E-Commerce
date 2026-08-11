@@ -1,0 +1,69 @@
+.tagsBlock {
+    margin: 16px 0 4px;
+}
+
+.tagsHeading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.tagsHeadingIcon {
+    color: #94a3b8;
+}
+
+.tagsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tagChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #334155;
+    font-size: 13.5px;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.tagIcon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* Arabic tags are longer than their English twins, so let them wrap instead of
+   overflowing the row. */
+[dir='rtl'] .tagChip {
+    white-space: normal;
+}
+
+@media (max-width: 600px) {
+    .tagsBlock {
+        margin: 12px 0 4px;
+    }
+
+    .tagsList {
+        gap: 6px;
+    }
+
+    .tagChip {
+        padding: 6px 11px;
+        font-size: 12.5px;
+        gap: 6px;
+    }
+}

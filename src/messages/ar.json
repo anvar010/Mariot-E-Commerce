@@ -143,6 +143,7 @@
         "deliveryTomorrow": "استلمه <b>غداً</b>",
         "deliveryByDate": "استلمه بحلول <b>{date}</b>",
         "deliveryOrderIn": "اطلب خلال {hours}س {minutes}د",
+        "perfectFor": "مثالي لـ",
         "weAcceptPayment": "طرق الدفع المتاحة",
         "description": "الوصف",
         "noDescription": "لا يوجد وصف متاح",
