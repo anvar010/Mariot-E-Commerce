@@ -35,7 +35,6 @@ import {
     BellRing,
     Scale,
     Share2,
-    CheckCircle2,
     ArrowRight,
     Globe,
     Box,
@@ -518,50 +517,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 ))}
             </ul>
         );
-    };
-
-    // Short descriptions are commonly authored as dash/bullet-prefixed lines
-    // (e.g. "‐ Ice Production: 900 kg / 24h\r\n‐ Ice Storage: 350 kg"). Extract
-    // each line as a standalone feature so it can render as a checklist instead
-    // of a single run-on paragraph.
-    const getFeatureLines = (rawContent: string): string[] => {
-        if (!rawContent) return [];
-        const cleaned = cleanShortcodes(rawContent);
-
-        if (cleaned.includes('<li>')) {
-            return [...cleaned.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
-                .map(m => m[1].replace(/<[^>]+>/g, '').trim())
-                .filter(Boolean);
-        }
-        if (cleaned.includes('<p>')) {
-            const pLines = [...cleaned.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
-                .map(m => m[1].replace(/<[^>]+>/g, '').trim())
-                .filter(Boolean);
-            if (pLines.length > 1) return pLines;
-            // Single <p> with a long paragraph — fall through to sentence split
-        }
-
-        const lines = cleaned
-            .split(/(?:<br\s*\/?>|[\r\n])+/)
-            .map(s => s.replace(/^[•\-‐\*✳️✅]\s*/, '').trim())
-            .filter(Boolean);
-
-        if (lines.length > 1) return lines;
-
-        // If we still have a single block of text, split on sentence boundaries
-        // (period/comma followed by space) to create individual feature bullets.
-        // This handles continuous paragraph-style descriptions (e.g. Gelmatic).
-        if (lines.length === 1 && lines[0].length > 60) {
-            const plainText = lines[0].replace(/<[^>]+>/g, '');
-            // Split on period or comma followed by a space and an Arabic/Latin letter
-            const sentences = plainText
-                .split(/(?<=[.،,])\s+(?=[A-Za-z\u0600-\u06FF])/)
-                .map(s => s.trim().replace(/[.،,]+$/, '').trim())
-                .filter(s => s.length > 5);
-            if (sentences.length > 1) return sentences;
-        }
-
-        return lines;
     };
 
     // Compare-with-similar-products states
@@ -1053,8 +1008,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const isFav = isInWishlist(product.id);
 
     const resolveUrlLocal = resolveUrl;
-
-    const featureLines = getFeatureLines(getLocalizedField('short_description', 'short_description_ar'));
 
     // ── Variant resolution ────────────────────────────────────────────────
     const hasVariants = product.has_variants === 1
@@ -1776,74 +1729,25 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </div>
                                 </div>
 
+                                {/* Always prose, never a bullet list: the short description reads as a
+                                    paragraph even when the admin wrote it on separate lines. */}
                                 {getLocalizedField('short_description', 'short_description_ar') && (
-                                    featureLines.length > 1 ? (
-                                        <div className={styles.keyFeaturesWrapper} dir={detectDir(getLocalizedField('short_description', 'short_description_ar'))}>
-                                            <h3 className={styles.keyFeaturesTitle}>{t('keyFeatures', { defaultValue: 'Key Features' })}</h3>
-                                            <ul className={styles.keyFeaturesList}>
-                                                {featureLines.slice(0, 5).map((line, idx) => (
-                                                    <li key={idx} className={styles.keyFeatureItem}>
-                                                        <CheckCircle2 size={18} className={styles.keyFeatureCheck} />
-                                                        <span>{line}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                            {featureLines.length > 5 && (
-                                                <>
-                                                    <AnimatePresence initial={false}>
-                                                        {isShortDescExpanded && (
-                                                            <motion.div
-                                                                initial={{ height: 0, opacity: 0 }}
-                                                                animate={{ height: 'auto', opacity: 1 }}
-                                                                exit={{ height: 0, opacity: 0 }}
-                                                                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                                                                style={{ overflow: 'hidden' }}
-                                                            >
-                                                                <ul className={styles.keyFeaturesList} style={{ marginTop: 8 }}>
-                                                                    {featureLines.slice(5).map((line, idx) => (
-                                                                        <li key={idx + 5} className={styles.keyFeatureItem}>
-                                                                            <CheckCircle2 size={18} className={styles.keyFeatureCheck} />
-                                                                            <span>{line}</span>
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
-                                                    <button
-                                                        className={styles.readMoreBtn}
-                                                        onClick={() => setIsShortDescExpanded(!isShortDescExpanded)}
-                                                    >
-                                                        {isShortDescExpanded ? t('readLess') : t('readMore')}
-                                                        <motion.span
-                                                            animate={{ rotate: isShortDescExpanded ? 180 : 0 }}
-                                                            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                                                            style={{ display: 'inline-flex' }}
-                                                        >
-                                                            <ChevronDown size={14} />
-                                                        </motion.span>
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className={styles.shortDescriptionWrapper}>
-                                            <div
-                                                ref={shortDescRef}
-                                                dir={detectDir(getLocalizedField('short_description', 'short_description_ar'))}
-                                                className={`${styles.shortDescription} ${isShortDescExpanded ? styles.expanded : ''}`}
-                                                dangerouslySetInnerHTML={{ __html: cleanShortcodes(getLocalizedField('short_description', 'short_description_ar')) }}
-                                            />
-                                            {canShowReadMore && (
-                                                <button
-                                                    className={styles.readMoreBtn}
-                                                    onClick={() => setIsShortDescExpanded(!isShortDescExpanded)}
-                                                >
-                                                    {isShortDescExpanded ? t('readLess') : t('readMore')}
-                                                </button>
-                                            )}
-                                        </div>
-                                    )
+                                    <div className={styles.shortDescriptionWrapper}>
+                                        <div
+                                            ref={shortDescRef}
+                                            dir={detectDir(getLocalizedField('short_description', 'short_description_ar'))}
+                                            className={`${styles.shortDescription} ${isShortDescExpanded ? styles.expanded : ''}`}
+                                            dangerouslySetInnerHTML={{ __html: cleanShortcodes(getLocalizedField('short_description', 'short_description_ar')) }}
+                                        />
+                                        {canShowReadMore && (
+                                            <button
+                                                className={styles.readMoreBtn}
+                                                onClick={() => setIsShortDescExpanded(!isShortDescExpanded)}
+                                            >
+                                                {isShortDescExpanded ? t('readLess') : t('readMore')}
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
 
                                 {/* Tabby Area */}

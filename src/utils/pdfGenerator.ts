@@ -145,17 +145,33 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
     const pdfWidth = pdf.internal.pageSize.getWidth();
 
     // ── Spec line processor (reused by measurement probe + page renderer) ─
-    const buildSpecLines = (item: any): string[] =>
-        String((isArabic && item.specifications_ar) ? item.specifications_ar : (item.specifications || ''))
-            .replace(/â€¢/g, '\n').replace(/â€"/g, '-').replace(/Â/g, '')
+    // The product description as a single flowing paragraph. The admin writes it as HTML, so
+    // tags and bullet markers are stripped to plain text and the whole thing is capped: a long
+    // description would otherwise push one line item across several pages of the quotation.
+    const MAX_DESC_CHARS = 320;
+    const buildItemDescription = (item: any): string => {
+        // Quotations saved before this switched to the full description only carry
+        // specifications, so fall back to those rather than render an empty cell.
+        const source = (isArabic && (item.description_ar || item.specifications_ar))
+            ? (item.description_ar || item.specifications_ar)
+            : (item.description || item.specifications || '');
+
+        const text = String(source)
+            .replace(/â€¢/g, ' ').replace(/â€"/g, '-').replace(/Â/g, '')
             .replace(/\[[^\]]*\]/g, ' ')
-            .replace(/<\/?(p|div|br|li|ul|ol|tr|td)[^>]*>/gi, '\n')
+            .replace(/<\/?(p|div|br|li|ul|ol|tr|td)[^>]*>/gi, ' ')
             .replace(/<[^>]*>/g, ' ')
             .replace(/&nbsp;/g, ' ')
-            .split(/\n|•|·/)
-            .map((s: string) => s.replace(/\s+/g, ' ').replace(/^[•·\-•\s]+/, '').trim())
-            .filter((s: string) => s.length > 0)
-            .slice(0, 6);
+            .replace(/[•·]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (text.length <= MAX_DESC_CHARS) return text;
+        // Cut on a word boundary so the trailing ellipsis doesn't land mid-word.
+        const cut = text.slice(0, MAX_DESC_CHARS);
+        const lastSpace = cut.lastIndexOf(' ');
+        return `${(lastSpace > MAX_DESC_CHARS * 0.6 ? cut.slice(0, lastSpace) : cut).trim()}…`;
+    };
 
     // ── Single item <tr> builder (reused by measurement probe + page renderer) ─
     const buildItemRowHTML = (item: any, imgSrc: string, displayNum: number): string => {
@@ -165,14 +181,14 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
             : '';
         const variantLabel = item.variant_label || '';
         const itemName = (isArabic && item.name_ar) ? item.name_ar : item.name;
-        const specLines = buildSpecLines(item);
+        const itemDescription = buildItemDescription(item);
         return `
             <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart};" dir="ltr">${displayNum}</td>
                 <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart}; width: 35%;">
                     <div style="font-weight: bold; color: #1e293b;">${itemName}</div>
                     <div style="color: #64748b; font-size: 10px;">${L.brand}: ${item.brand || 'Standard'}</div>
-                    ${specLines.length ? `<div style="color: #475569; font-size: 9.5px; margin-top: 4px; line-height: 1.5;">${specLines.map((s: string) => `<div>• ${s}</div>`).join('')}</div>` : ''}
+                    ${itemDescription ? `<div style="color: #475569; font-size: 9.5px; margin-top: 4px; line-height: 1.5; text-align: justify;">${itemDescription}</div>` : ''}
                     ${item.model ? `<div style="color: #64748b; font-size: 10px; margin-top: 4px;">${L.model}: ${item.model}</div>` : ''}
                     ${(variantLabel && !dims) ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
                     ${dims ? `<div style="color: #334155; font-size: 10px; margin-top: 4px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${dims}</div>` : ''}
