@@ -1,5 +1,6 @@
 .tagsBlock {
     margin: 16px 0 4px;
+    padding-top: 14px;
 }
 
 .tagsHeading {
@@ -11,11 +12,11 @@
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #64748b;
+    color: #000000;
 }
 
 .tagsHeadingIcon {
-    color: #94a3b8;
+    color: #000000;
 }
 
 .tagsList {
@@ -32,7 +33,7 @@
     align-items: center;
     gap: 7px;
     padding: 7px 14px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #94a3b8;
     border-radius: 999px;
     background: #ffffff;
     color: #334155;
@@ -50,6 +51,22 @@
    overflowing the row. */
 [dir='rtl'] .tagChip {
     white-space: normal;
+}
+
+/* Rendered twice — under the gallery on desktop, and below the bundle / price-match cards on
+   mobile where it reads better next to the buying decision. Exactly one is ever visible. */
+.tagsMobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .tagsDesktop {
+        display: none;
+    }
+
+    .tagsMobile {
+        display: block;
+    }
 }
 
 @media (max-width: 600px) {

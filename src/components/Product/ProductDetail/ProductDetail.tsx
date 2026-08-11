@@ -1496,7 +1496,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </button>
                                 </div>
 
-                                <ProductTags tags={product?.tags} tagsAr={product?.tags_ar} isArabic={isArabic} />
+                                <ProductTags tags={product?.tags} tagsAr={product?.tags_ar} isArabic={isArabic} variant="desktop" />
                             </div>
 
                             {/* Info */}
@@ -2059,6 +2059,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         </button>
                                     </div>
                                 )}
+
+                                {/* Mobile copy — sits after the bundle / price-match cards. The
+                                    desktop copy under the gallery is hidden at this width. */}
+                                <ProductTags
+                                    tags={product?.tags}
+                                    tagsAr={product?.tags_ar}
+                                    isArabic={isArabic}
+                                    variant="mobile"
+                                />
                             </div>
                         </div>
 

@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminProducts.module.css';
 import { DELIVERY_PRESETS, DEFAULT_DELIVERY_DAYS, deliveryDateLabel, normalizeDeliveryDays } from '@/utils/delivery';
+import { PERFECT_FOR_PRESETS, splitTags, joinTags, type PerfectForPreset } from '@/utils/productTags';
 import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag, Ruler, MoveHorizontal, MoveVertical, Scale, Info, GripVertical } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -779,7 +780,8 @@ const AdminProducts = () => {
         warranty_ar: '',
         delivery_days: '',
         tags: '',
-        tags_ar: ''
+        tags_ar: '',
+        weight_kg: ''
     });
 
     const searchParams = useSearchParams();
@@ -819,6 +821,7 @@ const AdminProducts = () => {
                 delivery_days: '',
         tags: '',
         tags_ar: '',
+        weight_kg: '',
                 notify_users_on_save: false
             });
             setIsModalOpen(true);
@@ -1088,6 +1091,26 @@ const AdminProducts = () => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
         setCurrentPage(1);
+    };
+
+    // Adds or removes a suggested tag in both languages together, so the Arabic box never
+    // drifts out of step with the English one. Hand-typed tags are left untouched.
+    const togglePresetTag = (preset: PerfectForPreset) => {
+        setFormData(prev => {
+            const en = splitTags(prev.tags);
+            const ar = splitTags(prev.tags_ar);
+            const isSelected = en.some(tag => tag.toLowerCase() === preset.en.toLowerCase());
+
+            return {
+                ...prev,
+                tags: joinTags(isSelected
+                    ? en.filter(tag => tag.toLowerCase() !== preset.en.toLowerCase())
+                    : [...en, preset.en]),
+                tags_ar: joinTags(isSelected
+                    ? ar.filter(tag => tag !== preset.ar)
+                    : (ar.includes(preset.ar) ? ar : [...ar, preset.ar])),
+            };
+        });
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -1366,6 +1389,7 @@ const AdminProducts = () => {
             delivery_days: product.delivery_days !== null && product.delivery_days !== undefined ? String(product.delivery_days) : '',
             tags: product.tags || '',
             tags_ar: product.tags_ar || '',
+            weight_kg: product.weight_kg !== null && product.weight_kg !== undefined ? String(product.weight_kg) : '',
             notify_users_on_save: false
         });
 
@@ -1592,6 +1616,7 @@ const AdminProducts = () => {
             delivery_days: '',
         tags: '',
         tags_ar: '',
+        weight_kg: '',
             notify_users_on_save: false
         });
         setFbtSelectedItems([]);
@@ -2711,32 +2736,71 @@ const AdminProducts = () => {
                                                     . Leave empty for the default of {DEFAULT_DELIVERY_DAYS} days.
                                                 </small>
                                             </div>
-                                            <div className={styles.formGrid}>
-                                                <div className={styles.formGroup}>
-                                                    <label>Perfect For (tags)</label>
-                                                    <TagsInput
-                                                        value={formData.tags}
-                                                        placeholder="Restaurants, Hotels, Cafés…"
-                                                        onChange={(next) => setFormData(prev => ({ ...prev, tags: next }))}
-                                                    />
-                                                    <small className={styles.fieldHint}>
-                                                        Who this product suits. Shown as chips on the product page, and
-                                                        searchable &mdash; a shopper searching &ldquo;bakery&rdquo; finds
-                                                        everything tagged for bakeries.
-                                                    </small>
+                                            <div className={styles.formGroup}>
+                                                <label>Shipping Weight (kg)</label>
+                                                <input
+                                                    type="number"
+                                                    name="weight_kg"
+                                                    min="0"
+                                                    step="0.001"
+                                                    placeholder="e.g. 12.5"
+                                                    value={formData.weight_kg}
+                                                    onChange={handleInputChange}
+                                                />
+                                                <small className={styles.fieldHint}>
+                                                    Used to quote DHL and Aramex rates at checkout. Leave empty and a
+                                                    house average is assumed, which may under- or over-charge the
+                                                    customer &mdash; so fill it in for anything heavy or bulky.
+                                                </small>
+                                            </div>
+                                            <div className={styles.tagsSection}>
+                                                <label>Perfect For (tags)</label>
+                                                <small className={styles.fieldHint}>
+                                                    Who this product suits. Shown as chips on the product page, and
+                                                    searchable &mdash; a shopper searching &ldquo;bakery&rdquo; finds
+                                                    everything tagged for bakeries. Pick a suggestion to fill both
+                                                    languages at once, or type your own in either box.
+                                                </small>
+
+                                                <div className={styles.tagSuggestions}>
+                                                    {PERFECT_FOR_PRESETS.map(preset => {
+                                                        const selected = splitTags(formData.tags)
+                                                            .some(tag => tag.toLowerCase() === preset.en.toLowerCase());
+                                                        return (
+                                                            <button
+                                                                key={preset.en}
+                                                                type="button"
+                                                                className={`${styles.tagSuggestion} ${selected ? styles.tagSuggestionActive : ''}`}
+                                                                onClick={() => togglePresetTag(preset)}
+                                                                title={preset.ar}
+                                                            >
+                                                                {selected ? '−' : '+'} {preset.en}
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
-                                                <div className={styles.formGroup}>
-                                                    <label>Perfect For &mdash; Arabic (الوسوم)</label>
-                                                    <TagsInput
-                                                        value={formData.tags_ar}
-                                                        placeholder="مطاعم، فنادق، مقاهي…"
-                                                        dir="rtl"
-                                                        onChange={(next) => setFormData(prev => ({ ...prev, tags_ar: next }))}
-                                                    />
-                                                    <small className={styles.fieldHint}>
-                                                        Arabic wording for the same tags. Leave empty to show the English
-                                                        tags on the Arabic site.
-                                                    </small>
+
+                                                <div className={styles.formGrid}>
+                                                    <div className={styles.formGroup}>
+                                                        <label>English</label>
+                                                        <TagsInput
+                                                            value={formData.tags}
+                                                            placeholder="Restaurants, Hotels, Cafés…"
+                                                            onChange={(next) => setFormData(prev => ({ ...prev, tags: next }))}
+                                                        />
+                                                    </div>
+                                                    <div className={styles.formGroup}>
+                                                        <label>Arabic (الوسوم)</label>
+                                                        <TagsInput
+                                                            value={formData.tags_ar}
+                                                            placeholder="مطاعم، فنادق، مقاهي…"
+                                                            dir="rtl"
+                                                            onChange={(next) => setFormData(prev => ({ ...prev, tags_ar: next }))}
+                                                        />
+                                                        <small className={styles.fieldHint}>
+                                                            Leave empty to show the English tags on the Arabic site.
+                                                        </small>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
