@@ -32,6 +32,7 @@ const contactRoutes = require('./routes/contact.routes');
 const cmsRoutes = require('./routes/cms.routes');
 const settingsRoutes = require('./routes/settings.routes');
 const verifyRoutes = require('./routes/verify.routes');
+const shippingRoutes = require('./routes/shipping.routes');
 
 const cookieParser = require('cookie-parser');
 
@@ -169,8 +170,12 @@ app.use(['/uploads', '/product_images'], (req, res, next) => {
 // works out where that is (see the comment there) and is the same value the upload middleware
 // writes to.
 const uploadsPath = require('./config/uploadsDir');
-app.use('/uploads', express.static(uploadsPath));
-app.use('/product_images', express.static(uploadsPath));
+// Uploaded filenames are content-unique (Date.now()+random, and sharp rewrites to .webp), so a
+// given URL never changes contents and is safe to cache indefinitely. express.static defaults to
+// max-age=0, which made Hostinger's CDN revalidate every product image on every page view.
+const uploadsStatic = { maxAge: '1y', immutable: true, etag: true };
+app.use('/uploads', express.static(uploadsPath, uploadsStatic));
+app.use('/product_images', express.static(uploadsPath, uploadsStatic));
 
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
@@ -197,6 +202,7 @@ app.use('/api/v1/invoices', invoiceRoutes);
 // app.use('/api/v1/contact', contactRoutes); // Moved up with limiter
 app.use('/api/v1/cms', cmsRoutes);
 app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/v1/shipping', shippingRoutes);
 app.use('/api/v1/verify', verifyRoutes);
 
 // Welcome route

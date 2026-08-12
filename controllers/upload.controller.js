@@ -44,8 +44,14 @@ exports.uploadImage = async (req, res, next) => {
             filename = optimizedFilename;
         }
 
+        // Store a root-relative path, never an absolute URL. Building one from req.get('host')
+        // bakes whatever hostname the upload happened to arrive on into the database forever —
+        // that is how 53 products ended up pointing at the old WordPress apex instead of the API
+        // host, and those rows 404 wherever the raw value is used (og:image, JSON-LD, sitemap).
+        // Every consumer already absolutizes "/uploads/..." against MEDIA_BASE_URL: the frontend
+        // in utils/resolveUrl.ts, emails in utils/sendEmail.js and services/stockNotifications.
         const relativePath = req.query.folder ? `${req.query.folder}/${filename}` : filename;
-        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${relativePath}`;
+        const fileUrl = `/uploads/${relativePath}`;
 
         res.status(200).json({
             success: true,
@@ -56,7 +62,7 @@ exports.uploadImage = async (req, res, next) => {
         console.error('Image processing error:', error);
         // Fallback to original file
         const relativePath = req.query.folder ? `${req.query.folder}/${filename}` : filename;
-        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${relativePath}`;
+        const fileUrl = `/uploads/${relativePath}`;
         res.status(200).json({
             success: true,
             data: fileUrl,
@@ -71,7 +77,7 @@ exports.uploadFile = (req, res, next) => {
     }
 
     const relativePath = req.query.folder ? `${req.query.folder}/${req.file.filename}` : req.file.filename;
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${relativePath}`;
+    const fileUrl = `/uploads/${relativePath}`;
 
     res.status(200).json({
         success: true,
@@ -113,7 +119,7 @@ exports.uploadImages = async (req, res, next) => {
                 }
             }
             const relativePath = req.query.folder ? `${req.query.folder}/${filename}` : filename;
-            return `${req.protocol}://${req.get('host')}/uploads/${relativePath}`;
+            return `/uploads/${relativePath}`;
         }));
 
         res.status(200).json({
