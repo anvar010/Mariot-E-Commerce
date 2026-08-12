@@ -795,3 +795,12 @@
         font-size: 11px !important;
     }
 }
+/* Unoptimised retry: matches what next/image's layout="fill" objectFit="contain"
+   produces, so a fallback image sits identically to an optimised one. */
+.rawImage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}

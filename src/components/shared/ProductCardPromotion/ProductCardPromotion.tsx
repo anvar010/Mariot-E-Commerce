@@ -143,6 +143,11 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
     };
 
     const [logoError, setLogoError] = React.useState(false);
+    // Two stages, because the card optimises images through the Next server while the product
+    // page loads them straight from the browser. When the optimiser refuses or times out (host
+    // missing from remotePatterns, slow upstream, a burst of card images) the file itself is
+    // usually fine — so retry it unoptimised before giving up on the placeholder.
+    const [unoptimizedImages, setUnoptimizedImages] = React.useState<Set<number>>(new Set());
     const [failedImages, setFailedImages] = React.useState<Set<number>>(new Set());
 
     // Images shown in the card carousel:
@@ -157,23 +162,28 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         : [];
     const variantGallery: string[] = Array.isArray((product as any).variant_gallery) ? (product as any).variant_gallery : [];
 
-    let allImages: string[];
-    if (selectedSwatchImages.length > 0) {
-        allImages = Array.from(new Set(selectedSwatchImages.map((u: string) => resolveUrl(u)).filter(Boolean)));
-    } else if (variantGallery.length > 0) {
-        allImages = Array.from(new Set(variantGallery.map((u: string) => resolveUrl(u)).filter(Boolean)));
-    } else {
-        allImages = [resolveUrl(product.primary_image) || '/assets/mariot-logo2.webp'];
-        if (product.images && Array.isArray(product.images)) {
-            const addImages = product.images.map((img: any) => resolveUrl(img.image_url || img.image || img)).filter(Boolean);
-            allImages = [...allImages, ...addImages];
-        } else if (product.gallery && Array.isArray(product.gallery)) {
-            const addImages = product.gallery.map((img: any) => resolveUrl(img.image_url || img.image || img)).filter(Boolean);
-            allImages = [...allImages, ...addImages];
-        }
-        allImages = Array.from(new Set(allImages));
-    }
-    if (allImages.length === 0) allImages = ['/assets/mariot-logo2.webp'];
+    const resolveAll = (list: any[]): string[] => Array.from(new Set(
+        list.map((img: any) => resolveUrl(typeof img === 'string' ? img : (img?.image_url || img?.image || img))).filter(Boolean)
+    ));
+
+    // The product's own photos, used both as the default and as the fallback when a variant
+    // selection yields nothing usable.
+    const productImages: string[] = resolveAll([
+        product.primary_image,
+        ...(Array.isArray(product.images) ? product.images : []),
+        ...(Array.isArray((product as any).gallery) ? (product as any).gallery : []),
+    ].filter(Boolean));
+
+    // First list that actually contains something wins. Previously the placeholder was pushed
+    // in as element 0 whenever primary_image was missing, so a product with perfectly good
+    // photos still opened on the logo -- the carousel starts at slide 0 -- while the detail
+    // page showed the real photo. A variant gallery that resolved to nothing fell through to
+    // the placeholder as well, instead of the product's own images.
+    const allImages: string[] = [
+        resolveAll(selectedSwatchImages),
+        resolveAll(variantGallery),
+        productImages,
+    ].find(list => list.length > 0) || ['/assets/mariot-logo2.webp'];
 
     const [isHovered, setIsHovered] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -322,16 +332,34 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                         <div className={styles.emblaContainer}>
                             {allImages.map((img, i) => (
                                 <div key={i} className={styles.imageSlide}>
-                                    <Image
-                                        src={failedImages.has(i) ? '/assets/mariot-logo2.webp' : img}
-                                        alt={`${isArabic && product.name_ar ? product.name_ar : product.name} - ${i + 1}`}
-                                        layout="fill"
-                                        objectFit="contain"
-                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                                        onError={() => {
-                                            setFailedImages(prev => new Set(prev).add(i));
-                                        }}
-                                    />
+                                    {failedImages.has(i) ? (
+                                        <Image
+                                            src="/assets/mariot-logo2.webp"
+                                            alt={isArabic && product.name_ar ? product.name_ar : product.name}
+                                            layout="fill"
+                                            objectFit="contain"
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                        />
+                                    ) : unoptimizedImages.has(i) ? (
+                                        // Straight from the browser: the optimiser couldn't serve it,
+                                        // but the file usually loads fine fetched directly.
+                                        <img
+                                            src={img}
+                                            alt={`${isArabic && product.name_ar ? product.name_ar : product.name} - ${i + 1}`}
+                                            className={styles.rawImage}
+                                            loading="lazy"
+                                            onError={() => setFailedImages(prev => new Set(prev).add(i))}
+                                        />
+                                    ) : (
+                                        <Image
+                                            src={img}
+                                            alt={`${isArabic && product.name_ar ? product.name_ar : product.name} - ${i + 1}`}
+                                            layout="fill"
+                                            objectFit="contain"
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                            onError={() => setUnoptimizedImages(prev => new Set(prev).add(i))}
+                                        />
+                                    )}
                                 </div>
                             ))}
                         </div>
