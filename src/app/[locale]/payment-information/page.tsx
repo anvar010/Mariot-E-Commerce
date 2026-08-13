@@ -5,10 +5,23 @@ import FloatingActions from '@/components/shared/FloatingActions/FloatingActions
 import styles from './page.module.css';
 import { useTranslations } from 'next-intl';
 
-export const metadata = {
-    title: 'Payment Information | Mariot Kitchen Equipment',
-    description: 'Explore our secure payment options including credit cards, bank transfers, and Tabby.',
-};
+import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/seo';
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await props.params;
+    const isArabic = locale === 'ar';
+    return pageMetadata({
+        locale,
+        path: '/payment-information',
+        title: isArabic
+            ? 'طرق الدفع – بطاقات وتحويل بنكي وتابي | ماريوت'
+            : 'Payment Options – Card, Bank Transfer & Tabby | Mariot',
+        description: isArabic
+            ? 'طرق دفع آمنة في ماريوت: بطاقات الائتمان والخصم، التحويل البنكي، وتابي للدفع لاحقًا. تعرف على البطاقات المقبولة وكيفية إتمام الطلب.'
+            : 'Secure payment methods at Mariot: credit and debit cards, bank transfer, and Tabby buy-now-pay-later. See accepted cards and how checkout works.',
+    });
+}
 
 export default function PaymentInformationPage() {
     const t = useTranslations('paymentPage');

@@ -7,6 +7,7 @@ import ShopLayout from '@/components/Shop/ShopLayout';
 import TodayOffersPage from '@/components/Offers/TodayOffersPage';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import Loader from '@/components/shared/Loader/Loader';
+import { pageMetadata } from '@/lib/seo';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
     const params = await props.params;
@@ -16,16 +17,16 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     } = params;
 
     const isArabic = locale === 'ar';
-    return {
-        title: isArabic ? 'تسوق معدات المطابخ الفاخرة | ماريوت' : 'Shop Premium Kitchen Equipment | Mariot Store',
-        description: isArabic ? 'تصفح الكتالوج الكامل لمعدات المطابخ التجارية، وآلات القهوة، وعروض التبريد.' : 'Browse our full catalog of commercial kitchen equipment, coffee machines, bakery tools, and refrigeration units. Quality equipment for professionals.',
-        openGraph: {
-            title: isArabic ? 'تسوق معدات المطابخ الفاخرة | ماريوت' : 'Shop Premium Kitchen Equipment | Mariot Store',
-            description: isArabic ? 'تصفح الكتالوج الكامل لمعدات المطابخ التجارية، وآلات القهوة، وعروض التبريد.' : 'Browse our full catalog of commercial kitchen equipment, coffee machines, bakery tools, and refrigeration units. Quality equipment for professionals.',
-            url: `https://mariotstore.com/${locale}/shop`,
-            type: 'website',
-        }
-    };
+    return pageMetadata({
+        locale,
+        path: '/shop',
+        title: isArabic
+            ? 'تسوق معدات المطابخ التجارية أونلاين | ماريوت الإمارات'
+            : 'Buy Commercial Kitchen Equipment Online | Mariot UAE',
+        description: isArabic
+            ? 'تصفح الكتالوج الكامل لمعدات المطابخ التجارية من ماريوت: آلات القهوة، ومعدات التبريد، وأدوات المخابز، ومعدات الطهي، مع التوصيل في الإمارات.'
+            : 'Browse the full Mariot catalogue of commercial kitchen equipment: coffee machines, refrigeration, bakery tools and cooking ranges, delivered across the UAE.',
+    });
 }
 
 const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';

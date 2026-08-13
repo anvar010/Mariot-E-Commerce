@@ -23,10 +23,23 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-export const metadata = {
-    title: 'Affiliate Program | Mariot Kitchen Equipment',
-    description: 'Join the Mariot Kitchen Equipment affiliate program and earn commissions.',
-};
+import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/seo';
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await props.params;
+    const isArabic = locale === 'ar';
+    return pageMetadata({
+        locale,
+        path: '/affiliate-program',
+        title: isArabic
+            ? 'برنامج الشراكة – اربح عمولة | ماريوت دبي'
+            : 'Affiliate Program – Earn Commission | Mariot Dubai',
+        description: isArabic
+            ? 'انضم إلى برنامج الشراكة من ماريوت واربح عمولة على كل عملية بيع لمعدات المطابخ التجارية تقوم بترشيحها. الانضمام مجاني. قدّم طلبك عبر الإنترنت.'
+            : 'Join the Mariot affiliate program and earn commission on every commercial kitchen equipment sale you refer. Free to join, based in Dubai. Apply online now.',
+    });
+}
 
 const PatternIcon = () => (
     <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">

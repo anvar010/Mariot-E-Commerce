@@ -3,6 +3,7 @@ import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import TodayOffersPage from '@/components/Offers/TodayOffersPage';
+import { pageMetadata } from '@/lib/seo';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }) {
     const params = await props.params;
@@ -12,15 +13,17 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     } = params;
 
     const isArabic = locale === 'ar';
-    return {
-        title: isArabic ? 'العروض اليومية على معدات المطابخ | ماريوت' : 'Daily Deals on Premium Kitchen Equipment | Mariot Store',
-        description: isArabic ? 'وفر الكثير مع عروضنا اليومية الحصرية. خصومات محدودة المدة على آلات الإسبريسو الاحترافية وأفران المطاعم.' : 'Save big with our exclusive daily offers. Limited-time discounts on professional espresso machines, commercial ovens, fryers, and more high-end kitchen gear.',
-        openGraph: {
-            title: isArabic ? 'العروض اليومية | ماريوت' : 'Daily Deals | Mariot Store',
-            url: `https://mariotstore.com/${locale}/today-offers`,
-            type: 'website',
-        }
-    };
+    return pageMetadata({
+        locale,
+        path: '/today-offers',
+        title: isArabic
+            ? 'عروض اليوم على معدات المطابخ التجارية | ماريوت'
+            : "Today's Offers on Commercial Kitchen Equipment | Mariot",
+        description: isArabic
+            ? 'خصومات محدودة المدة على آلات الإسبريسو الاحترافية وأفران المطاعم والمقالي ومعدات التبريد. تسوق عروض اليوم من ماريوت قبل انتهائها.'
+            : 'Limited-time discounts on professional espresso machines, commercial ovens, fryers and refrigeration. Shop today\'s Mariot deals before they expire.',
+        ogTitle: isArabic ? 'العروض اليومية | ماريوت' : 'Daily Deals | Mariot Store',
+    });
 }
 
 export const dynamic = 'force-dynamic';

@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/seo';
 
-const BASE_URL = 'https://mariotstore.com'; // Replace with your production domain
+const BASE_URL = SITE_URL;
 const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 // Regenerate the sitemap at most once an hour instead of on every crawl. The
@@ -12,21 +13,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const defaultLastMod = new Date();
     const locales = ['en', 'ar'];
 
-    // List of your static routes
+    // Indexable routes only. /cart, /profile, /signin and /signup used to be listed
+    // here while also being marked noindex — Search Console reports that pairing as
+    // "Submitted URL marked 'noindex'", so they are deliberately absent.
     const staticRoutes = [
         '',
         '/shop',
+        '/shopnow',
         '/all-categories',
         '/today-offers',
         '/shop-by-brands',
+        '/about',
+        '/contact',
+        '/affiliate-program',
         '/category/kitchen-equipment',
         '/category/coffee-makers',
         '/category/fryers',
         '/category/laundry',
-        '/profile',
-        '/cart',
-        '/signin',
-        '/signup'
+        // Policy pages: real landing pages for "return policy"/"shipping" searches,
+        // and Google likes to see them linked from the sitemap for trust signals.
+        '/shipping-details',
+        '/payment-information',
+        '/price-match-policy',
+        '/return-policy',
+        '/privacy-policy',
+        '/terms-and-conditions',
     ];
 
     const sitemapEntries: MetadataRoute.Sitemap = [];

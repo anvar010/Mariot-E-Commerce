@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import React from 'react';
+import { pageMetadata } from '@/lib/seo';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
     const params = await props.params;
@@ -9,15 +10,17 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     } = params;
 
     const isArabic = locale === 'ar';
-    return {
-        title: isArabic ? 'تواصل معنا | متجر ماريوت' : 'Contact Us | Mariot Store',
-        description: isArabic ? 'تواصل مع فريق ماريوت لمعدات المطابخ. نحن هنا لمساعدتك في أي استفسارات تخص أعمالك.' : 'Get in touch with the Mariot Kitchen Equipment team. We are here to help you with your B2B inquiries and product support.',
-        openGraph: {
-            title: isArabic ? 'تواصل معنا | ماريوت' : 'Contact Us | Mariot Store',
-            url: `https://mariotstore.com/${locale}/contact`,
-            type: 'website',
-        }
-    };
+    return pageMetadata({
+        locale,
+        path: '/contact',
+        title: isArabic
+            ? 'تواصل معنا – معدات المطابخ في دبي | ماريوت'
+            : 'Contact Mariot – Kitchen Equipment Dubai | Call or Visit',
+        description: isArabic
+            ? 'تواصل مع فريق ماريوت لمعدات المطابخ التجارية في دبي. اتصل بنا أو راسلنا للحصول على عرض سعر أو دعم المنتجات أو استفسارات الشركات.'
+            : 'Get in touch with the Mariot commercial kitchen equipment team in Dubai. Call, email or visit us for a quotation, product support or B2B enquiries.',
+        ogTitle: isArabic ? 'تواصل معنا | ماريوت' : 'Contact Us | Mariot Store',
+    });
 }
 
 export default function ContactLayout({ children }: { children: React.ReactNode }) {

@@ -6,10 +6,22 @@ import FloatingActions from '@/components/shared/FloatingActions/FloatingActions
 import styles from './page.module.css';
 import { useTranslations } from 'next-intl';
 
-export const metadata: Metadata = {
-    title: 'Terms and Conditions | Mariot Store',
-    description: 'Read the official terms and conditions for shopping at Mariot Store. Learn about our service agreements, user obligations, and legal policies.',
-};
+import { pageMetadata } from '@/lib/seo';
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await props.params;
+    const isArabic = locale === 'ar';
+    return pageMetadata({
+        locale,
+        path: '/terms-and-conditions',
+        title: isArabic
+            ? 'الشروط والأحكام | ماريوت لمعدات المطابخ'
+            : 'Terms & Conditions | Mariot Kitchen Equipment UAE',
+        description: isArabic
+            ? 'الشروط التي تحكم عمليات الشراء من ماريوت: الطلبات والأسعار والضمان والتوصيل والتزامات المستخدم لمعدات المطابخ التجارية في الإمارات.'
+            : 'The terms governing purchases from Mariot: orders, pricing, warranty, delivery and user obligations for commercial kitchen equipment in the UAE.',
+    });
+}
 
 export default function TermsAndConditionsPage() {
     const t = useTranslations('termsPage');

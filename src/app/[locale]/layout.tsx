@@ -5,7 +5,7 @@ import { getMessages } from 'next-intl/server';
 import Providers from './providers';
 import DeferredChrome from './DeferredChrome';
 import { Inter, Alexandria } from 'next/font/google';
-import { localeAlternates, ogLocale } from '@/lib/seo';
+import { localeAlternates, ogLocale, SITE_URL, SITE_NAME, OG_IMAGE } from '@/lib/seo';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -45,28 +45,43 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
 
     return {
         title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
-        description: isArabic ? 'معدات مطابخ فاخرة وتجارية في الإمارات العربية المتحدة' : 'Premium Commercial Kitchen Equipment in UAE',
+        // ~155 chars: long enough that Google shows the whole line rather than padding it
+        // with scraped page text, short enough not to be truncated.
+        description: isArabic
+            ? 'ماريوت مورد معدات المطابخ التجارية في الإمارات: آلات القهوة، ومعدات التبريد، وأفران المخابز، ومعدات الطهي للمطاعم والفنادق، مع التوصيل في جميع الإمارات.'
+            : 'Mariot supplies commercial kitchen equipment across the UAE — coffee machines, refrigeration, bakery ovens and cooking ranges for restaurants and hotels.',
         icons: {
             icon: '/favicon.ico',
             shortcut: '/favicon.ico',
             apple: '/favicon.ico',
         },
+        // Relative URLs in child pages' metadata resolve against this, so a page that
+        // forgets an absolute origin still emits a valid tag rather than a bare path.
+        metadataBase: new URL(SITE_URL),
         alternates: localeAlternates(locale, ''),
         openGraph: {
             title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
             description: isArabic ? 'تصفح مجموعتنا الواسعة من معدات المطابخ. جودة فائقة وأسعار لا تقبل المنافسة.' : 'Browse our wide range of premium commercial kitchen equipment with unbeatable prices.',
-            url: `https://mariotstore.com/${locale}`,
-            siteName: 'Mariot Kitchen Equipment',
+            url: `${SITE_URL}/${locale}`,
+            siteName: SITE_NAME,
             images: [
                 {
-                    url: 'https://mariotstore.com/assets/mariot-logo.webp',
-                    width: 1200,
-                    height: 630,
+                    ...OG_IMAGE,
                     alt: isArabic ? 'ماريوت لمعدات المطابخ' : 'Mariot Kitchen Equipment',
                 }
             ],
             ...ogLocale(locale),
             type: 'website',
+        },
+        // Without an explicit card X/Twitter falls back to a small thumbnail, and the
+        // previous build emitted a single twitter:* tag, so shares rendered untitled.
+        twitter: {
+            card: 'summary_large_image',
+            title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
+            description: isArabic
+                ? 'تصفح مجموعة ماريوت الواسعة من معدات المطابخ التجارية بجودة فائقة وأسعار لا تقبل المنافسة في الإمارات.'
+                : 'Browse our wide range of premium commercial kitchen equipment with unbeatable prices.',
+            images: [OG_IMAGE.url],
         }
     };
 }

@@ -6,10 +6,23 @@ import styles from './page.module.css';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
-export const metadata = {
-    title: 'Shipping Details | Mariot Kitchen Equipment',
-    description: 'Information about delivery times, shipping charges, and tracking for your orders.',
-};
+import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/seo';
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await props.params;
+    const isArabic = locale === 'ar';
+    return pageMetadata({
+        locale,
+        path: '/shipping-details',
+        title: isArabic
+            ? 'التوصيل والشحن في الإمارات | ماريوت لمعدات المطابخ'
+            : 'Delivery & Shipping Across the UAE | Mariot Kitchen Equipment',
+        description: isArabic
+            ? 'مواعيد التوصيل ورسوم الشحن وتتبع الطلبات لمعدات المطابخ التجارية في دبي وجميع أنحاء الإمارات، مع توصيل مجاني على الطلبات المؤهلة.'
+            : 'Delivery times, shipping charges and order tracking for commercial kitchen equipment across Dubai and the UAE, with free delivery on qualifying orders.',
+    });
+}
 
 export default function ShippingDetailsPage() {
     const t = useTranslations('shippingPage');

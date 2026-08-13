@@ -7,10 +7,22 @@ import styles from './page.module.css';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
-export const metadata: Metadata = {
-    title: 'Return & Refund Policy | Mariot Store',
-    description: 'Review our clear and fair return policy. At Mariot Store, we ensure a smooth replacement and refund process for all your kitchen equipment purchases.',
-};
+import { pageMetadata } from '@/lib/seo';
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await props.params;
+    const isArabic = locale === 'ar';
+    return pageMetadata({
+        locale,
+        path: '/return-policy',
+        title: isArabic
+            ? 'سياسة الإرجاع والاسترداد | ماريوت لمعدات المطابخ'
+            : 'Returns & Refund Policy | Mariot Kitchen Equipment UAE',
+        description: isArabic
+            ? 'كيفية إرجاع أو استبدال معدات المطابخ التجارية المشتراة من ماريوت: شروط الأهلية وإجراءات الاستبدال ومواعيد الاسترداد وطريقة تقديم الطلب.'
+            : 'How to return or exchange commercial kitchen equipment bought from Mariot. Eligibility, replacement process, refund timelines and how to raise a request.',
+    });
+}
 
 export default function ReturnPolicyPage() {
     const t = useTranslations('returnPage');

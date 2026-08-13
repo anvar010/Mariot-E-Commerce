@@ -6,6 +6,7 @@ import FloatingActions from '@/components/shared/FloatingActions/FloatingActions
 import styles from './page.module.css';
 import Image from "next/legacy/image";
 import { useTranslations } from 'next-intl';
+import { pageMetadata } from '@/lib/seo';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
     const params = await props.params;
@@ -15,15 +16,17 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     } = params;
 
     const isArabic = locale === 'ar';
-    return {
-        title: isArabic ? 'من نحن | ماريوت - المورد الرائد لمعدات المطابخ' : 'About Us | Mariot Store - Leading Kitchen Equipment Supplier',
-        description: isArabic ? 'تعرف على ماريوت، شريكك الموثوق لمعدات المطابخ التجارية في الإمارات' : 'Learn about Mariot Store, your trusted partner for commercial kitchen equipment in the UAE. With over 15 years of industry experience, we provide premium solutions.',
-        openGraph: {
-            title: isArabic ? 'من نحن | معدات ماريوت للمطابخ' : 'About Us | Mariot Kitchen Equipment',
-            url: `https://mariotstore.com/${locale}/about`,
-            type: 'website',
-        }
-    };
+    return pageMetadata({
+        locale,
+        path: '/about',
+        title: isArabic
+            ? 'من نحن | ماريوت - المورد الرائد لمعدات المطابخ في الإمارات'
+            : 'About Mariot – Kitchen Equipment Supplier in Dubai & UAE',
+        description: isArabic
+            ? 'تعرف على ماريوت، شريكك الموثوق لمعدات المطابخ التجارية في الإمارات، بخبرة تتجاوز 15 عامًا في تجهيز المطاعم والفنادق والمخابز.'
+            : 'Learn about Mariot, your trusted partner for commercial kitchen equipment in the UAE. Over 15 years equipping restaurants, hotels and bakeries across Dubai.',
+        ogTitle: isArabic ? 'من نحن | معدات ماريوت للمطابخ' : 'About Us | Mariot Kitchen Equipment',
+    });
 }
 import {
     MapPin,

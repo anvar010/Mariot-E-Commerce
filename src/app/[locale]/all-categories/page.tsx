@@ -3,6 +3,7 @@ import Footer from '@/components/Layout/Footer/Footer';
 import CategoriesLayout from '@/components/Categories/CategoriesLayout';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/seo';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
     const params = await props.params;
@@ -12,15 +13,17 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     } = params;
 
     const isArabic = locale === 'ar';
-    return {
-        title: isArabic ? 'تصفح جميع فئات معدات المطابخ | ماريوت' : 'Browse Kitchen Equipment Categories | Mariot Store',
-        description: isArabic ? 'اكتشف مجموعتنا الشاملة من معدات المطابخ التجارية، وآلات القهوة، والثلاجات.' : 'Explore our comprehensive selection of commercial kitchen equipment, coffee machines, refrigeration, and more.',
-        openGraph: {
-            title: isArabic ? 'فئات المنتجات | ماريوت' : 'Product Categories | Mariot Store',
-            url: `https://mariotstore.com/${locale}/all-categories`,
-            type: 'website',
-        }
-    };
+    return pageMetadata({
+        locale,
+        path: '/all-categories',
+        title: isArabic
+            ? 'جميع فئات معدات المطابخ التجارية | ماريوت الإمارات'
+            : 'All Kitchen Equipment Categories | Mariot UAE',
+        description: isArabic
+            ? 'تصفح جميع فئات معدات المطابخ التجارية لدى ماريوت: التبريد، وآلات القهوة، وأفران المخابز، ومعدات الطهي، والتحضير، والغسيل.'
+            : 'Browse every commercial kitchen equipment category at Mariot: refrigeration, coffee machines, bakery ovens, cooking ranges, prep and warewashing.',
+        ogTitle: isArabic ? 'فئات المنتجات | ماريوت' : 'Product Categories | Mariot Store',
+    });
 }
 
 export default function CategoriesPage() {

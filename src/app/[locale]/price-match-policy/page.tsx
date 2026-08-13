@@ -6,10 +6,22 @@ import FloatingActions from '@/components/shared/FloatingActions/FloatingActions
 import styles from './page.module.css';
 import { Tag } from 'lucide-react';
 
-export const metadata: Metadata = {
-    title: 'Price Match Policy | Mariot Kitchen Equipment',
-    description: 'Learn about the Price Match Policy at Mariot Kitchen Equipment. We ensure you get the best value.',
-};
+import { pageMetadata } from '@/lib/seo';
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await props.params;
+    const isArabic = locale === 'ar';
+    return pageMetadata({
+        locale,
+        path: '/price-match-policy',
+        title: isArabic
+            ? 'ضمان مطابقة الأسعار لمعدات المطابخ | ماريوت الإمارات'
+            : 'Price Match Guarantee on Kitchen Equipment | Mariot UAE',
+        description: isArabic
+            ? 'وجدته بسعر أقل؟ تطابق ماريوت السعر على معدات المطابخ التجارية في الإمارات. تعرف على آلية ضمان مطابقة الأسعار وكيفية تقديم طلبك.'
+            : 'Found it cheaper elsewhere? Mariot matches the price on commercial kitchen equipment across the UAE. See how our price match guarantee works and how to claim.',
+    });
+}
 
 export default function PriceMatchPolicyPage() {
     return (

@@ -6,10 +6,22 @@ import FloatingActions from '@/components/shared/FloatingActions/FloatingActions
 import styles from './page.module.css';
 import { useTranslations } from 'next-intl';
 
-export const metadata: Metadata = {
-    title: 'Privacy Policy | Mariot Store',
-    description: 'Our privacy policy outlines how we handle your personal data and ensure your information remains secure when shopping at Mariot Store.',
-};
+import { pageMetadata } from '@/lib/seo';
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await props.params;
+    const isArabic = locale === 'ar';
+    return pageMetadata({
+        locale,
+        path: '/privacy-policy',
+        title: isArabic
+            ? 'سياسة الخصوصية | ماريوت لمعدات المطابخ'
+            : 'Privacy Policy | Mariot Kitchen Equipment UAE',
+        description: isArabic
+            ? 'كيف تجمع ماريوت بياناتك الشخصية وتستخدمها وتحميها عند التسوق لمعدات المطابخ التجارية عبر الإنترنت، بما في ذلك حقوقك وملفات الارتباط وأمان البيانات.'
+            : 'How Mariot collects, uses and protects your personal data when you shop for commercial kitchen equipment online. Your rights, cookies and data security explained.',
+    });
+}
 
 export default function PrivacyPolicyPage() {
     const t = useTranslations('privacyPage');
