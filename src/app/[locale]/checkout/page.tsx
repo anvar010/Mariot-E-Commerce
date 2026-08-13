@@ -89,8 +89,16 @@ function CheckoutContent() {
         orderNotes: ''
     });
 
-    const [paymentMethod, setPaymentMethod] = useState('card');
+    // Empty until the shopper picks one: Complete Purchase stays disabled until both a
+    // payment method and a delivery method have been chosen deliberately.
+    const [paymentMethod, setPaymentMethod] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Delivery options, quoted live from the carriers for the selected address.
+    const [shippingMethods, setShippingMethods] = useState<any[]>([]);
+    const [selectedShipping, setSelectedShipping] = useState<string>('');
+    const [shippingLoading, setShippingLoading] = useState(false);
+    const [shippingError, setShippingError] = useState('');
 
     const [cardDetails, setCardDetails] = useState({
         name: '',
@@ -229,10 +237,71 @@ function CheckoutContent() {
         }));
     };
 
+    const selectedShippingMethod = shippingMethods.find(m => m.code === selectedShipping) || null;
+    const shippingCost = Number(selectedShippingMethod?.price || 0);
+
     // Calculate final processing totals early so useEffects can use them
     // Prices are VAT-exclusive — add 5% VAT on top of the discounted total (cartTotal),
-    // then add per-product delivery charges (delivery is not VAT-taxed).
-    const finalTotal = cartTotal * 1.05 + deliveryTotal;
+    // then add per-product delivery charges (delivery is not VAT-taxed) and the carrier's
+    // charge for the chosen delivery method.
+    const finalTotal = cartTotal * 1.05 + deliveryTotal + shippingCost;
+
+    // Re-quote whenever the destination or the cart changes. The previous selection is
+    // cleared first: a price quoted for one address must never be charged for another.
+    useEffect(() => {
+        const destination = (() => {
+            const saved = userAddresses.find(a => a.id?.toString() === selectedAddressId?.toString());
+            if (saved) return { country: saved.country, city: saved.city, zip_code: saved.zip_code, state: saved.state };
+            if (form.country) return { country: form.country, city: form.city, zip_code: form.postcode };
+            return null;
+        })();
+
+        if (!destination?.country || cartItems.length === 0) {
+            setShippingMethods([]);
+            setSelectedShipping('');
+            return;
+        }
+
+        let cancelled = false;
+        setShippingLoading(true);
+        setShippingError('');
+        setSelectedShipping('');
+
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/shipping/quote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        items: cartItems.map(i => ({ id: i.id, quantity: i.quantity })),
+                        destination,
+                    }),
+                });
+                const data = await res.json();
+                if (cancelled) return;
+
+                if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+                    setShippingMethods(data.data);
+                    // Cheapest first from the API; pre-selecting the only option saves a click
+                    // without making a price choice on the shopper's behalf.
+                    if (data.data.length === 1) setSelectedShipping(data.data[0].code);
+                } else {
+                    setShippingMethods([]);
+                    setShippingError(data.message || t('shippingUnavailable'));
+                }
+            } catch {
+                if (!cancelled) {
+                    setShippingMethods([]);
+                    setShippingError(t('shippingUnavailable'));
+                }
+            } finally {
+                if (!cancelled) setShippingLoading(false);
+            }
+        })();
+
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedAddressId, userAddresses, cartItems, form.country, form.city, form.postcode]);
 
     const fetchAddresses = async () => {
         if (!user) return;
@@ -409,6 +478,17 @@ function CheckoutContent() {
             return;
         }
 
+        // The button is disabled without these, but a form can still be submitted by keyboard.
+        if (!selectedShipping) {
+            showNotification(t('selectShippingFirst'), 'error');
+            return;
+        }
+
+        if (!paymentMethod) {
+            showNotification(t('selectPaymentFirst'), 'error');
+            return;
+        }
+
         // DISABLED: WhatsApp OTP phone verification – re-enable when ready
         // if (!user?.phone_verified) {
         //     setOtpOpen(true);
@@ -442,6 +522,10 @@ function CheckoutContent() {
                 })),
                 shipping_address_id: selectedAddressId || 1, // Use selected if exists, 1 is placeholder
                 payment_method: paymentMethod,
+                // Sent for the record; the server re-quotes rather than trusting this price.
+                shipping_method: selectedShippingMethod?.code || null,
+                shipping_carrier: selectedShippingMethod?.carrier || null,
+                shipping_cost: shippingCost,
                 points_to_use: pointsToUse,
                 discount_amount: discountAmount + pointsDiscountAmount,
                 coupon_id: appliedCoupon?.id,
@@ -664,6 +748,63 @@ function CheckoutContent() {
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {(shippingLoading || shippingMethods.length > 0 || shippingError) && (
+                    <div className={styles.shippingCard} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+                        <h3 className={styles.shippingHeading}>{t('shippingMethod')}</h3>
+
+                        {shippingLoading && (
+                            <div className={styles.shippingLoading}>
+                                <Clock size={16} className={styles.animateSpin} />
+                                <span>{t('shippingLoading')}</span>
+                            </div>
+                        )}
+
+                        {!shippingLoading && shippingError && (
+                            <p className={styles.shippingError}>{shippingError}</p>
+                        )}
+
+                        {!shippingLoading && shippingMethods.map((method) => {
+                            const isSelected = selectedShipping === method.code;
+                            const days = method.min_days && method.max_days
+                                ? (method.min_days === method.max_days
+                                    ? `${method.min_days}`
+                                    : `${method.min_days}-${method.max_days}`)
+                                : null;
+
+                            return (
+                                <label
+                                    key={method.code}
+                                    className={`${styles.shippingOption} ${isSelected ? styles.shippingOptionActive : ''}`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="shippingMethod"
+                                        value={method.code}
+                                        checked={isSelected}
+                                        onChange={() => setSelectedShipping(method.code)}
+                                    />
+                                    <span className={styles.shippingOptionBody}>
+                                        <span className={styles.shippingOptionTop}>
+                                            <span className={styles.shippingOptionName}>
+                                                {locale === 'ar' && method.label_ar ? method.label_ar : method.label}
+                                            </span>
+                                            {method.carrier && (
+                                                <span className={styles.shippingCarrier}>{method.carrier}</span>
+                                            )}
+                                        </span>
+                                        {days && (
+                                            <span className={styles.shippingDays}>{t('shippingDays', { days })}</span>
+                                        )}
+                                        <span className={styles.shippingPrice}>
+                                            <CurrencyPrice amount={Number(method.price)} />
+                                        </span>
+                                    </span>
+                                </label>
+                            );
+                        })}
                     </div>
                 )}
 
@@ -1240,7 +1381,21 @@ function CheckoutContent() {
                                     )}
                                 </div>
 
-                                <button type="submit" className={styles.checkoutBtn} disabled={isProcessing || cartItems.length === 0}>
+                                {!isProcessing && cartItems.length > 0 && (!selectedShipping || !paymentMethod) && (
+                                    <p className={styles.checkoutBlockedHint}>
+                                        {!selectedShipping && !paymentMethod
+                                            ? t('selectShippingAndPayment')
+                                            : !selectedShipping
+                                                ? t('selectShippingFirst')
+                                                : t('selectPaymentFirst')}
+                                    </p>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    className={styles.checkoutBtn}
+                                    disabled={isProcessing || cartItems.length === 0 || !selectedShipping || !paymentMethod}
+                                >
                                     {isProcessing ? (
                                         <Clock size={20} className={styles.animateSpin} />
                                     ) : (

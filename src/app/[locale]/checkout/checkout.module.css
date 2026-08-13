@@ -2207,3 +2207,124 @@
 .receiverSaveBtn:hover {
     background: #1487bb;
 }
+
+/* Shipping method — sits under the receiver card and mirrors its shell. */
+.shippingCard {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.shippingHeading {
+    margin: 0 0 14px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.shippingLoading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 4px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.shippingError {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 13.5px;
+}
+
+.shippingOption {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.shippingOption:last-child {
+    margin-bottom: 0;
+}
+
+.shippingOption:hover {
+    border-color: #94a3b8;
+}
+
+.shippingOptionActive {
+    border-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.shippingOption input[type='radio'] {
+    margin-top: 3px;
+    accent-color: #f59e0b;
+    width: 17px;
+    height: 17px;
+    flex: none;
+}
+
+.shippingOptionBody {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.shippingOptionTop {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.shippingOptionName {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.shippingCarrier {
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.shippingDays {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.shippingPrice {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+/* Why Complete Purchase is still disabled. */
+.checkoutBlockedHint {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: 13px;
+    text-align: center;
+}
