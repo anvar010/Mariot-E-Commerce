@@ -410,24 +410,27 @@ exports.updateHomepageCMS = async (req, res, next) => {
     }
 };
 
-// One-time, idempotent migration: add mobile hero-image columns to an existing
-// hero_slides table (older installs created it without them). Guarded so it runs
-// at most once per process and no-ops when the columns already exist.
-let heroMobileColsEnsured = false;
-const ensureHeroMobileColumns = async () => {
-    if (heroMobileColsEnsured) return;
-    for (const col of ['image_mobile', 'image_mobile_ar']) {
+// One-time, idempotent migration: add the image columns that older hero_slides
+// tables were created without. CREATE TABLE IF NOT EXISTS never alters an existing
+// table, so any column added to that definition later has to be listed here too —
+// image_ar was added to the CREATE but not here, so live tables never got it and
+// every slide save failed with "Unknown column 'image_ar' in 'SET'".
+// Guarded so it runs at most once per process and no-ops when columns exist.
+let heroImageColsEnsured = false;
+const ensureHeroImageColumns = async () => {
+    if (heroImageColsEnsured) return;
+    for (const col of ['image_ar', 'image_mobile', 'image_mobile_ar']) {
         try { await db.query(`ALTER TABLE hero_slides ADD COLUMN ${col} TEXT`); }
         catch (e) { /* column already exists — ignore */ }
     }
-    heroMobileColsEnsured = true;
+    heroImageColsEnsured = true;
 };
 
 // @desc    Get all hero slides
 // @route   GET /api/v1/admin/cms/hero-slides
 exports.getHeroSlides = async (req, res, next) => {
     try {
-        await ensureHeroMobileColumns();
+        await ensureHeroImageColumns();
         const [slides] = await db.query('SELECT * FROM hero_slides ORDER BY order_index ASC');
         res.json({ success: true, data: slides });
     } catch (error) {
@@ -439,7 +442,7 @@ exports.getHeroSlides = async (req, res, next) => {
 // @route   POST /api/v1/admin/cms/hero-slides
 exports.addHeroSlide = async (req, res, next) => {
     try {
-        await ensureHeroMobileColumns();
+        await ensureHeroImageColumns();
         const { tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, image_mobile, image_mobile_ar, accent, btnText, btnText_ar, link, order_index } = req.body;
 
         const [result] = await db.query(`
@@ -457,7 +460,7 @@ exports.addHeroSlide = async (req, res, next) => {
 // @route   PUT /api/v1/admin/cms/hero-slides/:id
 exports.updateHeroSlide = async (req, res, next) => {
     try {
-        await ensureHeroMobileColumns();
+        await ensureHeroImageColumns();
         const { tagline, tagline_ar, title, title_ar, description, description_ar, image, image_ar, image_mobile, image_mobile_ar, accent, btnText, btnText_ar, link, order_index, is_active } = req.body;
 
         await db.query(`

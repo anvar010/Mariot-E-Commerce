@@ -1,19 +1,21 @@
 const db = require('../config/db');
 
-// One-time, idempotent migration: add mobile hero-image columns to an existing
-// hero_slides table. CREATE TABLE IF NOT EXISTS won't alter a table that already
-// exists, so older installs need this. Guarded by a flag + try/catch so it runs
-// at most once per process and silently no-ops when the columns already exist.
-let heroMobileColsEnsured = false;
-const ensureHeroMobileColumns = async () => {
-    if (heroMobileColsEnsured) return;
-    for (const col of ['image_mobile', 'image_mobile_ar']) {
+// One-time, idempotent migration: add the image columns that an existing
+// hero_slides table may predate. CREATE TABLE IF NOT EXISTS won't alter a table
+// that already exists, so every column added to the definition below must also be
+// listed here — image_ar was not, so live tables never gained it. Guarded by a
+// flag + try/catch so it runs at most once per process and silently no-ops when
+// the columns already exist.
+let heroImageColsEnsured = false;
+const ensureHeroImageColumns = async () => {
+    if (heroImageColsEnsured) return;
+    for (const col of ['image_ar', 'image_mobile', 'image_mobile_ar']) {
         try { await db.query(`ALTER TABLE hero_slides ADD COLUMN ${col} TEXT`); }
         catch (e) { /* column already exists — ignore */ }
     }
-    heroMobileColsEnsured = true;
+    heroImageColsEnsured = true;
 };
-exports.ensureHeroMobileColumns = ensureHeroMobileColumns;
+exports.ensureHeroImageColumns = ensureHeroImageColumns;
 
 /**
  * @desc    Get homepage CMS content
@@ -73,8 +75,8 @@ exports.getHomepageCms = async (req, res, next) => {
             )
         `);
 
-        // Ensure mobile image columns exist on older installs before reading.
-        await ensureHeroMobileColumns();
+        // Ensure the newer image columns exist on older installs before reading.
+        await ensureHeroImageColumns();
 
         // Get hero slides
         const [heroSlides] = await db.query('SELECT * FROM hero_slides WHERE is_active = 1 ORDER BY order_index ASC');
