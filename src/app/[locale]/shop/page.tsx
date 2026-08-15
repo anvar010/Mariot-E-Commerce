@@ -21,11 +21,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
         locale,
         path: '/shop',
         title: isArabic
-            ? 'تسوق معدات المطابخ التجارية أونلاين | ماريوت الإمارات'
-            : 'Buy Commercial Kitchen Equipment Online | Mariot UAE',
+            ? 'تسوق معدات المطابخ التجارية | الإمارات والخليج'
+            : 'Buy Commercial Kitchen Equipment Online | UAE & GCC',
         description: isArabic
-            ? 'تصفح الكتالوج الكامل لمعدات المطابخ التجارية من ماريوت: آلات القهوة، ومعدات التبريد، وأدوات المخابز، ومعدات الطهي، مع التوصيل في الإمارات.'
-            : 'Browse the full Mariot catalogue of commercial kitchen equipment: coffee machines, refrigeration, bakery tools and cooking ranges, delivered across the UAE.',
+            ? 'تصفح الكتالوج الكامل لمعدات المطابخ التجارية من ماريوت: آلات القهوة والتبريد وأدوات المخابز والطهي، مع التوصيل إلى الإمارات ودول الخليج والعالم.'
+            : 'Browse the full Mariot catalogue of commercial kitchen equipment — coffee machines, refrigeration, bakery and cooking. Delivered across the UAE, GCC & worldwide.',
     });
 }
 

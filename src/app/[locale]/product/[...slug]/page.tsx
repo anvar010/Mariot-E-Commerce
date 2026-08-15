@@ -65,7 +65,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string |
             // short description, then a generic line.
             const longDesc = isArabic && product.description_ar ? product.description_ar : product.description;
             const shortDesc = isArabic && product.short_description_ar ? product.short_description_ar : product.short_description;
-            const cleanDescription = clampDesc(stripHtml(longDesc) || stripHtml(shortDesc) || `Buy ${title} at the best price in UAE only at Mariot Store.`);
+            const cleanDescription = clampDesc(stripHtml(longDesc) || stripHtml(shortDesc) || `Buy ${title} at the best price from Mariot Store. Delivery across the UAE, GCC and worldwide.`);
 
             // Get the primary image
             const imagePath = product.primary_image || (product.images && product.images[0]?.image_url);
@@ -113,7 +113,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string |
     const fallbackTitle = slugArray
         .map(s => decodeURIComponent(s).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))
         .join(' ');
-    const fallbackDescription = `Shop ${fallbackTitle} at Mariot Store — premium commercial kitchen equipment in UAE.`;
+    const fallbackDescription = `Shop ${fallbackTitle} at Mariot Store — commercial kitchen equipment delivered across the UAE, GCC and worldwide.`;
     const fallbackUrl = `${SITE_URL}/${params.locale}/product/${encodeURIComponent(id)}`;
     const fallbackImage = `${SITE_URL}/assets/mariot-logo.webp`;
     return {

@@ -9,11 +9,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
         locale: params.locale,
         path: '/shopnow',
         title: isArabic
-            ? 'تسوّق الآن معدات المطابخ التجارية | ماريوت الإمارات'
-            : 'Shop Now – Commercial Kitchen Equipment | Mariot UAE',
+            ? 'تسوّق الآن معدات المطابخ | الإمارات والخليج'
+            : 'Shop Now – Commercial Kitchen Equipment | UAE & GCC',
         description: isArabic
-            ? 'تصفح مجموعة ماريوت الكاملة من معدات المطابخ التجارية بأفضل الأسعار في الإمارات، مع التوصيل إلى دبي وجميع الإمارات.'
-            : 'Browse the full Mariot range of commercial kitchen equipment at the best UAE prices, with delivery to Dubai and across the Emirates.',
+            ? 'تصفح مجموعة ماريوت الكاملة من معدات المطابخ التجارية بأفضل الأسعار، مع التوصيل إلى الإمارات ودول الخليج والشحن الدولي.'
+            : 'Browse the full Mariot range of commercial kitchen equipment at the best prices, with delivery across the UAE, the GCC and worldwide shipping.',
         ogTitle: isArabic ? 'تسوّق الآن | ماريوت' : 'Shop Now | Mariot Store',
     });
 }

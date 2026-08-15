@@ -16,11 +16,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
         locale,
         path: '/shipping-details',
         title: isArabic
-            ? 'التوصيل والشحن في الإمارات | ماريوت لمعدات المطابخ'
-            : 'Delivery & Shipping Across the UAE | Mariot Kitchen Equipment',
+            ? 'التوصيل إلى الإمارات ودول الخليج والعالم | ماريوت'
+            : 'Delivery to UAE, GCC & Worldwide | Mariot Kitchen Equipment',
         description: isArabic
-            ? 'مواعيد التوصيل ورسوم الشحن وتتبع الطلبات لمعدات المطابخ التجارية في دبي وجميع أنحاء الإمارات، مع توصيل مجاني على الطلبات المؤهلة.'
-            : 'Delivery times, shipping charges and order tracking for commercial kitchen equipment across Dubai and the UAE, with free delivery on qualifying orders.',
+            ? 'توصيل معدات المطابخ التجارية إلى الإمارات والسعودية والكويت وعُمان وقطر والبحرين، إضافة إلى الشحن الدولي. مواعيد التوصيل والرسوم وتتبع الطلبات.'
+            : 'Mariot delivers commercial kitchen equipment across the UAE, Saudi Arabia, Kuwait, Oman, Qatar and Bahrain, plus worldwide shipping. Times, charges & tracking.',
     });
 }
 

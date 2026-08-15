@@ -44,12 +44,14 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     const isArabic = locale === 'ar';
 
     return {
-        title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
+        title: isArabic
+            ? 'ماريوت | مورد معدات المطابخ في الإمارات والخليج'
+            : 'Kitchen Equipment Supplier UAE & GCC | Mariot Dubai',
         // ~155 chars: long enough that Google shows the whole line rather than padding it
         // with scraped page text, short enough not to be truncated.
         description: isArabic
-            ? 'ماريوت مورد معدات المطابخ التجارية في الإمارات: آلات القهوة، ومعدات التبريد، وأفران المخابز، ومعدات الطهي للمطاعم والفنادق، مع التوصيل في جميع الإمارات.'
-            : 'Mariot supplies commercial kitchen equipment across the UAE — coffee machines, refrigeration, bakery ovens and cooking ranges for restaurants and hotels.',
+            ? 'مورد معدات المطابخ التجارية في دبي مع التوصيل إلى الإمارات والسعودية والكويت وعُمان وقطر والبحرين وجميع أنحاء العالم. تجهيز المطاعم والفنادق والمخابز.'
+            : 'Commercial kitchen equipment supplier in Dubai, delivering across the UAE, Saudi Arabia, Kuwait, Oman, Qatar, Bahrain and worldwide. Restaurant & hotel gear.',
         icons: {
             icon: '/favicon.ico',
             shortcut: '/favicon.ico',
@@ -60,8 +62,12 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
         metadataBase: new URL(SITE_URL),
         alternates: localeAlternates(locale, ''),
         openGraph: {
-            title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
-            description: isArabic ? 'تصفح مجموعتنا الواسعة من معدات المطابخ. جودة فائقة وأسعار لا تقبل المنافسة.' : 'Browse our wide range of premium commercial kitchen equipment with unbeatable prices.',
+            title: isArabic
+                ? 'ماريوت | مورد معدات المطابخ في الإمارات والخليج'
+                : 'Kitchen Equipment Supplier UAE & GCC | Mariot Dubai',
+            description: isArabic
+                ? 'معدات مطابخ تجارية بجودة فائقة مع التوصيل إلى الإمارات ودول الخليج وجميع أنحاء العالم.'
+                : 'Premium commercial kitchen equipment with delivery across the UAE, GCC and worldwide.',
             url: `${SITE_URL}/${locale}`,
             siteName: SITE_NAME,
             images: [
@@ -77,10 +83,12 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
         // previous build emitted a single twitter:* tag, so shares rendered untitled.
         twitter: {
             card: 'summary_large_image',
-            title: isArabic ? 'ماريوت | أفضل مورد لمعدات المطابخ في الإمارات' : 'Mariot | Best Kitchen Equipment Supplier in UAE',
+            title: isArabic
+                ? 'ماريوت | مورد معدات المطابخ في الإمارات والخليج'
+                : 'Kitchen Equipment Supplier UAE & GCC | Mariot Dubai',
             description: isArabic
-                ? 'تصفح مجموعة ماريوت الواسعة من معدات المطابخ التجارية بجودة فائقة وأسعار لا تقبل المنافسة في الإمارات.'
-                : 'Browse our wide range of premium commercial kitchen equipment with unbeatable prices.',
+                ? 'معدات مطابخ تجارية بجودة فائقة مع التوصيل إلى الإمارات ودول الخليج وجميع أنحاء العالم.'
+                : 'Premium commercial kitchen equipment with delivery across the UAE, GCC and worldwide.',
             images: [OG_IMAGE.url],
         }
     };

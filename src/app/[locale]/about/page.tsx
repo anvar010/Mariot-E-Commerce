@@ -20,11 +20,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
         locale,
         path: '/about',
         title: isArabic
-            ? 'من نحن | ماريوت - المورد الرائد لمعدات المطابخ في الإمارات'
-            : 'About Mariot – Kitchen Equipment Supplier in Dubai & UAE',
+            ? 'من نحن | ماريوت لمعدات المطابخ في الإمارات والخليج'
+            : 'About Mariot – Kitchen Equipment Supplier, Dubai & GCC',
         description: isArabic
-            ? 'تعرف على ماريوت، شريكك الموثوق لمعدات المطابخ التجارية في الإمارات، بخبرة تتجاوز 15 عامًا في تجهيز المطاعم والفنادق والمخابز.'
-            : 'Learn about Mariot, your trusted partner for commercial kitchen equipment in the UAE. Over 15 years equipping restaurants, hotels and bakeries across Dubai.',
+            ? 'تعرف على ماريوت، شريكك الموثوق لمعدات المطابخ التجارية، بخبرة تتجاوز 15 عامًا في تجهيز المطاعم والفنادق والمخابز في الإمارات ودول الخليج والعالم.'
+            : 'Learn about Mariot, your trusted partner for commercial kitchen equipment. Over 15 years equipping restaurants and hotels across the UAE, GCC and worldwide.',
         ogTitle: isArabic ? 'من نحن | معدات ماريوت للمطابخ' : 'About Us | Mariot Kitchen Equipment',
     });
 }

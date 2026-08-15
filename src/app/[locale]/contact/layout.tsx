@@ -17,8 +17,8 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
             ? 'تواصل معنا – معدات المطابخ في دبي | ماريوت'
             : 'Contact Mariot – Kitchen Equipment Dubai | Call or Visit',
         description: isArabic
-            ? 'تواصل مع فريق ماريوت لمعدات المطابخ التجارية في دبي. اتصل بنا أو راسلنا للحصول على عرض سعر أو دعم المنتجات أو استفسارات الشركات.'
-            : 'Get in touch with the Mariot commercial kitchen equipment team in Dubai. Call, email or visit us for a quotation, product support or B2B enquiries.',
+            ? 'تواصل مع فريق ماريوت لمعدات المطابخ التجارية في دبي للحصول على عرض سعر أو دعم المنتجات. نخدم الإمارات ودول الخليج والعملاء حول العالم.'
+            : 'Get in touch with the Mariot commercial kitchen equipment team in Dubai for a quotation, product support or B2B enquiries. Serving the UAE, GCC and worldwide.',
         ogTitle: isArabic ? 'تواصل معنا | ماريوت' : 'Contact Us | Mariot Store',
     });
 }

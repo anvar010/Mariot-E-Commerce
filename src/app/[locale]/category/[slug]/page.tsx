@@ -31,7 +31,7 @@ export async function generateMetadata(props: CategoryPageProps): Promise<Metada
     if (category) {
       const title = isArabic && category.name_ar ? category.name_ar : category.name;
       const desc = (isArabic && category.description_ar ? category.description_ar : category.description)
-        || `Buy professional ${title} in UAE at Mariot Store.`;
+        || `Buy professional ${title} from Mariot Store, delivered across the UAE, GCC and worldwide.`;
       return {
         title: `${title} | Mariot Store`,
         description: desc,

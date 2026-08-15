@@ -17,11 +17,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
         locale,
         path: '/all-categories',
         title: isArabic
-            ? 'جميع فئات معدات المطابخ التجارية | ماريوت الإمارات'
-            : 'All Kitchen Equipment Categories | Mariot UAE',
+            ? 'جميع فئات معدات المطابخ | الإمارات والخليج'
+            : 'All Kitchen Equipment Categories | UAE & GCC',
         description: isArabic
-            ? 'تصفح جميع فئات معدات المطابخ التجارية لدى ماريوت: التبريد، وآلات القهوة، وأفران المخابز، ومعدات الطهي، والتحضير، والغسيل.'
-            : 'Browse every commercial kitchen equipment category at Mariot: refrigeration, coffee machines, bakery ovens, cooking ranges, prep and warewashing.',
+            ? 'تصفح جميع فئات معدات المطابخ التجارية لدى ماريوت: التبريد وآلات القهوة وأفران المخابز والطهي والتحضير، مع التوصيل إلى الخليج والعالم.'
+            : 'Browse every commercial kitchen equipment category at Mariot: refrigeration, coffee machines, bakery ovens, cooking and prep. Delivered GCC-wide and worldwide.',
         ogTitle: isArabic ? 'فئات المنتجات | ماريوت' : 'Product Categories | Mariot Store',
     });
 }

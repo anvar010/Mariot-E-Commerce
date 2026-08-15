@@ -125,9 +125,20 @@ export default async function Home(props: { params: Promise<{ locale: string }> 
         image: 'https://mariotstore.com/assets/mariot-logo.webp',
         url: 'https://mariotstore.com',
         logo: 'https://mariotstore.com/assets/mariot-logo.webp',
-        description: 'Best Kitchen Equipment Supplier in Dubai, UAE. Premium quality kitchen equipment, coffee makers, and ice makers.',
+        description: 'Commercial kitchen equipment supplier in Dubai, UAE. Coffee machines, refrigeration, bakery ovens and cooking ranges, delivered across the GCC and worldwide.',
         telephone: '+971-4-288-2777',
         priceRange: 'AED',
+        // Delivery coverage. Search engines use areaServed to decide which regional
+        // queries this business can answer, so the GCC markets are listed explicitly
+        // rather than left implied by the Dubai address.
+        areaServed: [
+            { '@type': 'Country', name: 'United Arab Emirates' },
+            { '@type': 'Country', name: 'Saudi Arabia' },
+            { '@type': 'Country', name: 'Kuwait' },
+            { '@type': 'Country', name: 'Oman' },
+            { '@type': 'Country', name: 'Qatar' },
+            { '@type': 'Country', name: 'Bahrain' },
+        ],
         address: {
             '@type': 'PostalAddress',
             addressLocality: 'Dubai',
@@ -151,7 +162,7 @@ export default async function Home(props: { params: Promise<{ locale: string }> 
             '@type': 'ContactPoint',
             telephone: '+971-4-288-2777',
             contactType: 'customer service',
-            areaServed: 'AE',
+            areaServed: ['AE', 'SA', 'KW', 'OM', 'QA', 'BH'],
             availableLanguage: ['en', 'ar']
         }
     };
