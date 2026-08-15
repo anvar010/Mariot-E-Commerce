@@ -93,7 +93,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
         issuedFrom: 'صادر من', issuedTo: 'صادر إلى',
         companyName: 'متجر ماريوت', companyLegal: 'ماريوت لتجارة معدات المطابخ ذ.م.م', vat: 'الرقم الضريبي',
         note: 'لن يتم حجز المنتجات في هذه التسعيرة إلا بعد إتمام الطلب',
-        thRef: 'مرجع المنتج', thName: 'اسم المنتج', thImage: 'صورة المنتج', thQty: 'الكمية', thUnit: 'سعر الوحدة', thTotal: 'مجموع السعر',
+        thRef: 'رقم المرجع', thName: 'اسم المنتج', thImage: 'صورة المنتج', thQty: 'الكمية', thUnit: 'سعر الوحدة', thTotal: 'مجموع السعر',
         brand: 'الماركة', model: 'الموديل',
         totalAmounts: 'إجمالي المبلغ', subtotal: 'الإجمالي (غير شامل الضريبة)', coupon: 'خصم القسيمة', points: 'خصم النقاط', discount: 'الخصم', vatLine: 'إجمالي الضريبة (5٪)', grandTotal: 'إجمالي المبلغ المستحق',
         terms: 'الشروط والأحكام',
@@ -106,7 +106,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
         issuedFrom: 'Issued from', issuedTo: 'Issued to',
         companyName: 'Mariot Store', companyLegal: 'Mariot Kitchen Equipment Trading LLC', vat: 'VAT#',
         note: "This quotation won't reserve the available stock for you until you place an order",
-        thRef: 'Product Ref.', thName: 'Product Name', thImage: 'Product Image', thQty: 'QTY', thUnit: 'Unit Price', thTotal: 'Total Price',
+        thRef: 'Ref no.', thName: 'Product Name', thImage: 'Product Image', thQty: 'QTY', thUnit: 'Unit Price', thTotal: 'Total Price',
         brand: 'Brand', model: 'Model',
         totalAmounts: 'Total Amounts', subtotal: 'Subtotal (Excl. VAT)', coupon: 'Coupon Discount', points: 'Reward Points', discount: 'Discount', vatLine: 'Total VAT (5%)', grandTotal: 'Grand Total',
         terms: 'Terms & Conditions',
@@ -184,7 +184,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
         const itemDescription = buildItemDescription(item);
         return `
             <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart};" dir="ltr">${displayNum}</td>
+                <td style="padding: 15px 6px; font-size: 11px; text-align: ${alignStart};" dir="ltr">${displayNum}</td>
                 <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart}; width: 35%;">
                     <div style="font-weight: bold; color: #1e293b;">${itemName}</div>
                     <div style="color: #64748b; font-size: 10px;">${L.brand}: ${item.brand || 'Standard'}</div>
@@ -363,8 +363,11 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
                     <thead>
                         <tr style="border-bottom: 2px solid #e2e8f0; background: #f8fafc; font-size: 10px; color: #64748b;">
-                            <th style="padding: 10px; text-align: ${alignStart};">${L.thRef}</th>
-                            <th style="padding: 10px; text-align: ${alignStart}; width: 35%;">${L.thName}</th>
+                            <!-- The cell holds a line number, so the column only needs to fit
+                                 two digits; without a width cap the header text alone stretched
+                                 it and squeezed the product name column. -->
+                            <th style="padding: 10px 6px; text-align: ${alignStart}; width: 7%; white-space: nowrap;">${L.thRef}</th>
+                            <th style="padding: 10px; text-align: ${alignStart}; width: 38%;">${L.thName}</th>
                             <th style="padding: 10px; text-align: center;">${L.thImage}</th>
                             <th style="padding: 10px; text-align: center;">${L.thQty}</th>
                             <th style="padding: 10px; text-align: ${alignEnd};">${L.thUnit}</th>
