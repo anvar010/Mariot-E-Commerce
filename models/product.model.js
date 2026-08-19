@@ -46,6 +46,22 @@ function normalizeWeightKg(value) {
     return Math.min(Math.round(parsed * 1000) / 1000, MAX_WEIGHT_KG);
 }
 
+let maxStaffDiscountColEnsured = false;
+async function ensureMaxStaffDiscountColumn() {
+    if (maxStaffDiscountColEnsured) return;
+    const [cols] = await db.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
+           AND COLUMN_NAME = 'max_staff_discount_pct'`
+    );
+    if (cols.length === 0) {
+        // NULL means no cap is set, so staff may discount freely; 0 means no discount is
+        // allowed at all. The two must stay distinguishable - never default this to 0.
+        await db.query(`ALTER TABLE products ADD COLUMN max_staff_discount_pct DECIMAL(5,2) NULL`);
+    }
+    maxStaffDiscountColEnsured = true;
+}
+
 let freeGiftColEnsured = false;
 async function ensureFreeGiftColumn() {
     if (freeGiftColEnsured) return;
@@ -565,6 +581,7 @@ class Product {
         await ensureFreeGiftColumn();
         await ensureCompareConfigColumn();
         await ensureSpecificationsArColumn();
+        await ensureMaxStaffDiscountColumn();
         const [rows] = await db.execute(`
             SELECT p.*,
             c.name as category_name, c.name_ar as category_name_ar, c.slug as category_slug,
@@ -789,6 +806,7 @@ class Product {
             await ensureFreeGiftColumn();
             await ensureCompareConfigColumn();
             await ensureSpecificationsArColumn();
+            await ensureMaxStaffDiscountColumn();
             const name = String(data.name || '');
             const model = data.model ? String(data.model) : null;
             const youtube_video_link = data.youtube_video_link ? String(data.youtube_video_link) : null;
@@ -937,6 +955,7 @@ class Product {
         await ensureFreeGiftColumn();
         await ensureCompareConfigColumn();
         await ensureSpecificationsArColumn();
+        await ensureMaxStaffDiscountColumn();
         const allowedColumns = [
             'name', 'name_ar', 'description', 'description_ar', 'short_description', 'short_description_ar',
             'specifications', 'specifications_ar', 'price', 'discount_percentage', 'offer_price', 'stock_quantity',
@@ -1112,7 +1131,7 @@ class Product {
 
         const allowedColumns = [
             'is_featured', 'is_weekly_deal', 'is_limited_offer', 'is_daily_offer',
-            'is_active', 'status', 'offer_start', 'offer_end', 'discount_percentage', 'price'
+            'is_active', 'status', 'offer_start', 'offer_end', 'discount_percentage', 'price', 'max_staff_discount_pct'
         ];
 
         const cleanData = {};
@@ -1124,7 +1143,7 @@ class Product {
                 } else if (['offer_start', 'offer_end'].includes(key)) {
                     // Handle datetime columns: empty string -> null (strict MySQL rejects '')
                     cleanData[key] = (data[key] && data[key] !== '') ? data[key] : null;
-                } else if (['discount_percentage', 'price'].includes(key)) {
+                } else if (['discount_percentage', 'price', 'max_staff_discount_pct'].includes(key)) {
                     // Handle numeric columns: empty string -> null
                     const val = data[key];
                     if (val === '' || val === null || val === undefined) {

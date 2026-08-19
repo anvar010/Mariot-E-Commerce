@@ -33,6 +33,7 @@ const cmsRoutes = require('./routes/cms.routes');
 const settingsRoutes = require('./routes/settings.routes');
 const verifyRoutes = require('./routes/verify.routes');
 const shippingRoutes = require('./routes/shipping.routes');
+const staffQuotationRoutes = require('./routes/staffQuotation.routes');
 
 const cookieParser = require('cookie-parser');
 
@@ -198,6 +199,7 @@ app.use('/api/v1/coupons', couponRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/reviews', reviewRoutes);
 app.use('/api/v1/quotations', quotationRoutes);
+app.use('/api/v1/staff-quotations', staffQuotationRoutes);
 app.use('/api/v1/invoices', invoiceRoutes);
 // app.use('/api/v1/contact', contactRoutes); // Moved up with limiter
 app.use('/api/v1/cms', cmsRoutes);
