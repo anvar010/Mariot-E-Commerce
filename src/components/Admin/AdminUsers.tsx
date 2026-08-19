@@ -25,6 +25,7 @@ const ADMIN_PERMISSIONS = [
     { key: 'cms', label: 'CMS Manager' },
     { key: 'settings', label: 'Settings' },
     { key: 'quotations', label: 'Quotations' },
+    { key: 'staff_quotations', label: 'Staff Quotations' },
     { key: 'reviews', label: 'Reviews' },
 ];
 

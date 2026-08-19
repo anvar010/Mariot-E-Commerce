@@ -1,0 +1,1327 @@
+.wrapper {
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px;
+}
+
+.subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.backBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 12px;
+}
+
+.backBtn:hover {
+    background: #e2e8f0;
+}
+
+.primaryBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 14px;
+}
+
+.header .primaryBtn {
+    width: auto;
+    margin-top: 0;
+}
+
+.primaryBtn:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.primaryBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── Search ───────────────────────────────────────────── */
+.searchBox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 16px;
+    color: #94a3b8;
+}
+
+.searchBox input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 13.5px;
+    color: #0f172a;
+    background: transparent;
+}
+
+/* ── Builder layout ───────────────────────────────────── */
+.builderGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 20px;
+    align-items: start;
+}
+
+@media (max-width: 1024px) {
+    .builderGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.builderMain,
+.builderSide {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.cardLabel {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 10px;
+}
+
+.card .searchBox {
+    margin-bottom: 0;
+}
+
+.input,
+.textarea {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13.5px;
+    color: #0f172a;
+    margin-bottom: 9px;
+    outline: none;
+    font-family: inherit;
+}
+
+.input:focus,
+.textarea:focus {
+    border-color: #2563eb;
+}
+
+.textarea {
+    resize: vertical;
+    margin-bottom: 0;
+}
+
+/* ── Product results ──────────────────────────────────── */
+.results {
+    margin-top: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.resultRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 11px;
+    background: #fff;
+    border: none;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    text-align: left;
+    color: #0f172a;
+}
+
+.resultRow:last-child {
+    border-bottom: none;
+}
+
+.resultRow:hover {
+    background: #f8fafc;
+}
+
+.resultImg,
+.resultImgPlaceholder {
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    object-fit: contain;
+    background: #f1f5f9;
+    flex-shrink: 0;
+}
+
+.resultImgPlaceholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+}
+
+.resultInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.resultName {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.resultMeta {
+    font-size: 11.5px;
+    color: #94a3b8;
+}
+
+.resultPrice {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+}
+
+/* ── Line items table ─────────────────────────────────── */
+.linesTableWrap {
+    overflow-x: auto;
+}
+
+.linesTable,
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.linesTable th,
+.table th {
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.linesTable td,
+.table td {
+    padding: 10px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: #0f172a;
+}
+
+.lineName {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.lineMeta {
+    font-size: 11.5px;
+    color: #94a3b8;
+}
+
+.lineTotal {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.numInput {
+    width: 84px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 13px;
+    outline: none;
+    color: #0f172a;
+}
+
+.numInput:focus {
+    border-color: #2563eb;
+}
+
+.qtyBox {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 3px 6px;
+}
+
+.qtyBox button {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 4px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #475569;
+}
+
+.qtyBox button:hover {
+    background: #e2e8f0;
+}
+
+.qtyBox span {
+    min-width: 20px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* ── Totals ───────────────────────────────────────────── */
+.totalRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13.5px;
+    color: #475569;
+    padding: 6px 0;
+}
+
+.grandTotal {
+    border-top: 1px solid #e2e8f0;
+    margin-top: 6px;
+    padding-top: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.negative {
+    color: #dc2626;
+    white-space: nowrap;
+}
+
+.hint {
+    font-size: 11.5px;
+    color: #94a3b8;
+    margin: 10px 0 0;
+    line-height: 1.5;
+}
+
+/* ── List table ───────────────────────────────────────── */
+.tableContainer {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow-x: auto;
+}
+
+.ref {
+    font-weight: 700;
+    color: #2563eb;
+    white-space: nowrap;
+}
+
+.actions {
+    display: flex;
+    gap: 6px;
+}
+
+.actions button {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #475569;
+}
+
+.actions button:hover:not(:disabled) {
+    background: #e2e8f0;
+}
+
+.actions button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.iconDanger {
+    color: #dc2626 !important;
+}
+
+.iconDanger:hover {
+    background: #fee2e2 !important;
+}
+
+.empty,
+.emptyCell {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+    padding: 26px 10px;
+}
+
+/* ── Modal ────────────────────────────────────────────── */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1000;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 760px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modalHeader h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+.modalHeader button {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #475569;
+}
+
+.modalBody {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.metaGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.metaGrid span {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+
+.metaGrid strong {
+    font-size: 13.5px;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.notes {
+    background: #f8fafc;
+    border-left: 3px solid #cbd5e1;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #475569;
+    margin: 0 0 16px;
+}
+
+.notes span {
+    font-weight: 700;
+}
+
+.modalTotals {
+    margin-top: 16px;
+    margin-left: auto;
+    max-width: 320px;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.capHint {
+    font-size: 10.5px;
+    color: #94a3b8;
+    margin-top: 3px;
+    white-space: nowrap;
+}
+
+/* ── Discount limits ──────────────────────────────────── */
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.secondaryBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.secondaryBtn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.filterRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #475569;
+    margin-bottom: 12px;
+    cursor: pointer;
+}
+
+.bulkBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+    color: #1e40af;
+    font-weight: 600;
+    flex-wrap: wrap;
+}
+
+.bulkApply {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.bulkApply:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.bulkClear {
+    background: transparent;
+    border: none;
+    color: #1e40af;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.limitRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.saveCell {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    min-width: 54px;
+}
+
+.saveCell:hover:not(:disabled) {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
+}
+
+.saveCell:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.roleBadge {
+    display: inline-block;
+    margin-top: 3px;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: capitalize;
+}
+
+.roleAdmin {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.roleStaff {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.categorySelect {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13.5px;
+    color: #0f172a;
+    background: #fff;
+    outline: none;
+    margin-bottom: 10px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.categorySelect:focus {
+    border-color: #2563eb;
+}
+
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+    font-size: 12px;
+    color: #64748b;
+    flex-wrap: wrap;
+}
+
+.pagerBtns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pagerBtns button {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+}
+
+.pagerBtns button:hover:not(:disabled) {
+    background: #e2e8f0;
+}
+
+.pagerBtns button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.pagerPage {
+    font-weight: 600;
+    color: #0f172a;
+    min-width: 52px;
+    text-align: center;
+}
+
+/* ── Product cards ────────────────────────────────────── */
+.productGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.productCard {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+    padding: 0;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.productCard:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    transform: translateY(-2px);
+}
+
+.productCardAdded {
+    border-color: #34d399;
+    background: #f0fdf4;
+}
+
+.cardThumb {
+    position: relative;
+    height: 110px;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.cardThumb img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.addedTick {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: #059669;
+    color: #fff;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 2px 7px;
+    border-radius: 20px;
+}
+
+.cardBody {
+    padding: 9px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+}
+
+.cardName {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cardMeta {
+    font-size: 11px;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cardFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 6px;
+}
+
+.cardPrice {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.cardAdd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: #2563eb;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.productCard:hover .cardAdd {
+    background: #1d4ed8;
+}
+
+.cardLabelRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.cardLabelRow .cardLabel {
+    margin-bottom: 0;
+}
+
+.addedCount {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.cardPriceWrap {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    min-width: 0;
+}
+
+.cardPriceOffer {
+    font-size: 13px;
+    font-weight: 700;
+    color: #dc2626;
+}
+
+.cardPriceOld {
+    font-size: 10.5px;
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+.offerTick {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 2px 7px;
+    border-radius: 20px;
+}
+
+/* Keep the customer + totals panel in view while scrolling a long product list.
+   Only in the two-column layout — below 1024px the grid stacks, where a sticky
+   block would cover the items it belongs to. */
+@media (min-width: 1025px) {
+    .builderSide {
+        position: sticky;
+        /* AdminHeader is sticky at top: 0 with height 50px, so anchoring at 0 would
+           park this panel underneath it. 50px header + 16px breathing room. */
+        top: 66px;
+        /* When the panel itself is taller than the viewport it scrolls internally,
+           so Save Quotation stays reachable instead of stranded below the fold. */
+        max-height: calc(100vh - 82px);
+        overflow-y: auto;
+    }
+}
+
+/* ── Approval workflow ────────────────────────────────── */
+.statusTabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.statusTab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 7px 13px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+}
+
+/* Scoped away from the active tab: `.statusTab:hover` (0,2,0) outranks
+   `.statusTabActive` (0,1,0), so an unscoped hover repainted the active tab's
+   white text dark grey on its dark background. */
+.statusTab:not(.statusTabActive):hover {
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.statusTabActive:hover {
+    background: #1e293b;
+    border-color: #1e293b;
+    color: #fff;
+}
+
+.statusTabActive {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: #fff;
+}
+
+.tabCount {
+    background: rgba(100, 116, 139, 0.15);
+    border-radius: 20px;
+    padding: 1px 7px;
+    font-size: 10.5px;
+    font-weight: 700;
+}
+
+.statusTabActive .tabCount {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.statusPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.stPending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.stApproved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.stRejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.reviewNoteInline {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.iconApprove {
+    color: #059669 !important;
+}
+
+.iconApprove:hover:not(:disabled) {
+    background: #d1fae5 !important;
+}
+
+.iconReject {
+    color: #b45309 !important;
+}
+
+.iconReject:hover:not(:disabled) {
+    background: #fef3c7 !important;
+}
+
+.notesReject {
+    background: #fef2f2;
+    border-left-color: #dc2626;
+    color: #991b1b;
+}
+
+.dangerBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 14px;
+}
+
+.dangerBtn:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.dangerBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.mineTab {
+    margin-left: auto;
+}
+
+/* ── KPI row ──────────────────────────────────────────────
+   Status counts are a handful of headline numbers, so they are stat tiles rather
+   than a chart. Each tile IS the filter for its status, so the summary and the
+   table below can never disagree. Status hues come from the reserved status
+   palette and always ship with an icon + label, never colour alone. */
+.kpiRow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.kpi:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.kpiActive {
+    border-color: #0f172a;
+    box-shadow: inset 0 0 0 1px #0f172a;
+}
+
+.kpiLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* Hero-ish figure: the number is the point of the tile. */
+.kpiValue {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.1;
+}
+
+.kpiSub {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+/* Reserved status inks — icons only, never applied to text. */
+.inkGood {
+    color: #0ca30c;
+}
+
+.inkWarning {
+    color: #fab219;
+}
+
+.inkCritical {
+    color: #d03b3b;
+}
+
+/* Search + scope toggle share one row now that the status tabs are gone —
+   the KPI tiles are the status filter. */
+.filterBar {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.filterBar .searchBox {
+    flex: 1;
+    min-width: 240px;
+    margin-bottom: 0;
+}
+
+.mineToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.mineToggle:hover {
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.mineToggleActive {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: #fff;
+}
+
+.mineToggleActive:hover {
+    background: #1e293b;
+    border-color: #1e293b;
+    color: #fff;
+}
+
+/* The rejection reason belongs where the author is fixing it, not only in the
+   list they came from. */
+.rejectBanner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 3px solid #d03b3b;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #991b1b;
+    line-height: 1.5;
+}
+
+.rejectBanner strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+/* ── Quotation-wide discount cap ──────────────────────── */
+.capBox {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.capToggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+}
+
+.capToggle span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.capFields {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.capNote {
+    font-size: 11.5px;
+    color: #64748b;
+    max-width: 460px;
+    line-height: 1.5;
+}
+
+.capOk,
+.capWarn {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    margin-top: 12px;
+}
+
+.capOk {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* Reserved critical status ink, paired with an icon and text — never colour alone. */
+.capWarn {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    font-weight: 600;
+}
+
+/* ── Customer autocomplete ────────────────────────────── */
+.customerField {
+    position: relative;
+}
+
+.existingTag {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: #d1fae5;
+    color: #065f46;
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    pointer-events: none;
+}
+
+.customerList {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% - 4px);
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+    z-index: 20;
+    max-height: 230px;
+    overflow-y: auto;
+}
+
+.customerRow {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    text-align: left;
+    background: #fff;
+    border: none;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 8px 11px;
+    cursor: pointer;
+}
+
+.customerRow:last-child {
+    border-bottom: none;
+}
+
+.customerRow:hover {
+    background: #f8fafc;
+}
