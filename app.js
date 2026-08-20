@@ -104,6 +104,25 @@ app.use(hpp());
 // rules pick it up.
 const { isAllowedOrigin } = require('./config/allowedOrigins');
 
+// Vary: Origin, on every response, BEFORE cors runs.
+//
+// The CORS answer differs per origin: a browser request gets
+// Access-Control-Allow-Origin, an origin-less one (server-side fetch, curl, an
+// uptime monitor) gets none. Hostinger's CDN sits in front of this API and, with
+// no Vary: Origin, keeps a single cached copy for both. When the copy it stored
+// came from an origin-less request, browsers are served a response with no
+// Access-Control-Allow-Origin and every fetch fails with "No
+// 'Access-Control-Allow-Origin' header is present" — intermittently, depending on
+// which request populated the cache.
+//
+// Same reasoning as the Vary: Referer on the media guard below; the API routes
+// simply never got the equivalent. res.vary() appends rather than replaces, so
+// Accept-Encoding and anything cors adds are preserved.
+app.use((req, res, next) => {
+    res.vary('Origin');
+    next();
+});
+
 app.use(cors({
     origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps or curl)
