@@ -29,8 +29,7 @@ const DiscountLimitsModal: React.FC<Props> = ({ onClose }) => {
 
     // Whole-quotation ceiling, stored in the shared settings table rather than on
     // any product, since it applies across every line.
-    const [capEnabled, setCapEnabled] = useState(false);
-    const [capAmount, setCapAmount] = useState('');
+    const [capPct, setCapPct] = useState('20');
     const [capSaving, setCapSaving] = useState(false);
 
     const load = useCallback(async (search: string) => {
@@ -58,17 +57,17 @@ const DiscountLimitsModal: React.FC<Props> = ({ onClose }) => {
                 const res = await fetch(`${API_BASE_URL}/settings`, { credentials: 'include' });
                 const data = await res.json();
                 if (data.success) {
-                    setCapEnabled(String(data.data?.staff_quotation_max_discount_enabled) === '1');
-                    const amt = data.data?.staff_quotation_max_discount_amount;
-                    setCapAmount(amt && Number(amt) > 0 ? String(amt) : '');
+                    const pct = data.data?.staff_quotation_max_discount_pct;
+                    setCapPct(pct !== undefined && pct !== null && pct !== '' ? String(pct) : '20');
                 }
             } catch { /* leave the control at its defaults */ }
         })();
     }, []);
 
     const saveCap = async () => {
-        if (capEnabled && !(Number(capAmount) > 0)) {
-            showNotification('Enter a maximum discount amount above zero', 'error');
+        const n = Number(capPct);
+        if (!Number.isFinite(n) || n < 0 || n > 100) {
+            showNotification('Enter a percentage between 0 and 100', 'error');
             return;
         }
         setCapSaving(true);
@@ -78,14 +77,11 @@ const DiscountLimitsModal: React.FC<Props> = ({ onClose }) => {
                 credentials: 'include',
                 headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    settings: {
-                        staff_quotation_max_discount_enabled: capEnabled ? '1' : '0',
-                        staff_quotation_max_discount_amount: capEnabled ? String(Number(capAmount)) : '0',
-                    },
+                    settings: { staff_quotation_max_discount_pct: String(n) },
                 }),
             });
             const data = await res.json();
-            showNotification(data.success ? 'Quotation discount limit saved' : (data.message || 'Failed to save'),
+            showNotification(data.success ? 'Approval threshold saved' : (data.message || 'Failed to save'),
                 data.success ? 'success' : 'error');
         } catch {
             showNotification('Failed to save', 'error');
@@ -198,31 +194,25 @@ const DiscountLimitsModal: React.FC<Props> = ({ onClose }) => {
 
                     <div className={styles.capBox}>
                         <label className={styles.capToggle}>
-                            <input
-                                type="checkbox"
-                                checked={capEnabled}
-                                onChange={e => setCapEnabled(e.target.checked)}
-                            />
-                            <span><AlertTriangle size={13} /> Cap the total discount on a single quotation</span>
+                            <AlertTriangle size={13} /> Maximum discount before approval is required
                         </label>
-                        {capEnabled && (
-                            <div className={styles.capFields}>
-                                <input
-                                    type="number" min={0} step="1"
-                                    className={styles.numInput}
-                                    style={{ width: '130px' }}
-                                    placeholder="Max amount"
-                                    value={capAmount}
-                                    onChange={e => setCapAmount(e.target.value)}
-                                />
-                                <span className={styles.capNote}>
-                                    Staff cannot submit a quotation whose total discount exceeds this.
-                                    Per-product limits below still apply. Admins are unaffected.
-                                </span>
-                            </div>
-                        )}
+                        <div className={styles.capFields}>
+                            <input
+                                type="number" min={0} max={100} step="0.5"
+                                className={styles.numInput}
+                                style={{ width: '110px' }}
+                                value={capPct}
+                                onChange={e => setCapPct(e.target.value)}
+                            />
+                            <span className={styles.capNote}>
+                                A staff quotation whose total discount is at or below this share of the
+                                subtotal is approved automatically and can be downloaded straight away.
+                                Above it, an admin has to sign it off. Set 0 to review everything, 100 to
+                                review nothing. Per-product limits below are separate and still cap each line.
+                            </span>
+                        </div>
                         <button className={styles.saveCell} onClick={saveCap} disabled={capSaving}>
-                            {capSaving ? <Loader2 size={14} className={styles.spin} /> : 'Save limit'}
+                            {capSaving ? <Loader2 size={14} className={styles.spin} /> : 'Save threshold'}
                         </button>
                     </div>
 

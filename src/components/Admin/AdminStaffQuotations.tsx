@@ -84,8 +84,9 @@ const AdminStaffQuotations = () => {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editingRef, setEditingRef] = useState('');
     const [editingStatus, setEditingStatus] = useState<string>('');
-    // Whole-quotation discount ceiling, set by an admin in Discount Limits.
-    const [discountCap, setDiscountCap] = useState<number | null>(null);
+    // Admin's max discount, as a share of the subtotal. At or under it a staff
+    // quotation is approved on submission; over it, an admin has to sign it off.
+    const [thresholdPct, setThresholdPct] = useState<number>(20);
     const [customerMatches, setCustomerMatches] = useState<any[]>([]);
     const [customerOpen, setCustomerOpen] = useState(false);
     const [pickedCustomerId, setPickedCustomerId] = useState<number | null>(null);
@@ -113,11 +114,10 @@ const AdminStaffQuotations = () => {
             try {
                 const res = await fetch(`${API_BASE_URL}/settings`, { credentials: 'include' });
                 const data = await res.json();
-                const on = String(data?.data?.staff_quotation_max_discount_enabled) === '1';
-                const amt = Number(data?.data?.staff_quotation_max_discount_amount) || 0;
-                setDiscountCap(on && amt > 0 ? amt : null);
+                const pct = data?.data?.staff_quotation_max_discount_pct;
+                setThresholdPct(pct === undefined || pct === null || pct === '' ? 20 : Number(pct));
             } catch {
-                setDiscountCap(null);
+                setThresholdPct(20);
             }
         })();
     }, []);
@@ -317,8 +317,9 @@ const AdminStaffQuotations = () => {
         setCustomerOpen(false);
     };
 
-    const capApplies = isStaff && discountCap !== null;
-    const overCap = capApplies && totals.discount > (discountCap as number);
+    // Share of the subtotal, matching the server's rule exactly.
+    const discountShare = totals.subtotal > 0 ? (totals.discount / totals.subtotal) * 100 : 0;
+    const needsApproval = isStaff && discountShare > thresholdPct;
 
     const resetBuilder = () => {
         setCustomer({ customer_name: '', customer_email: '', customer_phone: '', vat_number: '', notes: '' });
@@ -333,10 +334,7 @@ const AdminStaffQuotations = () => {
     const saveQuotation = async () => {
         if (!customer.customer_name.trim()) { showNotification('Customer name is required', 'error'); return; }
         if (lines.length === 0) { showNotification('Add at least one product', 'error'); return; }
-        if (overCap) {
-            showNotification(`Total discount exceeds the ${discountCap} limit for one quotation`, 'error');
-            return;
-        }
+
         setSaving(true);
         try {
             const res = await fetch(
@@ -754,29 +752,31 @@ const AdminStaffQuotations = () => {
                             <div className={styles.totalRow}><span>VAT (5%)</span><CurrencyPrice amount={totals.vat} /></div>
                             <div className={`${styles.totalRow} ${styles.grandTotal}`}><span>Total</span><CurrencyPrice amount={totals.total} /></div>
 
-                            {capApplies && (
-                                <div className={overCap ? styles.capWarn : styles.capOk}>
-                                    <AlertTriangle size={14} />
+                            {isStaff && lines.length > 0 && (
+                                <div className={needsApproval ? styles.capWarn : styles.capOk}>
+                                    {needsApproval ? <AlertTriangle size={14} /> : <Check size={14} />}
                                     <span>
-                                        {overCap
-                                            ? <>Discount is over the <CurrencyPrice amount={discountCap as number} /> limit for one quotation. Reduce it to submit.</>
-                                            : <>Discount limit for one quotation: <CurrencyPrice amount={discountCap as number} /></>}
+                                        {needsApproval
+                                            ? <>Discount is {discountShare.toFixed(1)}%, above the {thresholdPct}% limit — this needs an admin&apos;s approval before it can be downloaded.</>
+                                            : <>Discount is {discountShare.toFixed(1)}%, within the {thresholdPct}% limit — approved on save, ready to download.</>}
                                     </span>
                                 </div>
                             )}
 
-                            <button className={styles.primaryBtn} onClick={saveQuotation} disabled={saving || overCap}>
+                            <button className={styles.primaryBtn} onClick={saveQuotation} disabled={saving}>
                                 {saving
                                     ? <><Loader2 size={16} className={styles.spin} /> Saving…</>
                                     : isStaff
-                                        ? (editingId ? <>Resubmit for Approval</> : <>Submit for Approval</>)
+                                        ? (needsApproval
+                                            ? (editingId ? <>Resubmit for Approval</> : <>Submit for Approval</>)
+                                            : (editingId ? <>Save Changes</> : <>Save Quotation</>))
                                         : (editingId ? <>Save Changes</> : <>Save Quotation</>)}
                             </button>
                             <p className={styles.hint}>
                                 {isStaff
-                                    ? (editingId
-                                        ? 'Editing clears the previous decision — it goes back to an admin for approval.'
-                                        : 'Goes to an admin for approval. It cannot be downloaded or emailed until approved.')
+                                    ? (needsApproval
+                                        ? 'Goes to an admin for approval. It cannot be downloaded or emailed until approved.'
+                                        : 'Approved automatically, so you can download and email it right away.')
                                     : 'Saved as approved, since you are an admin. Emailing the customer is a separate action from the list.'}
                             </p>
                         </div>
