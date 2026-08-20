@@ -147,11 +147,21 @@ const ownedByRequester = async (req, id) => {
     return { row, allowed: true };
 };
 
-const quotationDiscountCap = async () => {
-    const enabled = String(await getSettingValue('staff_quotation_max_discount_enabled', '0')) === '1';
-    const amount = Number(await getSettingValue('staff_quotation_max_discount_amount', '0')) || 0;
-    return { enabled: enabled && amount > 0, amount };
+// The admin's maximum discount, as a share of the subtotal. At or below it a staff
+// quotation is approved on submission and can be downloaded straight away; above
+// it, it goes to an admin. Exceeding the figure is allowed but has to be signed
+// off — it is a threshold, not a wall. 0 sends everything for approval, 100 none.
+// Per-product caps are separate and remain hard clamps on an individual line.
+const approvalThresholdPct = async () => {
+    const raw = await getSettingValue('staff_quotation_max_discount_pct', '20');
+    const n = Number(raw);
+    return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 20;
 };
+
+// Discount as a percentage of the pre-discount subtotal. Percent rather than a
+// flat amount so the rule reads the same on a 2,000 quote and a 200,000 one.
+const discountShare = (priced) =>
+    priced.subtotal > 0 ? (priced.discount_amount / priced.subtotal) * 100 : 0;
 
 // @desc    Create a staff-built quotation
 // @route   POST /api/v1/staff-quotations
@@ -172,26 +182,23 @@ exports.createStaffQuotation = async (req, res, next) => {
         if (priced.items.length === 0) {
             return res.status(400).json({ success: false, message: 'Add at least one product' });
         }
-        // Refuse rather than silently trim: staff need to see which lines to change,
-        // and a quietly reduced discount would misprice the quote they thought they sent.
-        if (isStaff) {
-            const cap = await quotationDiscountCap();
-            if (cap.enabled && priced.discount_amount > cap.amount) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Total discount ${priced.discount_amount.toFixed(2)} exceeds the ${cap.amount.toFixed(2)} limit for a single quotation. Reduce the discounts and try again.`,
-                    max_discount_amount: cap.amount,
-                });
-            }
-        }
+
+        // An admin raising a quotation is the approver already. For staff it turns on
+        // how deep the discount goes.
+        const threshold = await approvalThresholdPct();
+        const share = discountShare(priced);
+        const needsApproval = isStaff && share > threshold;
+        const autoNote = (!needsApproval && isStaff)
+            ? `Auto-approved: ${share.toFixed(1)}% discount is within the ${threshold}% threshold`
+            : null;
 
         // Placeholder satisfies the NOT NULL UNIQUE column; the real SQT-xxxxx ref is
         // derived from the row id right after insert (same pattern as quotations).
         const tempRef = `SQT-TMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const [result] = await db.execute(
             `INSERT INTO staff_quotations
-             (quotation_ref, created_by, created_by_name, created_by_role, customer_name, customer_email, customer_phone, vat_number, items, subtotal, discount_amount, tax_amount, total_amount, notes, status, reviewed_by, reviewed_by_name, reviewed_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (quotation_ref, created_by, created_by_name, created_by_role, customer_name, customer_email, customer_phone, vat_number, items, subtotal, discount_amount, tax_amount, total_amount, notes, status, reviewed_by, reviewed_by_name, reviewed_at, review_note)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [tempRef, (req.user && req.user.id) || null,
                 // Denormalised on purpose: the join below loses the author entirely if the
                 // account is later deleted, and a quotation must always say who raised it.
@@ -199,12 +206,13 @@ exports.createStaffQuotation = async (req, res, next) => {
                 customer_name, customer_email || null,
                 customer_phone || null, vat_number || null, JSON.stringify(priced.items),
                 priced.subtotal, priced.discount_amount, priced.tax_amount, priced.total_amount, notes || null,
-                // An admin raising a quotation is the approver, so it needs no second
-                // pair of eyes. Staff submissions wait for one.
-                isStaff ? 'pending' : 'approved',
-                isStaff ? null : ((req.user && req.user.id) || null),
-                isStaff ? null : ((req.user && req.user.name) || null),
-                isStaff ? null : new Date()]
+                needsApproval ? 'pending' : 'approved',
+                // Nobody reviewed an auto-approved quotation, so reviewed_by stays null;
+                // the note records why it did not need one.
+                (!needsApproval && isStaff) ? null : (isStaff ? null : ((req.user && req.user.id) || null)),
+                (!needsApproval && isStaff) ? 'Auto' : (isStaff ? null : ((req.user && req.user.name) || null)),
+                needsApproval ? null : new Date(),
+                autoNote]
         );
 
         const quotation_ref = `SQT-${String(result.insertId).padStart(5, '0')}`;
@@ -213,7 +221,7 @@ exports.createStaffQuotation = async (req, res, next) => {
         res.status(201).json({
             success: true,
             data: {
-                id: result.insertId, quotation_ref, status: isStaff ? 'pending' : 'approved', customer_name,
+                id: result.insertId, quotation_ref, status: needsApproval ? 'pending' : 'approved', customer_name,
                 customer_email: customer_email || null, customer_phone: customer_phone || null,
                 vat_number: vat_number || null, notes: notes || null, ...priced
             }
@@ -288,23 +296,19 @@ exports.updateStaffQuotation = async (req, res, next) => {
         if (priced.items.length === 0) {
             return res.status(400).json({ success: false, message: 'Add at least one product' });
         }
-        // Refuse rather than silently trim: staff need to see which lines to change,
-        // and a quietly reduced discount would misprice the quote they thought they sent.
-        if (isStaff) {
-            const cap = await quotationDiscountCap();
-            if (cap.enabled && priced.discount_amount > cap.amount) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Total discount ${priced.discount_amount.toFixed(2)} exceeds the ${cap.amount.toFixed(2)} limit for a single quotation. Reduce the discounts and try again.`,
-                    max_discount_amount: cap.amount,
-                });
-            }
-        }
         // Any edit by staff invalidates a previous decision — otherwise an approved
-        // quote could be rewritten after the fact and still read as approved.
-        const resetReview = isStaff
-            ? ", status = 'pending', reviewed_by = NULL, reviewed_by_name = NULL, reviewed_at = NULL, review_note = NULL"
-            : '';
+        // quote could be rewritten after the fact and still read as approved. The
+        // edited version is re-judged against the threshold, so trimming a discount
+        // back under the line clears it again without an admin round trip.
+        let resetReview = '';
+        if (isStaff) {
+            const threshold = await approvalThresholdPct();
+            const share = discountShare(priced);
+            resetReview = share > threshold
+                ? ", status = 'pending', reviewed_by = NULL, reviewed_by_name = NULL, reviewed_at = NULL, review_note = NULL"
+                : ", status = 'approved', reviewed_by = NULL, reviewed_by_name = 'Auto', reviewed_at = NOW(),"
+                  + ` review_note = ${db.escape(`Auto-approved: ${share.toFixed(1)}% discount is within the ${threshold}% threshold`)}`;
+        }
         const [r] = await db.execute(
             `UPDATE staff_quotations
              SET customer_name = ?, customer_email = ?, customer_phone = ?, vat_number = ?,
