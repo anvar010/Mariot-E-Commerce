@@ -123,6 +123,20 @@ app.use((req, res, next) => {
     next();
 });
 
+// And do not let a shared cache hold API responses at all.
+//
+// /api/v1 responses sent no Cache-Control whatsoever, which leaves a CDN free to
+// cache them heuristically. That is wrong twice over: the CORS headers differ per
+// origin (see above), and the bodies differ per USER — a cached /users/me or
+// /cart could be handed to somebody else entirely. Vary only asks a cache to
+// behave; no-store settles it.
+//
+// Static media under /uploads is unaffected and still cached for a year.
+app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+});
+
 app.use(cors({
     origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps or curl)
