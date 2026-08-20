@@ -23,6 +23,11 @@ type Line = {
     model?: string;
     brand?: string;
     image?: string;
+    /** Full product description — the quotation PDF prints this under the model
+        number. The short description is deliberately not used: the quotation is
+        the document a customer decides from. */
+    description?: string;
+    description_ar?: string;
     unit_price: number;
     quantity: number;
     discount_pct: number;
@@ -215,6 +220,8 @@ const AdminStaffQuotations = () => {
                 model: p.model || '',
                 brand: p.brand_name || '',
                 image: p.primary_image || p.image || '',
+                description: p.description || '',
+                description_ar: p.description_ar || '',
                 unit_price: price,
                 quantity: 1,
                 discount_pct: 0,
@@ -266,6 +273,8 @@ const AdminStaffQuotations = () => {
             model: i.model || '',
             brand: i.brand || '',
             image: i.image || '',
+            description: i.description || '',
+            description_ar: i.description_ar || '',
             unit_price: Number(i.unit_price ?? i.price) || 0,
             quantity: Number(i.quantity) || 1,
             discount_pct: Number(i.discount_pct) || 0,

@@ -188,8 +188,8 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                 <td style="padding: 15px 10px; font-size: 11px; text-align: ${alignStart}; width: 35%;">
                     <div style="font-weight: bold; color: #1e293b;">${itemName}</div>
                     <div style="color: #64748b; font-size: 10px;">${L.brand}: ${item.brand || 'Standard'}</div>
-                    ${itemDescription ? `<div style="color: #475569; font-size: 9.5px; margin-top: 4px; line-height: 1.5; text-align: justify;">${itemDescription}</div>` : ''}
                     ${item.model ? `<div style="color: #64748b; font-size: 10px; margin-top: 4px;">${L.model}: ${item.model}</div>` : ''}
+                    ${itemDescription ? `<div style="color: #475569; font-size: 9.5px; margin-top: 4px; line-height: 1.5; text-align: justify;">${itemDescription}</div>` : ''}
                     ${(variantLabel && !dims) ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
                     ${dims ? `<div style="color: #334155; font-size: 10px; margin-top: 4px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${dims}</div>` : ''}
                 </td>
@@ -473,9 +473,21 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
             let renderWidth = pdfWidth;
             let renderHeight = naturalRenderHeight;
             if (naturalRenderHeight > pageHeight) {
-                const scale = pageHeight / naturalRenderHeight;
-                renderWidth = pdfWidth * scale;
-                renderHeight = pageHeight;
+                // Page 1 carries ~390px of header before a single row, so it is the page
+                // most likely to run a few pixels past A4 — and shrinking BOTH dimensions
+                // to absorb that is what made it render narrower than the pages after it.
+                // A sub-2% overrun is a rounding artefact, not a layout problem: clamp the
+                // height and keep full width so every page comes out the same size. A real
+                // overflow still scales proportionally, keeping one very long item legible
+                // rather than squashed.
+                const overrun = naturalRenderHeight / pageHeight;
+                if (overrun <= 1.02) {
+                    renderHeight = pageHeight;
+                } else {
+                    const scale = pageHeight / naturalRenderHeight;
+                    renderWidth = pdfWidth * scale;
+                    renderHeight = pageHeight;
+                }
             }
             const xOffset = (pdfWidth - renderWidth) / 2;
 
