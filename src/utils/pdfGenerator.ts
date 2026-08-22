@@ -148,29 +148,60 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
     // The product description as a single flowing paragraph. The admin writes it as HTML, so
     // tags and bullet markers are stripped to plain text and the whole thing is capped: a long
     // description would otherwise push one line item across several pages of the quotation.
-    const MAX_DESC_CHARS = 320;
-    const buildItemDescription = (item: any): string => {
-        // Quotations saved before this switched to the full description only carry
-        // specifications, so fall back to those rather than render an empty cell.
+    // A quotation lists the few figures a buyer actually compares on, not the whole
+    // marketing description. These four are pulled out of the product description by
+    // their label; anything the description does not state is simply left out rather
+    // than shown empty.
+    //
+    // The label lists come from the real catalogue: across 1,269 products the
+    // descriptions use "Dimensions" 650 times but also "Dim" (61) and "Product Size"
+    // (9); weight is "Net Weight" (558) far more often than plain "Weight" (150);
+    // origin is usually "Country of Origin" (161) rather than "Origin" (54). Matching
+    // is exact against these lists — a loose /capacity/ test would wrongly grab
+    // "Boiler Capacity", "Cooling Capacity" or "Washing Capacity", which describe
+    // performance rather than the size of the unit.
+    const SPEC_FIELDS: { en: string; ar: string; keys: string[] }[] = [
+        { en: 'Capacity', ar: 'السعة', keys: ['capacity', 'net capacity', 'gross capacity', 'volume'] },
+        { en: 'Dimensions', ar: 'الأبعاد', keys: ['dimensions', 'dimension', 'dim', 'product size', 'overall dimensions', 'external dimensions'] },
+        { en: 'Weight', ar: 'الوزن', keys: ['net weight', 'weight', 'gross weight', 'net / gross weight', 'net/gross weight'] },
+        { en: 'Origin', ar: 'بلد المنشأ', keys: ['country of origin', 'origin', 'made in', 'manufactured in'] },
+    ];
+
+    const MAX_SPEC_VALUE = 60;
+
+    const buildItemSpecs = (item: any): { label: string; value: string }[] => {
+        // Older quotations carry only `specifications`, so fall back to it.
         const source = (isArabic && (item.description_ar || item.specifications_ar))
             ? (item.description_ar || item.specifications_ar)
             : (item.description || item.specifications || '');
 
-        const text = String(source)
-            .replace(/â€¢/g, ' ').replace(/â€"/g, '-').replace(/Â/g, '')
-            .replace(/\[[^\]]*\]/g, ' ')
-            .replace(/<\/?(p|div|br|li|ul|ol|tr|td)[^>]*>/gi, ' ')
+        const lines = String(source)
+            .replace(/<\/?(p|div|br|li|ul|ol|tr|td)[^>]*>/gi, '\n')
             .replace(/<[^>]*>/g, ' ')
+            .replace(/\[[^\]]*\]/g, ' ')
             .replace(/&nbsp;/g, ' ')
-            .replace(/[•·]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
+            .replace(/â€¢/g, ' ').replace(/â€"/g, '-').replace(/Â/g, '')
+            .split(/\r?\n/)
+            .map(l => l.replace(/\s+/g, ' ').trim())
+            .filter(Boolean);
 
-        if (text.length <= MAX_DESC_CHARS) return text;
-        // Cut on a word boundary so the trailing ellipsis doesn't land mid-word.
-        const cut = text.slice(0, MAX_DESC_CHARS);
-        const lastSpace = cut.lastIndexOf(' ');
-        return `${(lastSpace > MAX_DESC_CHARS * 0.6 ? cut.slice(0, lastSpace) : cut).trim()}…`;
+        const out: { label: string; value: string }[] = [];
+        for (const field of SPEC_FIELDS) {
+            for (const line of lines) {
+                const m = line.match(/^([^:：]{1,40})[:：]\s*(.+)$/);
+                if (!m) continue;
+                const key = m[1].trim().toLowerCase().replace(/\s+/g, ' ');
+                if (!field.keys.includes(key)) continue;
+                // Trailing full stops are how these lines are written; they read as
+                // noise once the value stands alone in its own row.
+                let value = m[2].trim().replace(/[.;]+$/, '').trim();
+                if (!value) continue;
+                if (value.length > MAX_SPEC_VALUE) value = value.slice(0, MAX_SPEC_VALUE).trim() + '…';
+                out.push({ label: isArabic ? field.ar : field.en, value });
+                break; // first stated value wins for this field
+            }
+        }
+        return out;
     };
 
     // ── Single item <tr> builder (reused by measurement probe + page renderer) ─
@@ -181,7 +212,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
             : '';
         const variantLabel = item.variant_label || '';
         const itemName = (isArabic && item.name_ar) ? item.name_ar : item.name;
-        const itemDescription = buildItemDescription(item);
+        const itemSpecs = buildItemSpecs(item);
         return `
             <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 15px 6px; font-size: 11px; text-align: ${alignStart};" dir="ltr">${displayNum}</td>
@@ -189,7 +220,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                     <div style="font-weight: bold; color: #1e293b;">${itemName}</div>
                     <div style="color: #64748b; font-size: 10px;">${L.brand}: ${item.brand || 'Standard'}</div>
                     ${item.model ? `<div style="color: #64748b; font-size: 10px; margin-top: 4px;">${L.model}: ${item.model}</div>` : ''}
-                    ${itemDescription ? `<div style="color: #475569; font-size: 9.5px; margin-top: 4px; line-height: 1.5; text-align: justify;">${itemDescription}</div>` : ''}
+                    ${itemSpecs.length ? `<div style="margin-top: 4px;">${itemSpecs.map(sp => `<div style="color: #475569; font-size: 9.5px; line-height: 1.45;"><span style="color: #94a3b8;">${sp.label}:</span> ${sp.value}</div>`).join('')}</div>` : ''}
                     ${(variantLabel && !dims) ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
                     ${dims ? `<div style="color: #334155; font-size: 10px; margin-top: 4px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${dims}</div>` : ''}
                 </td>
