@@ -19,6 +19,8 @@ import DiscountLimitsModal from './DiscountLimitsModal';
 
 type Line = {
     product_id: number | null;
+    /** Needed by the quotation PDF to link "more…" back to the product page. */
+    slug?: string;
     name: string;
     model?: string;
     brand?: string;
@@ -216,6 +218,7 @@ const AdminStaffQuotations = () => {
             }
             return [...prev, {
                 product_id: p.id,
+                slug: p.slug || '',
                 name: p.name || '',
                 model: p.model || '',
                 brand: p.brand_name || '',
@@ -269,6 +272,7 @@ const AdminStaffQuotations = () => {
         });
         setLines(items.map((i: any) => ({
             product_id: i.product_id ?? null,
+            slug: i.slug || '',
             name: i.name || '',
             model: i.model || '',
             brand: i.brand || '',

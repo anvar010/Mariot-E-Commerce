@@ -60,13 +60,13 @@ const Footer = () => {
                                 <ChevronRight size={24} />
                             </div>
                         </a>
-                        <a href="mailto:info@mariot-group.com" className={styles.supportItem}>
+                        <a href="mailto:support@mariot-group.com" className={styles.supportItem}>
                             <div className={styles.iconCircle}>
                                 <Mail size={24} color="#ffffff" strokeWidth={2.5} />
                             </div>
                             <div className={styles.itemInfo}>
                                 <span className={styles.itemLabel}>{t('infoEmailLabel')}</span>
-                                <span className={styles.itemValue}>info@mariot-group.com</span>
+                                <span className={styles.itemValue}>support@mariot-group.com</span>
                             </div>
                             <div className={styles.chevronIcon}>
                                 <ChevronRight size={24} />
@@ -78,7 +78,7 @@ const Footer = () => {
                             </div>
                             <div className={styles.itemInfo}>
                                 <span className={styles.itemLabel}>{t('helpCenterLabel')}</span>
-                                <span className={styles.itemValue}>help@mariot-group.com</span>
+                                <span className={styles.itemValue}>admin@mariotkitchen.com</span>
                             </div>
                             <div className={styles.chevronIcon}>
                                 <ChevronRight size={24} />

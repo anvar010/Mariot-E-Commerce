@@ -69,6 +69,10 @@ const imageToBase64 = async (url: string): Promise<string> => {
     return EMPTY_IMG;
 };
 
+// Origin for the "more…" links. Kept beside the generator rather than imported
+// from lib/seo so this utility stays usable outside the app shell.
+const QUOTE_SITE_URL = 'https://mariotstore.com';
+
 export const generateQuotationPDF = async (quotation: any, shouldDownload = false, isArabic = false): Promise<string> => {
     const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
 
@@ -148,60 +152,48 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
     // The product description as a single flowing paragraph. The admin writes it as HTML, so
     // tags and bullet markers are stripped to plain text and the whole thing is capped: a long
     // description would otherwise push one line item across several pages of the quotation.
-    // A quotation lists the few figures a buyer actually compares on, not the whole
-    // marketing description. These four are pulled out of the product description by
-    // their label; anything the description does not state is simply left out rather
-    // than shown empty.
-    //
-    // The label lists come from the real catalogue: across 1,269 products the
-    // descriptions use "Dimensions" 650 times but also "Dim" (61) and "Product Size"
-    // (9); weight is "Net Weight" (558) far more often than plain "Weight" (150);
-    // origin is usually "Country of Origin" (161) rather than "Origin" (54). Matching
-    // is exact against these lists — a loose /capacity/ test would wrongly grab
-    // "Boiler Capacity", "Cooling Capacity" or "Washing Capacity", which describe
-    // performance rather than the size of the unit.
-    const SPEC_FIELDS: { en: string; ar: string; keys: string[] }[] = [
-        { en: 'Capacity', ar: 'السعة', keys: ['capacity', 'net capacity', 'gross capacity', 'volume'] },
-        { en: 'Dimensions', ar: 'الأبعاد', keys: ['dimensions', 'dimension', 'dim', 'product size', 'overall dimensions', 'external dimensions'] },
-        { en: 'Weight', ar: 'الوزن', keys: ['net weight', 'weight', 'gross weight', 'net / gross weight', 'net/gross weight'] },
-        { en: 'Origin', ar: 'بلد المنشأ', keys: ['country of origin', 'origin', 'made in', 'manufactured in'] },
-    ];
+    // The quotation shows the product description, capped at five lines. Past that
+    // a single verbose product would push one line item across several pages, so the
+    // rest is replaced by a "more…" link back to the product page where the full
+    // text lives. Descriptions in this catalogue are newline-separated spec lines
+    // ("Capacity: 4 × GN 1/1"), so clamping by LINE keeps whole facts intact —
+    // clamping by character count would cut one in half.
+    const DESC_MAX_LINES = 5;
+    const DESC_MAX_LINE_CHARS = 110;
 
-    const MAX_SPEC_VALUE = 60;
+    const productUrl = (item: any): string => {
+        const slug = item.slug || item.product_slug || '';
+        if (!slug) return '';
+        // Slugs in this catalogue contain non-ASCII and reserved characters (one reads
+        // "…-4-×-gn-1/1,-ash-oak-…"), which a PDF viewer will not open unescaped.
+        // encodeURI leaves "/" intact, which matters because the product route is a
+        // catch-all and those slashes are real path segments.
+        return encodeURI(`${QUOTE_SITE_URL}/${isArabic ? 'ar' : 'en'}/product/${slug}`);
+    };
 
-    const buildItemSpecs = (item: any): { label: string; value: string }[] => {
-        // Older quotations carry only `specifications`, so fall back to it.
+    const buildItemDescription = (item: any): { lines: string[]; truncated: boolean } => {
+        // Older quotations carry only `specifications`, so fall back to those.
         const source = (isArabic && (item.description_ar || item.specifications_ar))
             ? (item.description_ar || item.specifications_ar)
             : (item.description || item.specifications || '');
 
-        const lines = String(source)
+        const all = String(source)
             .replace(/<\/?(p|div|br|li|ul|ol|tr|td)[^>]*>/gi, '\n')
             .replace(/<[^>]*>/g, ' ')
             .replace(/\[[^\]]*\]/g, ' ')
             .replace(/&nbsp;/g, ' ')
             .replace(/â€¢/g, ' ').replace(/â€"/g, '-').replace(/Â/g, '')
             .split(/\r?\n/)
-            .map(l => l.replace(/\s+/g, ' ').trim())
-            .filter(Boolean);
+            .map(l => l.replace(/[•·]/g, ' ').replace(/\s+/g, ' ').trim())
+            .filter(Boolean)
+            // The first line repeats the product name, which is already the heading
+            // directly above it.
+            .filter((l, i) => !(i === 0 && item.name && l.toLowerCase() === String(item.name).toLowerCase().trim()));
 
-        const out: { label: string; value: string }[] = [];
-        for (const field of SPEC_FIELDS) {
-            for (const line of lines) {
-                const m = line.match(/^([^:：]{1,40})[:：]\s*(.+)$/);
-                if (!m) continue;
-                const key = m[1].trim().toLowerCase().replace(/\s+/g, ' ');
-                if (!field.keys.includes(key)) continue;
-                // Trailing full stops are how these lines are written; they read as
-                // noise once the value stands alone in its own row.
-                let value = m[2].trim().replace(/[.;]+$/, '').trim();
-                if (!value) continue;
-                if (value.length > MAX_SPEC_VALUE) value = value.slice(0, MAX_SPEC_VALUE).trim() + '…';
-                out.push({ label: isArabic ? field.ar : field.en, value });
-                break; // first stated value wins for this field
-            }
-        }
-        return out;
+        const lines = all.slice(0, DESC_MAX_LINES).map(l =>
+            l.length > DESC_MAX_LINE_CHARS ? l.slice(0, DESC_MAX_LINE_CHARS).trim() + '…' : l
+        );
+        return { lines, truncated: all.length > DESC_MAX_LINES };
     };
 
     // ── Single item <tr> builder (reused by measurement probe + page renderer) ─
@@ -212,7 +204,8 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
             : '';
         const variantLabel = item.variant_label || '';
         const itemName = (isArabic && item.name_ar) ? item.name_ar : item.name;
-        const itemSpecs = buildItemSpecs(item);
+        const itemDesc = buildItemDescription(item);
+        const itemUrl = productUrl(item);
         return `
             <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 15px 6px; font-size: 11px; text-align: ${alignStart};" dir="ltr">${displayNum}</td>
@@ -220,7 +213,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                     <div style="font-weight: bold; color: #1e293b;">${itemName}</div>
                     <div style="color: #64748b; font-size: 10px;">${L.brand}: ${item.brand || 'Standard'}</div>
                     ${item.model ? `<div style="color: #64748b; font-size: 10px; margin-top: 4px;">${L.model}: ${item.model}</div>` : ''}
-                    ${itemSpecs.length ? `<div style="margin-top: 4px;">${itemSpecs.map(sp => `<div style="color: #475569; font-size: 9.5px; line-height: 1.45;"><span style="color: #94a3b8;">${sp.label}:</span> ${sp.value}</div>`).join('')}</div>` : ''}
+                    ${itemDesc.lines.length ? `<div style="margin-top: 4px; color: #475569; font-size: 9.5px; line-height: 1.5;">${itemDesc.lines.map(l => `<div>${l}</div>`).join('')}${itemDesc.truncated && itemUrl ? `<a data-more-url="${itemUrl}" href="${itemUrl}" style="color: #2563eb; text-decoration: underline; display: inline-block; margin-top: 2px;">more…</a>` : (itemDesc.truncated ? `<div style="color:#94a3b8;">more…</div>` : '')}</div>` : ''}
                     ${(variantLabel && !dims) ? `<div style="color: #64748b; font-size: 10px;">${variantLabel}</div>` : ''}
                     ${dims ? `<div style="color: #334155; font-size: 10px; margin-top: 4px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${dims}</div>` : ''}
                 </td>
@@ -496,6 +489,21 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
                 backgroundColor: '#ffffff', width: 794, windowWidth: 794
             });
 
+            // html2canvas rasterises the page, so the <a> above is only pixels. Capture
+            // each link's box now, while the DOM still exists, and lay a real PDF link
+            // annotation over it after the image is placed.
+            const contRect = pageContainer.getBoundingClientRect();
+            const linkBoxes = Array.from(pageContainer.querySelectorAll('[data-more-url]')).map((el) => {
+                const r = (el as HTMLElement).getBoundingClientRect();
+                return {
+                    url: (el as HTMLElement).getAttribute('data-more-url') || '',
+                    left: r.left - contRect.left,
+                    top: r.top - contRect.top,
+                    width: r.width,
+                    height: r.height,
+                };
+            });
+
             const imgData = canvas.toDataURL('image/jpeg', 0.95);
             const pageHeight = pdf.internal.pageSize.getHeight();
             const naturalRenderHeight = (canvas.height * pdfWidth) / canvas.width;
@@ -524,6 +532,14 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
 
             if (i > 0) pdf.addPage();
             pdf.addImage(imgData, 'JPEG', xOffset, 0, renderWidth, renderHeight);
+
+            // 794px is the page container's CSS width; scale to whatever width the
+            // image was actually placed at so the hotspots track a scaled page too.
+            const pxToMm = renderWidth / 794;
+            linkBoxes.forEach(b => {
+                if (!b.url || b.width <= 0) return;
+                pdf.link(xOffset + b.left * pxToMm, b.top * pxToMm, b.width * pxToMm, b.height * pxToMm, { url: b.url });
+            });
 
             document.body.removeChild(pageContainer);
         }

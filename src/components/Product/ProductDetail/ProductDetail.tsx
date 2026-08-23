@@ -987,7 +987,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 </div>
                                 <div className={styles.supportInfo}>
                                     <h4>{t('infoEmail')}</h4>
-                                    <p>info@mariot-group.com</p>
+                                    <p>support@mariot-group.com</p>
                                 </div>
                             </div>
                             <div className={styles.supportItem}>
@@ -996,7 +996,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 </div>
                                 <div className={styles.supportInfo}>
                                     <h4>{t('helpCenter')}</h4>
-                                    <p>help@mariot-group.com</p>
+                                    <p>admin@mariotkitchen.com</p>
                                 </div>
                             </div>
                         </div>
