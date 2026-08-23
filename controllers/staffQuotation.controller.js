@@ -105,6 +105,7 @@ const priceItems = (rawItems, caps = new Map()) => {
             : Math.min(flat, capAmount);
         return {
             product_id: it.product_id !== undefined ? it.product_id : (it.id !== undefined ? it.id : null),
+            slug: it.slug || '',
             name: it.name || '',
             name_ar: it.name_ar || '',
             model: it.model || '',
