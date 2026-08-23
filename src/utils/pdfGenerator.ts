@@ -69,9 +69,17 @@ const imageToBase64 = async (url: string): Promise<string> => {
     return EMPTY_IMG;
 };
 
-// Origin for the "more…" links. Kept beside the generator rather than imported
-// from lib/seo so this utility stays usable outside the app shell.
-const QUOTE_SITE_URL = 'https://mariotstore.com';
+// Origin for the "more…" links, taken from the page the PDF is generated on, so a
+// quotation always points back at the site it came from — uae.mariotstore.com, a
+// staging host, or localhost in development. A hardcoded origin meant every PDF
+// linked to production no matter where it was produced.
+const siteOrigin = (): string => {
+    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+        return window.location.origin.replace(/\/+$/, '');
+    }
+    // Only reachable if this ever runs server-side; the generator is client-only today.
+    return 'https://mariotstore.com';
+};
 
 export const generateQuotationPDF = async (quotation: any, shouldDownload = false, isArabic = false): Promise<string> => {
     const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
@@ -168,7 +176,8 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
         // "…-4-×-gn-1/1,-ash-oak-…"), which a PDF viewer will not open unescaped.
         // encodeURI leaves "/" intact, which matters because the product route is a
         // catch-all and those slashes are real path segments.
-        return encodeURI(`${QUOTE_SITE_URL}/${isArabic ? 'ar' : 'en'}/product/${slug}`);
+        // localePrefix is 'always' in i18n/routing, so the locale segment is required.
+        return encodeURI(`${siteOrigin()}/${isArabic ? 'ar' : 'en'}/product/${slug}`);
     };
 
     const buildItemDescription = (item: any): { lines: string[]; truncated: boolean } => {
