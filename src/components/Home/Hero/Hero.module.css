@@ -330,8 +330,12 @@
 
 @media (max-width: 768px) {
     .heroSection {
-        height: 60vh;
-        min-height: 430px;
+        /* Content is bottom-aligned, so the section's height minus the text block IS
+           the band of empty image above it. 60vh/430px left a large gap on phones,
+           where the text is only ~200px tall. Sized to sit just above the content
+           instead. */
+        height: 40vh;
+        min-height: 295px;
         max-height: none;
     }
 
@@ -345,7 +349,7 @@
     .heroContent {
         padding: 0 16px;
         align-items: flex-end;
-        padding-bottom: 55px;
+        padding-bottom: 34px;
         /* Aligned back to bottom */
     }
 
@@ -403,13 +407,13 @@
 
 @media (max-width: 576px) {
     .heroSection {
-        height: 60vh;
-        min-height: 390px;
+        height: 36vh;
+        min-height: 250px;
         max-height: none;
     }
 
     .textContent {
-        gap: 8px;
+        gap: 6px;
     }
 
     .tagline {
@@ -419,20 +423,20 @@
     }
 
     .title {
-        font-size: 21px;
+        font-size: 19px;
         font-weight: 800;
         letter-spacing: -0.3px;
     }
 
     .description {
-        font-size: 12.5px;
-        line-height: 1.5;
+        font-size: 12px;
+        line-height: 1.4;
     }
 
     .heroContent {
         padding: 0 20px;
         align-items: flex-end;
-        padding-bottom: 40px;
+        padding-bottom: 26px;
         /* Aligned back to bottom */
     }
 
