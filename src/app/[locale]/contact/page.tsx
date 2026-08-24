@@ -141,7 +141,6 @@ export default function ContactPage() {
                                 </div>
                                 <div className={styles.contactItemDetails}>
                                     <strong>{t('email')}</strong>
-                                    <a href="mailto:info@mariot-group.com">info@mariot-group.com</a>
                                     <a href="mailto:support@mariot-group.com">support@mariot-group.com</a>
                                 </div>
                             </div>

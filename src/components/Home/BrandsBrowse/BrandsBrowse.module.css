@@ -110,29 +110,8 @@
     margin: 0 -40px;
 }
 
-/* Edge fades: dissolve the partially-clipped card at each end into the
-   section background so it doesn't read as a hard "broken" cut. Color is
-   matched to the section's near-white radial gradient. */
-.sliderWrapper::before,
-.sliderWrapper::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 56px;
-    z-index: 4;
-    pointer-events: none;
-}
-
-.sliderWrapper::before {
-    left: 0;
-    background: linear-gradient(to right, #f7f9fb 20%, rgba(247, 249, 251, 0));
-}
-
-.sliderWrapper::after {
-    right: 0;
-    background: linear-gradient(to left, #f7f9fb 20%, rgba(247, 249, 251, 0));
-}
+/* Edge fades removed — the white overlay at each end read as a shade sitting
+   on top of the brand cards rather than as a soft edge. */
 
 .emblaViewport {
     overflow: hidden;

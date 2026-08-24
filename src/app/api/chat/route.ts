@@ -130,7 +130,7 @@ KNOWLEDGE (Business Info):
   - Abu Dhabi: Muroor Road
   - Sharjah: Al Majaz and Industrial Area
   - Al Ain: Industrial Area
-- Contact: Phone/WhatsApp +971 4 288 2777 | Email: info@mariot-group.com
+- Contact: Phone/WhatsApp +971 4 288 2777 | Email: support@mariot-group.com
 - Website: mariotstore.com
 - Shipping: Free shipping on orders over AED 1,500 across the UAE. Standard delivery is 4-7 working days.
 - VAT: Listed prices are exclusive of VAT; 5% UAE VAT is added at checkout.
@@ -161,7 +161,7 @@ const SYSTEM_PROMPT_AR = `أنت خبير مطابخ ماريوت — المسا
   - أبوظبي: شارع المرور
   - الشارقة: المجاز والمنطقة الصناعية
   - العين: المنطقة الصناعية
-- التواصل: هاتف/واتساب 2777 288 4 971+ | البريد الإلكتروني: info@mariot-group.com
+- التواصل: هاتف/واتساب 2777 288 4 971+ | البريد الإلكتروني: support@mariot-group.com
 - الموقع الإلكتروني: mariotstore.com
 - الشحن: شحن مجاني للطلبات فوق 1,500 درهم داخل الإمارات. التوصيل القياسي خلال 4-7 أيام عمل.
 - الضريبة: ضريبة القيمة المضافة 5% مشمولة في الأسعار المعلنة.
