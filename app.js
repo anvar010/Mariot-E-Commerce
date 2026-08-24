@@ -153,7 +153,10 @@ app.use(cors({
 // Global Rate Limiting
 const globalLimiter = rateLimit({
                                                                                                                                                                                                                                                                                                                                 windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // Limit each IP to 1000 requests per windowMs
+    // Raised from 1000. A single admin page fires many API calls, and staff behind
+    // one office IP consume this collectively; it is a blanket abuse ceiling, not a
+    // per-user quota.
+    max: 3000, // per IP per 15 minutes
     message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes.' },
     standardHeaders: true,
     legacyHeaders: false,

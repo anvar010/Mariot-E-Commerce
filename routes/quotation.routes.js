@@ -6,7 +6,10 @@ const router = express.Router();
 
 const quotationLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 10, // Limit each IP to 10 requests per windowMs
+    // Raised from 10. Limits are per IP, and a showroom or office shares one, so a
+    // busy afternoon of legitimate quotations was hitting the old ceiling between
+    // them. Still bounded, so an abusive client is capped.
+    max: 200, // per IP per hour
     message: { success: false, message: 'Too many quotation requests from this IP, please try again after an hour' }
 });
 

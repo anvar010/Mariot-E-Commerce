@@ -8,7 +8,8 @@ const router = express.Router();
 // Checkout rate limiter — prevents order spam
 const checkoutLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 20, // Limit each IP to 20 orders per hour
+    // Raised from 20 for the same shared-IP reason as quotations.
+    max: 60, // per IP per hour
     message: { success: false, message: 'Too many orders placed from this IP, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,

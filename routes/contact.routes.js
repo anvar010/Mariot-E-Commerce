@@ -11,7 +11,9 @@ const { protect, authorize } = require('../middlewares/auth.middleware');
 
 const contactLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 5, // Limit each IP to 5 requests per windowMs
+    // Raised from 5. Still tight, because this is a public unauthenticated form
+    // and the main thing it attracts is spam.
+    max: 20, // per IP per hour
     message: { success: false, message: 'Too many messages sent from this IP, please try again after an hour' }
 });
 
