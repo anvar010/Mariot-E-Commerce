@@ -198,6 +198,13 @@ app.use(['/uploads', '/product_images'], (req, res, next) => {
     const referer = req.get('referer');
     if (referer && !isAllowedReferer(referer)) {
         console.warn(`[hotlink] Refused ${req.originalUrl} for referer: ${referer}`);
+        // Explicitly never let a refusal be cached. The Vary: Referer above is meant to
+        // keep one visitor's answer from being served to another, but Hostinger's CDN
+        // strips Vary from these responses — and the allowed answer is cached for a
+        // year. Without this a single hotlinker's 403 can occupy the cache entry for an
+        // image and be handed to our own shoppers, whose <img> then fails: brand logos
+        // silently degrade to the brand name in text on the product cards.
+        res.setHeader('Cache-Control', 'no-store');
         return res.status(403).json({ success: false, message: 'Hotlinking is not allowed.' });
     }
 
