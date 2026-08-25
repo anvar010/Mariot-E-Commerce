@@ -27,9 +27,18 @@ const BrandsBrowse = ({ initialBrands = [] }: BrandsBrowseProps) => {
         loop: false,
         direction: isRtl ? 'rtl' : 'ltr',
         align: 'start',
-        skipSnaps: false,
-        dragFree: false,
         containScroll: 'trimSnaps',
+        // Touch scrolling is free with momentum: a swipe carries as far as it was
+        // thrown instead of snapping exactly one tile forward, which is what made
+        // the strip feel like it moved one item at a time on a phone. skipSnaps lets
+        // a fast flick pass several tiles rather than braking at the next one.
+        dragFree: true,
+        skipSnaps: true,
+        // Desktop keeps precise snapping — navigation there is the arrow buttons,
+        // and free drag makes them land off-grid.
+        breakpoints: {
+            '(min-width: 768px)': { dragFree: false, skipSnaps: false },
+        },
     });
 
     useEffect(() => {
