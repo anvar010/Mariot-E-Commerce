@@ -5,6 +5,7 @@ import Footer from '@/components/Layout/Footer/Footer';
 import ProductDetail from '@/components/Product/ProductDetail/ProductDetail';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import { localeAlternates, ogLocale } from '@/lib/seo';
+import { fetchJsonWithRetry } from '@/utils/readJson';
 
 const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://mariot-backend.onrender.com/api/v1';
 
@@ -49,14 +50,14 @@ export async function generateMetadata(props: { params: Promise<{ slug: string |
     };
 
     try {
-        const res = await fetch(`${API_BASE_URL_SERVER}/products/${encodeURIComponent(id)}`, {
-            next: { revalidate: 300 },
-            signal: AbortSignal.timeout(8000),
-        });
-        if (!res.ok) {
-            console.error(`[generateMetadata] Product fetch failed: ${res.status} for slug "${id}" from ${API_BASE_URL_SERVER}`);
-        }
-        const data = await res.json();
+        // Retries once when the response isn't even JSON — the CDN in front of the API
+        // intermittently answers a render with an HTML 403. Falls through to the
+        // slug-derived metadata below rather than throwing if it fails twice.
+        const data = await fetchJsonWithRetry(
+            `${API_BASE_URL_SERVER}/products/${encodeURIComponent(id)}`,
+            { next: { revalidate: 300 }, signal: AbortSignal.timeout(8000) },
+            `product metadata "${id}"`,
+        );
 
         if (data.success && data.data) {
             const product = data.data;
@@ -148,11 +149,11 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
     let jsonLd = null;
 
     try {
-        const res = await fetch(`${API_BASE_URL_SERVER}/products/${encodeURIComponent(slug)}`, {
-            next: { revalidate: 60 },
-            signal: AbortSignal.timeout(8000),
-        });
-        const data = await res.json();
+        const data = await fetchJsonWithRetry(
+            `${API_BASE_URL_SERVER}/products/${encodeURIComponent(slug)}`,
+            { next: { revalidate: 60 }, signal: AbortSignal.timeout(8000) },
+            `product JSON-LD "${slug}"`,
+        );
 
         if (data.success && data.data) {
             const product = data.data;

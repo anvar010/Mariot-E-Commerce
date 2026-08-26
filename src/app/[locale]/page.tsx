@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic';
 import Header from '@/components/Layout/Header/Header';
 import Hero from '@/components/Home/Hero/Hero';
+import { readJson } from '@/utils/readJson';
 
 // Above-fold sections — SSR but CSS is code-split (not render-blocking)
 const BrandsBrowse = dynamic(() => import('@/components/Home/BrandsBrowse/BrandsBrowse'), { ssr: true });
@@ -30,12 +31,14 @@ async function getHomeData(locale: string) {
             fetch(`${API_BASE_URL_SERVER}/brands?all=1`, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) })
         ]);
 
-        const cmsData = await cmsRes.json();
-        const limitedData = await limitedRes.json();
-        const weeklyData = await weeklyRes.json();
-        const newArrivalsData = await newArrivalsRes.json();
-        const categoriesData = await categoriesRes.json();
-        const brandsData = await brandsRes.json();
+        // One bad response used to take the whole home page down; each section now
+        // degrades on its own.
+        const cmsData = await readJson(cmsRes, 'home cms');
+        const limitedData = await readJson(limitedRes, 'home limited offers');
+        const weeklyData = await readJson(weeklyRes, 'home weekly deals');
+        const newArrivalsData = await readJson(newArrivalsRes, 'home new arrivals');
+        const categoriesData = await readJson(categoriesRes, 'home categories');
+        const brandsData = await readJson(brandsRes, 'home brands');
 
         let heroSlides = [];
         let heroPosters = [];
@@ -77,7 +80,7 @@ async function getHomeData(locale: string) {
                 let products = [];
                 try {
                     const res = await fetch(`${API_BASE_URL_SERVER}/products?category=${encodeURIComponent(c.slug)}&limit=12`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(8000) });
-                    const data = await res.json();
+                    const data = await readJson(res, `home section "${c.slug}"`);
                     products = data.success ? data.data : [];
                 } catch {
                     products = [];

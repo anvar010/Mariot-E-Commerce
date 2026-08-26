@@ -8,6 +8,7 @@ import TodayOffersPage from '@/components/Offers/TodayOffersPage';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import Loader from '@/components/shared/Loader/Loader';
 import { pageMetadata } from '@/lib/seo';
+import { readJson } from '@/utils/readJson';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
     const params = await props.params;
@@ -80,9 +81,9 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
             fetch(categoriesUrl, categoryOpts)
         ]);
 
-        const productsData = await productsRes.json();
-        const brandsData = await brandsRes.json();
-        const categoriesData = await categoriesRes.json();
+        const productsData = await readJson(productsRes, 'shop products');
+        const brandsData = await readJson(brandsRes, 'shop brands');
+        const categoriesData = await readJson(categoriesRes, 'shop categories');
 
         const allFetchedCategories = categoriesData.success ? categoriesData.data : [];
 
