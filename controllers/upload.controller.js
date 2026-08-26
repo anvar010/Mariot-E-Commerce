@@ -32,14 +32,26 @@ exports.uploadImage = async (req, res, next) => {
             const optimizedPath = path.join(parsedPath.dir, optimizedFilename);
 
             const maxWidth = getMaxWidthForFolder(req.query.folder);
-            let pipeline = sharp(originalPath);
+
+            // Read the source into memory rather than letting sharp stream from the
+            // path. A .webp upload already carries the target extension, so
+            // optimizedPath equals originalPath and sharp refuses outright with
+            // "Cannot use same file for input and output" — which is why .webp uploads
+            // were failing. With a buffer there is no input file handle at all, so
+            // writing back over the same path is safe on every platform.
+            // Uploads are capped at 5MB by the multer limits, so this stays bounded.
+            const input = await fsPromises.readFile(originalPath);
+            let pipeline = sharp(input);
             if (maxWidth) {
                 pipeline = pipeline.resize({ width: maxWidth, withoutEnlargement: true });
             }
             await pipeline.webp({ quality: 80, effort: 4 }).toFile(optimizedPath);
 
-            // Delete the original file
-            await fsPromises.unlink(originalPath).catch(err => console.error('Error deleting original image:', err));
+            // Only remove the original when the optimized file is a different name;
+            // otherwise it has just been overwritten in place.
+            if (path.resolve(optimizedPath) !== path.resolve(originalPath)) {
+                await fsPromises.unlink(originalPath).catch(err => console.error('Error deleting original image:', err));
+            }
 
             filename = optimizedFilename;
         }
@@ -103,14 +115,20 @@ exports.uploadImages = async (req, res, next) => {
                     const optimizedPath = path.join(parsedPath.dir, optimizedFilename);
 
                     const maxWidth = getMaxWidthForFolder(req.query.folder);
-                    let pipeline = sharp(originalPath);
+
+                    // Buffer the source for the same reason as the single-file path: a
+                    // .webp upload makes input and output the same file, which sharp
+                    // rejects. No file handle is held, so writing back is safe.
+                    const input = await fsPromises.readFile(originalPath);
+                    let pipeline = sharp(input);
                     if (maxWidth) {
                         pipeline = pipeline.resize({ width: maxWidth, withoutEnlargement: true });
                     }
                     await pipeline.webp({ quality: 80, effort: 4 }).toFile(optimizedPath);
 
-                    // Delete original
-                    await fsPromises.unlink(originalPath).catch(err => console.error('Error deleting original image:', err));
+                    if (path.resolve(optimizedPath) !== path.resolve(originalPath)) {
+                        await fsPromises.unlink(originalPath).catch(err => console.error('Error deleting original image:', err));
+                    }
 
                     filename = optimizedFilename;
                 } catch (err) {
