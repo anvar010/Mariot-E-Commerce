@@ -161,9 +161,25 @@ const globalLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
-app.use('/api', globalLimiter);
+// ── RATE LIMITING DISABLED ────────────────────────────────────────────────────
+// Turned off at the owner's request. The limiter above is left defined but is no
+// longer mounted; uncomment this line to restore the blanket ceiling on /api.
+//
+// WARNING: with this off there is no global cap on requests per IP, so nothing
+// throttles scraping or a runaway client hammering the API.
+// app.use('/api', globalLimiter);
 
-// Specific Rate Limiter for sensitive routes
+// ── RATE LIMITING DISABLED ────────────────────────────────────────────────────
+// Turned off at the owner's request. A passthrough keeps every call site working
+// unchanged; to restore protection, delete the passthrough and uncomment the
+// original definition below it.
+//
+// WARNING: with this off there is no server-side ceiling on repeated requests to
+// the auth routes — login, registration and password reset. On a public
+// storefront that leaves credential stuffing and password guessing unthrottled.
+const authLimiter = (req, res, next) => next();
+
+/* original definition, kept for restoring:
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 30, // Limit each IP to 30 login/register requests per 15 minutes
@@ -171,6 +187,7 @@ const authLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
+*/
 
 // Cookie parser
 app.use(cookieParser());

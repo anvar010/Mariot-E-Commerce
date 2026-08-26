@@ -6,14 +6,23 @@ const { protect, authorize } = require('../middlewares/auth.middleware');
 const router = express.Router();
 
 // Checkout rate limiter — prevents order spam
+// ── RATE LIMITING DISABLED ────────────────────────────────────────────────────
+// Turned off at the owner's request. Delete the passthrough and uncomment the
+// block below to restore protection.
+//
+// WARNING: this capped order creation per IP, which is also what limited repeated
+// card attempts through checkout.
+const checkoutLimiter = (req, res, next) => next();
+
+/* original definition, kept for restoring:
 const checkoutLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    // Raised from 20 for the same shared-IP reason as quotations.
     max: 60, // per IP per hour
     message: { success: false, message: 'Too many orders placed from this IP, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
+*/
 
 // Webhooks - must be BEFORE protect middleware (called server-to-server)
 router.post('/webhook/tabby', tabbyWebhook);

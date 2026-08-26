@@ -9,13 +9,21 @@ const {
 const rateLimit = require('express-rate-limit');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 
+// ── RATE LIMITING DISABLED ────────────────────────────────────────────────────
+// Turned off at the owner's request. Delete the passthrough and uncomment the
+// block below to restore protection.
+//
+// WARNING: this is a public, unauthenticated form. With no limit it can be
+// submitted continuously, which in practice means spam straight to the inbox.
+const contactLimiter = (req, res, next) => next();
+
+/* original definition, kept for restoring:
 const contactLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    // Raised from 5. Still tight, because this is a public unauthenticated form
-    // and the main thing it attracts is spam.
     max: 20, // per IP per hour
     message: { success: false, message: 'Too many messages sent from this IP, please try again after an hour' }
 });
+*/
 
 // @route   POST /api/v1/contact
 // @desc    Save contact form submission

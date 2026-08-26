@@ -7,11 +7,21 @@ const validate = require('../middlewares/validate.middleware');
 
 const router = express.Router();
 
+// ── RATE LIMITING DISABLED ────────────────────────────────────────────────────
+// Turned off at the owner's request. Passthrough keeps the call sites unchanged;
+// delete it and uncomment the block below to restore protection.
+//
+// WARNING: this guarded login, registration, forgot-password and reset-password.
+// With it off, those endpoints accept unlimited attempts per IP.
+const authLimiter = (req, res, next) => next();
+
+/* original definition, kept for restoring:
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 30, // Limit each IP to 30 requests per windowMs
     message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }
 });
+*/
 
 router.post('/register', authLimiter, [
     body('name').notEmpty().withMessage('Name is required'),
