@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { reconcileStripePayment } = require('./order.controller');
 
 // @desc    Get dashboard stats
 // @route   GET /api/v1/admin/stats
@@ -389,6 +390,24 @@ exports.getAllOrders = async (req, res, next) => {
             JOIN users u ON o.user_id = u.id 
             ORDER BY o.created_at DESC
         `);
+
+        // This list is where staff actually watch payments land, so a card order the
+        // Stripe webhook never reached would sit here reading "pending" long after the
+        // customer was charged. Ask Stripe about the recent pending ones and correct
+        // them in place. Read-only against Stripe, and only orders still pending with a
+        // PaymentIntent cost a call — capped at the ten newest, since this endpoint
+        // returns every order ever placed and older pending ones are not what anyone is
+        // watching for.
+        const stale = orders
+            .filter(o => o.payment_status === 'pending' && o.stripe_payment_intent_id)
+            .slice(0, 10);
+        if (stale.length > 0) {
+            const fixed = new Map(
+                (await Promise.all(stale.map(reconcileStripePayment))).map(o => [o.id, o])
+            );
+            orders.forEach((o, i) => { if (fixed.has(o.id)) orders[i] = fixed.get(o.id); });
+        }
+
         res.json({ success: true, data: orders });
     } catch (error) {
         next(error);

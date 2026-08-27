@@ -584,6 +584,10 @@ const reconcileStripePayment = async (order) => {
     return order;
 };
 
+// Shared with the admin order list, which is where staff actually watch payments
+// land — that view must self-heal too, not just the customer's own history.
+exports.reconcileStripePayment = reconcileStripePayment;
+
 exports.getMyOrders = async (req, res, next) => {
     try {
         const orders = await Order.findByUserId(req.user.id);

@@ -152,7 +152,7 @@ app.use(cors({
 
 // Global Rate Limiting
 const globalLimiter = rateLimit({
-                                                                                                                                                                                                                                                                                                                                windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000, // 15 minutes
     // Raised from 1000. A single admin page fires many API calls, and staff behind
     // one office IP consume this collectively; it is a blanket abuse ceiling, not a
     // per-user quota.
