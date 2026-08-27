@@ -544,9 +544,58 @@ exports.tabbyWebhook = async (req, res) => {
     }
 };
 
+// Self-healing safety net for a webhook that never arrived.
+//
+// An order's payment_status is set solely by the Stripe webhook. If that delivery
+// fails — a deploy restart, a network blip, or the CDN in front of this API
+// answering with one of its intermittent HTML 403s — the customer has been charged
+// and the order sits at "pending" indefinitely, with nobody the wiser until they
+// complain.
+//
+// So whenever a pending order is read back and we hold a PaymentIntent id for it,
+// ask Stripe what actually happened and correct the record. Read-only against
+// Stripe, idempotent, and costs one API call only for orders that are still
+// pending — a paid order never reaches this.
+const reconcileStripePayment = async (order) => {
+    if (!order || !stripe) return order;
+    if (order.payment_status !== 'pending') return order;
+    if (!order.stripe_payment_intent_id) return order;
+
+    try {
+        const pi = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id);
+
+        if (pi.status === 'succeeded') {
+            console.warn(`[Reconcile] Order #${order.id} was paid (${pi.id}) but still pending — webhook never landed. Marking paid.`);
+            await Order.updatePaymentStatus(order.id, 'paid');
+            return { ...order, payment_status: 'paid' };
+        }
+
+        // canceled is terminal; requires_payment_method after a failed confirm means
+        // the charge was declined. Anything else is still legitimately in flight.
+        if (pi.status === 'canceled') {
+            console.warn(`[Reconcile] Order #${order.id} PaymentIntent ${pi.id} canceled — marking failed.`);
+            await Order.updatePaymentStatus(order.id, 'failed');
+            return { ...order, payment_status: 'failed' };
+        }
+    } catch (e) {
+        // Never let reconciliation break the read it is attached to.
+        console.error(`[Reconcile] Could not check ${order.stripe_payment_intent_id}: ${e.message}`);
+    }
+    return order;
+};
+
 exports.getMyOrders = async (req, res, next) => {
     try {
         const orders = await Order.findByUserId(req.user.id);
+
+        // Only the pending ones cost an API call, and only the five most recent:
+        // an older pending order is not something a shopper is waiting on.
+        const pending = orders.filter(o => o.payment_status === 'pending' && o.stripe_payment_intent_id).slice(0, 5);
+        if (pending.length > 0) {
+            const fixed = new Map((await Promise.all(pending.map(reconcileStripePayment))).map(o => [o.id, o]));
+            orders.forEach((o, i) => { if (fixed.has(o.id)) orders[i] = fixed.get(o.id); });
+        }
+
         res.json({ success: true, data: orders });
     } catch (error) {
         next(error);
@@ -565,7 +614,7 @@ exports.getOrder = async (req, res, next) => {
             return res.status(403).json({ success: false, message: 'Not authorized to view this order' });
         }
 
-        res.json({ success: true, data: order });
+        res.json({ success: true, data: await reconcileStripePayment(order) });
     } catch (error) {
         next(error);
     }
