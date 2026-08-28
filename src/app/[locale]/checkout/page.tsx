@@ -1732,6 +1732,9 @@ function CheckoutContent() {
             <CardManagerModal
                 open={cardManagerOpen}
                 onClose={() => setCardManagerOpen(false)}
+                // With nothing saved yet the list screen is an empty box with one
+                // button on it, so go straight to the form the shopper came for.
+                initialView={savedCards.length === 0 ? 'add' : 'list'}
                 isRtl={locale === 'ar'}
                 labels={cardLabels}
                 onChange={(cards) => {

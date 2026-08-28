@@ -47,6 +47,14 @@ interface Props {
     onClose: () => void;
     /** Fires whenever the card list changes, so the parent can refresh its copy. */
     onChange?: (cards: SavedCard[]) => void;
+    /**
+     * Which screen to open on. A host that already shows its own card list — the
+     * profile — has a row's edit and delete controls right there, so clicking one
+     * should land on that action, not on a second copy of the list.
+     */
+    initialView?: View;
+    /** The card `initialView` acts on, for 'edit' and 'confirmDelete'. */
+    initialCard?: SavedCard | null;
     labels: CardManagerLabels;
     isRtl?: boolean;
 }
@@ -61,7 +69,7 @@ const elementStyle = {
     invalid: { color: '#dc2626' },
 };
 
-const CardManagerModalInner: React.FC<Props> = ({ open, onClose, onChange, labels, isRtl }) => {
+const CardManagerModalInner: React.FC<Props> = ({ open, onClose, onChange, initialView, initialCard, labels, isRtl }) => {
     const stripe = useStripe();
     const elements = useElements();
 
@@ -103,9 +111,24 @@ const CardManagerModalInner: React.FC<Props> = ({ open, onClose, onChange, label
 
     useEffect(() => {
         if (!open) return;
-        setView('list');
         setError(null);
+
+        // Open straight onto the requested action, prefilling the edit form from the
+        // card the host already has in hand rather than waiting on the refresh below.
+        if (initialCard && (initialView === 'edit' || initialView === 'confirmDelete')) {
+            setTarget(initialCard);
+            setEditName(initialCard.name || '');
+            setEditMonth(initialCard.exp_month ? String(initialCard.exp_month).padStart(2, '0') : '');
+            setEditYear(initialCard.exp_year ? String(initialCard.exp_year) : '');
+            setView(initialView);
+        } else {
+            setView(initialView || 'list');
+        }
+
         refresh();
+        // initialView/initialCard are read once per open on purpose: changing them
+        // mid-flow would yank the shopper off the screen they are working on.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, refresh]);
 
     // Escape closes, and the page behind must not scroll while the sheet is open.

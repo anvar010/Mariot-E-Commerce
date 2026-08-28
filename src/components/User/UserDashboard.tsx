@@ -50,7 +50,7 @@ import EmailOtpModal from '@/components/shared/EmailOtpModal/EmailOtpModal';
 import { useSearchParams } from 'next/navigation';
 import SavedCards from '@/components/Payment/SavedCards';
 import CardManagerModal from '@/components/Payment/CardManagerModal';
-import { SavedCard, listCards } from '@/utils/paymentMethodsApi';
+import { SavedCard, listCards, setDefaultCard } from '@/utils/paymentMethodsApi';
 
 const UserDashboard = () => {
     const t = useTranslations('userDashboard');
@@ -79,6 +79,9 @@ const UserDashboard = () => {
     const [cardsLoading, setCardsLoading] = useState(false);
     const [cardsError, setCardsError] = useState<string | null>(null);
     const [cardManagerOpen, setCardManagerOpen] = useState(false);
+    const [cardManagerView, setCardManagerView] = useState<'list' | 'add' | 'edit' | 'confirmDelete'>('list');
+    const [cardManagerTarget, setCardManagerTarget] = useState<SavedCard | null>(null);
+    const [cardBusyId, setCardBusyId] = useState<string | null>(null);
 
     useEffect(() => {
         if (tabParam) {
@@ -564,6 +567,29 @@ const UserDashboard = () => {
         'Personal Info': t('profile.personalInfo'),
         'Bussiness Info': t('profile.businessInfo'),
         'Sign-in Info': t('profile.signInInfo')
+    };
+
+    // The profile shows its own card rows, so a row's controls open the manager
+    // directly on that action instead of on a second copy of the list.
+    const openCardManager = (view: 'list' | 'add' | 'edit' | 'confirmDelete', card: SavedCard | null = null) => {
+        setCardManagerView(view);
+        setCardManagerTarget(card);
+        setCardManagerOpen(true);
+    };
+
+    // Making a card the default needs no form, so it happens in place rather than
+    // sending the shopper through a dialog to press one button.
+    const handleCardSetDefault = async (card: SavedCard) => {
+        setCardBusyId(card.id);
+        setCardsError(null);
+        try {
+            await setDefaultCard(card.id);
+            setSavedCards(await listCards());
+        } catch (e: any) {
+            setCardsError(e.message || 'Could not update your default card.');
+        } finally {
+            setCardBusyId(null);
+        }
     };
 
     const navItems = [
@@ -1783,7 +1809,7 @@ const UserDashboard = () => {
                         <button
                             type="button"
                             className={styles.manageCardsBtn}
-                            onClick={() => setCardManagerOpen(true)}
+                            onClick={() => openCardManager('add')}
                         >
                             <Plus size={15} />
                             {t('payments.cards.addCard')}
@@ -1796,9 +1822,10 @@ const UserDashboard = () => {
                             loading={cardsLoading}
                             error={cardsError}
                             mode="manage"
-                            onEdit={() => setCardManagerOpen(true)}
-                            onDelete={() => setCardManagerOpen(true)}
-                            onSetDefault={() => setCardManagerOpen(true)}
+                            busyId={cardBusyId}
+                            onEdit={(card) => openCardManager('edit', card)}
+                            onDelete={(card) => openCardManager('confirmDelete', card)}
+                            onSetDefault={handleCardSetDefault}
                             labels={cardLabels}
                         />
                     </div>
@@ -1807,6 +1834,8 @@ const UserDashboard = () => {
                         open={cardManagerOpen}
                         onClose={() => setCardManagerOpen(false)}
                         onChange={setSavedCards}
+                        initialView={cardManagerView}
+                        initialCard={cardManagerTarget}
                         labels={cardLabels}
                         isRtl={locale === 'ar'}
                     />
