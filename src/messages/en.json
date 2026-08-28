@@ -1213,7 +1213,9 @@
       "adding": "Adding…",
       "removing": "Removing…",
       "done": "Done",
-      "cardExpiredError": "That card has expired. Please choose another or add a new one."
+      "cardExpiredError": "That card has expired. Please choose another or add a new one.",
+      "expressCheckout": "Express checkout",
+      "orPayAnotherWay": "Or pay another way"
     }
   },
   "success": {

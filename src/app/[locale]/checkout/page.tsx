@@ -47,6 +47,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import SavedCards from '@/components/Payment/SavedCards';
 import CardManagerModal from '@/components/Payment/CardManagerModal';
+import WalletExpressCheckout from '@/components/Payment/WalletExpressCheckout';
 import { SavedCard, listCards } from '@/utils/paymentMethodsApi';
 import OtpVerifyModal from '@/components/shared/OtpVerifyModal/OtpVerifyModal';
 import AddressBookSheet from '@/components/Checkout/AddressBookSheet';
@@ -518,6 +519,75 @@ function CheckoutContent() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    // One payload builder for both routes into checkout: the Place Order button
+    // and the wallet sheet. They must send the server an identical order — the only
+    // difference is that a wallet supplies the payment method itself, so the
+    // saved-card fields do not apply.
+    const buildOrderData = (overrides: Record<string, any> = {}) => ({
+        items: cartItems.map(item => ({
+            product_id: item.id,
+            variant_id: item.variant_id ?? null,
+            quantity: item.quantity,
+            price: item.price,
+            custom_dimensions: item.custom_dimensions || null,
+            custom_label: item.variant_label || null
+        })),
+        shipping_address_id: selectedAddressId || 1, // Use selected if exists, 1 is placeholder
+        payment_method: paymentMethod,
+        // Either charge a card the shopper already saved, or offer to keep the
+        // one being entered now. Never both.
+        payment_method_id: paymentMethod === 'card' ? selectedCardId : null,
+        save_card: paymentMethod === 'card' && !selectedCardId && saveCard,
+        // Sent for the record; the server re-quotes rather than trusting this price.
+        shipping_method: selectedShippingMethod?.code || null,
+        shipping_carrier: selectedShippingMethod?.carrier || null,
+        shipping_cost: shippingCost,
+        points_to_use: pointsToUse,
+        discount_amount: discountAmount + pointsDiscountAmount,
+        coupon_id: appliedCoupon?.id,
+        billing_details: {
+            ...form,
+            name: (user && userAddresses.length > 0 && receiverName.trim())
+                ? receiverName.trim()
+                : `${form.firstName} ${form.lastName}`.trim(),
+            phone: (user && userAddresses.length > 0 && receiverPhone.trim())
+                ? receiverPhone.trim()
+                : form.phone
+        },
+        locale: locale,
+        ...overrides,
+    });
+
+    // ── Wallet checkout (Apple Pay / Google Pay) ─────────────────────────────
+    // The wallet sheet has already collected the card by the time this runs, so
+    // the order is created here and its PaymentIntent handed straight back for
+    // confirmation. Nothing about the card form is involved.
+    const walletValidate = () => {
+        if (cartItems.length === 0) return n('orderFailed');
+        if (!selectedShipping) return t('selectShippingFirst');
+        return null;
+    };
+
+    const walletCreateOrder = async () => {
+        const res = await fetch(`${API_BASE_URL}/orders`, {
+            credentials: 'include',
+            method: 'POST',
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            // A wallet always pays by card, whatever tab happens to be selected, and
+            // never saves the card: the shopper keeps it in their wallet already.
+            body: JSON.stringify(buildOrderData({
+                payment_method: 'card',
+                payment_method_id: null,
+                save_card: false,
+            })),
+        });
+        const data = await res.json();
+        if (!data.success || !data.client_secret) {
+            throw new Error(data.message || n('orderFailed'));
+        }
+        return { clientSecret: data.client_secret, orderId: data.data?.id };
+    };
+
     const handlePlaceOrder = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -574,39 +644,7 @@ function CheckoutContent() {
                 }
             }
 
-            const orderData = {
-                items: cartItems.map(item => ({
-                    product_id: item.id,
-                    variant_id: item.variant_id ?? null,
-                    quantity: item.quantity,
-                    price: item.price,
-                    custom_dimensions: item.custom_dimensions || null,
-                    custom_label: item.variant_label || null
-                })),
-                shipping_address_id: selectedAddressId || 1, // Use selected if exists, 1 is placeholder
-                payment_method: paymentMethod,
-                // Either charge a card the shopper already saved, or offer to keep the
-                // one being entered now. Never both.
-                payment_method_id: paymentMethod === 'card' ? selectedCardId : null,
-                save_card: paymentMethod === 'card' && !selectedCardId && saveCard,
-                // Sent for the record; the server re-quotes rather than trusting this price.
-                shipping_method: selectedShippingMethod?.code || null,
-                shipping_carrier: selectedShippingMethod?.carrier || null,
-                shipping_cost: shippingCost,
-                points_to_use: pointsToUse,
-                discount_amount: discountAmount + pointsDiscountAmount,
-                coupon_id: appliedCoupon?.id,
-                billing_details: {
-                    ...form,
-                    name: (user && userAddresses.length > 0 && receiverName.trim())
-                        ? receiverName.trim()
-                        : `${form.firstName} ${form.lastName}`.trim(),
-                    phone: (user && userAddresses.length > 0 && receiverPhone.trim())
-                        ? receiverPhone.trim()
-                        : form.phone
-                },
-                locale: locale
-            };
+            const orderData = buildOrderData();
 
             const res = await fetch(`${API_BASE_URL}/orders`, {
                 credentials: "include",
@@ -992,6 +1030,25 @@ function CheckoutContent() {
                                 <div className={styles.stepNumber}>2</div>
                                 <h2 className={styles.sectionTitle}>{t('paymentMethod')}</h2>
                             </div>
+
+                            {/* Apple Pay / Google Pay. Renders nothing unless the visitor
+                                actually has a usable wallet, so it costs nothing when it
+                                cannot be used. Sits above the payment tabs because a wallet
+                                skips every field below it. */}
+                            <WalletExpressCheckout
+                                amount={finalTotal}
+                                validate={walletValidate}
+                                onCreateOrder={walletCreateOrder}
+                                onSuccess={async (orderId) => {
+                                    await clearCart();
+                                    showNotification(n('orderSuccess'));
+                                    router.push(`/checkoutsuccess?orderId=${orderId || ''}`);
+                                }}
+                                onError={(msg) => showNotification(msg, 'error')}
+                                heading={t('cards.expressCheckout')}
+                                dividerText={t('cards.orPayAnotherWay')}
+                                isRtl={locale === 'ar'}
+                            />
 
                             <div className={styles.paymentGrid}>
                                 {/* Card Payment */}
