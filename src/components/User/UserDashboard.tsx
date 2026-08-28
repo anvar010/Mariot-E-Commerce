@@ -187,13 +187,13 @@ const UserDashboard = () => {
         if (activeSection === 'quotations' && user) {
             fetchQuotations();
         }
-    }, [activeSection, user]);
+    }, [activeSection, user?.id]);
 
     useEffect(() => {
         if (activeSection === 'myRewards' && user) {
             fetchRewardHistory();
         }
-    }, [activeSection, user]);
+    }, [activeSection, user?.id]);
 
     const fetchRewardHistory = async () => {
         setLoadingRewardHistory(true);

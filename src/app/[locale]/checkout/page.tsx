@@ -447,7 +447,7 @@ function CheckoutContent() {
             .catch(() => { if (!cancelled) setSavedCards([]); })
             .finally(() => { if (!cancelled) setCardsLoading(false); });
         return () => { cancelled = true; };
-    }, [user]);
+    }, [user?.id]);
 
     useEffect(() => {
         if (paymentMethod === 'tabby' && typeof window !== 'undefined' && (window as any).TabbyPromo) {

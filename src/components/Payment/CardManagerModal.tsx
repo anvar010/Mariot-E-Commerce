@@ -14,7 +14,7 @@
  *
  * Must be rendered inside an <Elements> provider.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ArrowLeft, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -75,19 +75,27 @@ const CardManagerModal: React.FC<Props> = ({ open, onClose, onChange, labels, is
     const [editMonth, setEditMonth] = useState('');
     const [editYear, setEditYear] = useState('');
 
+    // onChange lives in a ref rather than in refresh's dependencies. Callers pass an
+    // inline arrow, so its identity changes on every parent render; depending on it
+    // directly gave refresh a new identity each time, which re-fired the effect
+    // below, which called setLoading(true), which re-rendered the parent — a loop
+    // that left the modal on its skeleton forever and hammered the API.
+    const onChangeRef = useRef(onChange);
+    useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+
     const refresh = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
             const next = await listCards();
             setCards(next);
-            onChange?.(next);
+            onChangeRef.current?.(next);
         } catch (e: any) {
             setError(e.message || 'Could not load your saved cards.');
         } finally {
             setLoading(false);
         }
-    }, [onChange]);
+    }, []);
 
     useEffect(() => {
         if (!open) return;
