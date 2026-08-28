@@ -1,0 +1,278 @@
+/* Saved cards — shared by the checkout selector and the profile manager. */
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ── one card row ─────────────────────────────────────────────────────────── */
+.card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    text-align: start;
+    font-family: inherit;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.selectable {
+    cursor: pointer;
+}
+
+.selectable:hover:not(.selected):not(.disabled) {
+    border-color: #cbd5e1;
+    background: #fafbfc;
+}
+
+.selected {
+    border-color: #1e293b;
+    box-shadow: 0 0 0 3px rgba(30, 41, 59, .08);
+}
+
+.disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* ── radio dot ────────────────────────────────────────────────────────────── */
+.radio {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #cbd5e1;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    transition: border-color .15s ease;
+}
+
+.selected .radio {
+    border-color: #1e293b;
+}
+
+.radioDot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #1e293b;
+}
+
+/* ── brand mark ───────────────────────────────────────────────────────────── */
+.brand {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+}
+
+.brandVisa {
+    background: #1a1f71;
+    color: #fff;
+}
+
+.brandMastercard {
+    background: #1a1a1a;
+    color: #ff5f00;
+}
+
+.brandAmex {
+    background: #006fcf;
+    color: #fff;
+}
+
+/* ── details ──────────────────────────────────────────────────────────────── */
+.details {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.numberRow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.dots {
+    letter-spacing: 2px;
+    color: #94a3b8;
+}
+
+.metaRow {
+    margin-top: 3px;
+    font-size: 12.5px;
+    color: #64748b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.badgeExpired {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* ── row actions (manage mode) ────────────────────────────────────────────── */
+.actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.iconBtn {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    color: #64748b;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+.iconBtn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.iconBtnDanger:hover {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.iconBtn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.linkBtn {
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #2563eb;
+    cursor: pointer;
+}
+
+.linkBtn:hover {
+    text-decoration: underline;
+}
+
+.linkBtn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+    text-decoration: none;
+}
+
+/* ── add / new-card row ───────────────────────────────────────────────────── */
+.addRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 13px 16px;
+    background: #fff;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 12px;
+    color: #334155;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: start;
+    transition: border-color .15s ease, background .15s ease;
+}
+
+.addRow:hover {
+    border-color: #94a3b8;
+    background: #fafbfc;
+}
+
+.addRowSelected {
+    border-style: solid;
+    border-color: #1e293b;
+    box-shadow: 0 0 0 3px rgba(30, 41, 59, .08);
+}
+
+/* ── empty + loading ──────────────────────────────────────────────────────── */
+.empty {
+    padding: 22px 16px;
+    text-align: center;
+    color: #64748b;
+    font-size: 13.5px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.skeleton {
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e8edf3 37%, #f1f5f9 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0 50%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
+}
+
+.error {
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    font-size: 13px;
+}
+
+/* ── RTL ──────────────────────────────────────────────────────────────────── */
+[dir='rtl'] .metaRow {
+    direction: rtl;
+}

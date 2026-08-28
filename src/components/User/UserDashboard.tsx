@@ -48,6 +48,13 @@ import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import OtpVerifyModal from '@/components/shared/OtpVerifyModal/OtpVerifyModal';
 import EmailOtpModal from '@/components/shared/EmailOtpModal/EmailOtpModal';
 import { useSearchParams } from 'next/navigation';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import SavedCards from '@/components/Payment/SavedCards';
+import CardManagerModal from '@/components/Payment/CardManagerModal';
+import { SavedCard, listCards } from '@/utils/paymentMethodsApi';
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || '');
 
 const UserDashboard = () => {
     const t = useTranslations('userDashboard');
@@ -69,6 +76,13 @@ const UserDashboard = () => {
 
     const [activeSection, setActiveSection] = useState('yourOrders');
     const [activeTab, setActiveTab] = useState('All Orders');
+
+    // Saved cards, loaded only when the Payments section is actually opened —
+    // every other section would be paying for a Stripe round trip it never uses.
+    const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
+    const [cardsLoading, setCardsLoading] = useState(false);
+    const [cardsError, setCardsError] = useState<string | null>(null);
+    const [cardManagerOpen, setCardManagerOpen] = useState(false);
 
     useEffect(() => {
         if (tabParam) {
@@ -162,6 +176,14 @@ const UserDashboard = () => {
 
     // Fetch quotations when that section becomes active
     useEffect(() => {
+        if (activeSection === 'payments' && user) {
+            setCardsLoading(true);
+            setCardsError(null);
+            listCards()
+                .then(setSavedCards)
+                .catch((e) => setCardsError(e.message || 'Could not load your saved cards.'))
+                .finally(() => setCardsLoading(false));
+        }
         if (activeSection === 'quotations' && user) {
             fetchQuotations();
         }
@@ -1737,9 +1759,65 @@ const UserDashboard = () => {
         }
 
         if (activeSection === 'payments') {
+            const cardLabels = {
+                newCard: t('payments.cards.useNewCard'), addCard: t('payments.cards.addCard'),
+                empty: t('payments.cards.noSavedCards'), defaultBadge: t('payments.cards.defaultBadge'),
+                expiredBadge: t('payments.cards.expiredBadge'), expires: t('payments.cards.expires'),
+                makeDefault: t('payments.cards.makeDefault'), edit: t('payments.cards.edit'),
+                remove: t('payments.cards.remove'), manageTitle: t('payments.cards.manageTitle'),
+                addTitle: t('payments.cards.addTitle'), editTitle: t('payments.cards.editTitle'),
+                removeTitle: t('payments.cards.removeTitle'), nameOnCard: t('payments.cards.nameOnCard'),
+                namePlaceholder: t('payments.cards.namePlaceholder'), cardNumber: t('payments.cards.cardNumber'),
+                expiry: t('payments.cards.expiry'), cvc: t('payments.cards.cvc'),
+                expiryMonth: t('payments.cards.expiryMonth'), expiryYear: t('payments.cards.expiryYear'),
+                setAsDefault: t('payments.cards.setAsDefault'), secureNote: t('payments.cards.secureNote'),
+                editHint: t('payments.cards.editHint'), removeConfirm: t('payments.cards.removeConfirm'),
+                removeConfirmSub: t('payments.cards.removeConfirmSub'), save: t('payments.cards.save'),
+                saving: t('payments.cards.saving'), cancel: t('payments.cards.cancel'),
+                add: t('payments.cards.add'), adding: t('payments.cards.adding'),
+                removing: t('payments.cards.removing'), done: t('payments.cards.done'),
+            };
+
             return (
                 <div className={styles.quotationsContainer}>
+                    {/* Saved cards sit above the transaction list: managing how you pay
+                        is a live action, the history below it is a record. */}
                     <div className={styles.sectionHeader}>
+                        <h2 className={styles.sectionTitle}>{t('payments.cards.savedCardsTitle')}</h2>
+                        <button
+                            type="button"
+                            className={styles.manageCardsBtn}
+                            onClick={() => setCardManagerOpen(true)}
+                        >
+                            <Plus size={15} />
+                            {t('payments.cards.addCard')}
+                        </button>
+                    </div>
+
+                    <div className={styles.savedCardsWrap}>
+                        <SavedCards
+                            cards={savedCards}
+                            loading={cardsLoading}
+                            error={cardsError}
+                            mode="manage"
+                            onEdit={() => setCardManagerOpen(true)}
+                            onDelete={() => setCardManagerOpen(true)}
+                            onSetDefault={() => setCardManagerOpen(true)}
+                            labels={cardLabels}
+                        />
+                    </div>
+
+                    <Elements stripe={stripePromise}>
+                        <CardManagerModal
+                            open={cardManagerOpen}
+                            onClose={() => setCardManagerOpen(false)}
+                            onChange={setSavedCards}
+                            labels={cardLabels}
+                            isRtl={locale === 'ar'}
+                        />
+                    </Elements>
+
+                    <div className={styles.sectionHeader} style={{ marginTop: '28px' }}>
                         <h2 className={styles.sectionTitle}>{t('payments.title')}</h2>
                         <span className={styles.itemCount}>{orders.length} {t('payments.transactions')}</span>
                     </div>

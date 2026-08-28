@@ -34,7 +34,8 @@ import {
     Building2,
     MoreHorizontal,
     BadgeCheck,
-    Plus
+    Plus,
+    Settings2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL } from '@/config';
@@ -44,6 +45,9 @@ import { resolveUrl } from '@/utils/resolveUrl';
 import styles from './checkout.module.css';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import SavedCards from '@/components/Payment/SavedCards';
+import CardManagerModal from '@/components/Payment/CardManagerModal';
+import { SavedCard, listCards } from '@/utils/paymentMethodsApi';
 import OtpVerifyModal from '@/components/shared/OtpVerifyModal/OtpVerifyModal';
 import AddressBookSheet from '@/components/Checkout/AddressBookSheet';
 
@@ -61,6 +65,23 @@ function CheckoutContent() {
     const common = useTranslations('common');
     const tProd = useTranslations('product');
     const otpT = useTranslations('otpModal');
+    const cardsT = useTranslations('checkout.cards');
+
+    // One bag of strings for both the inline list and the manager modal, so the
+    // two can never drift apart.
+    const cardLabels = {
+        newCard: cardsT('useNewCard'), addCard: cardsT('addCard'), empty: cardsT('noSavedCards'),
+        defaultBadge: cardsT('defaultBadge'), expiredBadge: cardsT('expiredBadge'), expires: cardsT('expires'),
+        makeDefault: cardsT('makeDefault'), edit: cardsT('edit'), remove: cardsT('remove'),
+        manageTitle: cardsT('manageTitle'), addTitle: cardsT('addTitle'), editTitle: cardsT('editTitle'),
+        removeTitle: cardsT('removeTitle'), nameOnCard: cardsT('nameOnCard'), namePlaceholder: cardsT('namePlaceholder'),
+        cardNumber: cardsT('cardNumber'), expiry: cardsT('expiry'), cvc: cardsT('cvc'),
+        expiryMonth: cardsT('expiryMonth'), expiryYear: cardsT('expiryYear'), setAsDefault: cardsT('setAsDefault'),
+        secureNote: cardsT('secureNote'), editHint: cardsT('editHint'),
+        removeConfirm: cardsT('removeConfirm'), removeConfirmSub: cardsT('removeConfirmSub'),
+        save: cardsT('save'), saving: cardsT('saving'), cancel: cardsT('cancel'),
+        add: cardsT('add'), adding: cardsT('adding'), removing: cardsT('removing'), done: cardsT('done'),
+    };
     const router = useRouter();
     const searchParams = useSearchParams();
     const locale = useLocale();
@@ -92,6 +113,14 @@ function CheckoutContent() {
     // Empty until the shopper picks one: Complete Purchase stays disabled until both a
     // payment method and a delivery method have been chosen deliberately.
     const [paymentMethod, setPaymentMethod] = useState('');
+
+    // Saved cards. selectedCardId === null means "pay with a new card", which is
+    // also the only possible state for a guest or a shopper with nothing saved.
+    const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
+    const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+    const [cardsLoading, setCardsLoading] = useState(false);
+    const [saveCard, setSaveCard] = useState(false);
+    const [cardManagerOpen, setCardManagerOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
     // Delivery options, quoted live from the carriers for the selected address.
@@ -396,6 +425,30 @@ function CheckoutContent() {
     }, [user]);
 
     // Force re-render of Tabby Promo if coming back to the tab
+    // Load saved cards once there is a signed-in shopper. Guests never call this;
+    // the endpoint is authenticated and would just 401.
+    useEffect(() => {
+        if (!user) {
+            setSavedCards([]);
+            setSelectedCardId(null);
+            return;
+        }
+        let cancelled = false;
+        setCardsLoading(true);
+        listCards()
+            .then((cards) => {
+                if (cancelled) return;
+                setSavedCards(cards);
+                // Preselect the default card, but never an expired one — that would
+                // put the shopper one click from a guaranteed decline.
+                const preferred = cards.find(c => c.is_default && !c.is_expired) || cards.find(c => !c.is_expired);
+                setSelectedCardId(preferred ? preferred.id : null);
+            })
+            .catch(() => { if (!cancelled) setSavedCards([]); })
+            .finally(() => { if (!cancelled) setCardsLoading(false); });
+        return () => { cancelled = true; };
+    }, [user]);
+
     useEffect(() => {
         if (paymentMethod === 'tabby' && typeof window !== 'undefined' && (window as any).TabbyPromo) {
             setTimeout(() => {
@@ -504,10 +557,20 @@ function CheckoutContent() {
                     setIsProcessing(false);
                     return;
                 }
-                if (!cardDetails.name) {
+                // A saved card carries its own billing details; only a freshly typed
+                // card needs the name field filled in.
+                if (!selectedCardId && !cardDetails.name) {
                     showNotification(n('cardDetailsRequired'), 'error');
                     setIsProcessing(false);
                     return;
+                }
+                if (selectedCardId) {
+                    const chosen = savedCards.find(c => c.id === selectedCardId);
+                    if (chosen?.is_expired) {
+                        showNotification(cardsT('cardExpiredError'), 'error');
+                        setIsProcessing(false);
+                        return;
+                    }
                 }
             }
 
@@ -522,6 +585,10 @@ function CheckoutContent() {
                 })),
                 shipping_address_id: selectedAddressId || 1, // Use selected if exists, 1 is placeholder
                 payment_method: paymentMethod,
+                // Either charge a card the shopper already saved, or offer to keep the
+                // one being entered now. Never both.
+                payment_method_id: paymentMethod === 'card' ? selectedCardId : null,
+                save_card: paymentMethod === 'card' && !selectedCardId && saveCard,
                 // Sent for the record; the server re-quotes rather than trusting this price.
                 shipping_method: selectedShippingMethod?.code || null,
                 shipping_carrier: selectedShippingMethod?.carrier || null,
@@ -557,10 +624,17 @@ function CheckoutContent() {
                 // Stripe Card Payment handling
                 if (data.requires_payment && data.client_secret) {
                     const cardNumberElement = elements?.getElement(CardNumberElement);
-                    if (cardNumberElement && stripe) {
-                        const { error, paymentIntent } = await stripe.confirmCardPayment(data.client_secret, {
+                    // Paying with a saved card confirms against the id the server
+                    // authorised (data.payment_method_id), not the card fields — those
+                    // are empty in that case. A new card confirms against the Element.
+                    const savedId = data.payment_method_id || null;
+
+                    if ((savedId || cardNumberElement) && stripe) {
+                        const { error, paymentIntent } = await stripe.confirmCardPayment(data.client_secret, savedId ? {
+                            payment_method: savedId,
+                        } : {
                             payment_method: {
-                                card: cardNumberElement,
+                                card: cardNumberElement!,
                                 billing_details: {
                                     name: cardDetails.name,
                                     email: form.email || undefined,
@@ -946,6 +1020,40 @@ function CheckoutContent() {
                                             </div>
                                         </div>
 
+                                        {/* Saved cards. Guests and shoppers with nothing saved skip
+                                            straight to the card form below. */}
+                                        {user && (savedCards.length > 0 || cardsLoading) && (
+                                            <div className={styles.savedCardsBlock}>
+                                                <div className={styles.savedCardsHead}>
+                                                    <div>
+                                                        <span className={styles.savedCardsTitle}>{cardsT('savedCardsTitle')}</span>
+                                                        <span className={styles.savedCardsSub}>{cardsT('savedCardsSub')}</span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className={styles.manageCardsBtn}
+                                                        onClick={() => setCardManagerOpen(true)}
+                                                    >
+                                                        <Settings2 size={14} />
+                                                        {cardsT('manageCards')}
+                                                    </button>
+                                                </div>
+
+                                                <SavedCards
+                                                    cards={savedCards}
+                                                    loading={cardsLoading}
+                                                    mode="select"
+                                                    selectedId={selectedCardId}
+                                                    onSelect={setSelectedCardId}
+                                                    showNewCardRow
+                                                    labels={cardLabels}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {/* The card form only appears when a new card is being entered;
+                                            a saved card needs none of these fields. */}
+                                        {!selectedCardId && (
                                         <div className={styles.cardFormContent}>
                                             <div className={styles.fieldGroup}>
                                                 <label className={styles.fieldLabel}>
@@ -1042,11 +1150,41 @@ function CheckoutContent() {
                                                 </div>
                                             </div>
 
+                                            {/* Offer to keep this card. Only for signed-in shoppers:
+                                                a guest has no account to attach it to. */}
+                                            {user && (
+                                                <label className={styles.saveCardRow}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={saveCard}
+                                                        onChange={(e) => setSaveCard(e.target.checked)}
+                                                    />
+                                                    <span>
+                                                        <span className={styles.saveCardLabel}>{cardsT('saveCardPrompt')}</span>
+                                                        <span className={styles.saveCardNote}>{cardsT('saveCardNote')}</span>
+                                                    </span>
+                                                </label>
+                                            )}
+
                                             <div className={styles.cardSecureFooter}>
                                                 <ShieldCheck size={14} />
                                                 <span>{t('securePaymentNotice')}</span>
                                             </div>
                                         </div>
+                                        )}
+
+                                        {/* Nothing saved yet, but signed in — let them add a card
+                                            from here rather than sending them to their profile. */}
+                                        {user && savedCards.length === 0 && !cardsLoading && (
+                                            <button
+                                                type="button"
+                                                className={styles.manageCardsInline}
+                                                onClick={() => setCardManagerOpen(true)}
+                                            >
+                                                <Settings2 size={14} />
+                                                {cardsT('manageCards')}
+                                            </button>
+                                        )}
                                     </div>
                                 )}
 
@@ -1587,6 +1725,25 @@ function CheckoutContent() {
                 phoneNumber={user?.phone_number}
                 title={otpT('checkoutTitle')}
                 description={otpT('checkoutDesc')}
+            />
+
+            {/* Card manager, reachable from the payment section so a shopper can
+                add, edit or remove a card without abandoning a filled-in order. */}
+            <CardManagerModal
+                open={cardManagerOpen}
+                onClose={() => setCardManagerOpen(false)}
+                isRtl={locale === 'ar'}
+                labels={cardLabels}
+                onChange={(cards) => {
+                    setSavedCards(cards);
+                    // A card removed while it was the chosen one must not stay selected,
+                    // or checkout would post a pm_ that no longer exists.
+                    setSelectedCardId((current) => {
+                        if (current && cards.some(c => c.id === current && !c.is_expired)) return current;
+                        const fallback = cards.find(c => c.is_default && !c.is_expired) || cards.find(c => !c.is_expired);
+                        return fallback ? fallback.id : null;
+                    });
+                }}
             />
         </div >
     );

@@ -1,0 +1,288 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(15, 23, 42, .5);
+    backdrop-filter: blur(2px);
+    animation: fade .16s ease;
+}
+
+.sheet {
+    width: 100%;
+    max-width: 470px;
+    max-height: min(88vh, 720px);
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, .25);
+    overflow: hidden;
+    animation: rise .18s ease;
+}
+
+@keyframes fade {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .overlay,
+    .sheet {
+        animation: none;
+    }
+}
+
+/* ── header ───────────────────────────────────────────────────────────────── */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 20px;
+    border-bottom: 1px solid #e9eef4;
+}
+
+.title {
+    flex: 1;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.closeBtn {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f1f5f9;
+    border-radius: 8px;
+    color: #475569;
+    cursor: pointer;
+    transition: background .15s ease;
+}
+
+.closeBtn:hover {
+    background: #e2e8f0;
+}
+
+.backBtn {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    color: #475569;
+    cursor: pointer;
+}
+
+.backBtn:hover {
+    background: #f1f5f9;
+}
+
+/* ── body ─────────────────────────────────────────────────────────────────── */
+.body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.field {
+    margin-bottom: 14px;
+}
+
+.label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.input {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1.5px solid #dde3ea;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #1e293b;
+    box-shadow: 0 0 0 3px rgba(30, 41, 59, .07);
+}
+
+/* Stripe Elements mount into these; they must look identical to .input. */
+.elementBox {
+    padding: 12px 13px;
+    border: 1.5px solid #dde3ea;
+    border-radius: 10px;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.elementBoxFocused {
+    border-color: #1e293b;
+    box-shadow: 0 0 0 3px rgba(30, 41, 59, .07);
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.hint {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.secureNote {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 9px;
+    font-size: 12px;
+    color: #166534;
+}
+
+.error {
+    margin-bottom: 14px;
+    padding: 11px 13px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 9px;
+    color: #991b1b;
+    font-size: 13px;
+}
+
+.checkboxRow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 4px;
+    font-size: 13.5px;
+    color: #334155;
+    cursor: pointer;
+}
+
+.checkboxRow input {
+    width: 16px;
+    height: 16px;
+    accent-color: #1e293b;
+    cursor: pointer;
+}
+
+/* ── footer ───────────────────────────────────────────────────────────────── */
+.footer {
+    display: flex;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid #e9eef4;
+    background: #fbfcfd;
+}
+
+.btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, opacity .15s ease;
+}
+
+.btnPrimary {
+    border: none;
+    background: #1e293b;
+    color: #fff;
+}
+
+.btnPrimary:hover:not(:disabled) {
+    background: #0f172a;
+}
+
+.btnGhost {
+    border: 1.5px solid #dde3ea;
+    background: #fff;
+    color: #334155;
+}
+
+.btnGhost:hover:not(:disabled) {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+/* ── delete confirmation ──────────────────────────────────────────────────── */
+.confirmText {
+    margin: 0 0 6px;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.confirmSub {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.55;
+}
+
+.btnDanger {
+    border: none;
+    background: #dc2626;
+    color: #fff;
+}
+
+.btnDanger:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+@media (max-width: 520px) {
+    .overlay {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .sheet {
+        max-width: 100%;
+        max-height: 92vh;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .row {
+        grid-template-columns: 1fr;
+    }
+}
