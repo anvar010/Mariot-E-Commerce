@@ -48,13 +48,9 @@ import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import OtpVerifyModal from '@/components/shared/OtpVerifyModal/OtpVerifyModal';
 import EmailOtpModal from '@/components/shared/EmailOtpModal/EmailOtpModal';
 import { useSearchParams } from 'next/navigation';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import SavedCards from '@/components/Payment/SavedCards';
 import CardManagerModal from '@/components/Payment/CardManagerModal';
 import { SavedCard, listCards } from '@/utils/paymentMethodsApi';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || '');
 
 const UserDashboard = () => {
     const t = useTranslations('userDashboard');
@@ -1807,15 +1803,13 @@ const UserDashboard = () => {
                         />
                     </div>
 
-                    <Elements stripe={stripePromise}>
-                        <CardManagerModal
-                            open={cardManagerOpen}
-                            onClose={() => setCardManagerOpen(false)}
-                            onChange={setSavedCards}
-                            labels={cardLabels}
-                            isRtl={locale === 'ar'}
-                        />
-                    </Elements>
+                    <CardManagerModal
+                        open={cardManagerOpen}
+                        onClose={() => setCardManagerOpen(false)}
+                        onChange={setSavedCards}
+                        labels={cardLabels}
+                        isRtl={locale === 'ar'}
+                    />
 
                     <div className={styles.sectionHeader} style={{ marginTop: '28px' }}>
                         <h2 className={styles.sectionTitle}>{t('payments.title')}</h2>

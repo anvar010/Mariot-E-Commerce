@@ -17,13 +17,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ArrowLeft, ShieldCheck, AlertTriangle } from 'lucide-react';
-import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import SavedCards from './SavedCards';
 import {
     SavedCard, listCards, createSetupIntent, confirmCard, updateCard,
     setDefaultCard, deleteCard, brandLabel, formatExpiry,
 } from '@/utils/paymentMethodsApi';
 import styles from './CardManagerModal.module.css';
+
+// Module scope: one Stripe instance for the whole app, not one per modal open.
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || '');
 
 type View = 'list' | 'add' | 'edit' | 'confirmDelete';
 
@@ -57,7 +61,7 @@ const elementStyle = {
     invalid: { color: '#dc2626' },
 };
 
-const CardManagerModal: React.FC<Props> = ({ open, onClose, onChange, labels, isRtl }) => {
+const CardManagerModalInner: React.FC<Props> = ({ open, onClose, onChange, labels, isRtl }) => {
     const stripe = useStripe();
     const elements = useElements();
 
@@ -412,6 +416,28 @@ const CardManagerModal: React.FC<Props> = ({ open, onClose, onChange, labels, is
             </div>
         </div>,
         document.body,
+    );
+};
+
+/**
+ * The modal carries its own <Elements> group, and that is deliberate.
+ *
+ * Stripe allows exactly one Element of a given type per group. Checkout already
+ * has a CardNumberElement mounted for the "new card" form, so opening this modal
+ * inside that same group and rendering a second one threw
+ * "Can only create one Element of type cardNumber" and took the page down with
+ * it. A separate group gives the modal its own card fields, independent of
+ * whatever the host page has mounted.
+ *
+ * Rendering nothing while closed also means the group is only created when the
+ * shopper actually opens the manager.
+ */
+const CardManagerModal: React.FC<Props> = (props) => {
+    if (!props.open) return null;
+    return (
+        <Elements stripe={stripePromise}>
+            <CardManagerModalInner {...props} />
+        </Elements>
     );
 };
 
