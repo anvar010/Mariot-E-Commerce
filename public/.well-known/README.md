@@ -1,33 +1,44 @@
 # Apple Pay domain verification
 
-Apple Pay will not appear on the site until this domain is verified, and it
-fails **silently** — no console error, no message, the button simply never
-renders. If Apple Pay is missing, check this first.
+**Nothing needs to be placed in this directory.** It is kept only so the answer
+is written down somewhere findable.
 
-## What to do
+Older Stripe integrations required the merchant to host a file at
+`/.well-known/apple-developer-merchantid-domain-association`. That is no longer
+how this account works: registering the domain under **Settings → Payments →
+Payment method domains** is enough, and Stripe registers it with Apple on our
+behalf. Verified against the API on 29 Aug 2026 — `apple_pay: active` for
+`uae.mariotstore.com` while that path returned a 404, which settles it.
 
-1. Stripe Dashboard → **Settings → Payments → Payment method domains**
-2. **Add a new domain** → `uae.mariotstore.com`
-3. Download the file Stripe offers: `apple-developer-merchantid-domain-association`
-   (no file extension — keep it exactly as given)
-4. Drop it in **this directory**, next to this README
-5. Rebuild and deploy the frontend
-6. Back in the Dashboard, press **Verify**
+## What actually matters: modes do not cross
 
-Confirm it is being served before verifying:
+A payment method domain registered in **live mode is invisible in test mode**,
+and the reverse. The wallet button then renders nothing at all, with no error to
+explain why — the browser is told no wallet is available, and that is the end of
+it.
 
-    curl -i https://uae.mariotstore.com/.well-known/apple-developer-merchantid-domain-association
+So the domain has to be registered **twice**: once in test mode, once in live.
 
-You want `200` and a body of plain text. A `404` means the file did not make it
-into the deployed build.
+Check which modes a domain is good for:
 
-## Do it twice
+    # answers for whichever mode the key belongs to
+    node -e "require('stripe')('sk_...').paymentMethodDomains.list({domain_name:'uae.mariotstore.com'}).then(r=>console.log(JSON.stringify(r.data,null,2)))"
 
-Payment method domains are per-mode. A domain verified in **test mode** is not
-verified in **live mode**, and vice versa. Register the domain in whichever mode
-you are running, and again when you switch.
+Look for `apple_pay.status` and `google_pay.status` — both should read `active`.
+`status_details.error_message` says what is wrong when they do not.
 
-## Google Pay
+## If the wallet button never appears
 
-Nothing to do — Google Pay needs no domain verification. It works as soon as it
-is enabled on the Stripe account.
+In the order worth checking:
+
+1. **Mode mismatch** — the cause above, and by far the most likely one.
+2. `NEXT_PUBLIC_STRIPE_PUBLIC_KEY` missing from the deploy. It is baked in at
+   build time, so setting it needs a rebuild, not a restart. The component
+   returns `null` without it.
+3. Order total under about 2 AED, below Stripe's minimum charge — the button is
+   deliberately not offered.
+4. No wallet on the device. Apple Pay needs Safari and a card in Wallet; Google
+   Pay needs Chrome and a card on the Google account. Firefox shows neither.
+   A blank space on a Windows desktop is expected, not a bug.
+
+Google Pay needs no domain step in either mode beyond the registration above.
