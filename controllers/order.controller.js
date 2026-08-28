@@ -7,6 +7,8 @@ const axios = require('axios');
 const { sendOrderConfirmationEmail, sendEmail } = require('../utils/sendEmail');
 
 // Initialize Stripe with secret key
+const { ensureStripeCustomer, ownedPaymentMethod } = require('./paymentMethod.controller');
+
 const stripe = process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('REPLACE_WITH')
     ? require('stripe')(process.env.STRIPE_SECRET_KEY)
     : null;
@@ -45,7 +47,10 @@ exports.createOrder = async (req, res, next) => {
             return sum + (unitPrice * item.quantity);
         }, 0);
 
-        const { shipping_address_id, payment_method, points_to_use = 0, coupon_id = null, billing_details = null, locale = 'en' } = req.body;
+        const { shipping_address_id, payment_method, points_to_use = 0, coupon_id = null, billing_details = null, locale = 'en',
+            // Saved cards: save_card asks Stripe to keep the card entered at checkout,
+            // payment_method_id charges a card the shopper saved earlier.
+            save_card = false, payment_method_id = null } = req.body;
         // NOTE: discount_amount from req.body is intentionally IGNORED for security
 
         // ====================================================
@@ -218,11 +223,17 @@ exports.createOrder = async (req, res, next) => {
                     });
                 }
 
-                // Create a Stripe PaymentIntent (server-side, secure)
-                const paymentIntent = await stripe.paymentIntents.create({
+                // Every card payment is attached to the shopper's Stripe Customer.
+                // Without this a card cannot be saved at all, and a previously saved
+                // card cannot be charged — Stripe refuses to reuse a payment method
+                // outside the customer that owns it.
+                const customerId = await ensureStripeCustomer(req.user);
+
+                const intentOptions = {
                     amount: Math.round(finalAmount * 100), // Stripe uses cents
                     currency: 'aed',
                     description: `Order #${orderId} from Mariot Store`,
+                    customer: customerId,
                     metadata: {
                         order_id: orderId.toString(),
                         user_id: req.user.id.toString()
@@ -233,7 +244,25 @@ exports.createOrder = async (req, res, next) => {
                     automatic_payment_methods: {
                         enabled: true,
                     },
-                }, {
+                };
+
+                if (payment_method_id) {
+                    // Paying with a saved card. Ownership is checked server-side: the id
+                    // comes from the browser, so without this any signed-in shopper could
+                    // post someone else's pm_… and charge their card.
+                    const saved = await ownedPaymentMethod(payment_method_id, customerId);
+                    if (!saved) {
+                        return res.status(400).json({ success: false, message: 'That saved card is no longer available. Please choose another.' });
+                    }
+                    intentOptions.payment_method = saved.id;
+                } else if (save_card) {
+                    // Store the card being entered now, as a side effect of this payment,
+                    // so the shopper is never charged merely to add a card. off_session is
+                    // what permits reusing it later.
+                    intentOptions.setup_future_usage = 'off_session';
+                }
+
+                const paymentIntent = await stripe.paymentIntents.create(intentOptions, {
                     idempotencyKey: `order_${orderId}_${Date.now()}` // Prevent duplicate charges
                 });
 
@@ -247,6 +276,9 @@ exports.createOrder = async (req, res, next) => {
                     success: true,
                     requires_payment: true,
                     client_secret: paymentIntent.client_secret,
+                    // Echoed so the browser confirms against the same saved card the
+                    // server authorised, rather than deciding for itself.
+                    payment_method_id: intentOptions.payment_method || null,
                     data: { id: orderId, ...orderData }
                 });
             } catch (stripeError) {
