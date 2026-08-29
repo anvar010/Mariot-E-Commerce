@@ -571,13 +571,45 @@
     animation: toastBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* The mobile header is shorter, and the toast spans the width there. */
+/* Phones: centred and only as wide as it needs to be, rather than a bar pinned
+   across the top. Stretched edge to edge it read as a site-wide announcement
+   banner instead of a reply to something the shopper just did. */
 @media (max-width: 768px) {
     .rewardToastFloating {
-        top: 68px;
-        inset-inline-start: 10px;
-        inset-inline-end: 10px;
-        max-width: none;
+        top: 70px;
+        inset-inline-start: 50%;
+        inset-inline-end: auto;
+        transform: translateX(-50%);
+        width: max-content;
+        max-width: calc(100vw - 28px);
+    }
+
+    /* A little larger and rounder, since it is the only thing on screen at that
+       moment and has to survive being read at arm's length. */
+    .rewardToastContent {
+        padding: 13px 16px;
+        border-radius: 999px;
+        font-size: 13.5px;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, .18);
+    }
+}
+
+/* The animation moves it, so on phones it has to keep the centring transform. */
+@media (max-width: 768px) {
+    .rewardToastFloating {
+        animation: toastDropCentred 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+}
+
+@keyframes toastDropCentred {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
     }
 }
 
@@ -600,6 +632,14 @@
     position: relative;
 }
 
+/* The message takes whatever room is left; the icon and the close control keep
+   their size and stay on one line with it. */
+.rewardToastContent span {
+    flex: 1 1 auto;
+    min-width: 0;
+    line-height: 1.35;
+}
+
 /* The pointer arrow is gone with the tooltip it belonged to: the toast used to
    hang off the coins icon and needed to point back at it. It now floats against
    the viewport corner, where an arrow would point at nothing. */
@@ -609,11 +649,21 @@
     flex-shrink: 0;
 }
 
+/* box-sizing: content-box so the padding grows the hit area rather than shrinking
+   the 14px glyph inside it. A bare icon is well under the ~44px a fingertip needs,
+   and this is the only way to dismiss the toast on a phone. */
 .closeToast {
     cursor: pointer;
     opacity: 0.7;
     transition: opacity 0.2s;
     flex-shrink: 0;
+    box-sizing: content-box;
+    padding: 8px;
+    margin: -8px -6px -8px 0;
+}
+
+.closeToast:hover {
+    opacity: 1;
 }
 
 @media (hover: hover) {
