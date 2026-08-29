@@ -43,6 +43,11 @@ const Header = () => {
     const [isCategoriesHovered, setIsCategoriesHovered] = useState(false);
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
     const [showRewardToast, setShowRewardToast] = useState(false);
+    // Defined once and rendered inside both points links — the desktop one and the
+    // mobile one. Each is display:none at the other's breakpoint, so exactly one is
+    // ever on screen, and the toast hangs off whichever that is. Floating it free of
+    // both put it in the middle of nowhere; anchored, it points at the number it is
+    // talking about.
     const [rewardToastPoints, setRewardToastPoints] = useState(0);
     const [announcement, setAnnouncement] = useState<any>(null);
 
@@ -346,6 +351,20 @@ const Header = () => {
         { label: t('rewardPoints'), path: '/profile?tab=myRewards', icon: Trophy, hasBadge: true, requiresAuth: true },
     ];
 
+    const rewardToastNode = (showRewardToast && rewardToastPoints > 0) ? (
+        <div className={styles.rewardToast}>
+            <div className={styles.rewardToastContent}>
+                <Trophy size={16} className={styles.trophyIcon} />
+                <span>{t('congratsPoints', { points: rewardToastPoints })}</span>
+                <X size={14} className={styles.closeToast} onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowRewardToast(false);
+                }} />
+            </div>
+        </div>
+    ) : null;
+
     return (
         <>
             <div style={{ height: isSticky ? `${headerHeight}px` : 'auto' }}>
@@ -494,25 +513,6 @@ const Header = () => {
                                 )}
                             </div>
 
-                            {/* Rendered here rather than inside the reward-points link.
-                                That link is desktopOnly, so on a phone the toast was never
-                                painted at all — while the effect still marked the points as
-                                seen, which meant the message was consumed and lost rather
-                                than merely delayed. Most of the traffic here is mobile, so
-                                that was most customers never being told. */}
-                            {showRewardToast && rewardToastPoints > 0 && (
-                                <div className={styles.rewardToastFloating}>
-                                    <div className={styles.rewardToastContent}>
-                                        <Trophy size={16} className={styles.trophyIcon} />
-                                        <span>{t('congratsPoints', { points: rewardToastPoints })}</span>
-                                        <X size={14} className={styles.closeToast} onClick={(e) => {
-                                            e.stopPropagation();
-                                            setShowRewardToast(false);
-                                        }} />
-                                    </div>
-                                </div>
-                            )}
-
                             <div className={styles.userActions}>
                                 <Link href={user ? '/profile?tab=myRewards' : '/affiliate-program'} className={`${styles.rewardPoints} ${styles.desktopOnly}`}>
                                     <Coins size={24} className={styles.pointIcon} />
@@ -520,6 +520,7 @@ const Header = () => {
                                         <span className={styles.label}>{t('rewardPoints')}</span>
                                         <span className={styles.value}>{user?.reward_points || 0}</span>
                                     </div>
+                                    {rewardToastNode}
                                 </Link>
 
                                 <div className={`${styles.switch} ${styles.headerLangSelector}`} dir="ltr">
@@ -542,6 +543,7 @@ const Header = () => {
                                             {formatPoints(user.reward_points)}
                                         </span>
                                     )}
+                                    {rewardToastNode}
                                 </Link>
 
                                 <Link href={user ? "/profile" : "/signin"} className={styles.profile}>

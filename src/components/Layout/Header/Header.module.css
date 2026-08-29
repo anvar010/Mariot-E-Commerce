@@ -557,69 +557,61 @@
     position: relative;
 }
 
-/* Anchored to the viewport rather than to the reward-points link.
-   That link only exists above 768px, so a toast nested inside it could never be
-   painted on a phone. Fixed positioning keeps it visible at every size and stops
-   it depending on an element that may not be rendered at all. */
-.rewardToastFloating {
-    position: fixed;
-    top: 84px;
-    inset-inline-end: 16px;
+/* Hangs off whichever points link is on screen, so it points back at the number
+   it is talking about. Both links are position:relative and only one of them is
+   displayed at any breakpoint, so exactly one toast is ever rendered. */
+.rewardToast {
+    position: absolute;
+    top: calc(100% + 10px);
     z-index: 1001;
-    max-width: min(320px, calc(100vw - 32px));
-    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
-    animation: toastBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: max-content;
+    filter: drop-shadow(0 8px 18px rgba(15, 23, 42, .16));
+    animation: toastBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Phones: centred and only as wide as it needs to be, rather than a bar pinned
-   across the top. Stretched edge to edge it read as a site-wide announcement
-   banner instead of a reply to something the shopper just did. */
-@media (max-width: 768px) {
-    .rewardToastFloating {
-        top: 70px;
-        inset-inline-start: 50%;
-        inset-inline-end: auto;
-        transform: translateX(-50%);
-        /* Capped well short of the screen so it stays a small notice rather than
-           something spanning the width. The message wraps to a second line at this
-           size, which is what keeps it narrow. */
-        width: max-content;
-        max-width: min(240px, calc(100vw - 72px));
-    }
-
-    .rewardToastContent {
-        padding: 11px 14px;
-        border-radius: 14px;
-        font-size: 12.5px;
-        box-shadow: 0 6px 20px rgba(15, 23, 42, .18);
-    }
+/* Desktop: centred beneath the wider link. */
+.rewardPoints .rewardToast {
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    max-width: 280px;
 }
 
-/* The animation moves it, so on phones it has to keep the centring transform. */
-@media (max-width: 768px) {
-    .rewardToastFloating {
-        animation: toastDropCentred 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
+/* Phone: the coins sit close to the right edge, so the panel is pulled back
+   inside the screen and the arrow moves across to meet the icon instead. */
+.rewardPointsMobile .rewardToast {
+    inset-inline-end: -6px;
+    max-width: min(248px, calc(100vw - 28px));
 }
 
-@keyframes toastDropCentred {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-12px);
-    }
+.rewardPointsMobile .rewardToastContent {
+    padding: 10px 13px;
+    font-size: 12.5px;
+}
 
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
+/* The pointer: centred under the desktop link, near the right on a phone. */
+.rewardToastContent::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    border-inline-start: 6px solid transparent;
+    border-inline-end: 6px solid transparent;
+    border-bottom: 6px solid #56cfe1;
+}
+
+.rewardPoints .rewardToastContent::after {
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+}
+
+.rewardPointsMobile .rewardToastContent::after {
+    inset-inline-end: 18px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .rewardToastFloating {
+    .rewardToast {
         animation: none;
     }
 }
-
 .rewardToastContent {
     background: #56cfe1;
     color: white;
@@ -639,6 +631,10 @@
     flex: 1 1 auto;
     min-width: 0;
     line-height: 1.35;
+    /* Splits the two lines evenly instead of filling the first and leaving a
+       stub on the second — "Congratulations! You / got 8597 points" reads as a
+       broken layout rather than a sentence. */
+    text-wrap: balance;
 }
 
 /* The pointer arrow is gone with the tooltip it belonged to: the toast used to
@@ -1756,6 +1752,8 @@
 }
 
 .rewardPointsMobile {
+    /* Anchors the points toast, which hangs beneath this on a phone. */
+    position: relative;
     display: none;
     align-items: center;
     justify-content: center;
