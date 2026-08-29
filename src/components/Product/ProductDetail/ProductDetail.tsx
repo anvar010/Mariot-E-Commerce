@@ -1511,6 +1511,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             bulletActiveClass: styles.swiperBulletActive,
                                         }}
                                         modules={[Pagination]}
+                                        // Swiper suppresses clicks on its slides by default, to stop a
+                                        // swipe across a link from following it. That also swallowed the
+                                        // first tap on the play button, so it took two. The only thing
+                                        // clickable inside a slide here is that button, and it does its
+                                        // own swipe check below, so the protection costs more than it
+                                        // gives.
+                                        preventClicks={false}
+                                        preventClicksPropagation={false}
                                         className={styles.mainSwiper}
                                         onSlideChange={(swiper: any) => {
                                             const i = swiper.activeIndex;
@@ -1567,23 +1575,25 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                         <button
                                                             type="button"
                                                             className={styles.galleryVideoPoster}
-                                                            // Not onClick. Swiper suppresses a click whenever the
-                                                            // touch moved at all, and a finger tap almost always
-                                                            // drifts a pixel or two — so the first tap was being
-                                                            // swallowed as a swipe and only the second one played.
-                                                            // Judging the gesture here instead: released close to
-                                                            // where it started, so it was a tap and not a swipe.
+                                                            // Swiper no longer eats the click, so the ordinary click
+                                                            // path works — including keyboard Enter, which a
+                                                            // pointer-only handler would have missed.
+                                                            //
+                                                            // The press position is still recorded, so a swipe that
+                                                            // happens to finish on the button does not start the
+                                                            // video: released more than twelve pixels from where it
+                                                            // began is a swipe, not a tap.
                                                             onPointerDown={(e) => { posterTapRef.current = { x: e.clientX, y: e.clientY }; }}
-                                                            onPointerUp={(e) => {
+                                                            onClick={(e) => {
                                                                 const start = posterTapRef.current;
                                                                 posterTapRef.current = null;
-                                                                if (!start) return;
-                                                                const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
-                                                                if (moved > 12) return;
+                                                                if (start) {
+                                                                    const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+                                                                    if (moved > 12) return;
+                                                                }
                                                                 setCurrentImageIndex(idx);
                                                                 setVideoPlaying(true);
                                                             }}
-                                                            onPointerCancel={() => { posterTapRef.current = null; }}
                                                             aria-label="Play product video"
                                                         >
                                                             {item.still && (
