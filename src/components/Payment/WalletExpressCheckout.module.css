@@ -17,17 +17,6 @@
     min-height: 46px;
 }
 
-/* Kept mounted but out of view until onReady reports a usable wallet — unmounting
-   would tear down the element Stripe is still setting up. */
-.hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-}
-
 .divider {
     display: flex;
     align-items: center;

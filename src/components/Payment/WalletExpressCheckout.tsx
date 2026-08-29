@@ -56,7 +56,7 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
     const [available, setAvailable] = useState<boolean | null>(null);
 
     // onReady reports which wallets the browser can actually offer. null means we
-    // have not heard yet, false means none — either way, render nothing.
+    // have not heard yet; false means none, so the band collapses.
     if (available === false) return null;
 
     const handleConfirm = async () => {
@@ -99,7 +99,13 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
         <div className={styles.wrap} dir={isRtl ? 'rtl' : 'ltr'}>
             {heading && available && <span className={styles.heading}>{heading}</span>}
 
-            <div className={available ? styles.buttonBox : styles.hidden}>
+            {/* Always mounted at full width. An earlier version parked the element in
+                a 1px clipped box until onReady confirmed a wallet, but Stripe sizes
+                these buttons from their container, and at 1px wide Google Pay never
+                laid out — Apple Pay happened to survive it, which is exactly why the
+                bug looked like "Android is broken". The element draws nothing until
+                it is ready, so there is nothing to hide in the first place. */}
+            <div className={styles.buttonBox}>
                 <ExpressCheckoutElement
                     options={{
                         buttonHeight: 46,
@@ -108,7 +114,16 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
                         paymentMethods: { applePay: 'auto', googlePay: 'auto', amazonPay: 'never', link: 'never' },
                     }}
                     onReady={({ availablePaymentMethods }) => {
-                        setAvailable(!!availablePaymentMethods && Object.keys(availablePaymentMethods).length > 0);
+                        // Every key is present as a boolean whether or not the wallet is
+                        // offered, so counting keys always said "yes". Ask whether any
+                        // of them is actually true.
+                        setAvailable(
+                            !!availablePaymentMethods && Object.values(availablePaymentMethods).some(Boolean)
+                        );
+                    }}
+                    onLoadError={({ error }) => {
+                        console.error('[wallet] Express checkout failed to load:', error?.message || error);
+                        setAvailable(false);
                     }}
                     onClick={({ resolve, reject }) => {
                         const problem = validate?.();
