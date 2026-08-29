@@ -4,10 +4,6 @@ const withNextIntl = createNextIntlPlugin('./src/i18n.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // Lets a verification build write somewhere a running dev server is not
-    // already using; .next is shared between next dev and next build and they
-    // corrupt each other.
-    distDir: process.env.NEXT_DIST_DIR || '.next',
     transpilePackages: ['next-intl'],
     trailingSlash: false,
     poweredByHeader: false,

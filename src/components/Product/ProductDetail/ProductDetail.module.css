@@ -5531,6 +5531,9 @@
     width: 100%;
     aspect-ratio: 16 / 9;
     max-height: 100%;
+    /* Centres the box inside a taller slide on both axes, without relying on the
+       parent's alignment surviving every other rule that touches a slide. */
+    margin: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5572,9 +5575,26 @@
     inset: 0;
     display: grid;
     place-items: center;
-    color: #ffffff;
     pointer-events: none;
-    filter: drop-shadow(0 4px 14px rgba(0, 0, 0, .5));
+}
+
+/* YouTube keeps its button dark until hover, which stops it competing with the
+   still behind it; the red is the reward for aiming at it. */
+.ytPlayBg {
+    fill: #212121;
+    fill-opacity: .8;
+    transition: fill .18s ease, fill-opacity .18s ease;
+}
+
+.galleryVideoPoster:hover .ytPlayBg {
+    fill: #f00;
+    fill-opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ytPlayBg {
+        transition: none;
+    }
 }
 
 /* Play marker on the thumbnail strip. */
