@@ -696,6 +696,10 @@ function CheckoutContent() {
 
                         if (paymentIntent && paymentIntent.status === 'succeeded') {
                             await clearCart();
+                            // The order has already changed the reward balance server-side;
+                            // without this the header keeps showing the pre-order figure until
+                            // a full page load, and checkout would offer points already spent.
+                            await refreshUser();
                             showNotification(n('orderSuccess'));
                             router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
                             return;
@@ -705,6 +709,7 @@ function CheckoutContent() {
                 // Dev Mock handling
                 else if (data.payment_mock) {
                     await clearCart();
+                    await refreshUser();
                     showNotification(n('mockPaymentSuccess'));
                     router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
                     return;
@@ -716,6 +721,7 @@ function CheckoutContent() {
                 } else {
                     // Only clear frontend cart immediately if it's a direct completion (like Bank Transfer)
                     await clearCart();
+                    await refreshUser();
                     showNotification(n('orderSuccess'));
                     router.push(`/checkoutsuccess?orderId=${data.data?.id || ''}`);
                 }
@@ -1041,6 +1047,7 @@ function CheckoutContent() {
                                 onCreateOrder={walletCreateOrder}
                                 onSuccess={async (orderId) => {
                                     await clearCart();
+                                    await refreshUser();
                                     showNotification(n('orderSuccess'));
                                     router.push(`/checkoutsuccess?orderId=${orderId || ''}`);
                                 }}
