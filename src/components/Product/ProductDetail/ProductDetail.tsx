@@ -1392,12 +1392,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
 
     const activeIsVideo = galleryItems[currentImageIndex]?.kind === 'video';
 
-    // Leaving the video slide tears the player down, so it stops playing and stops
-    // holding on to touch events on the slides either side of it.
-    useEffect(() => {
-        if (!activeIsVideo) setVideoPlaying(false);
-    }, [activeIsVideo]);
-
     // Calculate Rating Stats once per render
     const reviewsCount = reviews.length;
     const avgRatingRaw = reviewsCount > 0 ? reviews.reduce((sum: number, r: any) => sum + Number(r.rating), 0) / reviewsCount : 0;
@@ -1506,7 +1500,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         }}
                                         modules={[Pagination]}
                                         className={styles.mainSwiper}
-                                        onSlideChange={(swiper: any) => setCurrentImageIndex(swiper.activeIndex)}
+                                        onSlideChange={(swiper: any) => {
+                                            const i = swiper.activeIndex;
+                                            setCurrentImageIndex(i);
+                                            // Moving off the video unmounts the player, so it stops
+                                            // playing and stops swallowing touches. Every navigation
+                                            // path reaches here through the slideTo sync effect, which
+                                            // is why this is the only place that needs to know.
+                                            if (galleryItems[i]?.kind !== 'video') setVideoPlaying(false);
+                                        }}
                                         initialSlide={currentImageIndex}
                                     >
                                         {galleryItems.map((item, idx: number) => (

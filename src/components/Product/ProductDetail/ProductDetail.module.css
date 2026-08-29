@@ -5603,9 +5603,8 @@
         border-radius: 0;
     }
 
-    /* Here the frame is already the video's shape, so the still fills it exactly
-       and cover crops nothing. */
-    .videoFrame .posterImage {
-        object-fit: cover;
-    }
+    /* No cover override here on purpose. Where the frame is 16:9 and the still is
+       16:9, contain and cover give the identical result — but contain can never
+       crop, so if the frame is ever not exactly 16:9 the video is shown at its own
+       proportions rather than enlarged and cut off. */
 }
