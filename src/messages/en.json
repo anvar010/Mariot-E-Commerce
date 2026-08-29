@@ -320,7 +320,8 @@
     "total": "Total",
     "shipping": "Shipping",
     "vat": "VAT",
-    "taxableAmount": "Total taxable amount"
+    "taxableAmount": "Total taxable amount",
+    "heroTrust": "Better kitchens with Mariot"
   },
   "ticker": {
     "restaurantSupply": "RESTAURANT SUPPLY & KITCHEN EQUIPMENT",

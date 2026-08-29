@@ -1,26 +1,97 @@
-/* ===== Hero Section — Full-Width Immersive Slider ===== */
+/* Hero — peek carousel.
+   The active slide is a rounded card with its neighbours showing at either edge,
+   blurred and slightly squashed so they read as "next" rather than as content.
+   On phones the peek collapses to zero and the card fills the width. */
+
 .heroSection {
     width: 100%;
-    height: 70vh;
-    min-height: 550px;
-    max-height: 800px;
     position: relative;
     overflow: hidden;
-    background-color: #0a1628;
+    background: #ffffff;
+    padding: 10px 0 28px;
 }
 
-/* Background Image Layer */
-.imageLayer {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
+/* The stage is deliberately wider than its container and pulled back by half the
+   overhang, so the peeking neighbours bleed to the screen edges instead of
+   stopping at the content gutter. */
+.carouselStage {
+    --carousel-peek: clamp(112px, 8.8vw, 170px);
+    --carousel-gap: 9px;
+    position: relative;
+    width: calc(100% + 44px);
+    height: clamp(500px, 30vw, 590px);
+    margin-inline-start: -22px;
+    overflow: hidden;
+    touch-action: pan-y;
+    cursor: grab;
 }
 
-.slideBg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
+.carouselStage:active {
+    cursor: grabbing;
+}
+
+.carouselTrack {
+    display: flex;
+    align-items: center;
+    gap: var(--carousel-gap);
+    width: max-content;
     height: 100%;
+    will-change: transform;
+    transition: transform .55s cubic-bezier(.25, .46, .45, .94);
+    /* Laid out left-to-right in both locales. The card order and the transform
+       maths stay identical; only the text inside a card flips. */
+    direction: ltr;
+}
+
+/* Jumping from a cloned edge slide back to the real one must not animate, or the
+   loop visibly rewinds. */
+.resettingTrack {
+    transition: none;
+}
+
+.draggingTrack {
+    transition: none;
+}
+
+.slideCard {
+    position: relative;
+    flex: 0 0 var(--carousel-card-width);
+    width: var(--carousel-card-width);
+    height: 100%;
+    overflow: hidden;
+    border-radius: 15px;
+    background: #1f2422;
+    isolation: isolate;
+    box-shadow: 0 18px 45px rgba(16, 24, 40, .08);
+    transition: transform .5s ease;
+    transform-origin: center;
+}
+
+.resettingTrack .slideCard {
+    transition: none;
+}
+
+.sideSlide {
+    transform: scaleY(.9);
+}
+
+.sideSlide .bgImage {
+    filter: blur(2.6px) brightness(.82);
+    transform: scale(1.015);
+}
+
+.sideSlide .heroContent {
+    pointer-events: none;
+}
+
+.imageLayer,
+.overlay {
+    position: absolute;
+    inset: 0;
+}
+
+.imageLayer {
+    z-index: 1;
 }
 
 .bgImage {
@@ -30,127 +101,122 @@
     object-position: center;
 }
 
-/* Gradient Overlay — left-to-right dark fade for readability */
 .overlay {
-    position: absolute;
-    inset: 0;
     z-index: 2;
-    background: linear-gradient(90deg,
-            rgba(10, 22, 40, 0.92) 0%,
-            rgba(10, 22, 40, 0.75) 35%,
-            rgba(10, 22, 40, 0.3) 65%,
-            rgba(10, 22, 40, 0.05) 100%);
+    background:
+        linear-gradient(90deg, rgba(22, 24, 22, .78), rgba(22, 24, 22, .55) 46%, rgba(22, 24, 22, .12) 78%),
+        linear-gradient(0deg, rgba(13, 14, 13, .3), transparent 55%);
 }
 
-/* Content Layer */
 .heroContent {
     position: relative;
-    z-index: 5;
+    z-index: 3;
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 80px;
+    padding: 42px clamp(48px, 5vw, 78px);
 }
 
-/* Text Content */
 .textContent {
-    max-width: 600px;
+    width: min(670px, 62%);
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    align-items: flex-start;
 }
 
+/* ── trust pill ───────────────────────────────────────────────────────────── */
+.trustPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 46px;
+    padding: 10px 20px;
+    margin-bottom: 20px;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #18202b;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+}
+
+.trustMark {
+    color: #4285f4;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.trustStar {
+    color: #f6ad24;
+    font-size: 17px;
+}
+
+/* ── copy ─────────────────────────────────────────────────────────────────── */
 .tagline {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    color: #5bb377;
-    text-transform: uppercase;
-    padding: 4px 12px;
-    background: rgba(91, 179, 119, 0.12);
-    border-inline-start: 3px solid #5bb377;
-    border-radius: 0 4px 4px 0;
-    width: fit-content;
+    color: #f0d6ad;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.4;
+    letter-spacing: .02em;
+    margin-bottom: 14px;
 }
 
 .title {
-    font-size: 42px;
-    font-weight: 900;
-    color: #ffffff;
-    line-height: 1.1;
-    letter-spacing: -1px;
+    max-width: 650px;
     margin: 0;
+    color: #ffffff;
+    font-size: clamp(34px, 3vw, 52px);
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -.035em;
+    text-wrap: balance;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, .12);
 }
 
 .titleAccent {
-    display: inline-block;
-    transition: color 0.5s ease;
+    color: inherit;
 }
 
 .description {
-    font-size: 13px;
-    line-height: 1.7;
-    color: rgba(255, 255, 255, 0.7);
-    max-width: 576px;
-    margin: 0;
+    max-width: 620px;
+    margin: 20px 0 0;
+    color: rgba(255, 255, 255, .9);
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.75;
 }
 
-/* Buttons */
+/* ── buttons ──────────────────────────────────────────────────────────────── */
 .buttonGroup {
     display: flex;
-    gap: 14px;
+    flex-wrap: wrap;
     align-items: center;
-    margin-top: 8px;
+    gap: 12px;
+    margin-top: 24px;
 }
 
-.buyBtn {
-    background: linear-gradient(135deg, #ff3b30, #e0322a);
-    color: white;
-    font-size: 15px;
-    font-weight: 700;
-    padding: 14px 36px;
-    border-radius: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 20px rgba(255, 59, 48, 0.35);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    border: none;
-}
-
-@media (hover: hover) {
-
-    .buyBtn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 30px rgba(255, 59, 48, 0.5);
-        background: linear-gradient(135deg, #ff4f44, #ff3b30);
-    }
-}
-
+.buyBtn,
 .whatsappBtn {
-    background: rgba(255, 255, 255, 0.08);
-    color: #25D366;
-    font-size: 15px;
-    font-weight: 700;
-    padding: 14px 36px;
-    border-radius: 50px;
-    border: 1.5px solid rgba(37, 211, 102, 0.4);
-    display: flex;
+    min-height: 50px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    transition: all 0.3s ease;
+    gap: 9px;
+    padding: 11px 22px;
+    border: 1px solid rgba(255, 255, 255, .7);
+    border-radius: 999px;
+    background: rgba(20, 20, 18, .16);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
     cursor: pointer;
-    backdrop-filter: blur(10px);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background .25s ease, border-color .25s ease, transform .25s ease, color .25s ease;
 }
 
 .iconLtr {
@@ -163,301 +229,274 @@
 
 @media (hover: hover) {
 
+    .buyBtn:hover,
     .whatsappBtn:hover {
-        background: #25D366;
-        color: white;
-        border-color: #25D366;
         transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(37, 211, 102, 0.3);
+        background: #ffffff;
+        border-color: #ffffff;
+        color: #18202b;
     }
 }
 
-@media (hover: hover) {
-
-    .whatsappBtn:hover svg {
-        fill: white;
-    }
-}
-
-/* Brand Badge — floating on the right side */
-.brandBadge {
-    position: absolute;
-    inset-inline-end: 80px;
-    bottom: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    padding: 14px 24px;
-    z-index: 10;
-}
-
-.brandLogo {
-    height: 28px;
-    width: auto;
-    object-fit: contain;
-    filter: brightness(0) invert(1);
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
-}
-
-@media (hover: hover) {
-
-    .brandBadge:hover .brandLogo {
-        opacity: 1;
-    }
-}
-
-/* Slider Arrows */
+/* ── controls ─────────────────────────────────────────────────────────────── */
 .sliderBtn {
     position: absolute;
     top: 50%;
-    transform: translateY(-50%);
-    width: 48px;
-    height: 48px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    color: white;
-    border-radius: 50%;
+    z-index: 10;
+    width: 58px;
+    height: 58px;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 20;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #23303a;
     cursor: pointer;
-    transition: all 0.3s ease;
-    opacity: 0;
+    transform: translateY(-50%);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .14);
+    transition: transform .25s ease, box-shadow .25s ease;
 }
 
 @media (hover: hover) {
-
-    .heroSection:hover .sliderBtn {
-        opacity: 1;
-    }
-}
-
-@media (hover: hover) {
-
     .sliderBtn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        transform: translateY(-50%) scale(1.08);
+        transform: translateY(-50%) scale(1.06);
+        box-shadow: 0 14px 32px rgba(0, 0, 0, .2);
     }
 }
 
 .prevBtn {
-    inset-inline-start: 24px;
-}
-
-.prevBtn[dir="rtl"] svg {
-    transform: rotate(180deg);
+    inset-inline-start: 30px;
 }
 
 .nextBtn {
-    inset-inline-end: 24px;
+    inset-inline-end: 30px;
 }
 
-.nextBtn[dir="rtl"] svg {
+.prevBtn[dir='rtl'] svg,
+.nextBtn[dir='rtl'] svg {
     transform: rotate(180deg);
 }
 
-/* Dot Indicators */
 .indicators {
-    position: absolute;
-    bottom: 32px;
-    inset-inline-start: 80px;
     display: flex;
-    gap: 10px;
-    z-index: 20;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
 }
 
 .dot {
-    width: 32px;
-    height: 4px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.25);
-    border: none;
-    cursor: pointer;
-    transition: all 0.4s ease;
+    width: 12px;
+    height: 12px;
+    flex: 0 0 auto;
     padding: 0;
-}
-
-@media (hover: hover) {
-
-    .dot:hover {
-        background: rgba(255, 255, 255, 0.5);
-    }
+    border: 0;
+    border-radius: 999px;
+    background: #c7cbd0;
+    cursor: pointer;
+    transition: width .3s ease, background .3s ease;
 }
 
 .dotActive {
-    width: 48px;
-    background: #5bb377;
+    width: 28px;
+    background: #e33c34;
 }
 
-/* ===== Responsive ===== */
-
+/* ── breakpoints ──────────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
+    .carouselStage {
+        --carousel-peek: 105px;
+        height: 520px;
+    }
+
     .heroContent {
-        padding: 0 50px;
+        padding-inline: 52px;
     }
 
-    .title {
-        font-size: 46px;
-    }
-
-    .brandBadge {
-        inset-inline-end: 50px;
-    }
-
-    .indicators {
-        inset-inline-start: 50px;
+    .textContent {
+        width: min(650px, 72%);
     }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
     .heroSection {
-        height: 60vh;
-        min-height: 400px;
+        padding-top: 32px;
     }
 
-    .title {
-        font-size: 40px;
+    .carouselStage {
+        --carousel-peek: 60px;
+        --carousel-gap: 8px;
+        width: calc(100% + 24px);
+        height: 500px;
+        margin-inline-start: -12px;
+    }
+
+    .slideCard {
+        border-radius: 14px;
+    }
+
+    .heroContent {
+        padding: 36px 42px;
+    }
+
+    .textContent {
+        width: 82%;
     }
 
     .description {
         font-size: 15px;
+        line-height: 1.65;
+    }
+
+    .sliderBtn {
+        width: 50px;
+        height: 50px;
+    }
+
+    .prevBtn {
+        inset-inline-start: 2px;
+    }
+
+    .nextBtn {
+        inset-inline-end: 2px;
     }
 }
 
+/* Phones: no peek, no arrows, copy sits at the bottom over a vertical scrim. */
 @media (max-width: 768px) {
     .heroSection {
-        /* Content is bottom-aligned, so the section's height minus the text block IS
-           the band of empty image above it. 60vh/430px left a large gap on phones,
-           where the text is only ~200px tall. Sized to sit just above the content
-           instead. */
-        height: 40vh;
-        min-height: 295px;
-        max-height: none;
+        padding: 18px 14px 22px;
     }
 
-    .overlay {
-        background: linear-gradient(180deg,
-                rgba(10, 22, 40, 0.4) 0%,
-                rgba(10, 22, 40, 0.7) 50%,
-                rgba(10, 22, 40, 0.92) 100%);
-    }
-
-    .heroContent {
-        padding: 0 16px;
-        align-items: flex-end;
-        padding-bottom: 34px;
-        /* Aligned back to bottom */
-    }
-
-    .textContent {
-        max-width: 100%;
-    }
-
-    .title {
-        font-size: 34px;
-    }
-
-    .tagline {
-        font-size: 11px;
-        letter-spacing: 2px;
-    }
-
-    .description {
-        font-size: 14px;
-    }
-
-    .buttonGroup {
-        flex-direction: column;
+    .carouselStage {
+        --carousel-peek: 0px;
+        --carousel-gap: 0px;
         width: 100%;
+        height: min(72vh, 570px);
+        min-height: 460px;
+        margin: 0;
     }
 
-    .buyBtn,
-    .whatsappBtn {
-        width: 100%;
-        justify-content: center;
+    .slideCard {
+        border-radius: 14px;
     }
 
-    .brandBadge {
-        display: none;
+    .sideSlide {
+        transform: none;
     }
 
     .sliderBtn {
         display: none;
-        /* Hide arrows on mobile and use touch swiping instead */
     }
 
-    .prevBtn {
-        inset-inline-start: 12px;
-    }
-
-    .nextBtn {
-        inset-inline-end: 12px;
-    }
-
-    .indicators {
-        inset-inline-start: 50%;
-        transform: translateX(-50%);
-        bottom: 20px;
-    }
-}
-
-@media (max-width: 576px) {
-    .heroSection {
-        height: 36vh;
-        min-height: 250px;
-        max-height: none;
-    }
-
-    .textContent {
-        gap: 6px;
-    }
-
-    .tagline {
-        font-size: 10px;
-        letter-spacing: 1.5px;
-        padding: 3px 10px;
-    }
-
-    .title {
-        font-size: 19px;
-        font-weight: 800;
-        letter-spacing: -0.3px;
-    }
-
-    .description {
-        font-size: 12px;
-        line-height: 1.4;
+    .overlay {
+        background: linear-gradient(0deg, rgba(16, 18, 17, .88), rgba(16, 18, 17, .58) 55%, rgba(16, 18, 17, .2));
     }
 
     .heroContent {
-        padding: 0 20px;
         align-items: flex-end;
-        padding-bottom: 26px;
-        /* Aligned back to bottom */
+        padding: 30px 26px 36px;
+    }
+
+    .textContent {
+        width: 100%;
+    }
+
+    .trustPill {
+        min-height: 40px;
+        margin-bottom: 14px;
+        padding: 9px 15px;
+        font-size: 12px;
+    }
+
+    .tagline {
+        margin-bottom: 9px;
+        font-size: 12px;
+    }
+
+    .title {
+        font-size: clamp(29px, 8vw, 40px);
+    }
+
+    .description {
+        margin-top: 14px;
+        font-size: 14px;
+        line-height: 1.55;
     }
 
     .buttonGroup {
-        gap: 10px;
-        margin-top: 4px;
+        gap: 9px;
+        margin-top: 18px;
     }
 
-    .buyBtn {
-        padding: 10px 20px;
-        font-size: 13px;
-    }
-
+    .buyBtn,
     .whatsappBtn {
-        padding: 10px 20px;
-        font-size: 13px;
+        min-height: 44px;
+        padding: 10px 16px;
+        font-size: 12px;
     }
 
-    .buyBtn svg,
-    .whatsappBtn svg {
-        width: 16px;
-        height: 16px;
+    .indicators {
+        margin-top: 15px;
     }
+}
+
+@media (max-width: 430px) {
+    .carouselStage {
+        min-height: 430px;
+        height: 66vh;
+    }
+
+    .heroContent {
+        padding: 24px 20px 28px;
+    }
+
+    .description {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .carouselTrack,
+    .slideCard,
+    .buyBtn,
+    .whatsappBtn,
+    .sliderBtn,
+    .dot {
+        transition: none;
+    }
+}
+
+/* Measurement probes. A custom property computes to its specified string, so
+   clamp() cannot be read back with getComputedStyle — laying out a real element
+   of that width is what makes it measurable. Zero height, no paint, no hit area. */
+.peekProbe,
+.gapProbe {
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    height: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.peekProbe {
+    width: var(--carousel-peek);
+}
+
+.gapProbe {
+    width: var(--carousel-gap);
+}
+
+/* Before the probes have been laid out the card width is 0, which would paint a
+   row of collapsed cards for one frame. */
+.unmeasuredTrack {
+    visibility: hidden;
 }
