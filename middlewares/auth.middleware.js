@@ -30,7 +30,14 @@ const protect = async (req, res, next) => {
         req.user = rows[0];
         next();
     } catch (error) {
-        console.error(error);
+        // An expired or malformed token is a routine event on a public storefront —
+        // every session reaches its 24-hour limit eventually. Printing a stack trace
+        // for it buried the genuine faults in the runtime log.
+        if (error.name === 'TokenExpiredError' || error.name === 'JsonWebTokenError') {
+            console.warn(`[AUTH] ${error.name}: ${error.message} — ${req.method} ${req.originalUrl}`);
+        } else {
+            console.error('[AUTH] Unexpected failure verifying token:', error);
+        }
         res.status(401).json({ success: false, message: 'Not authorized' });
     }
 };
