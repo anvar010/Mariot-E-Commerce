@@ -80,10 +80,19 @@
     line-height: 1;
 }
 
+/* Invisible catcher covering the viewport while the menu is open, so a click
+   meant to dismiss cannot also press a button on the page behind it. */
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    background: transparent;
+}
+
 /* ── panel ────────────────────────────────────────────────────────────────── */
 .panel {
     position: absolute;
-    z-index: 60;
+    z-index: 901;
     top: calc(100% + 6px);
     inset-inline-start: 0;
     min-width: 268px;

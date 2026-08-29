@@ -67,18 +67,11 @@ const DeliveryCountrySelect: React.FC<Props> = ({ zones, value, onChange, locale
 
     useEffect(() => {
         if (!open) return;
-        const onPointerDown = (e: PointerEvent) => {
-            if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-        };
         // Closing on scroll rather than repositioning: the panel is anchored to a
         // control inside a sticky column, and a detached menu is worse than none.
         const onScroll = () => setOpen(false);
-        document.addEventListener('pointerdown', onPointerDown);
         window.addEventListener('scroll', onScroll, true);
-        return () => {
-            document.removeEventListener('pointerdown', onPointerDown);
-            window.removeEventListener('scroll', onScroll, true);
-        };
+        return () => window.removeEventListener('scroll', onScroll, true);
     }, [open]);
 
     // Open onto the current selection, and keep the highlighted row in view.
@@ -173,6 +166,19 @@ const DeliveryCountrySelect: React.FC<Props> = ({ zones, value, onChange, locale
                 <ChevronDown size={15} className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`} aria-hidden="true" />
             </button>
 
+            {/* A backdrop rather than a document listener. Dismissing by clicking
+                elsewhere used to let that same click reach the page underneath, so
+                tapping away from the menu could add something to the cart. The
+                backdrop swallows it: one click closes the menu and does nothing
+                else. */}
+            {open && (
+                <div
+                    className={styles.backdrop}
+                    onClick={() => setOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
+
             {open && (
                 <ul
                     className={styles.panel}
@@ -192,9 +198,12 @@ const DeliveryCountrySelect: React.FC<Props> = ({ zones, value, onChange, locale
                                 data-active={i === activeIndex}
                                 className={`${styles.option} ${i === activeIndex ? styles.optionActive : ''} ${isSelected ? styles.optionSelected : ''}`}
                                 onMouseEnter={() => setActiveIndex(i)}
-                                // pointerdown, not click: the outside-click handler runs on
-                                // pointerdown and would close the panel first.
-                                onPointerDown={(e) => { e.preventDefault(); commit(i); }}
+                                // click, not pointerdown. Committing on pointerdown unmounted
+                                // the panel before the click finished, so the click landed on
+                                // whatever was underneath — Add to Cart, Talk to Expert — and
+                                // fired that instead. The panel now survives the whole
+                                // press-and-release, and nothing behind it is ever the target.
+                                onClick={() => commit(i)}
                             >
                                 <ZoneFlag code={zone.country_code} className={styles.flag} />
                                 <span className={styles.optionName}>{zoneLabel(zone, locale)}</span>
