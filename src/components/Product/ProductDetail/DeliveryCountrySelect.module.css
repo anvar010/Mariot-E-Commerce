@@ -1,0 +1,174 @@
+.root {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.label {
+    flex: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* ── trigger ──────────────────────────────────────────────────────────────── */
+.trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 7px 11px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+
+.trigger:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.trigger:focus-visible {
+    outline: none;
+    border-color: #16a1db;
+    box-shadow: 0 0 0 3px rgba(22, 161, 219, .16);
+}
+
+.triggerOpen {
+    border-color: #16a1db;
+    box-shadow: 0 0 0 3px rgba(22, 161, 219, .12);
+}
+
+.triggerName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chevron {
+    flex: none;
+    color: #64748b;
+    transition: transform .18s ease;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+/* ── flag ─────────────────────────────────────────────────────────────────── */
+/* Windows has no flag glyphs, so the regional-indicator pair falls back to two
+   letters. Sizing and spacing them like a code badge keeps that legible instead
+   of looking like a rendering failure. */
+.flag {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 16px;
+    font-size: 15px;
+    line-height: 1;
+    letter-spacing: -.06em;
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif;
+}
+
+/* ── panel ────────────────────────────────────────────────────────────────── */
+.panel {
+    position: absolute;
+    z-index: 60;
+    top: calc(100% + 6px);
+    inset-inline-start: 0;
+    min-width: 268px;
+    max-width: min(340px, 90vw);
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 5px;
+    list-style: none;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 14px 38px rgba(15, 23, 42, .16);
+    animation: dropIn .14s ease;
+}
+
+@keyframes dropIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .panel {
+        animation: none;
+    }
+
+    .chevron {
+        transition: none;
+    }
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13.5px;
+    color: #1e293b;
+}
+
+.optionActive {
+    background: #f1f5f9;
+}
+
+.optionSelected {
+    font-weight: 700;
+}
+
+.optionName {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The arrival date for each destination, so the choice can be made from the list
+   itself instead of by picking one and reading the line underneath. */
+.optionMeta {
+    flex: none;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.tick {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 16px;
+    color: #16a1db;
+}
+
+@media (max-width: 480px) {
+    .panel {
+        min-width: 0;
+        width: max(100%, 240px);
+    }
+
+    .optionMeta {
+        display: none;
+    }
+}

@@ -1,0 +1,184 @@
+'use client';
+
+/**
+ * Destination picker for the delivery estimate.
+ *
+ * A custom listbox rather than a <select>, because a native option list is drawn
+ * by the operating system: it cannot be styled and it cannot hold a flag. This
+ * reimplements what the native control gave us for free — keyboard navigation,
+ * type-ahead, click-outside, the correct ARIA roles — which is the price of that
+ * choice and worth paying only because the flags and the per-country arrival
+ * dates make the list genuinely easier to read.
+ */
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Check, ChevronDown } from 'lucide-react';
+import { DeliveryZone, flagEmoji, zoneLabel } from '@/utils/deliveryZones';
+import styles from './DeliveryCountrySelect.module.css';
+
+interface Props {
+    zones: DeliveryZone[];
+    value: string;
+    onChange: (code: string) => void;
+    locale: string;
+    label: string;
+    /** Arrival label for a given zone, shown beside each option. */
+    describeZone?: (zone: DeliveryZone) => string;
+}
+
+const DeliveryCountrySelect: React.FC<Props> = ({ zones, value, onChange, locale, label, describeZone }) => {
+    const [open, setOpen] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const rootRef = useRef<HTMLDivElement>(null);
+    const listRef = useRef<HTMLUListElement>(null);
+    const typeahead = useRef({ buffer: '', at: 0 });
+
+    const selectedIndex = Math.max(0, zones.findIndex(z => z.country_code === value));
+    const selected = zones[selectedIndex];
+
+    useEffect(() => {
+        if (!open) return;
+        const onPointerDown = (e: PointerEvent) => {
+            if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+        };
+        // Closing on scroll rather than repositioning: the panel is anchored to a
+        // control inside a sticky column, and a detached menu is worse than none.
+        const onScroll = () => setOpen(false);
+        document.addEventListener('pointerdown', onPointerDown);
+        window.addEventListener('scroll', onScroll, true);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown);
+            window.removeEventListener('scroll', onScroll, true);
+        };
+    }, [open]);
+
+    // Open onto the current selection, and keep the highlighted row in view.
+    useLayoutEffect(() => {
+        if (!open) return;
+        setActiveIndex(selectedIndex);
+    }, [open, selectedIndex]);
+
+    useEffect(() => {
+        if (!open) return;
+        listRef.current?.querySelector<HTMLElement>('[data-active="true"]')
+            ?.scrollIntoView({ block: 'nearest' });
+    }, [open, activeIndex]);
+
+    const commit = (index: number) => {
+        const zone = zones[index];
+        if (zone) onChange(zone.country_code);
+        setOpen(false);
+    };
+
+    const onKeyDown = (e: React.KeyboardEvent) => {
+        if (!open) {
+            if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+                e.preventDefault();
+                setOpen(true);
+            }
+            return;
+        }
+
+        switch (e.key) {
+            case 'Escape':
+                e.preventDefault();
+                setOpen(false);
+                break;
+            case 'Enter':
+            case ' ':
+                e.preventDefault();
+                commit(activeIndex);
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                setActiveIndex(i => (i + 1) % zones.length);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setActiveIndex(i => (i - 1 + zones.length) % zones.length);
+                break;
+            case 'Home':
+                e.preventDefault();
+                setActiveIndex(0);
+                break;
+            case 'End':
+                e.preventDefault();
+                setActiveIndex(zones.length - 1);
+                break;
+            default: {
+                // Type-ahead. Letters typed within a second of each other build a
+                // prefix, the way a native select behaves.
+                if (e.key.length !== 1) return;
+                const now = Date.now();
+                const t = typeahead.current;
+                t.buffer = now - t.at < 1000 ? t.buffer + e.key : e.key;
+                t.at = now;
+                const match = zones.findIndex(z =>
+                    zoneLabel(z, locale).toLowerCase().startsWith(t.buffer.toLowerCase()));
+                if (match >= 0) setActiveIndex(match);
+            }
+        }
+    };
+
+    if (zones.length === 0) return null;
+
+    return (
+        <div className={styles.root} ref={rootRef}>
+            <span className={styles.label}>{label}</span>
+
+            <button
+                type="button"
+                className={`${styles.trigger} ${open ? styles.triggerOpen : ''}`}
+                onClick={() => setOpen(o => !o)}
+                onKeyDown={onKeyDown}
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                aria-label={`${label}: ${selected ? zoneLabel(selected, locale) : ''}`}
+            >
+                <span className={styles.flag} aria-hidden="true">
+                    {selected ? flagEmoji(selected.country_code) : '🌍'}
+                </span>
+                <span className={styles.triggerName}>
+                    {selected ? zoneLabel(selected, locale) : ''}
+                </span>
+                <ChevronDown size={15} className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`} aria-hidden="true" />
+            </button>
+
+            {open && (
+                <ul
+                    className={styles.panel}
+                    role="listbox"
+                    ref={listRef}
+                    tabIndex={-1}
+                    aria-activedescendant={`zone-opt-${activeIndex}`}
+                >
+                    {zones.map((zone, i) => {
+                        const isSelected = zone.country_code === value;
+                        return (
+                            <li
+                                key={zone.country_code}
+                                id={`zone-opt-${i}`}
+                                role="option"
+                                aria-selected={isSelected}
+                                data-active={i === activeIndex}
+                                className={`${styles.option} ${i === activeIndex ? styles.optionActive : ''} ${isSelected ? styles.optionSelected : ''}`}
+                                onMouseEnter={() => setActiveIndex(i)}
+                                // pointerdown, not click: the outside-click handler runs on
+                                // pointerdown and would close the panel first.
+                                onPointerDown={(e) => { e.preventDefault(); commit(i); }}
+                            >
+                                <span className={styles.flag} aria-hidden="true">{flagEmoji(zone.country_code)}</span>
+                                <span className={styles.optionName}>{zoneLabel(zone, locale)}</span>
+                                {describeZone && (
+                                    <span className={styles.optionMeta}>{describeZone(zone)}</span>
+                                )}
+                                <span className={styles.tick}>{isSelected && <Check size={15} />}</span>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </div>
+    );
+};
+
+export default DeliveryCountrySelect;

@@ -85,3 +85,22 @@ export const zoneLabel = (zone: DeliveryZone, locale: string): string =>
 
 export const findZone = (zones: DeliveryZone[], code: string | null): DeliveryZone | undefined =>
     zones.find(z => z.country_code === code);
+
+/**
+ * Flag for a country code, as a regional-indicator emoji pair.
+ *
+ * Derived from the code rather than shipped as assets, so a country the admin
+ * adds later gets its flag with no extra work and no image requests. 'WW' is our
+ * own catch-all row, not a country, so it gets a globe.
+ *
+ * Renders as a flag on iOS, Android and macOS. Windows ships no flag glyphs, so
+ * there it falls back to the two letters — which is why the caller styles it as a
+ * code badge rather than leaving it looking like a failure.
+ */
+export const flagEmoji = (code: string): string => {
+    if (!code || code.length !== 2) return '🌍';
+    if (code.toUpperCase() === 'WW') return '🌍';
+    return String.fromCodePoint(
+        ...code.toUpperCase().split('').map(c => 0x1f1e6 + c.charCodeAt(0) - 65)
+    );
+};

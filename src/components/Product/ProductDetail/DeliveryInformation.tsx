@@ -2,12 +2,13 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { ChevronDown, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { deliveryDateLabel, isExpressDelivery, normalizeDeliveryDays, timeUntilMidnight } from '@/utils/delivery';
 import {
     DEFAULT_ZONE_CODE, DeliveryZone, FALLBACK_ZONES, findZone,
-    getDeliveryZones, readStoredCountry, storeCountry, zoneLabel,
+    getDeliveryZones, readStoredCountry, storeCountry,
 } from '@/utils/deliveryZones';
+import DeliveryCountrySelect from './DeliveryCountrySelect';
 import styles from './DeliveryInformation.module.css';
 
 interface DeliveryInformationProps {
@@ -88,25 +89,21 @@ export default function DeliveryInformation({ days, locale = 'en' }: DeliveryInf
             <div className={styles.deliveryCard}>
                 {/* One zone means nothing to choose between, so the control is not offered. */}
                 {zones.length > 1 && (
-                    <label className={styles.destinationRow}>
+                    <div className={styles.destinationRow}>
                         <MapPin size={15} className={styles.destinationIcon} />
-                        <span className={styles.destinationLabel}>{t('deliverTo')}</span>
-                        <span className={styles.destinationSelectWrap}>
-                            <select
-                                className={styles.destinationSelect}
-                                value={country}
-                                onChange={(e) => handleChange(e.target.value)}
-                                aria-label={t('deliverTo')}
-                            >
-                                {zones.map(z => (
-                                    <option key={z.country_code} value={z.country_code}>
-                                        {zoneLabel(z, locale)}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown size={15} className={styles.destinationChevron} aria-hidden="true" />
-                        </span>
-                    </label>
+                        <DeliveryCountrySelect
+                            zones={zones}
+                            value={country}
+                            onChange={handleChange}
+                            locale={locale}
+                            label={t('deliverTo')}
+                            // Each option carries its own arrival date, so the choice can be
+                            // made from the list rather than by picking one and reading the
+                            // line underneath.
+                            describeZone={(z) => deliveryDateLabel(
+                                normalizeDeliveryDays(baseDays + z.extra_days), locale)}
+                        />
+                    </div>
                 )}
 
                 <div className={styles.deliveryRow}>

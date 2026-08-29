@@ -104,70 +104,17 @@
     min-width: 0;
 }
 
-/* ── destination selector ─────────────────────────────────────────────────── */
+/* ── destination row ──────────────────────────────────────────────────────── */
 .destinationRow {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     padding-bottom: 9px;
     border-bottom: 1px solid #eef2f6;
-    font-size: 13px;
-    color: #475569;
-    cursor: pointer;
+    min-width: 0;
 }
 
 .destinationIcon {
     flex: none;
     color: #64748b;
-}
-
-.destinationLabel {
-    flex: none;
-    font-weight: 600;
-}
-
-.destinationSelectWrap {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    min-width: 0;
-}
-
-/* The native select carries the menu behaviour, keyboard support and the mobile
-   picker; only its chrome is replaced. */
-.destinationSelect {
-    appearance: none;
-    -webkit-appearance: none;
-    max-width: 100%;
-    padding: 3px 24px 3px 6px;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: #0f172a;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 1.3;
-    cursor: pointer;
-    text-overflow: ellipsis;
-}
-
-.destinationSelect:hover {
-    background: #f1f5f9;
-}
-
-.destinationSelect:focus-visible {
-    outline: 2px solid #16a1db;
-    outline-offset: 1px;
-}
-
-.destinationChevron {
-    position: absolute;
-    inset-inline-end: 5px;
-    color: #64748b;
-    pointer-events: none;
-}
-
-[dir='rtl'] .destinationSelect {
-    padding: 3px 6px 3px 24px;
 }
