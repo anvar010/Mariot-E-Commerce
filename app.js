@@ -34,6 +34,7 @@ const cmsRoutes = require('./routes/cms.routes');
 const settingsRoutes = require('./routes/settings.routes');
 const verifyRoutes = require('./routes/verify.routes');
 const shippingRoutes = require('./routes/shipping.routes');
+const deliveryZoneRoutes = require('./routes/deliveryZone.routes');
 const staffQuotationRoutes = require('./routes/staffQuotation.routes');
 
 const cookieParser = require('cookie-parser');
@@ -267,6 +268,7 @@ app.use('/api/v1/invoices', invoiceRoutes);
 app.use('/api/v1/cms', cmsRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/shipping', shippingRoutes);
+app.use('/api/v1/delivery-zones', deliveryZoneRoutes);
 app.use('/api/v1/verify', verifyRoutes);
 
 // Welcome route
