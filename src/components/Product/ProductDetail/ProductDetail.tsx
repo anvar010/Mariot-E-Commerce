@@ -1348,16 +1348,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     }
     const featuredVideoUrl = videoLinks[featuredVideoIndex] || videoLinks[0] || '';
 
-    const toEmbedUrl = (url: string) => {
-        if (!url) return '';
-        if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/').split('&')[0];
-        if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
-        return url;
-    };
-
     const youTubeId = (url: string) => {
         const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
         return m ? m[1] : '';
+    };
+
+    // Built from the id so the frame always lands on one origin.
+    //
+    // Rewriting the link textually produced "youtube.com/embed/..." from a youtu.be
+    // share link and "www.youtube.com/embed/..." from a normal one — two different
+    // origins for the same video. The document's Permissions-Policy delegates
+    // autoplay and fullscreen to a named origin, so a frame on the other spelling
+    // silently loses them.
+    const toEmbedUrl = (url: string) => {
+        const id = youTubeId(url);
+        return id ? `https://www.youtube.com/embed/${id}` : (url || '');
     };
 
     // YouTube's own still, so the strip shows what the video is of rather than a

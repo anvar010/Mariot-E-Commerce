@@ -166,7 +166,26 @@ const nextConfig = {
                     },
                     {
                         key: 'Permissions-Policy',
-                        value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()'
+                        // autoplay, encrypted-media, picture-in-picture and fullscreen
+                        // all default to an allowlist of "self", which excludes a
+                        // cross-origin frame. The product video's iframe asks for them
+                        // through its allow attribute, but a frame cannot grant itself
+                        // what the containing document has not delegated — hence
+                        // "Permissions policy violation: picture-in-picture is not
+                        // allowed in this document" in the console, and an autoplay=1
+                        // embed that opens paused. Delegated to YouTube only.
+                        value: [
+                            'camera=()',
+                            'microphone=()',
+                            'geolocation=(self)',
+                            'interest-cohort=()',
+                            // Both spellings: the Related Videos accordion builds its own
+                            // embed URLs and still emits the bare youtube.com origin.
+                            'autoplay=(self "https://www.youtube.com" "https://youtube.com")',
+                            'encrypted-media=(self "https://www.youtube.com" "https://youtube.com")',
+                            'picture-in-picture=(self "https://www.youtube.com" "https://youtube.com")',
+                            'fullscreen=(self "https://www.youtube.com" "https://youtube.com")',
+                        ].join(', ')
                     }
                 ]
             }
