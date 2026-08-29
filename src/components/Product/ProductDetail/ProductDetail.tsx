@@ -1333,7 +1333,48 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
             videoLinks = [String(videoDataRaw)].filter(v => v && v.trim() !== '');
         }
     }
-    const hasVideo = videoLinks.length > 0;
+
+    // Which of the product's videos is the featured one. Stored alongside the links
+    // when the CMS payload is an object rather than a bare array.
+    let featuredVideoIndex = 0;
+    if (videoDataRaw) {
+        try {
+            const parsed = JSON.parse(videoDataRaw);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                featuredVideoIndex = parsed.featuredIndex ?? 0;
+            }
+        } catch { /* a bare string has no featured index */ }
+    }
+    const featuredVideoUrl = videoLinks[featuredVideoIndex] || videoLinks[0] || '';
+
+    const toEmbedUrl = (url: string) => {
+        if (!url) return '';
+        if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/').split('&')[0];
+        if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
+        return url;
+    };
+
+    // YouTube's own still for the video, used as the gallery thumbnail so the strip
+    // shows what the video is of rather than a generic play icon.
+    const youTubeStill = (url: string) => {
+        const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+        return m ? `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg` : '';
+    };
+
+    // The video rides along at the end of the image gallery, so it plays in the same
+    // frame as the photos instead of sitting in its own column beside the copy.
+    type GalleryItem =
+        | { kind: 'image'; src: string }
+        | { kind: 'video'; embed: string; still: string };
+
+    const galleryItems: GalleryItem[] = [
+        ...images.map((src: string) => ({ kind: 'image' as const, src })),
+        ...(featuredVideoUrl
+            ? [{ kind: 'video' as const, embed: toEmbedUrl(featuredVideoUrl), still: youTubeStill(featuredVideoUrl) }]
+            : []),
+    ];
+
+    const activeIsVideo = galleryItems[currentImageIndex]?.kind === 'video';
 
     // Calculate Rating Stats once per render
     const reviewsCount = reviews.length;
@@ -1407,12 +1448,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         <div className={styles.topSection}>
                             {/* Gallery */}
                             <div className={styles.gallerySection}>
-                                <div
-                                    className={styles.stockBadge}
-                                    style={{ backgroundColor: !outOfStock ? '#62d972' : '#ff4d4f' }}
-                                >
-                                    {!outOfStock ? t('inStock') : t('outOfStock')}
-                                </div>
+                                {/* Stock is a fact about the product, but pinned over a playing
+                                    video it reads as a label on the video and covers it. */}
+                                {!activeIsVideo && (
+                                    <div
+                                        className={styles.stockBadge}
+                                        style={{ backgroundColor: !outOfStock ? '#62d972' : '#ff4d4f' }}
+                                    >
+                                        {!outOfStock ? t('inStock') : t('outOfStock')}
+                                    </div>
+                                )}
                                 <button className={styles.wishlistBtn} onClick={toggleWishlist}>
                                     <Heart size={20} fill={isFav ? "#e31e24" : "none"} color={isFav ? "#e31e24" : "#999"} />
                                 </button>
@@ -1440,24 +1485,49 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         onSlideChange={(swiper: any) => setCurrentImageIndex(swiper.activeIndex)}
                                         initialSlide={currentImageIndex}
                                     >
-                                        {images.map((img: string, idx: number) => (
+                                        {galleryItems.map((item, idx: number) => (
                                             <SwiperSlide key={idx} className={styles.mainSlide}>
-                                                <img
-                                                    src={img}
-                                                    alt={`${getLocalizedField('name', 'name_ar')} - ${idx + 1}`}
-                                                    className={styles.mainImage}
-                                                    onError={swapToLogoOnError}
-                                                />
+                                                {item.kind === 'video' ? (
+                                                    // Only mounted once the shopper is on this slide. An iframe
+                                                    // that exists from page load pulls in the YouTube player on
+                                                    // every product page, whether or not anyone watches it.
+                                                    currentImageIndex === idx ? (
+                                                        <div className={styles.galleryVideo}>
+                                                            <iframe
+                                                                src={item.embed}
+                                                                title="Product video"
+                                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                allowFullScreen
+                                                            ></iframe>
+                                                        </div>
+                                                    ) : (
+                                                        <div className={styles.galleryVideoPoster}>
+                                                            {item.still && <img src={item.still} alt="" className={styles.mainImage} />}
+                                                            <span className={styles.galleryPlayBadge}><PlayCircle size={54} /></span>
+                                                        </div>
+                                                    )
+                                                ) : (
+                                                    <img
+                                                        src={item.src}
+                                                        alt={`${getLocalizedField('name', 'name_ar')} - ${idx + 1}`}
+                                                        className={styles.mainImage}
+                                                        onError={swapToLogoOnError}
+                                                    />
+                                                )}
                                             </SwiperSlide>
                                         ))}
                                     </Swiper>
-                                    <button
-                                        className={styles.expandBtn}
-                                        onClick={() => setIsFullScreen(true)}
-                                        title={isArabic ? 'تكبير الصورة' : 'Expand Image'}
-                                    >
-                                        <Maximize2 size={20} />
-                                    </button>
+                                    {/* The lightbox zooms photographs; the video has its own
+                                        fullscreen control inside the player. */}
+                                    {!activeIsVideo && (
+                                        <button
+                                            className={styles.expandBtn}
+                                            onClick={() => setIsFullScreen(true)}
+                                            title={isArabic ? 'تكبير الصورة' : 'Expand Image'}
+                                        >
+                                            <Maximize2 size={20} />
+                                        </button>
+                                    )}
                                     {/* Custom dots container, positioned beneath the image track */}
                                     <div className={styles.swiperPagination}></div>
                                 </div>
@@ -1465,7 +1535,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 <div className={styles.thumbnailsWrapper}>
                                     <button
                                         className={styles.navBtn}
-                                        onClick={() => setCurrentImageIndex(prev => prev > 0 ? prev - 1 : images.length - 1)}
+                                        onClick={() => setCurrentImageIndex(prev => prev > 0 ? prev - 1 : galleryItems.length - 1)}
                                     >
                                         <ChevronLeft size={32} />
                                     </button>
@@ -1478,19 +1548,26 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         onMouseMove={handleThumbMouseMove}
                                         style={{ cursor: isDraggingThumbs ? 'grabbing' : 'grab' }}
                                     >
-                                        {images.map((img: string, idx: number) => (
+                                        {galleryItems.map((item, idx: number) => (
                                             <div
                                                 key={idx}
                                                 className={`${styles.thumbWrapper} ${currentImageIndex === idx ? styles.active : ''}`}
                                                 onClick={() => setCurrentImageIndex(idx)}
                                             >
-                                                <img src={img} alt={`Thumb ${idx}`} className={styles.thumbImage} onError={swapToLogoOnError} />
+                                                {item.kind === 'video' ? (
+                                                    <>
+                                                        <img src={item.still} alt="Product video" className={styles.thumbImage} onError={swapToLogoOnError} />
+                                                        <span className={styles.thumbPlayBadge}><PlayCircle size={20} /></span>
+                                                    </>
+                                                ) : (
+                                                    <img src={item.src} alt={`Thumb ${idx}`} className={styles.thumbImage} onError={swapToLogoOnError} />
+                                                )}
                                             </div>
                                         ))}
                                     </div>
                                     <button
                                         className={styles.navBtn}
-                                        onClick={() => setCurrentImageIndex(prev => prev < images.length - 1 ? prev + 1 : 0)}
+                                        onClick={() => setCurrentImageIndex(prev => prev < galleryItems.length - 1 ? prev + 1 : 0)}
                                     >
                                         <ChevronRight size={32} />
                                     </button>
@@ -2119,7 +2196,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 </div>
 
 
-                <div className={`${styles.detailsLayoutGrid} ${!hasVideo ? styles.noVideo : ''}`}>
+                <div className={styles.detailsLayoutGrid}>
                     {/*     Main Content Area (Accordions Column) */}
                     <div className={styles.accordionsColumn}>
                         <div className={styles.plainDescriptionSection}>
@@ -2373,46 +2450,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         </div>
                     </div>
 
-                    {/* Right column: Featured Video (area: video) */}
-                    {hasVideo && (
-                        <div className={styles.videoColumn}>
-                            {(() => {
-                                let fIndex = 0;
-                                if (videoDataRaw) {
-                                    try {
-                                        const parsed = JSON.parse(videoDataRaw);
-                                        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-                                            fIndex = parsed.featuredIndex ?? 0;
-                                        }
-                                    } catch { }
-                                }
-
-                                const featuredUrl = videoLinks[fIndex] || videoLinks[0];
-
-                                const getEmbedUrl = (url: string) => {
-                                    if (!url) return '';
-                                    if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/').split('&')[0];
-                                    if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
-                                    return url;
-                                };
-
-                                if (!featuredUrl) return null;
-
-                                return (
-                                    <div className={styles.stickyVideoWrapper}>
-                                        <div className={styles.videoContainer}>
-                                            <iframe
-                                                src={getEmbedUrl(featuredUrl)}
-                                                title="Product Featured Video"
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                allowFullScreen
-                                            ></iframe>
-                                        </div>
-                                    </div>
-                                );
-                            })()}
-                        </div>
-                    )}
+                    {/* The featured video used to sit here, in its own column beside the
+                        description. It now travels with the photographs in the gallery
+                        above, so there is one place to look at the product. */}
                 </div>
 
                 <div className={`${styles.sidebar} ${styles.sidebarMobile}`}>
