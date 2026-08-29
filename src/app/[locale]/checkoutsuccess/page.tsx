@@ -15,12 +15,16 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/context/AuthContext';
+import { API_BASE_URL } from '@/config';
+import { getAuthHeaders } from '@/utils/authHeaders';
 import styles from './success.module.css';
 
 const SuccessContent = () => {
     const t = useTranslations('success');
     const searchParams = useSearchParams();
     const [orderId, setOrderId] = useState<string>('...');
+    const { user, refreshUser } = useAuth();
 
     useEffect(() => {
         const id = searchParams.get('orderId');
@@ -31,6 +35,51 @@ const SuccessContent = () => {
             setOrderId('Order #M' + Math.floor(100000 + Math.random() * 900000));
         }
     }, [searchParams]);
+
+    /**
+     * Bring the reward balance up to date, once the order has actually settled.
+     *
+     * A card order earns its points only when the payment is confirmed paid, not
+     * when the order is created — the crediting hangs off updatePaymentStatus, and
+     * for a card that means waiting for Stripe's webhook. Refreshing back on the
+     * checkout page therefore read the balance before it had changed, which is why
+     * the points still looked stale after an order.
+     *
+     * Reading the order here is what settles it: the API reconciles a pending order
+     * against Stripe when it is fetched, and marking it paid is what credits the
+     * points. So this asks for the order until it comes back paid, then refreshes
+     * the user. A few seconds of polling covers the webhook arriving on its own, and
+     * the reconciliation covers it never arriving at all.
+     */
+    useEffect(() => {
+        const id = searchParams.get('orderId');
+        if (!id || !user) return;
+
+        let cancelled = false;
+        const delays = [0, 1500, 3000, 5000];
+
+        (async () => {
+            for (const wait of delays) {
+                if (cancelled) return;
+                if (wait) await new Promise(r => setTimeout(r, wait));
+                try {
+                    const res = await fetch(`${API_BASE_URL}/orders/${id}`, {
+                        credentials: 'include',
+                        headers: getAuthHeaders(),
+                    });
+                    const data = await res.json();
+                    if (data?.data?.payment_status === 'paid') break;
+                } catch {
+                    // A failed read just means trying again, or giving up quietly:
+                    // the balance is only ever cosmetic on this page.
+                }
+            }
+            if (!cancelled) await refreshUser();
+        })();
+
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, user?.id]);
 
     return (
         <div className={styles.successPage}>
