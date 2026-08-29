@@ -14,8 +14,18 @@
   margin: 0;
 }
 
+/* Deliberately NOT scroll-behavior: smooth.
+ *
+ * On the root element it also animates the browser's scroll *restoration*, so a
+ * refresh or a Back navigation starts gliding toward the saved position while the
+ * document is still loading and growing underneath it. The animation chases a
+ * moving target and settles at the bottom — which is why every refresh was
+ * dumping the visitor at the footer.
+ *
+ * Nothing is lost by removing it: every smooth scroll in the app asks for it
+ * explicitly via window.scrollTo({ behavior: 'smooth' }), and those still work. */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 html,

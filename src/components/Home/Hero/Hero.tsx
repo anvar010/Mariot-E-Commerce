@@ -154,8 +154,13 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
     const track = count > 1 ? [slides[count - 1], ...slides, slides[0]] : slides;
     const activeIndex = count > 1 ? (position - 1 + count) % count : 0;
 
+    // With a single slide there are no clones, so index 1 does not exist: the sole
+    // card would be treated as a neighbour — blurred, textless and shifted a whole
+    // card-width off screen. Pin it at 0 and there is simply nothing to carousel.
+    const trackPosition = count > 1 ? position : 0;
+
     const step = metrics.cardWidth + metrics.gap;
-    const baseOffset = metrics.peek + metrics.gap - position * step;
+    const baseOffset = metrics.peek + metrics.gap - trackPosition * step;
     const offset = baseOffset + (drag?.delta ?? 0);
 
     const goTo = useCallback((next: number) => {
@@ -254,7 +259,7 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                     onTransitionEnd={handleTransitionEnd}
                 >
                     {track.map((slide, i) => {
-                        const isActive = i === position;
+                        const isActive = i === trackPosition;
                         const image = (isMobile && slide?.imageMobile) ? slide.imageMobile : slide?.image;
 
                         return (
