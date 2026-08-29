@@ -1491,9 +1491,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     <Share2 size={18} color="#555" />
                                 </button>
 
-                                {/* A video is 16:9; the frame is square on phones. Without this
-                                    the slide leaves a tall band of empty white beneath the player. */}
-                                <div className={`${styles.mainImageWrapper} ${activeIsVideo ? styles.videoFrame : ''}`}>
+                                {/* The frame keeps one shape for every slide. Reshaping it when the
+                                    video became active resized the gallery mid-swipe, and the video
+                                    fills the frame on its own black now, so there is nothing to gain
+                                    from the change. */}
+                                <div className={styles.mainImageWrapper}>
                                     <Swiper
                                         onSwiper={(swiper: any) => (mainSwiperRef.current = swiper)}
                                         spaceBetween={0}

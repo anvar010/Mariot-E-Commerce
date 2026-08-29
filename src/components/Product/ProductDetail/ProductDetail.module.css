@@ -5518,11 +5518,16 @@
 .galleryVideo,
 .galleryVideoPoster {
     position: relative;
-    /* 16:9, letterboxed inside the fixed-height image frame rather than
-       stretched to fill it. */
+    /* Fills its slide, exactly as a photograph does.
+     *
+     * It used to be a 16:9 box inside a square slide, which made it a short strip
+     * sitting between full-height photographs — so every swipe past it showed the
+     * video shrinking and the neighbours towering over it. Filling the slide keeps
+     * all of them the same size and the swipe uniform; the video itself is still
+     * shown at its own proportions by the contain below, against the player's own
+     * black rather than against empty page. */
     width: 100%;
-    aspect-ratio: 16 / 9;
-    max-height: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5586,25 +5591,12 @@
     position: relative;
 }
 
-/* On phones the image frame is a full-bleed square, which is right for
-   photographs and wrong for a 16:9 video — it left a tall band of empty white
-   under the player. When the active slide is the video, the frame takes the
-   video's shape instead, and since mobile removes the frame's padding the two
-   match exactly with nothing left over. */
+/* Phones show the frame edge to edge, so the video drops its rounded corners and
+   simply fills the slide like the photographs beside it. */
 @media (max-width: 768px) {
-    .mainImageWrapper.videoFrame {
-        aspect-ratio: 16 / 9;
-    }
 
-    .videoFrame .galleryVideo,
-    .videoFrame .galleryVideoPoster {
-        aspect-ratio: auto;
-        height: 100%;
+    .galleryVideo,
+    .galleryVideoPoster {
         border-radius: 0;
     }
-
-    /* No cover override here on purpose. Where the frame is 16:9 and the still is
-       16:9, contain and cover give the identical result — but contain can never
-       crop, so if the frame is ever not exactly 16:9 the video is shown at its own
-       proportions rather than enlarged and cut off. */
 }
