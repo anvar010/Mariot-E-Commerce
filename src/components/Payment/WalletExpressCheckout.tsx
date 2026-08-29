@@ -120,6 +120,11 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
                         setAvailable(
                             !!availablePaymentMethods && Object.values(availablePaymentMethods).some(Boolean)
                         );
+                        // "The button isn't showing" is otherwise unanswerable: the
+                        // browser decides silently and a missing button looks identical
+                        // whether the cause is a device with no saved card, the wrong
+                        // Stripe mode, or an unregistered domain. This says which.
+                        console.info('[wallet] available:', availablePaymentMethods ?? 'none');
                     }}
                     onLoadError={({ error }) => {
                         console.error('[wallet] Express checkout failed to load:', error?.message || error);
