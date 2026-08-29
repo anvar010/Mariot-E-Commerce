@@ -1,0 +1,371 @@
+/* Delivery zones — matches the card styling used across the admin settings. */
+
+.card {
+    background: #ffffff;
+    border: 1px solid #e8edf3;
+    border-radius: 16px;
+    padding: 28px;
+    margin-top: 24px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .04);
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.sectionTitle h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.countPill {
+    margin-inline-start: auto;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* ── explainer ────────────────────────────────────────────────────────────── */
+.explainer {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px;
+    margin-bottom: 20px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.explainer h4 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.explainer p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #64748b;
+}
+
+.explainerNote {
+    margin-top: 8px !important;
+    font-size: 12.5px !important;
+    color: #94a3b8 !important;
+}
+
+/* ── table ────────────────────────────────────────────────────────────────── */
+.tableWrap {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.table th {
+    padding: 10px 10px;
+    text-align: start;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    border-bottom: 1px solid #eef2f7;
+    white-space: nowrap;
+}
+
+.table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f4f7fa;
+    vertical-align: middle;
+}
+
+.row:hover {
+    background: #fbfdff;
+}
+
+.draftRow {
+    background: #f0f9ff;
+}
+
+/* A zone that is off still lists, dimmed, so it is obvious it exists but is not
+   being offered. */
+.inactiveRow {
+    opacity: .55;
+}
+
+.centerCell {
+    text-align: center;
+}
+
+.empty {
+    padding: 26px 10px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13.5px;
+}
+
+/* ── inputs ───────────────────────────────────────────────────────────────── */
+.input {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13.5px;
+    color: #0f172a;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .1);
+}
+
+.input:disabled {
+    background: #f8fafc;
+    color: #475569;
+    cursor: not-allowed;
+}
+
+.codeInput {
+    width: 66px;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: .06em;
+}
+
+.daysInput {
+    width: 84px;
+}
+
+.orderInput {
+    width: 72px;
+}
+
+/* ── preview ──────────────────────────────────────────────────────────────── */
+.previewCell {
+    white-space: nowrap;
+}
+
+.previewDays {
+    display: inline-block;
+    min-width: 34px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.previewDate {
+    margin-inline-start: 6px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.expressTag {
+    margin-inline-start: 8px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+}
+
+/* ── toggle ───────────────────────────────────────────────────────────────── */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 21px;
+    cursor: pointer;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    inset: 0;
+    background: #cbd5e1;
+    border-radius: 999px;
+    transition: background .2s ease;
+}
+
+.slider::before {
+    content: '';
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s ease;
+}
+
+.switch input:checked+.slider {
+    background: #22c55e;
+}
+
+.switch input:checked+.slider::before {
+    transform: translateX(17px);
+}
+
+.switch input:focus-visible+.slider {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .25);
+}
+
+/* ── actions ──────────────────────────────────────────────────────────────── */
+.actionsCell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.saveRowBtn,
+.deleteRowBtn {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #475569;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.saveRowBtn:hover:not(:disabled) {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.deleteRowBtn:hover:not(:disabled) {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.saveRowBtn:disabled,
+.deleteRowBtn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.cancelBtn {
+    padding: 7px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #475569;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cancelBtn:hover {
+    background: #f8fafc;
+}
+
+.addBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 16px;
+    padding: 10px 16px;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    color: #334155;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+}
+
+.addBtn:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+
+/* ── states ───────────────────────────────────────────────────────────────── */
+.loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 30px 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.error {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 16px;
+    padding: 11px 14px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    color: #991b1b;
+    font-size: 13px;
+}
+
+.toast {
+    position: fixed;
+    bottom: 28px;
+    inset-inline-end: 28px;
+    z-index: 1000;
+    padding: 13px 20px;
+    background: #0f172a;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .25);
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spin {
+        animation: none;
+    }
+}

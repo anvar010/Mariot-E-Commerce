@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './AdminSettings.module.css';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import AdminDeliveryZones from './AdminDeliveryZones';
 import { 
     Settings, 
     Save, 
@@ -154,6 +155,8 @@ const AdminSettings = () => {
                     <span>{saving ? 'Saving...' : 'Save Configuration'}</span>
                 </button>
             </div>
+
+            <AdminDeliveryZones />
 
             {showToast && (
                 <div className={styles.toast}>

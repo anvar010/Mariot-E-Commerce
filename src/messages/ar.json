@@ -251,7 +251,8 @@
         "phoneSupport": "الدعم الهاتفي",
         "infoEmail": "البريد الإلكتروني",
         "helpCenter": "مركز المساعدة",
-        "pdfDocument": "ملف PDF"
+        "pdfDocument": "ملف PDF",
+        "deliverTo": "التوصيل إلى"
     },
     "footer": {
         "alwaysReady": "نحن دائماً جاهزون لمساعدتك",

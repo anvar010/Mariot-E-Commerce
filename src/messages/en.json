@@ -251,7 +251,8 @@
     "phoneSupport": "Phone Support",
     "infoEmail": "Support Email",
     "helpCenter": "Help Center",
-    "pdfDocument": "PDF Document"
+    "pdfDocument": "PDF Document",
+    "deliverTo": "Deliver to"
   },
   "footer": {
     "alwaysReady": "We're always ready to help",
