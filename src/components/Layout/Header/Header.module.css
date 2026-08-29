@@ -557,15 +557,34 @@
     position: relative;
 }
 
-.rewardToast {
-    position: absolute;
-    top: 100%;
-    inset-inline-start: 50%;
-    transform: translateX(-50%) translateY(10px);
+/* Anchored to the viewport rather than to the reward-points link.
+   That link only exists above 768px, so a toast nested inside it could never be
+   painted on a phone. Fixed positioning keeps it visible at every size and stops
+   it depending on an element that may not be rendered at all. */
+.rewardToastFloating {
+    position: fixed;
+    top: 84px;
+    inset-inline-end: 16px;
     z-index: 1001;
-    min-width: 250px;
+    max-width: min(320px, calc(100vw - 32px));
     filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
     animation: toastBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* The mobile header is shorter, and the toast spans the width there. */
+@media (max-width: 768px) {
+    .rewardToastFloating {
+        top: 68px;
+        inset-inline-start: 10px;
+        inset-inline-end: 10px;
+        max-width: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rewardToastFloating {
+        animation: none;
+    }
 }
 
 .rewardToastContent {
@@ -581,16 +600,9 @@
     position: relative;
 }
 
-.rewardToastContent::after {
-    content: '';
-    position: absolute;
-    top: -6px;
-    inset-inline-start: 50%;
-    transform: translateX(-50%);
-    border-inline-start: 6px solid transparent;
-    border-inline-end: 6px solid transparent;
-    border-bottom: 6px solid #56cfe1;
-}
+/* The pointer arrow is gone with the tooltip it belonged to: the toast used to
+   hang off the coins icon and needed to point back at it. It now floats against
+   the viewport corner, where an arrow would point at nothing. */
 
 .trophyIcon {
     color: #ffbf00;
