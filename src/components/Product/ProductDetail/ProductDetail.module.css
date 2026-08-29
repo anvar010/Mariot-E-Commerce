@@ -249,6 +249,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Anchors the video box, which centres itself against this rather than
+       against the flex alignment above — two other rules also target .mainSlide
+       and the box kept ending up at the top of the frame. */
+    position: relative;
 }
 
 .stockBadge {
@@ -5517,7 +5521,6 @@
    frame as the photographs instead of in a column beside the description. */
 .galleryVideo,
 .galleryVideoPoster {
-    position: relative;
     /* The box is the video, at 16:9 and nothing more.
      *
      * Filling the slide instead meant black above and below the picture on a
@@ -5531,9 +5534,15 @@
     width: 100%;
     aspect-ratio: 16 / 9;
     max-height: 100%;
-    /* Centres the box inside a taller slide on both axes, without relying on the
-       parent's alignment surviving every other rule that touches a slide. */
-    margin: auto;
+    /* Pinned to the middle of the slide rather than left to flex alignment.
+       margin: auto and align-items: center both failed here — three rules target
+       .mainSlide and the box kept settling against the top of the frame. Half the
+       slide down, then half the box back up, leaves it centred whatever else
+       happens to the slide. */
+    position: absolute;
+    top: 50%;
+    inset-inline: 0;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5578,17 +5587,17 @@
     pointer-events: none;
 }
 
-/* YouTube keeps its button dark until hover, which stops it competing with the
-   still behind it; the red is the reward for aiming at it. */
+/* Red from the outset, not only under the pointer. YouTube's dark-until-hover
+   treatment relies on a hover that half the visitors here do not have, and on a
+   busy photograph the grey button barely registered as a control. */
 .ytPlayBg {
-    fill: #212121;
-    fill-opacity: .8;
-    transition: fill .18s ease, fill-opacity .18s ease;
+    fill: #f00;
+    fill-opacity: 1;
+    transition: fill .18s ease;
 }
 
 .galleryVideoPoster:hover .ytPlayBg {
-    fill: #f00;
-    fill-opacity: 1;
+    fill: #cc0000;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5614,13 +5623,14 @@
     position: relative;
 }
 
-/* Phones show the frame edge to edge, so the video drops its rounded corners and
-   simply fills the slide like the photographs beside it. */
+/* The video keeps its rounded corners on phones too. It was squared off back when
+   the box ran edge to edge and a radius would have been clipped by the frame; the
+   box now sits inside the frame at 16:9, so the corners are visible and belong. */
 @media (max-width: 768px) {
 
     .galleryVideo,
     .galleryVideoPoster {
-        border-radius: 0;
+        border-radius: 10px;
     }
 }
 
