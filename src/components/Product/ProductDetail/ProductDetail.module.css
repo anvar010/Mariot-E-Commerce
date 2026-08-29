@@ -5600,3 +5600,31 @@
         border-radius: 0;
     }
 }
+
+/* Way out of a playing video.
+   Sits over the frame but outside the iframe, which is the point: everything
+   inside the iframe belongs to the player, so this is the only control the page
+   still owns once the video is running. */
+.videoCloseBtn {
+    position: absolute;
+    top: 10px;
+    inset-inline-end: 10px;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, .62);
+    color: #ffffff;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: background .15s ease;
+}
+
+.videoCloseBtn:hover {
+    background: rgba(15, 23, 42, .85);
+}

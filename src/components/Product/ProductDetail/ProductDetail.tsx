@@ -45,7 +45,8 @@ import {
     Package,
     Fan,
     Weight,
-    Settings
+    Settings,
+    X as CloseIcon
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
@@ -348,6 +349,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const shortDescRef = useRef<HTMLDivElement>(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [videoPlaying, setVideoPlaying] = useState(false);
+    // Where a press on the video poster began, so a swipe that happens to end on
+    // it is not mistaken for a tap. See the poster's handlers for why this cannot
+    // simply be an onClick.
+    const posterTapRef = useRef<{ x: number; y: number } | null>(null);
     const [isQtyOpen, setIsQtyOpen] = useState(false);
     const qtyRef = useRef<HTMLDivElement>(null);
 
@@ -1540,12 +1545,45 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                                 allowFullScreen
                                                             ></iframe>
+
+                                                            {/* The only way back out on a phone.
+                                                                A playing iframe consumes every touch inside it, so
+                                                                once the video fills the frame there is nothing left
+                                                                to swipe or scroll from — the page is stuck until the
+                                                                player goes away. This button sits outside the iframe
+                                                                and puts the still back, which frees the gesture and
+                                                                stops the video at the same time. */}
+                                                            <button
+                                                                type="button"
+                                                                className={styles.videoCloseBtn}
+                                                                onClick={() => setVideoPlaying(false)}
+                                                                aria-label={isArabic ? 'إغلاق الفيديو' : 'Close video'}
+                                                                title={isArabic ? 'إغلاق الفيديو' : 'Close video'}
+                                                            >
+                                                                <CloseIcon size={18} />
+                                                            </button>
                                                         </div>
                                                     ) : (
                                                         <button
                                                             type="button"
                                                             className={styles.galleryVideoPoster}
-                                                            onClick={() => { setCurrentImageIndex(idx); setVideoPlaying(true); }}
+                                                            // Not onClick. Swiper suppresses a click whenever the
+                                                            // touch moved at all, and a finger tap almost always
+                                                            // drifts a pixel or two — so the first tap was being
+                                                            // swallowed as a swipe and only the second one played.
+                                                            // Judging the gesture here instead: released close to
+                                                            // where it started, so it was a tap and not a swipe.
+                                                            onPointerDown={(e) => { posterTapRef.current = { x: e.clientX, y: e.clientY }; }}
+                                                            onPointerUp={(e) => {
+                                                                const start = posterTapRef.current;
+                                                                posterTapRef.current = null;
+                                                                if (!start) return;
+                                                                const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+                                                                if (moved > 12) return;
+                                                                setCurrentImageIndex(idx);
+                                                                setVideoPlaying(true);
+                                                            }}
+                                                            onPointerCancel={() => { posterTapRef.current = null; }}
                                                             aria-label="Play product video"
                                                         >
                                                             {item.still && (
