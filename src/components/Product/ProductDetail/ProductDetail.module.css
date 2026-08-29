@@ -5518,16 +5518,19 @@
 .galleryVideo,
 .galleryVideoPoster {
     position: relative;
-    /* Fills its slide, exactly as a photograph does.
+    /* The box is the video, at 16:9 and nothing more.
      *
-     * It used to be a 16:9 box inside a square slide, which made it a short strip
-     * sitting between full-height photographs — so every swipe past it showed the
-     * video shrinking and the neighbours towering over it. Filling the slide keeps
-     * all of them the same size and the swipe uniform; the video itself is still
-     * shown at its own proportions by the contain below, against the player's own
-     * black rather than against empty page. */
+     * Filling the slide instead meant black above and below the picture on a
+     * square frame, and the owner would rather have the video at its true size
+     * than have every slide the same height. The consequence is that the video
+     * slide is shorter than the photographs beside it, which shows while swiping
+     * past — a deliberate trade, not an oversight.
+     *
+     * max-height keeps it inside a short frame: the aspect ratio then drives the
+     * width down instead of the box overflowing. */
     width: 100%;
-    height: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
