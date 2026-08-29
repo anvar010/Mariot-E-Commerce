@@ -104,3 +104,22 @@ export const flagEmoji = (code: string): string => {
         ...code.toUpperCase().split('').map(c => 0x1f1e6 + c.charCodeAt(0) - 65)
     );
 };
+
+/**
+ * Local flag image for a country code, or null when we do not ship one.
+ *
+ * Emoji alone was not enough: Windows ships no flag glyphs, so a Windows
+ * shopper saw the two letters instead of a flag. These are 1.7KB in total for
+ * the whole GCC and are served from our own origin, so there is no third-party
+ * host to go down or be blocked - which matters on a site that has already had
+ * CDN refusals.
+ *
+ * A country the admin adds later has no file here and falls back to the emoji,
+ * which still renders on the phones most shoppers use.
+ */
+const FLAG_FILES = new Set(['ae', 'sa', 'kw', 'qa', 'bh', 'om']);
+
+export const flagImageSrc = (code: string): string | null => {
+    const key = (code || '').toLowerCase();
+    return FLAG_FILES.has(key) ? `/assets/flags/${key}.png` : null;
+};

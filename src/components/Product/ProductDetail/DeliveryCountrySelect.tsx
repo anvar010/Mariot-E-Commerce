@@ -12,8 +12,38 @@
  */
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
-import { DeliveryZone, flagEmoji, zoneLabel } from '@/utils/deliveryZones';
+import { DeliveryZone, flagEmoji, flagImageSrc, zoneLabel } from '@/utils/deliveryZones';
 import styles from './DeliveryCountrySelect.module.css';
+
+/**
+ * Flag for a zone.
+ *
+ * An image where we ship one, because Windows renders no flag emoji and a
+ * Windows shopper would otherwise see the bare country letters. Emoji covers
+ * anything the admin adds that has no file, and also catches an image that
+ * fails to load, so the slot is never empty.
+ */
+const ZoneFlag: React.FC<{ code: string; className?: string }> = ({ code, className }) => {
+    const src = flagImageSrc(code);
+    const [failed, setFailed] = useState(false);
+
+    if (!src || failed) {
+        return <span className={className} aria-hidden="true">{flagEmoji(code)}</span>;
+    }
+    return (
+        <img
+            src={src}
+            alt=""
+            aria-hidden="true"
+            className={className}
+            width={22}
+            height={16}
+            loading="lazy"
+            decoding="async"
+            onError={() => setFailed(true)}
+        />
+    );
+};
 
 interface Props {
     zones: DeliveryZone[];
@@ -134,9 +164,9 @@ const DeliveryCountrySelect: React.FC<Props> = ({ zones, value, onChange, locale
                 aria-expanded={open}
                 aria-label={`${label}: ${selected ? zoneLabel(selected, locale) : ''}`}
             >
-                <span className={styles.flag} aria-hidden="true">
-                    {selected ? flagEmoji(selected.country_code) : '🌍'}
-                </span>
+                {selected
+                    ? <ZoneFlag code={selected.country_code} className={styles.flag} />
+                    : <span className={styles.flag} aria-hidden="true">🌍</span>}
                 <span className={styles.triggerName}>
                     {selected ? zoneLabel(selected, locale) : ''}
                 </span>
@@ -166,7 +196,7 @@ const DeliveryCountrySelect: React.FC<Props> = ({ zones, value, onChange, locale
                                 // pointerdown and would close the panel first.
                                 onPointerDown={(e) => { e.preventDefault(); commit(i); }}
                             >
-                                <span className={styles.flag} aria-hidden="true">{flagEmoji(zone.country_code)}</span>
+                                <ZoneFlag code={zone.country_code} className={styles.flag} />
                                 <span className={styles.optionName}>{zoneLabel(zone, locale)}</span>
                                 {describeZone && (
                                     <span className={styles.optionMeta}>{describeZone(zone)}</span>

@@ -65,19 +65,19 @@
 }
 
 /* ── flag ─────────────────────────────────────────────────────────────────── */
-/* Windows has no flag glyphs, so the regional-indicator pair falls back to two
-   letters. Sizing and spacing them like a code badge keeps that legible instead
-   of looking like a rendering failure. */
+/* Sized for both cases: an <img> of the real flag, and the emoji span used when
+   we ship no file for a country. */
 .flag {
     flex: none;
     display: inline-grid;
     place-items: center;
-    min-width: 22px;
+    width: 22px;
     height: 16px;
+    object-fit: cover;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, .12);
     font-size: 15px;
     line-height: 1;
-    letter-spacing: -.06em;
-    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif;
 }
 
 /* ── panel ────────────────────────────────────────────────────────────────── */
