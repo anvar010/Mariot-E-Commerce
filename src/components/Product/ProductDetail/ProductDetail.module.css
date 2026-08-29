@@ -5539,11 +5539,24 @@
 }
 
 /* Shown on the neighbouring slides, where the iframe is not mounted yet. */
-.galleryVideoPoster img {
+/* The poster is the resting state now, not a stand-in for a neighbouring slide,
+   so it is shown at full strength and is a real button. */
+.galleryVideoPoster {
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+}
+
+/* contain, not cover: the still is already the video's own 16:9 frame, so
+   cropping it to fill can only cut into the picture — which is what made it look
+   zoomed in. Any slack shows as the player's own black, which is what a video
+   frame looks like regardless. */
+.posterImage {
+    display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    opacity: .78;
+    object-fit: contain;
 }
 
 .galleryPlayBadge {
@@ -5588,5 +5601,11 @@
         aspect-ratio: auto;
         height: 100%;
         border-radius: 0;
+    }
+
+    /* Here the frame is already the video's shape, so the still fills it exactly
+       and cover crops nothing. */
+    .videoFrame .posterImage {
+        object-fit: cover;
     }
 }

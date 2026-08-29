@@ -347,6 +347,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [canShowReadMore, setCanShowReadMore] = useState(false);
     const shortDescRef = useRef<HTMLDivElement>(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
+    const [videoPlaying, setVideoPlaying] = useState(false);
     const [isQtyOpen, setIsQtyOpen] = useState(false);
     const qtyRef = useRef<HTMLDivElement>(null);
 
@@ -1354,27 +1355,48 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         return url;
     };
 
-    // YouTube's own still for the video, used as the gallery thumbnail so the strip
-    // shows what the video is of rather than a generic play icon.
-    const youTubeStill = (url: string) => {
+    const youTubeId = (url: string) => {
         const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
-        return m ? `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg` : '';
+        return m ? m[1] : '';
+    };
+
+    // YouTube's own still, so the strip shows what the video is of rather than a
+    // generic play icon.
+    //
+    // maxresdefault and mqdefault are both true 16:9. hqdefault, which this used
+    // before, is 480x360 - 4:3 with black bars baked into the image - so filling a
+    // 16:9 frame with it cropped away far more than the bars and the still looked
+    // zoomed in. maxres is not generated for every upload, hence the fallback.
+    const youTubeStill = (url: string) => {
+        const id = youTubeId(url);
+        return id ? `https://img.youtube.com/vi/${id}/maxresdefault.jpg` : '';
+    };
+
+    const youTubeStillFallback = (url: string) => {
+        const id = youTubeId(url);
+        return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : '';
     };
 
     // The video rides along at the end of the image gallery, so it plays in the same
     // frame as the photos instead of sitting in its own column beside the copy.
     type GalleryItem =
         | { kind: 'image'; src: string }
-        | { kind: 'video'; embed: string; still: string };
+        | { kind: 'video'; embed: string; still: string; stillFallback: string };
 
     const galleryItems: GalleryItem[] = [
         ...images.map((src: string) => ({ kind: 'image' as const, src })),
         ...(featuredVideoUrl
-            ? [{ kind: 'video' as const, embed: toEmbedUrl(featuredVideoUrl), still: youTubeStill(featuredVideoUrl) }]
+            ? [{ kind: 'video' as const, embed: toEmbedUrl(featuredVideoUrl), still: youTubeStill(featuredVideoUrl), stillFallback: youTubeStillFallback(featuredVideoUrl) }]
             : []),
     ];
 
     const activeIsVideo = galleryItems[currentImageIndex]?.kind === 'video';
+
+    // Leaving the video slide tears the player down, so it stops playing and stops
+    // holding on to touch events on the slides either side of it.
+    useEffect(() => {
+        if (!activeIsVideo) setVideoPlaying(false);
+    }, [activeIsVideo]);
 
     // Calculate Rating Stats once per render
     const reviewsCount = reviews.length;
@@ -1490,23 +1512,51 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         {galleryItems.map((item, idx: number) => (
                                             <SwiperSlide key={idx} className={styles.mainSlide}>
                                                 {item.kind === 'video' ? (
-                                                    // Only mounted once the shopper is on this slide. An iframe
-                                                    // that exists from page load pulls in the YouTube player on
-                                                    // every product page, whether or not anyone watches it.
-                                                    currentImageIndex === idx ? (
+                                                    // The player is mounted only once the shopper asks for it.
+                                                    //
+                                                    // Two problems came from mounting it as soon as the slide
+                                                    // became active. An iframe swallows touch events, so a finger
+                                                    // that landed on the video could neither scroll the page nor
+                                                    // swipe back to the photos — the gallery trapped you. And it
+                                                    // pulled in the whole YouTube player the moment anyone
+                                                    // reached the last slide, which is why the video was slow.
+                                                    // A still image does neither: the page scrolls over it, the
+                                                    // gallery swipes past it, and nothing loads until the play
+                                                    // button is pressed.
+                                                    videoPlaying && currentImageIndex === idx ? (
                                                         <div className={styles.galleryVideo}>
                                                             <iframe
-                                                                src={item.embed}
+                                                                src={`${item.embed}${item.embed.includes('?') ? '&' : '?'}autoplay=1&rel=0&playsinline=1`}
                                                                 title="Product video"
                                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                                 allowFullScreen
                                                             ></iframe>
                                                         </div>
                                                     ) : (
-                                                        <div className={styles.galleryVideoPoster}>
-                                                            {item.still && <img src={item.still} alt="" className={styles.mainImage} />}
+                                                        <button
+                                                            type="button"
+                                                            className={styles.galleryVideoPoster}
+                                                            onClick={() => { setCurrentImageIndex(idx); setVideoPlaying(true); }}
+                                                            aria-label="Play product video"
+                                                        >
+                                                            {item.still && (
+                                                                <img
+                                                                    src={item.still}
+                                                                    alt=""
+                                                                    className={styles.posterImage}
+                                                                    loading="lazy"
+                                                                    // maxres does not exist for every upload; drop to
+                                                                    // the smaller 16:9 still rather than a broken image.
+                                                                    onError={(e) => {
+                                                                        const img = e.currentTarget;
+                                                                        if (item.stillFallback && img.src !== item.stillFallback) {
+                                                                            img.src = item.stillFallback;
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            )}
                                                             <span className={styles.galleryPlayBadge}><PlayCircle size={54} /></span>
-                                                        </div>
+                                                        </button>
                                                     )
                                                 ) : (
                                                     <img
