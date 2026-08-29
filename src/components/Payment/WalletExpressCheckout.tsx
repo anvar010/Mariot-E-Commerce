@@ -14,11 +14,11 @@
  * applePay, googlePay and amazonPay are the only ones the SDK exposes. Samsung
  * devices get the Google Pay button, which is what they use in Chrome anyway.
  *
- * The element renders nothing at all when the visitor has no usable wallet
- * (Firefox, a desktop with no saved card, Safari without an Apple Pay card), so
- * the whole band hides itself rather than showing a button that cannot work.
+ * The element renders nothing where no wallet is supported at all (Firefox, for
+ * one), and the heading and divider around it appear only once a button has
+ * actually been drawn, so the band collapses instead of framing empty space.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Elements, ExpressCheckoutElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import styles from './WalletExpressCheckout.module.css';
@@ -53,11 +53,24 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
 }) => {
     const stripe = useStripe();
     const elements = useElements();
-    const [available, setAvailable] = useState<boolean | null>(null);
+    // Whether Stripe actually drew a button, measured rather than inferred.
+    //
+    // onReady's availablePaymentMethods is a report, not the outcome: with
+    // googlePay: 'always' Stripe may render a button while still reporting the
+    // method unavailable, and gating the layout on that report would hide the very
+    // button 'always' exists to force. Watching the box's height asks the question
+    // that actually matters — is there something in there — and needs no
+    // assumptions about how Stripe fills the report in.
+    const [hasButton, setHasButton] = useState(false);
+    const boxRef = useRef<HTMLDivElement>(null);
 
-    // onReady reports which wallets the browser can actually offer. null means we
-    // have not heard yet; false means none, so the band collapses.
-    if (available === false) return null;
+    useEffect(() => {
+        const box = boxRef.current;
+        if (!box || typeof ResizeObserver === 'undefined') return;
+        const ro = new ResizeObserver(() => setHasButton(box.offsetHeight > 0));
+        ro.observe(box);
+        return () => ro.disconnect();
+    }, []);
 
     const handleConfirm = async () => {
         if (!stripe || !elements) return;
@@ -97,7 +110,7 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
 
     return (
         <div className={styles.wrap} dir={isRtl ? 'rtl' : 'ltr'}>
-            {heading && available && <span className={styles.heading}>{heading}</span>}
+            {heading && hasButton && <span className={styles.heading}>{heading}</span>}
 
             {/* Always mounted at full width. An earlier version parked the element in
                 a 1px clipped box until onReady confirmed a wallet, but Stripe sizes
@@ -105,21 +118,24 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
                 laid out — Apple Pay happened to survive it, which is exactly why the
                 bug looked like "Android is broken". The element draws nothing until
                 it is ready, so there is nothing to hide in the first place. */}
-            <div className={styles.buttonBox}>
+            <div className={styles.buttonBox} ref={boxRef}>
                 <ExpressCheckoutElement
                     options={{
                         buttonHeight: 46,
                         // Only the wallets that make sense for this store. Link and
                         // Amazon Pay are not enabled on the account.
-                        paymentMethods: { applePay: 'auto', googlePay: 'auto', amazonPay: 'never', link: 'never' },
+                        //
+                        // googlePay is 'always' rather than 'auto' on purpose. Under
+                        // 'auto', Chrome on Android reports no payment method until the
+                        // shopper already has a card in Google Wallet, and Stripe then
+                        // hides the button entirely — which is why it appeared on desktop
+                        // Chrome, which is more permissive, and never on the phone.
+                        // 'always' shows the button and lets Google Pay handle a shopper
+                        // with no card saved yet. It does not override browser support:
+                        // Safari still gets Apple Pay only, and Firefox still gets neither.
+                        paymentMethods: { applePay: 'auto', googlePay: 'always', amazonPay: 'never', link: 'never' },
                     }}
                     onReady={({ availablePaymentMethods }) => {
-                        // Every key is present as a boolean whether or not the wallet is
-                        // offered, so counting keys always said "yes". Ask whether any
-                        // of them is actually true.
-                        setAvailable(
-                            !!availablePaymentMethods && Object.values(availablePaymentMethods).some(Boolean)
-                        );
                         // "The button isn't showing" is otherwise unanswerable: the
                         // browser decides silently and a missing button looks identical
                         // whether the cause is a device with no saved card, the wrong
@@ -128,7 +144,6 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
                     }}
                     onLoadError={({ error }) => {
                         console.error('[wallet] Express checkout failed to load:', error?.message || error);
-                        setAvailable(false);
                     }}
                     onClick={({ resolve, reject }) => {
                         const problem = validate?.();
@@ -144,7 +159,7 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
                 />
             </div>
 
-            {available && dividerText && (
+            {hasButton && dividerText && (
                 <div className={styles.divider}><span>{dividerText}</span></div>
             )}
         </div>

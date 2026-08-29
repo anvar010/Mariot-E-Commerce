@@ -5572,3 +5572,21 @@
 .thumbWrapper {
     position: relative;
 }
+
+/* On phones the image frame is a full-bleed square, which is right for
+   photographs and wrong for a 16:9 video — it left a tall band of empty white
+   under the player. When the active slide is the video, the frame takes the
+   video's shape instead, and since mobile removes the frame's padding the two
+   match exactly with nothing left over. */
+@media (max-width: 768px) {
+    .mainImageWrapper.videoFrame {
+        aspect-ratio: 16 / 9;
+    }
+
+    .videoFrame .galleryVideo,
+    .videoFrame .galleryVideoPoster {
+        aspect-ratio: auto;
+        height: 100%;
+        border-radius: 0;
+    }
+}

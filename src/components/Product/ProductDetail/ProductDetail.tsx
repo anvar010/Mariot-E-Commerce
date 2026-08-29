@@ -1470,7 +1470,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     <Share2 size={18} color="#555" />
                                 </button>
 
-                                <div className={styles.mainImageWrapper}>
+                                {/* A video is 16:9; the frame is square on phones. Without this
+                                    the slide leaves a tall band of empty white beneath the player. */}
+                                <div className={`${styles.mainImageWrapper} ${activeIsVideo ? styles.videoFrame : ''}`}>
                                     <Swiper
                                         onSwiper={(swiper: any) => (mainSwiperRef.current = swiper)}
                                         spaceBetween={0}

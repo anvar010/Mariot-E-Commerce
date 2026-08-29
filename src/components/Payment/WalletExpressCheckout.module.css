@@ -13,8 +13,10 @@
     text-align: center;
 }
 
+/* No min-height: the box must collapse to nothing where no wallet is drawn,
+   otherwise an empty 46px gap sits above the payment options. */
 .buttonBox {
-    min-height: 46px;
+    min-height: 0;
 }
 
 .divider {
