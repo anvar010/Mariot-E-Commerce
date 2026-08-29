@@ -580,16 +580,17 @@
         inset-inline-start: 50%;
         inset-inline-end: auto;
         transform: translateX(-50%);
+        /* Capped well short of the screen so it stays a small notice rather than
+           something spanning the width. The message wraps to a second line at this
+           size, which is what keeps it narrow. */
         width: max-content;
-        max-width: calc(100vw - 28px);
+        max-width: min(240px, calc(100vw - 72px));
     }
 
-    /* A little larger and rounder, since it is the only thing on screen at that
-       moment and has to survive being read at arm's length. */
     .rewardToastContent {
-        padding: 13px 16px;
-        border-radius: 999px;
-        font-size: 13.5px;
+        padding: 11px 14px;
+        border-radius: 14px;
+        font-size: 12.5px;
         box-shadow: 0 6px 20px rgba(15, 23, 42, .18);
     }
 }
