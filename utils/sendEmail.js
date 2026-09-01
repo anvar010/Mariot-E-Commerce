@@ -540,15 +540,32 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
 
     const paymentDisplay = (ar ? {
         'bank_transfer': 'تحويل بنكي مباشر',
+        'bank': 'تحويل بنكي مباشر',
         'cod': 'الدفع عند الاستلام',
         'tabby': 'تابي (أقساط)',
+        'tamara': 'تمارا (أقساط)',
         'card': 'بطاقة ائتمان/خصم'
     } : {
         'bank_transfer': 'Direct bank transfer',
+        'bank': 'Direct bank transfer',
         'cod': 'Cash on Delivery',
         'tabby': 'Tabby (Installments)',
+        'tamara': 'Tamara (Installments)',
         'card': 'Credit/Debit Card'
     })[orderData.payment_method] || orderData.payment_method || 'N/A';
+
+    // Spelled out rather than implied by a "(Paid)" suffix: the back office needs to see at a
+    // glance whether money actually arrived, especially for the redirect gateways where an
+    // order can sit unpaid.
+    const rawPaymentStatus = String(orderData.payment_status || 'pending').toLowerCase();
+    const paymentStatusLabel = (ar ? {
+        paid: 'مدفوع', pending: 'قيد الانتظار', failed: 'فشل', refunded: 'مسترد'
+    } : {
+        paid: 'Paid', pending: 'Pending', failed: 'Failed', refunded: 'Refunded'
+    })[rawPaymentStatus] || rawPaymentStatus.toUpperCase();
+    const paymentStatusColor = rawPaymentStatus === 'paid' ? '#1a7f4b'
+        : rawPaymentStatus === 'failed' ? '#c0392b'
+        : rawPaymentStatus === 'refunded' ? '#8a6d1f' : '#b45309';
 
     const itemRows = orderItems.map((item, i) => {
         const isFree = Number(item.is_free_gift) === 1;
@@ -604,7 +621,7 @@ ${dsButton(orderSummaryUrl, L.cta, ar)}
   </td>
   <td width="50%" style="vertical-align:top;border-${ar ? 'right' : 'left'}:1px solid #ecedef;padding-${ar ? 'right' : 'left'}:26px;">
     <p style="margin:0 0 8px;font-family:${SANS};font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#17181c;">${L.paymentL}</p>
-    <p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.7;color:#17181c;">${paymentDisplay}<br>${isPaid ? L.paidLine(`AED ${total}`) : `AED ${total}`}</p>
+    <p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.7;color:#17181c;">${paymentDisplay} &middot; <strong style="color:${paymentStatusColor};">${paymentStatusLabel}</strong><br>${isPaid ? L.paidLine(`AED ${total}`) : `AED ${total}`}</p>
   </td>
 </tr></table>`;
 
@@ -616,7 +633,8 @@ ${dsButton(orderSummaryUrl, L.cta, ar)}
   <span style="color:#17181c;">Customer</span> <strong style="color:#17181c;">${userName}</strong><br>
   ${billing.email ? `<span style="color:#17181c;">Email</span> <strong style="color:#17181c;">${billing.email}</strong><br>` : ''}
   ${(shipping.phone || billing.phone) ? `<span style="color:#17181c;">Phone</span> <strong style="color:#17181c;">${shipping.phone || billing.phone}</strong><br>` : ''}
-  <span style="color:#17181c;">Payment</span> <strong style="color:#17181c;">${paymentDisplay}${isPaid ? ' (Paid)' : ''}</strong><br>
+  <span style="color:#17181c;">Payment method</span> <strong style="color:#17181c;">${paymentDisplay}</strong><br>
+  <span style="color:#17181c;">Payment status</span> <strong style="color:${paymentStatusColor};">${paymentStatusLabel}</strong><br>
   <span style="color:#17181c;">Total</span> <strong style="color:#17181c;">AED ${total}</strong>
 </td></tr></table>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${itemRows}</table>
