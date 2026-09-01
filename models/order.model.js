@@ -1,6 +1,13 @@
 const db = require('../config/db');
 const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
 
+// Payment methods where the shopper leaves the site and has NOT paid yet. For these,
+// clearing the cart, reducing stock and awarding points must wait for the payment
+// confirmation (webhook / payment intent), otherwise abandoning the redirect still earns
+// points and empties the basket. Add every new redirect-based gateway here -- this was
+// previously an inline "!== 'tabby' && !== 'card'" test, and Tamara silently fell through it.
+const REDIRECT_PAYMENT_METHODS = ['card', 'tabby', 'tamara'];
+
 // Lazy migration: make sure order_items has the customization columns.
 let customColsEnsured = false;
 async function ensureCustomColumns(connection) {
@@ -113,10 +120,10 @@ class Order {
                 );
             }
 
-            // 4. Process completion operations (clearing cart, stock reduction, points) 
-            // We do this immediately for all methods EXCEPT those that require a redirect to a 3rd party (like Tabby) 
-            // where the user hasn't successfully finished the checkout yet.
-            if (payment_method !== 'tabby' && payment_method !== 'card') {
+            // 4. Process completion operations (clearing cart, stock reduction, points).
+            // Immediate for methods that are already settled at this point; redirect-based
+            // gateways wait for their payment confirmation instead.
+            if (!REDIRECT_PAYMENT_METHODS.includes(payment_method)) {
                 await this.processOrderCompletion(connection, userId, orderId, items, points_to_use, adjustedFinalAmount);
             }
 
