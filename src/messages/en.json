@@ -100,6 +100,7 @@
     "loading": "Loading..."
   },
   "product": {
+      "genericError": "Something went wrong. Please try again.",
     "share": "Share",
     "shareText": "What do you think of this? Found it on Mariot Store!",
     "linkCopied": "Link copied to clipboard",
@@ -716,6 +717,9 @@
     "warranty": "We provide 1 year Warranty"
   },
   "userDashboard": {
+      "common": {
+          "loading": "Loading…"
+      },
     "yourAccount": "Your Account",
     "hello": "Hello, {name}",
     "activeSession": "Active Session",
@@ -835,6 +839,7 @@
       "addToCart": "Add to Cart"
     },
     "profile": {
+        "verifySuccess": "Mobile number verified successfully!",
       "title": "Profile & Security",
       "personalInfo": "Personal Info",
       "businessInfo": "Bussiness Info",
@@ -1058,7 +1063,6 @@
     "cartTotal": "Cart Total",
     "subtotal": "Subtotal",
     "couponDiscount": "Coupon Discount",
-    "walletAddressRequired": "Please fill in your delivery address before paying with Apple Pay or Google Pay.",
     "pointsDiscount": "Points Discount",
     "totalItems": "Items ({count})",
     "shippingFees": "Shipping fees",
@@ -1089,6 +1093,7 @@
     "applicableProducts": "Applicable Products"
   },
   "checkout": {
+      "walletAddressRequired": "Please fill in your delivery address before paying with Apple Pay or Google Pay.",
     "default": "Default",
     "title": "Secure Checkout",
     "subtitle": "Complete your order by providing shipping and payment details.",

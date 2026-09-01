@@ -100,6 +100,7 @@
         "loading": "جاري التحميل..."
     },
     "product": {
+        "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
         "share": "مشاركة",
         "shareText": "ما رأيك في هذا؟ وجدته على متجر ماريوت!",
         "linkCopied": "تم نسخ الرابط",
@@ -716,6 +717,9 @@
         "warranty": "نوفر ضماناً لمدة عام واحد"
     },
     "userDashboard": {
+        "common": {
+            "loading": "جارٍ التحميل…"
+        },
         "yourAccount": "حسابك",
         "hello": "مرحباً، {name}",
         "activeSession": "جلسة نشطة",
@@ -835,6 +839,7 @@
             "addToCart": "أضف إلى السلة"
         },
         "profile": {
+            "verifySuccess": "تم التحقق من رقم الجوال بنجاح!",
             "title": "الملف الشخصي والأمان",
             "personalInfo": "المعلومات الشخصية",
             "businessInfo": "معلومات العمل",
@@ -1058,7 +1063,6 @@
         "cartTotal": "إجمالي السلة",
         "subtotal": "المجموع الفرعي",
         "couponDiscount": "خصم الكوبون",
-        "walletAddressRequired": "يرجى إدخال عنوان التوصيل قبل الدفع عبر Apple Pay أو Google Pay.",
         "pointsDiscount": "خصم النقاط",
         "totalItems": "المنتجات ({count})",
         "shippingFees": "رسوم الشحن",
@@ -1089,6 +1093,7 @@
         "applicableProducts": "المنتجات المشمولة"
     },
     "checkout": {
+        "walletAddressRequired": "يرجى إدخال عنوان التوصيل قبل الدفع عبر Apple Pay أو Google Pay.",
         "default": "افتراضي",
         "title": "إتمام الشراء بأمان",
         "subtitle": "أكمل طلبك من خلال تقديم تفاصيل الشحن والدفع.",

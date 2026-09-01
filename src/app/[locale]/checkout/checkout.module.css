@@ -1618,9 +1618,11 @@
         gap: 32px;
     }
 
-    .rightColumn {
-        order: -1;
-    }
+    /* No `order` override here on purpose. Once the grid collapses to one column the
+       right column would otherwise be pulled above the form, putting the order summary
+       and the Complete Purchase button before the shipping details and the payment
+       method the shopper still has to choose. Source order is the correct order on a
+       phone: fill in details, pick how to pay, then review and pay. */
 
     .summaryContainer {
         position: static;
