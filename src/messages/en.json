@@ -1139,6 +1139,7 @@
     "bankInstruction": "Please use your Order ID as the payment reference. Your order will not be shipped until the funds have cleared in our account.",
     "reviewOrder": "Review Your Order",
     "couponSuccess": "Coupon applied successfully!",
+    "couponDiscount": "Coupon Discount",
     "viewAvailableCoupons": "View Available Coupons",
     "applyPointsForDiscount": "Apply points for discounts",
     "redeemPoints": "Redeem Reward Points",

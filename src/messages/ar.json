@@ -1139,6 +1139,7 @@
         "bankInstruction": "يرجى استخدام رقم الطلب الخاص بك كمرجع للدفع. لن يتم شحن طلبك حتى يتم تأكيد وصول الأموال إلى حسابنا.",
         "reviewOrder": "مراجعة طلبك",
         "couponSuccess": "تم تطبيق الكوبون بنجاح!",
+        "couponDiscount": "خصم الكوبون",
         "viewAvailableCoupons": "عرض الكوبونات المتاحة",
         "applyPointsForDiscount": "استخدم النقاط للحصول على خصم",
         "redeemPoints": "استبدال نقاط المكافآت",

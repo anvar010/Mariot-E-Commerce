@@ -38,7 +38,7 @@ import {
     Settings2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { API_BASE_URL, TABBY_ENABLED } from '@/config';
+import { API_BASE_URL, TABBY_ENABLED, SHIPPING_QUOTES_ENABLED } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { formatCustomDims } from '@/utils/customDimensions';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -293,7 +293,7 @@ function CheckoutContent() {
             return null;
         })();
 
-        if (!destination?.country || cartItems.length === 0) {
+        if (!SHIPPING_QUOTES_ENABLED || !destination?.country || cartItems.length === 0) {
             setShippingMethods([]);
             setSelectedShipping('');
             return;
@@ -571,7 +571,7 @@ function CheckoutContent() {
     // confirmation. Nothing about the card form is involved.
     const walletValidate = () => {
         if (cartItems.length === 0) return n('orderFailed');
-        if (!selectedShipping) return t('selectShippingFirst');
+        if (SHIPPING_QUOTES_ENABLED && !selectedShipping) return t('selectShippingFirst');
         return null;
     };
 
@@ -609,7 +609,7 @@ function CheckoutContent() {
         }
 
         // The button is disabled without these, but a form can still be submitted by keyboard.
-        if (!selectedShipping) {
+        if (SHIPPING_QUOTES_ENABLED && !selectedShipping) {
             showNotification(t('selectShippingFirst'), 'error');
             return;
         }
@@ -876,7 +876,7 @@ function CheckoutContent() {
                     </div>
                 )}
 
-                {(shippingLoading || shippingMethods.length > 0 || shippingError) && (
+                {SHIPPING_QUOTES_ENABLED && (shippingLoading || shippingMethods.length > 0 || shippingError) && (
                     <div className={styles.shippingCard} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
                         <h3 className={styles.shippingHeading}>{t('shippingMethod')}</h3>
 
@@ -1613,11 +1613,11 @@ function CheckoutContent() {
                                     )}
                                 </div>
 
-                                {!isProcessing && cartItems.length > 0 && (!selectedShipping || !paymentMethod) && (
+                                {!isProcessing && cartItems.length > 0 && ((SHIPPING_QUOTES_ENABLED && !selectedShipping) || !paymentMethod) && (
                                     <p className={styles.checkoutBlockedHint}>
-                                        {!selectedShipping && !paymentMethod
+                                        {SHIPPING_QUOTES_ENABLED && !selectedShipping && !paymentMethod
                                             ? t('selectShippingAndPayment')
-                                            : !selectedShipping
+                                            : SHIPPING_QUOTES_ENABLED && !selectedShipping
                                                 ? t('selectShippingFirst')
                                                 : t('selectPaymentFirst')}
                                     </p>
@@ -1626,7 +1626,7 @@ function CheckoutContent() {
                                 <button
                                     type="submit"
                                     className={styles.checkoutBtn}
-                                    disabled={isProcessing || cartItems.length === 0 || !selectedShipping || !paymentMethod}
+                                    disabled={isProcessing || cartItems.length === 0 || (SHIPPING_QUOTES_ENABLED && !selectedShipping) || !paymentMethod}
                                 >
                                     {isProcessing ? (
                                         <Clock size={20} className={styles.animateSpin} />

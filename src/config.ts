@@ -13,3 +13,11 @@ export const MEDIA_BASE_URL = BASE_URL || 'https://mariot-backend.onrender.com';
  * commented out, so restoring it can't half-happen.
  */
 export const TABBY_ENABLED = false;
+
+/**
+ * Live carrier shipping quotes (Aramex / DHL) at checkout. Off until the carrier accounts
+ * and credentials are in place -- with none configured the backend can only return a flat
+ * fallback, which reads to the customer as free shipping. Turning this on restores the
+ * quote request, the method selector, and the requirement to pick one before paying.
+ */
+export const SHIPPING_QUOTES_ENABLED = false;
