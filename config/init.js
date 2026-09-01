@@ -131,7 +131,10 @@ const initDb = async () => {
                 { name: 'coupon_id', definition: "INT" },
                 { name: 'discount_amount', definition: "DECIMAL(10, 2) DEFAULT 0.00" },
                 { name: 'receiver_name', definition: "VARCHAR(255) AFTER shipping_address_id" },
-                { name: 'receiver_phone', definition: "VARCHAR(50) AFTER receiver_name" }
+                { name: 'receiver_phone', definition: "VARCHAR(50) AFTER receiver_name" },
+                // Tamara's own order id. Its webhook carries this alongside our reference,
+                // and the authorise call is addressed to it, not to our numeric id.
+                { name: 'tamara_order_id', definition: "VARCHAR(64) NULL AFTER payment_method" }
             ];
 
             for (const col of orderColumns) {

@@ -28,3 +28,6 @@ temp-scripts/
 .claude/
 .agent/
 .agents/
+
+# Paste-ready credential dumps — never commit
+hpanel-*-env.txt

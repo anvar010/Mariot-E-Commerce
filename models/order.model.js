@@ -399,6 +399,12 @@ class Order {
         await db.execute('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
     }
 
+    // Tamara's own order id, stored at checkout so the webhook can address the
+    // authorise call to it later.
+    static async setTamaraOrderId(id, tamaraOrderId) {
+        await db.execute('UPDATE orders SET tamara_order_id = ? WHERE id = ?', [tamaraOrderId, id]);
+    }
+
     static async updatePaymentStatus(id, payment_status) {
         const connection = await db.getConnection();
         try {

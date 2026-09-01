@@ -1,6 +1,6 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const { createOrder, getMyOrders, getOrder, updateOrderStatus, tabbyWebhook, stripeWebhook } = require('../controllers/order.controller');
+const { createOrder, getMyOrders, getOrder, updateOrderStatus, tabbyWebhook, stripeWebhook, tamaraWebhook } = require('../controllers/order.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
@@ -27,6 +27,7 @@ const checkoutLimiter = rateLimit({
 // Webhooks - must be BEFORE protect middleware (called server-to-server)
 router.post('/webhook/tabby', tabbyWebhook);
 router.post('/webhook/stripe', stripeWebhook);
+router.post('/webhook/tamara', tamaraWebhook);
 
 router.use(protect);
 

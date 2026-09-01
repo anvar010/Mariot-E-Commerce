@@ -5,6 +5,7 @@ const User = require('../models/user.model');
 const db = require('../config/db');
 const axios = require('axios');
 const { sendOrderConfirmationEmail, sendEmail } = require('../utils/sendEmail');
+const tamaraService = require('../services/tamara.service');
 
 // Initialize Stripe with secret key
 const { ensureStripeCustomer, ownedPaymentMethod } = require('./paymentMethod.controller');
@@ -402,6 +403,75 @@ exports.createOrder = async (req, res, next) => {
         }
         // --- END TABBY ---
 
+        // --- TAMARA INTEGRATION ---
+        if (payment_method === 'tamara') {
+            try {
+                if (!tamaraService.isConfigured()) {
+                    return res.status(503).json({
+                        success: false,
+                        message: 'Tamara payments are not available right now. Please choose another payment method.'
+                    });
+                }
+
+                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+                let rawPhone = billing_details?.phone || req.user.phone || '';
+                const finalPhone = rawPhone.replace(/[^0-9+]/g, '');
+
+                const { tamaraOrderId, checkoutUrl } = await tamaraService.createCheckoutSession({
+                    orderId,
+                    totalAmount: finalAmount,
+                    taxAmount: vatAmount,
+                    shippingAmount: deliveryTotal,
+                    items,
+                    customer: {
+                        name: billing_details?.name || req.user.name,
+                        email: billing_details?.email || req.user.email,
+                        phone: finalPhone
+                    },
+                    shippingAddress: {
+                        line1: billing_details?.streetAddress || 'N/A',
+                        city: billing_details?.city || 'Dubai'
+                    },
+                    locale,
+                    frontendUrl
+                });
+
+                // Stored so the webhook can find this order again: Tamara's notifications
+                // carry its own order_id, and order_reference_id is our numeric id.
+                await Order.setTamaraOrderId(orderId, tamaraOrderId);
+
+                return res.status(201).json({
+                    success: true,
+                    requires_redirect: true,
+                    redirect_url: checkoutUrl,
+                    data: { id: orderId, ...orderData }
+                });
+            } catch (tamaraError) {
+                const detail = tamaraError.response?.data || tamaraError.message;
+                console.error('Tamara Checkout Error:', JSON.stringify(detail, null, 2));
+
+                // A 400 here is usually Tamara declining the basket (amount limits, unsupported
+                // address), not a broken integration -- tell the shopper, don't show a 500.
+                if (tamaraError.response?.status === 400) {
+                    return res.status(422).json({
+                        success: false,
+                        message: locale === 'ar'
+                            ? 'نأسف، تمارا غير قادرة على الموافقة على هذه العملية. الرجاء استخدام طريقة دفع أخرى.'
+                            : 'Sorry, Tamara is unable to approve this purchase, please use an alternative payment method.',
+                        tamara_rejected: true
+                    });
+                }
+
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to initialize Tamara payment flow',
+                    error_details: detail
+                });
+            }
+        }
+        // --- END TAMARA ---
+
         // Bank transfers stay pending until admin manually confirms
 
         res.status(201).json({
@@ -755,5 +825,89 @@ exports.updateOrderStatus = async (req, res, next) => {
         res.json({ success: true, message: `Order updated successfully` });
     } catch (error) {
         next(error);
+    }
+};
+
+/**
+ * Tamara webhook — https://api.mariotstore.com/api/v1/orders/webhook/tamara
+ *
+ * Tamara signs the notification as an HS256 JWT (Authorization: Bearer, or a tamaraToken
+ * query param) using the Notification Token. Unverified calls are rejected: this endpoint is
+ * public, so the signature is the only thing separating a real notification from anyone's POST.
+ *
+ * The critical branch is order_approved -> authorise. Tamara holds an approved order without
+ * authorising it, and an order that is never authorised expires and is never paid.
+ */
+exports.tamaraWebhook = async (req, res) => {
+    try {
+        const verified = tamaraService.verifyWebhookToken(req);
+        if (!verified) {
+            console.warn('[Tamara Webhook] rejected: missing or invalid signature');
+            return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
+        }
+
+        const { order_id: tamaraOrderId, order_reference_id: referenceId, event_type: eventType } = req.body || {};
+        console.log(`[Tamara Webhook] ${eventType} for order ref ${referenceId} (tamara ${tamaraOrderId})`);
+
+        const orderId = parseInt(referenceId, 10);
+        if (!Number.isFinite(orderId)) {
+            // Ack anyway: a non-2xx makes Tamara retry a notification we can never process.
+            console.error('[Tamara Webhook] unusable order_reference_id:', referenceId);
+            return res.status(200).json({ success: true, ignored: true });
+        }
+
+        switch (eventType) {
+            case 'order_approved': {
+                // Authorise first, mark paid only if Tamara confirms it.
+                await tamaraService.authoriseOrder(tamaraOrderId);
+                console.log(`[Tamara Webhook] Order #${orderId} authorised`);
+                await Order.updatePaymentStatus(orderId, 'paid');
+
+                try {
+                    const order = await Order.findById(orderId);
+                    if (order) {
+                        const u = await User.findById(order.user_id);
+                        const toEmail = u?.email || order.billing_email || order.user_email;
+                        const toName = u?.name || order.billing_name || order.user_name || 'Customer';
+                        if (toEmail) {
+                            const oLocale = await User.getPreferredLocale(order.user_id);
+                            await sendOrderConfirmationEmail(
+                                toEmail, toName, orderId, order.final_amount, order.items,
+                                { ...order, payment_status: 'paid' }, oLocale
+                            );
+                        } else {
+                            console.error(`[Tamara Webhook] No email for order #${orderId} — confirmation skipped`);
+                        }
+                    }
+                } catch (mailErr) {
+                    // A failed email must not fail the webhook, or Tamara retries the authorise.
+                    console.error('[Tamara Webhook] confirmation email failed:', mailErr.message);
+                }
+                break;
+            }
+
+            case 'order_declined':
+            case 'order_expired':
+            case 'order_canceled':
+                await Order.updatePaymentStatus(orderId, 'failed');
+                console.log(`[Tamara Webhook] Order #${orderId} marked failed (${eventType})`);
+                break;
+
+            case 'order_captured':
+            case 'order_authorised':
+            case 'order_refunded':
+                // Informational: capture happens automatically 21 days after authorisation.
+                console.log(`[Tamara Webhook] Order #${orderId}: ${eventType}`);
+                break;
+
+            default:
+                console.log(`[Tamara Webhook] Unhandled event: ${eventType}`);
+        }
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('[Tamara Webhook] error:', error.response?.data || error.message);
+        // 500 tells Tamara to retry, which is what we want for a transient failure.
+        return res.status(500).json({ success: false, message: 'Webhook processing failed' });
     }
 };
