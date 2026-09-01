@@ -140,7 +140,18 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
                         // browser decides silently and a missing button looks identical
                         // whether the cause is a device with no saved card, the wrong
                         // Stripe mode, or an unregistered domain. This says which.
-                        console.info('[wallet] available:', availablePaymentMethods ?? 'none');
+                        //
+                        // warn rather than info: console filters hide info by default in
+                        // some setups, and a diagnostic nobody sees is not a diagnostic.
+                        const keyMode = (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || '').startsWith('pk_live_') ? 'live' : 'test';
+                        if (!availablePaymentMethods || Object.keys(availablePaymentMethods).length === 0) {
+                            console.warn(`[wallet] the browser reports NO wallet available (Stripe key: ${keyMode} mode).`
+                                + ' Apple Pay needs Safari with a card in Wallet; Google Pay needs Chrome.'
+                                + ' If both should work, check the domain is registered in THIS mode:'
+                                + ' Stripe Dashboard -> Settings -> Payment method domains.');
+                        } else {
+                            console.warn('[wallet] available:', availablePaymentMethods, `(Stripe key: ${keyMode} mode)`);
+                        }
                     }}
                     onLoadError={({ error }) => {
                         console.error('[wallet] Express checkout failed to load:', error?.message || error);
@@ -167,8 +178,17 @@ const WalletInner: React.FC<WalletCheckoutProps> = ({
 };
 
 const WalletExpressCheckout: React.FC<WalletCheckoutProps> = (props) => {
-    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY) return null;
-    if (!Number.isFinite(props.amount) || props.amount < MIN_AED) return null;
+    // Both of these render nothing, which is indistinguishable from "the browser has no
+    // wallet" unless it is said out loud. Without them, "the button isn't showing" has
+    // three silent causes and no way to tell them apart from the outside.
+    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY) {
+        console.warn('[wallet] not rendered: NEXT_PUBLIC_STRIPE_PUBLIC_KEY is missing from this build');
+        return null;
+    }
+    if (!Number.isFinite(props.amount) || props.amount < MIN_AED) {
+        console.warn(`[wallet] not rendered: order total ${props.amount} is below the ${MIN_AED} AED minimum`);
+        return null;
+    }
 
     return (
         <Elements
