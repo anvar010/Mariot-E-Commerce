@@ -1314,26 +1314,6 @@ function CheckoutContent() {
                                     </div>
                                 </div>
 
-                                {/* Tamara */}
-                                <div className={`${styles.paymentTab} ${paymentMethod === 'tamara' ? styles.active : ''}`} onClick={() => setPaymentMethod('tamara')}>
-                                    <div className={styles.radioDot}>
-                                        <div className={styles.radioDotInner}></div>
-                                    </div>
-                                    <div className={styles.tabText}>
-                                        <span className={styles.tabTitle}>{t('tamaraTitle')}</span>
-                                        <span className={styles.tabDesc}>{t('tamaraDesc')}</span>
-                                    </div>
-                                    <div className={styles.tabbyBrand}>
-                                        <span className={styles.tamaraWordmark}>tamara</span>
-                                    </div>
-                                </div>
-
-                                {paymentMethod === 'tamara' && (
-                                    <div className={styles.tabContent}>
-                                        <p className={styles.tamaraNote}>{t('tamaraNote')}</p>
-                                    </div>
-                                )}
-
                                 {/* Tabby Promo - Shown when Tabby is selected as payment */}
                                 {paymentMethod === 'tabby' && (
                                     <div className={styles.tabContent}>
@@ -1364,6 +1344,27 @@ function CheckoutContent() {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Tamara */}
+                                <div className={`${styles.paymentTab} ${paymentMethod === 'tamara' ? styles.active : ''}`} onClick={() => setPaymentMethod('tamara')}>
+                                    <div className={styles.radioDot}>
+                                        <div className={styles.radioDotInner}></div>
+                                    </div>
+                                    <div className={styles.tabText}>
+                                        <span className={styles.tabTitle}>{t('tamaraTitle')}</span>
+                                        <span className={styles.tabDesc}>{t('tamaraDesc')}</span>
+                                    </div>
+                                    <div className={styles.tabbyBrand}>
+                                        <span className={styles.tamaraWordmark}>tamara</span>
+                                    </div>
+                                </div>
+
+                                {paymentMethod === 'tamara' && (
+                                    <div className={styles.tabContent}>
+                                        <p className={styles.tamaraNote}>{t('tamaraNote')}</p>
+                                    </div>
+                                )}
+
                             </div>
                         </div>
                     </div>
