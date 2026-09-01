@@ -1012,6 +1012,8 @@
     "genericDeleteSuccess": "Deleted successfully",
     "tabbyCancel": "You aborted the payment. Please retry or choose another payment method.",
     "tabbyFailure": "Sorry, Tabby is unable to approve this purchase, please use an alternative payment method for your order.",
+    "tamaraCancel": "You aborted the payment. Please retry or choose another payment method.",
+    "tamaraFailure": "Sorry, Tamara is unable to approve this purchase, please use an alternative payment method for your order.",
     "mockPaymentSuccess": "Payment successful (Mock Dev Mode)",
     "loading": "Loading..."
   },
@@ -1127,6 +1129,9 @@
     "bankDesc": "Transfer directly to our corporate account",
     "tabbyTitle": "Buy Now, Pay Later",
     "tabbyDesc": "Powered by Tabby — 4 interest-free payments",
+    "tamaraTitle": "Buy Now, Pay Later",
+    "tamaraDesc": "Powered by Tamara — split into interest-free payments",
+    "tamaraNote": "You will be redirected to Tamara to complete your payment. Your order is confirmed once Tamara approves it.",
     "bankAccountName": "Account Name",
     "bankAccountNumber": "Account Number",
     "bankIban": "IBAN",

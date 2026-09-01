@@ -2421,3 +2421,25 @@
     line-height: 1.5;
     color: #64748b;
 }
+
+/* Tamara — no brand asset in the repo, so the wordmark stands in for a logo. */
+.tamaraWordmark {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #3F2B8B;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.tamaraNote {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 13.5px;
+    line-height: 1.55;
+}
