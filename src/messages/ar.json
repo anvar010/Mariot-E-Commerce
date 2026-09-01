@@ -1058,6 +1058,7 @@
         "cartTotal": "إجمالي السلة",
         "subtotal": "المجموع الفرعي",
         "couponDiscount": "خصم الكوبون",
+        "walletAddressRequired": "يرجى إدخال عنوان التوصيل قبل الدفع عبر Apple Pay أو Google Pay.",
         "pointsDiscount": "خصم النقاط",
         "totalItems": "المنتجات ({count})",
         "shippingFees": "رسوم الشحن",

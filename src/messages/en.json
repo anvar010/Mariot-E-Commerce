@@ -1058,6 +1058,7 @@
     "cartTotal": "Cart Total",
     "subtotal": "Subtotal",
     "couponDiscount": "Coupon Discount",
+    "walletAddressRequired": "Please fill in your delivery address before paying with Apple Pay or Google Pay.",
     "pointsDiscount": "Points Discount",
     "totalItems": "Items ({count})",
     "shippingFees": "Shipping fees",

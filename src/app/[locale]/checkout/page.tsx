@@ -571,7 +571,18 @@ function CheckoutContent() {
     // confirmation. Nothing about the card form is involved.
     const walletValidate = () => {
         if (cartItems.length === 0) return n('orderFailed');
+        if (!token) return n('checkoutSignin');
         if (SHIPPING_QUOTES_ENABLED && !selectedShipping) return t('selectShippingFirst');
+
+        // The wallet sheet bypasses the form, so the browser's own `required` validation
+        // never runs -- without this the shopper could pay with no delivery address at all
+        // and the order would be created with empty shipping details.
+        const hasSavedAddress = Boolean(user && userAddresses.length > 0 && selectedAddressId);
+        if (!hasSavedAddress) {
+            const missing = !form.firstName?.trim() || !form.streetAddress?.trim()
+                || !form.city?.trim() || !form.phone?.trim() || !form.email?.trim();
+            if (missing) return t('walletAddressRequired');
+        }
         return null;
     };
 
