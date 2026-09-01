@@ -577,3 +577,14 @@
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+/* Payment method — read-only, so it stays visually quieter than the editable dropdowns. */
+.methodBadge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}

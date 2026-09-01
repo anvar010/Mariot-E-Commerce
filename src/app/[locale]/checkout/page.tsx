@@ -38,7 +38,7 @@ import {
     Settings2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL, TABBY_ENABLED } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { formatCustomDims } from '@/utils/customDimensions';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -1300,6 +1300,7 @@ function CheckoutContent() {
                                     </div>
                                 )}
 
+                                {TABBY_ENABLED && (<>
                                 {/* Tabby */}
                                 <div className={`${styles.paymentTab} ${paymentMethod === 'tabby' ? styles.active : ''}`} onClick={() => setPaymentMethod('tabby')}>
                                     <div className={styles.radioDot}>
@@ -1344,6 +1345,7 @@ function CheckoutContent() {
                                         </div>
                                     </div>
                                 )}
+                                </>)}
 
                                 {/* Tamara */}
                                 <div className={`${styles.paymentTab} ${paymentMethod === 'tamara' ? styles.active : ''}`} onClick={() => setPaymentMethod('tamara')}>

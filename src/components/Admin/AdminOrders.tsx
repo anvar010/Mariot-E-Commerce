@@ -23,6 +23,20 @@ const STATUS_FILTERS: { key: StatusFilter; label: string; dotColor: string }[] =
     { key: 'cancelled', label: 'Cancelled', dotColor: '#dc2626' }
 ];
 
+
+// Payment method as the back office reads it: 'tamara' -> 'Tamara', 'bank' -> 'Bank Transfer'.
+const formatPaymentMethod = (method?: string) => {
+    const labels: Record<string, string> = {
+        card: 'Card',
+        tabby: 'Tabby',
+        tamara: 'Tamara',
+        bank: 'Bank Transfer',
+        cod: 'Cash on Delivery',
+    };
+    if (!method) return '—';
+    return labels[method.toLowerCase()] || method.toUpperCase();
+};
+
 const AdminOrders = () => {
     const router = useRouter();
     const pathname = usePathname();
@@ -483,14 +497,15 @@ const AdminOrders = () => {
                             <th>Total Amount</th>
                             <th>Status</th>
                             <th>Payment</th>
+                            <th>Method</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Active Orders..." /></td></tr>
+                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '60px' }}><AdminLoader message="Loading Active Orders..." /></td></tr>
                         ) : filteredOrders.length === 0 ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>No orders found matching your search.</td></tr>
+                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>No orders found matching your search.</td></tr>
                         ) : (
                             filteredOrders.map((order) => (
                                 <tr key={order.id}>
@@ -548,6 +563,9 @@ const AdminOrders = () => {
                                                 ))}
                                             </div>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <span className={styles.methodBadge}>{formatPaymentMethod(order.payment_method)}</span>
                                     </td>
                                     <td>
                                         <div className={styles.customDropdown}>

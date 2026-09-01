@@ -52,7 +52,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
 import DeliveryInformation from './DeliveryInformation';
 import ProductTags from './ProductTags';
-import { API_BASE_URL, BASE_URL } from '@/config';
+import { API_BASE_URL, BASE_URL, TABBY_ENABLED } from '@/config';
 import { resolveUrl } from '@/utils/resolveUrl';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { useCartActions } from '@/context/CartContext';
@@ -1950,6 +1950,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 )}
 
                                 {/* Tabby Area */}
+                                {TABBY_ENABLED && (
                                 <div className={styles.tabbyBox} style={{ border: 'none', padding: 0 }}>
                                     <Script
                                         src="https://checkout.tabby.ai/tabby-promo.js"
@@ -1975,6 +1976,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     />
                                     <div id="TabbyPromo"></div>
                                 </div>
+                                )}
 
                                 {isCustomizable && customDimensionList.length > 0 && (
                                     <div className={styles.customSizingCard}>
@@ -2284,7 +2286,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             <div className={styles.paymentLogos}>
                                 <img src="/assets/visa-logo.svg" alt="Visa" className={styles.visaDetailLogo} />
                                 <img src="/assets/mastercard-logo.svg" alt="Mastercard" />
-                                <img src="/assets/Tabby.webp" alt="Tabby" />
+                                {TABBY_ENABLED && <img src="/assets/Tabby.webp" alt="Tabby" />}
                                 <img src="/assets/apple-pay-logo.svg" alt="ApplePay" />
                                 <img src="/assets/google-pay-logo.svg" alt="GPay" />
                             </div>
@@ -2589,7 +2591,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                         <div className={styles.paymentLogos}>
                             <img src="/assets/visa-logo.svg" alt="Visa" className={styles.visaDetailLogo} />
                             <img src="/assets/mastercard-logo.svg" alt="Mastercard" />
-                            <img src="/assets/Tabby.webp" alt="Tabby" />
+                            {TABBY_ENABLED && <img src="/assets/Tabby.webp" alt="Tabby" />}
                             <img src="/assets/apple-pay-logo.svg" alt="ApplePay" />
                             <img src="/assets/google-pay-logo.svg" alt="GPay" />
                         </div>
@@ -3136,7 +3138,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                 </div>
                 {/* Tabby Modal */}
                 {
-                    showTabbyModal && (
+                    TABBY_ENABLED && showTabbyModal && (
                         <div className={styles.modalOverlay} onClick={() => setShowTabbyModal(false)}>
                             <div className={styles.modal} onClick={e => e.stopPropagation()}>
                                 <div className={styles.modalHeader}>

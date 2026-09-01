@@ -1,4 +1,5 @@
 import React from 'react';
+import { TABBY_ENABLED } from '@/config';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
@@ -75,6 +76,7 @@ export default function PaymentInformationPage() {
                             </div>
                         </div>
 
+                        {TABBY_ENABLED && (
                         <div className={styles.paymentCard}>
                             <h2>{t('tabbyTitle')}</h2>
                             <p>
@@ -84,6 +86,7 @@ export default function PaymentInformationPage() {
                                 <img src="/assets/Tabby.webp" alt="Tabby" className={styles.payLogoLarge} />
                             </div>
                         </div>
+                        )}
                     </div>
                 </div>
             </div>
