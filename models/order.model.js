@@ -451,3 +451,4 @@ class Order {
 }
 
 module.exports = Order;
+module.exports.REDIRECT_PAYMENT_METHODS = REDIRECT_PAYMENT_METHODS;

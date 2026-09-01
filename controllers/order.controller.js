@@ -1,4 +1,5 @@
 const Order = require('../models/order.model');
+const { REDIRECT_PAYMENT_METHODS } = require('../models/order.model');
 const Cart = require('../models/cart.model');
 const Coupon = require('../models/coupon.model');
 const User = require('../models/user.model');
@@ -13,6 +14,30 @@ const { ensureStripeCustomer, ownedPaymentMethod } = require('./paymentMethod.co
 const stripe = process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('REPLACE_WITH')
     ? require('stripe')(process.env.STRIPE_SECRET_KEY)
     : null;
+
+
+/**
+ * "New order received" alert to the back office. Sent at creation for methods that are
+ * already settled, and at payment confirmation for redirect gateways -- an abandoned
+ * redirect must not tell the office an order arrived.
+ */
+const sendAdminNewOrderAlert = async (orderId, order, customerName) => {
+    try {
+        const adminEmail = process.env.RECEIVER_EMAIL || 'anvarshaknavas588@gmail.com';
+        await sendOrderConfirmationEmail(
+            adminEmail,
+            customerName || order?.billing_name || order?.user_name || 'Customer',
+            orderId,
+            order?.final_amount,
+            order?.items,
+            { ...order, payment_status: 'paid', is_admin_copy: true },
+            'en'
+        );
+        console.log(`[ORDER] New-order alert sent to ${adminEmail} (order #${orderId})`);
+    } catch (err) {
+        console.error(`[ORDER] Admin order alert failed (order #${orderId}):`, err.message);
+    }
+};
 
 exports.createOrder = async (req, res, next) => {
     try {
@@ -179,9 +204,11 @@ exports.createOrder = async (req, res, next) => {
         const orderId = await Order.create(req.user.id, orderData);
 
         // --- ASYNC ORDER NOTIFICATIONS (Immediate "Order Placed" notification) ---
-        // We send this immediately so both User and Admin are notified of the new order
-        // regardless of payment status.
-        (async () => {
+        // Only for methods that are settled by the time we get here. A redirect gateway
+        // has taken no money yet, and abandoning the redirect would otherwise email both
+        // the customer and the office about an order that never happened -- those are sent
+        // from the payment confirmation instead.
+        if (!REDIRECT_PAYMENT_METHODS.includes(payment_method)) (async () => {
             const customerEmail = billing_details?.email || req.user?.email;
             const customerName = billing_details?.name || req.user?.name || 'Customer';
             const adminEmail = process.env.RECEIVER_EMAIL || 'anvarshaknavas588@gmail.com';
@@ -540,6 +567,7 @@ exports.stripeWebhook = async (req, res) => {
                     } catch (emailErr) {
                         console.error('[Stripe Webhook] Failed to send payment confirmation email:', emailErr.message);
                     }
+                    await sendAdminNewOrderAlert(orderId, await Order.findById(orderId));
                 }
                 break;
             }
@@ -620,6 +648,7 @@ exports.tabbyWebhook = async (req, res) => {
             } catch (emailErr) {
                 console.error('[Tabby Webhook] Failed to send payment confirmation email:', emailErr.message);
             }
+            await sendAdminNewOrderAlert(orderId, await Order.findById(orderId));
 
             // Auto-capture if AUTHORIZED (Tabby expects merchants to capture)
             if (status === 'AUTHORIZED') {
@@ -883,6 +912,7 @@ exports.tamaraWebhook = async (req, res) => {
                     // A failed email must not fail the webhook, or Tamara retries the authorise.
                     console.error('[Tamara Webhook] confirmation email failed:', mailErr.message);
                 }
+                await sendAdminNewOrderAlert(orderId, await Order.findById(orderId));
                 break;
             }
 
