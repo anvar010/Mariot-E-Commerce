@@ -373,7 +373,15 @@ class Order {
             const fullyRefunded = refunded >= captured - 0.005;
 
             if (fullyRefunded) {
-                await connection.execute("UPDATE orders SET payment_status = 'refunded' WHERE id = ?", [orderId]);
+                // Fully refunded means the sale is off: the payment reads refunded and the
+                // order itself is cancelled, so it drops out of the queues that pick work up
+                // (packing, shipping) instead of sitting there as an order still to fulfil.
+                // Set directly rather than via updateStatus, whose own reversal would fight
+                // with the one performed below.
+                await connection.execute(
+                    "UPDATE orders SET payment_status = 'refunded', status = 'cancelled' WHERE id = ?",
+                    [orderId]
+                );
 
                 // Same guard the cancel path uses: act only if this order's credits have not
                 // already been unwound, so refunding then cancelling cannot double-reverse.
