@@ -56,7 +56,12 @@ const createStripeRefund = async (order, amount, reason, idempotencyKey) => {
             payment_intent: order.stripe_payment_intent_id,
             // Stripe works in the smallest unit — fils, not dirhams.
             amount: Math.round(amount * 100),
-            metadata: { order_id: String(order.id), reason: reason || '' },
+            // Deliberately no free-text reason here. The idempotency key is built from the
+            // order and the amount, so anything else that varies between attempts makes
+            // Stripe reject the retry as "same key, different parameters" -- which is exactly
+            // what a second attempt with a different reason typed in did. The reason is kept
+            // in our own ledger, where it belongs.
+            metadata: { order_id: String(order.id) },
         },
         // A double-click reuses the same key and Stripe returns the original refund
         // instead of taking the money twice.
@@ -86,6 +91,32 @@ const refundTamara = async (order, amount, reason) => {
     return { gatewayRefundId: data.refund_id || data.capture_id || null, status: data.status || 'refunded' };
 };
 
+
+/**
+ * What the gateway has actually refunded on this order, regardless of what our ledger says.
+ *
+ * The two can diverge: a refund that succeeds at Stripe but fails to record leaves the money
+ * returned and the books claiming otherwise, and the next attempt then collides with the
+ * original idempotency key. Asking Stripe first makes that state recoverable instead of a
+ * dead end. Only Stripe is queried; Tamara has no equivalent listing here.
+ */
+const gatewayRefundedTotal = async (order) => {
+    if (String(order.payment_method).toLowerCase() !== 'card' || !order.stripe_payment_intent_id) return null;
+    try {
+        const list = await stripeClient().refunds.list({ payment_intent: order.stripe_payment_intent_id, limit: 100 });
+        const total = list.data
+            .filter(r => r.status === 'succeeded' || r.status === 'pending')
+            .reduce((sum, r) => sum + r.amount, 0);
+        return {
+            amount: Math.round(total) / 100,
+            latestId: list.data[0]?.id || null,
+        };
+    } catch (err) {
+        console.warn('[refund] could not read existing Stripe refunds:', err.message);
+        return null;
+    }
+};
+
 const issueRefund = async ({ order, amount, reason, idempotencyKey }) => {
     const method = String(order.payment_method).toLowerCase();
     if (method === 'card') return { gateway: 'stripe', ...(await refundStripe(order, amount, reason, idempotencyKey)) };
@@ -93,4 +124,4 @@ const issueRefund = async ({ order, amount, reason, idempotencyKey }) => {
     throw new Error(`No refund path for payment method "${method}"`);
 };
 
-module.exports = { issueRefund, refundBlocker, SUPPORTED };
+module.exports = { issueRefund, refundBlocker, gatewayRefundedTotal, SUPPORTED };

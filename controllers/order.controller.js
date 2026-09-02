@@ -973,24 +973,54 @@ exports.refundOrder = async (req, res, next) => {
         const blocker = refundService.refundBlocker(order);
         if (blocker) return res.status(422).json({ success: false, message: blocker });
 
+        // Reconcile against the gateway before doing anything. A refund that succeeded at
+        // Stripe but failed to record here leaves the money returned, the order still reading
+        // as paid, and the next attempt colliding with the original idempotency key. Catching
+        // it up first turns that dead end into a self-repair.
+        let ledgerRefunded = refunded;
+        let left = remaining;
+        const atGateway = await refundService.gatewayRefundedTotal(order);
+        if (atGateway && atGateway.amount > ledgerRefunded + 0.005) {
+            const missing = Math.round((atGateway.amount - ledgerRefunded) * 100) / 100;
+            const caughtUp = await Order.recordRefund({
+                orderId,
+                amount: missing,
+                gateway: 'stripe',
+                gatewayRefundId: atGateway.latestId,
+                reason: 'Recorded from Stripe — refunded there but missing here',
+                refundedBy: req.user?.id || null,
+            });
+            console.log(`[refund] order #${orderId}: recorded AED ${missing.toFixed(2)} already refunded at Stripe`);
+            ledgerRefunded = caughtUp.refunded;
+            left = Math.max(0, Math.round((caughtUp.captured - caughtUp.refunded) * 100) / 100);
+
+            if (left <= 0) {
+                return res.json({
+                    success: true,
+                    message: `This order was already refunded in full at Stripe (AED ${ledgerRefunded.toFixed(2)}). The records have been brought up to date — no further money was sent.`,
+                    data: { amount: 0, gateway: 'stripe', total_refunded: ledgerRefunded, fully_refunded: true, reconciled: true },
+                });
+            }
+        }
+
         // Default to whatever is left, so "refund everything" needs no arithmetic upstream.
         const requested = amount === undefined || amount === null || amount === ''
-            ? remaining
+            ? left
             : Math.round(Number(amount) * 100) / 100;
 
         if (!Number.isFinite(requested) || requested <= 0) {
             return res.status(422).json({ success: false, message: 'Refund amount must be greater than zero.' });
         }
-        if (requested > remaining) {
+        if (requested > left) {
             return res.status(422).json({
                 success: false,
-                message: `Only AED ${remaining.toFixed(2)} is left to refund on this order (AED ${refunded.toFixed(2)} of AED ${captured.toFixed(2)} already returned).`
+                message: `Only AED ${left.toFixed(2)} is left to refund on this order (AED ${ledgerRefunded.toFixed(2)} of AED ${captured.toFixed(2)} already returned).`
             });
         }
 
         // Ties a retry of the same refund to the same gateway request. Two operators clicking
         // at once, or one double-click, produces one refund rather than two.
-        const idempotencyKey = `mariot-refund-${orderId}-${refunded.toFixed(2)}-${requested.toFixed(2)}`;
+        const idempotencyKey = `mariot-refund-${orderId}-${ledgerRefunded.toFixed(2)}-${requested.toFixed(2)}`;
 
         const result = await refundService.issueRefund({ order, amount: requested, reason, idempotencyKey });
 
