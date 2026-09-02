@@ -791,7 +791,12 @@ function CheckoutContent() {
                     const selAddr = userAddresses.find(a => a.id.toString() === selectedAddressId.toString());
                     if (!user || !selAddr) return null;
                     const icon = selAddr.address_type === 'home' ? <Home size={20} /> : selAddr.address_type === 'work' ? <Building2 size={20} /> : <MapPin size={20} />;
-                    const typeLabel = selAddr.address_type === 'home' ? t('typeHome') : selAddr.address_type === 'work' ? t('typeWork') : t('typeOther');
+                    // A custom-labelled address shows its own name: "Deliver to Warehouse",
+                    // not "Deliver to Other". The address book and the dashboard already
+                    // read it this way; this banner was the one place that didn't.
+                    const typeLabel = selAddr.address_type === 'home' ? t('typeHome')
+                        : selAddr.address_type === 'work' ? t('typeWork')
+                        : (selAddr.address_label?.trim() || t('typeOther'));
                     return (
                         <div className={styles.deliverBanner} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
                             <div className={styles.deliverIcon}>{icon}</div>
