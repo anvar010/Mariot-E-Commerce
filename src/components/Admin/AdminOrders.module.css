@@ -714,3 +714,77 @@
 @keyframes adminSpin {
     to { transform: rotate(360deg); }
 }
+
+/* Already refunded: solid rather than outlined, so the state reads at a glance down the
+   column instead of needing the label to be parsed. */
+.refundBtnDone {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #fff;
+}
+
+.refundBtnDone:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.refundHistory {
+    margin-bottom: 18px;
+}
+
+.refundHistoryTitle {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.refundEntry {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #fff;
+}
+
+.refundEntryTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 13.5px;
+    color: #0f172a;
+}
+
+.refundEntryTop span {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.refundEntryMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+    font-size: 11.5px;
+    color: #94a3b8;
+    /* Gateway ids are long and must not stretch the panel. */
+    word-break: break-all;
+}
+
+.refundEntryReason {
+    margin-top: 5px;
+    font-size: 12px;
+    color: #475569;
+}
+
+.refundDone {
+    margin: 0;
+    padding: 13px 15px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 13.5px;
+    line-height: 1.55;
+}

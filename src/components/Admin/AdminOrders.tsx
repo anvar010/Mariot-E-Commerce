@@ -58,11 +58,11 @@ const AdminOrders = () => {
     const [refundModal, setRefundModal] = useState<{
         isOpen: boolean; order: any; amount: string; reason: string;
         captured: number; refunded: number; remaining: number; blocker: string | null;
-        loading: boolean; submitting: boolean;
-    }>({ isOpen: false, order: null, amount: '', reason: '', captured: 0, refunded: 0, remaining: 0, blocker: null, loading: false, submitting: false });
+        refunds: any[]; loading: boolean; submitting: boolean;
+    }>({ isOpen: false, order: null, amount: '', reason: '', captured: 0, refunded: 0, remaining: 0, blocker: null, refunds: [], loading: false, submitting: false });
 
     const openRefund = async (order: any) => {
-        setRefundModal({ isOpen: true, order, amount: '', reason: '', captured: 0, refunded: 0, remaining: 0, blocker: null, loading: true, submitting: false });
+        setRefundModal({ isOpen: true, order, amount: '', reason: '', captured: 0, refunded: 0, remaining: 0, blocker: null, refunds: [], loading: true, submitting: false });
         try {
             const res = await fetch(`${API_BASE_URL}/orders/${order.id}/refunds`, {
                 credentials: 'include', headers: getAuthHeaders(),
@@ -75,6 +75,7 @@ const AdminOrders = () => {
                 refunded: Number(data.data.refunded) || 0,
                 remaining: Number(data.data.remaining) || 0,
                 blocker: data.data.blocker || null,
+                refunds: Array.isArray(data.data.refunds) ? data.data.refunds : [],
                 // Prefilled with the whole remaining balance: refunding everything is the
                 // common case, and typing it by hand is where a wrong figure creeps in.
                 amount: (Number(data.data.remaining) || 0).toFixed(2),
@@ -99,8 +100,11 @@ const AdminOrders = () => {
             const data = await res.json();
             if (!data.success) throw new Error(data.message || 'Refund failed');
             showNotification(data.message, 'success');
-            setRefundModal(prev => ({ ...prev, isOpen: false, submitting: false }));
+            setRefundModal(prev => ({ ...prev, submitting: false }));
             fetchOrders();
+            // Reopen on the updated figures: the operator sees the refund they just made
+            // land in the history rather than a panel that vanishes.
+            openRefund(order);
         } catch (err: any) {
             showNotification(err.message || 'Refund failed', 'error');
             setRefundModal(prev => ({ ...prev, submitting: false }));
@@ -656,12 +660,12 @@ const AdminOrders = () => {
                                         {(order.payment_status === 'paid' || order.payment_status === 'refunded') && (
                                             <button
                                                 type="button"
-                                                className={styles.refundBtn}
+                                                className={`${styles.refundBtn} ${order.payment_status === 'refunded' ? styles.refundBtnDone : ''}`}
                                                 onClick={() => openRefund(order)}
-                                                title="Refund this order"
+                                                title={order.payment_status === 'refunded' ? 'See when this was refunded' : 'Refund this order'}
                                             >
                                                 <RotateCcw size={13} />
-                                                <span>Refund</span>
+                                                <span>{order.payment_status === 'refunded' ? 'Refunded' : 'Refund'}</span>
                                             </button>
                                         )}
                                     </td>
@@ -698,6 +702,31 @@ const AdminOrders = () => {
                                         <div><span>Refundable now</span><strong>AED {refundModal.remaining.toFixed(2)}</strong></div>
                                     </div>
 
+                                    {refundModal.refunds.length > 0 && (
+                                        <div className={styles.refundHistory}>
+                                            <span className={styles.refundHistoryTitle}>Refund history</span>
+                                            {refundModal.refunds.map((rf: any) => (
+                                                <div key={rf.id} className={styles.refundEntry}>
+                                                    <div className={styles.refundEntryTop}>
+                                                        <strong>AED {Number(rf.amount).toFixed(2)}</strong>
+                                                        <span>{new Date(rf.created_at).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className={styles.refundEntryMeta}>
+                                                        <span>via {rf.gateway}</span>
+                                                        {rf.gateway_refund_id && <span title="Reference at the gateway">{rf.gateway_refund_id}</span>}
+                                                    </div>
+                                                    {rf.reason && <div className={styles.refundEntryReason}>{rf.reason}</div>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {refundModal.remaining <= 0 ? (
+                                        <p className={styles.refundDone}>
+                                            This order is fully refunded. There is nothing left to send back.
+                                        </p>
+                                    ) : (
+                                    <>
                                     <label className={styles.refundLabel}>Amount to refund (AED)</label>
                                     <input
                                         type="number"
@@ -740,6 +769,8 @@ const AdminOrders = () => {
                                             ? <><Loader2 size={16} className={styles.spin} /> Refunding…</>
                                             : `Refund AED ${(Number(refundModal.amount) || 0).toFixed(2)}`}
                                     </button>
+                                    </>
+                                    )}
                                 </>
                             )}
                         </div>
