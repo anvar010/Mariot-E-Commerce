@@ -125,34 +125,6 @@
     align-items: flex-start;
 }
 
-/* ── trust pill ───────────────────────────────────────────────────────────── */
-.trustPill {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    min-height: 46px;
-    padding: 10px 20px;
-    margin-bottom: 20px;
-    border-radius: 999px;
-    background: #ffffff;
-    color: #18202b;
-    font-size: 14px;
-    font-weight: 800;
-    line-height: 1;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
-}
-
-.trustMark {
-    color: #4285f4;
-    font-size: 15px;
-    font-weight: 900;
-}
-
-.trustStar {
-    color: #f6ad24;
-    font-size: 17px;
-}
-
 /* ── copy ─────────────────────────────────────────────────────────────────── */
 .tagline {
     color: #f0d6ad;
@@ -402,13 +374,6 @@
 
     .textContent {
         width: 100%;
-    }
-
-    .trustPill {
-        min-height: 40px;
-        margin-bottom: 14px;
-        padding: 9px 15px;
-        font-size: 12px;
     }
 
     .tagline {

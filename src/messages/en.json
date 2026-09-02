@@ -100,8 +100,7 @@
     "loading": "Loading..."
   },
   "product": {
-      "genericError": "Something went wrong. Please try again.",
-      "genericError": "Something went wrong. Please try again.",
+    "genericError": "Something went wrong. Please try again.",
     "share": "Share",
     "shareText": "What do you think of this? Found it on Mariot Store!",
     "linkCopied": "Link copied to clipboard",
@@ -323,8 +322,7 @@
     "total": "Total",
     "shipping": "Shipping",
     "vat": "VAT",
-    "taxableAmount": "Total taxable amount",
-    "heroTrust": "Better kitchens with Mariot"
+    "taxableAmount": "Total taxable amount"
   },
   "ticker": {
     "restaurantSupply": "RESTAURANT SUPPLY & KITCHEN EQUIPMENT",
@@ -718,10 +716,9 @@
     "warranty": "We provide 1 year Warranty"
   },
   "userDashboard": {
-      "common": {
-          "loading": "Loading…",
-          "loading": "Loading…"
-      },
+    "common": {
+      "loading": "Loading…"
+    },
     "yourAccount": "Your Account",
     "hello": "Hello, {name}",
     "activeSession": "Active Session",
@@ -841,8 +838,7 @@
       "addToCart": "Add to Cart"
     },
     "profile": {
-        "verifySuccess": "Mobile number verified successfully!",
-        "verifySuccess": "Mobile number verified successfully!",
+      "verifySuccess": "Mobile number verified successfully!",
       "title": "Profile & Security",
       "personalInfo": "Personal Info",
       "businessInfo": "Bussiness Info",
@@ -927,7 +923,7 @@
       "addError": "Failed to add address"
     },
     "payments": {
-        "refunded": "Refunded",
+      "refunded": "Refunded",
       "title": "Payment History",
       "transactions": "Transactions",
       "noPayments": "No payments found",
@@ -1097,10 +1093,10 @@
     "applicableProducts": "Applicable Products"
   },
   "checkout": {
-      "addressLabelPlaceholder": "e.g. Warehouse, Branch 2",
-      "addressLabelName": "Label name",
-      "saveAddressAs": "Save this address as",
-      "walletAddressRequired": "Please fill in your delivery address before paying with Apple Pay or Google Pay.",
+    "addressLabelPlaceholder": "e.g. Warehouse, Branch 2",
+    "addressLabelName": "Label name",
+    "saveAddressAs": "Save this address as",
+    "walletAddressRequired": "Please fill in your delivery address before paying with Apple Pay or Google Pay.",
     "default": "Default",
     "title": "Secure Checkout",
     "subtitle": "Complete your order by providing shipping and payment details.",
