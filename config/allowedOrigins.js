@@ -22,6 +22,14 @@ const DEFAULT_ORIGINS = [
     'https://mariotstore.com',
     'https://www.mariotstore.com',
     'https://api.mariotstore.com',
+    // TEMPORARY -- the auto-generated hostname of the new storefront site, so it can be
+    // tested against this API before mariotstore.com is attached to it. Remove once the
+    // real domain is live.
+    //
+    // Listed by exact hostname on purpose. A wildcard for *.hostingersite.com would let
+    // any Hostinger customer's site call this API and embed our media, since every site
+    // on the platform gets one of these names.
+    'https://lightsalmon-leopard-120325.hostingersite.com',
 ];
 
 const fromEnv = (value) => (value ? String(value).split(',').map(s => s.trim()).filter(Boolean) : []);
