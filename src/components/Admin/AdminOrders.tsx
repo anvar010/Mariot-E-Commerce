@@ -268,6 +268,7 @@ const AdminOrders = () => {
                     given_by_name: givenByName.trim() || user?.name || '',
                     final_amount: Number(order?.final_amount || 0),
                     delivery_charge: Number(order?.delivery_charge) || 0,
+                    settlement_fee: Number(order?.settlement_fee) || 0,
                     items: invoiceOrderItems
                 });
             } catch (pdfErr: any) {
@@ -337,6 +338,7 @@ const AdminOrders = () => {
                 given_by_name: givenByName.trim() || user?.name || '',
                 final_amount: Number(invoiceModal.order?.final_amount || invoiceModal.order?.total_amount || 0),
                 delivery_charge: Number(invoiceModal.order?.delivery_charge) || 0,
+                settlement_fee: Number(invoiceModal.order?.settlement_fee) || 0,
                 items: invoiceOrderItems
             });
 

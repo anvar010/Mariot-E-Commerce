@@ -7,6 +7,7 @@ export interface InvoicePDFData {
     given_by_name?: string;
     final_amount: number;
     delivery_charge?: number;
+    settlement_fee?: number;
     items: any[];
 }
 // Dynamically imported when generated to fix next.js SSR build errors
@@ -613,7 +614,11 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
     // Prices are VAT-exclusive. final_amount = goods (incl 5% VAT) + delivery (not VAT-taxed).
     const grandTotal = Number(data.final_amount);
     const deliveryAmount = Math.max(0, Number(data.delivery_charge) || 0);
-    const goodsTotal = Math.max(0, grandTotal - deliveryAmount); // VAT-inclusive goods portion
+    // BNPL settlement fee. It carries no VAT and is not part of the goods, so it has to
+    // come out before VAT is inferred below -- leave it in and the fee gets treated as
+    // taxable value, overstating the VAT on what is a tax document.
+    const settlementAmount = Math.max(0, Number(data.settlement_fee) || 0);
+    const goodsTotal = Math.max(0, grandTotal - deliveryAmount - settlementAmount); // VAT-inclusive goods portion
     const netExVat = goodsTotal / 1.05;                 // post-discount taxable value
     const vatAmount = goodsTotal - netExVat;            // 5% VAT
     // Sum of item line totals = pre-discount, ex-VAT subtotal (matches the rows above).
@@ -810,6 +815,13 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
                                         <div style="font-size:11px;font-weight:900;color:#111;">رسوم التوصيل</div><div style="font-size:10px;font-weight:900;color:#111;">Delivery Charge</div>
                                     </td>
                                     <td style="border-top:1px solid #1565c0;padding:6px 10px;font-size:13px;font-weight:800;text-align:center;color:#111;">${deliveryAmount.toFixed(2)}</td>
+                                </tr>` : ``}
+                                ${settlementAmount > 0 ? `
+                                <tr>
+                                    <td style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:6px 4px;text-align:center;vertical-align:middle;">
+                                        <div style="font-size:11px;font-weight:900;color:#111;">رسوم التسوية</div><div style="font-size:10px;font-weight:900;color:#111;">Settlement Fee</div>
+                                    </td>
+                                    <td style="border-top:1px solid #1565c0;padding:6px 10px;font-size:13px;font-weight:800;text-align:center;color:#111;">${settlementAmount.toFixed(2)}</td>
                                 </tr>` : ``}
                                 <tr>
                                     <td style="border-top:1px solid #1565c0;border-right:1px solid #1565c0;padding:8px 4px;text-align:center;vertical-align:middle;">

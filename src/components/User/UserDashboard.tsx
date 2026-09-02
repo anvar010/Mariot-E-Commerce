@@ -55,6 +55,7 @@ import { SavedCard, listCards, setDefaultCard } from '@/utils/paymentMethodsApi'
 const UserDashboard = () => {
     const t = useTranslations('userDashboard');
     const tProd = useTranslations('product');
+    const tc = useTranslations('common');
     // Prefer the localized custom-dimension string; fall back to variant signature / stored label.
     const itemVariantLine = (item: any): string =>
         formatCustomDims(item?.custom_dimensions, tProd) || item?.variant_options || item?.custom_label || '';
@@ -647,6 +648,7 @@ const UserDashboard = () => {
                 given_by_name: selectedOrder.invoice.given_by_name || '',
                 final_amount: Number(selectedOrder.invoice.order_total || selectedOrder.final_amount || 0),
                 delivery_charge: Number(selectedOrder.delivery_charge) || 0,
+                settlement_fee: Number(selectedOrder.settlement_fee) || 0,
                 items: selectedOrder.items || []
             });
             const base64 = dataUri.replace(/^data:application\/pdf[^,]*,/, '');
@@ -736,6 +738,9 @@ const UserDashboard = () => {
                 const vat = parseFloat(selectedOrder.vat_amount) || 0;
                 const orderTotal = parseFloat(selectedOrder.final_amount) || 0;
                 const deliveryFee = Math.max(0, Number(selectedOrder.delivery_charge) || 0);
+                // Without this the rows above simply do not add up to the total on a
+                // BNPL order, which reads to the customer as an unexplained charge.
+                const settlementFee = Math.max(0, Number(selectedOrder.settlement_fee) || 0);
                 const pm = (selectedOrder.payment_method || '').toLowerCase();
                 const paymentLabel = pm === 'card' ? t('orders.card') : (pm === 'cod' || pm === 'cash') ? t('orders.cashOnDelivery') : t('orders.bankTransfer');
                 const addr = selectedOrder.shipping_address;
@@ -781,6 +786,12 @@ const UserDashboard = () => {
                                         ? <span style={{ fontWeight: 600 }}><CurrencyPrice amount={deliveryFee} /></span>
                                         : <span style={{ color: '#16a34a', fontWeight: 800 }}>{t('orders.free')}</span>}
                                 </div>
+                                {settlementFee > 0 && (
+                                    <div style={{ ...rowStyle, marginBottom: '16px' }}>
+                                        <span style={{ color: '#475569' }}>{tc('settlementFee')}</span>
+                                        <span style={{ fontWeight: 600 }}><CurrencyPrice amount={settlementFee} /></span>
+                                    </div>
+                                )}
                                 <div style={{ ...rowStyle, borderTop: '1px solid #e2e8f0', paddingTop: '14px' }}>
                                     <span style={{ fontWeight: 800, fontSize: '16px', color: '#0f172a' }}>{t('orders.orderTotalLabel')} <span style={{ color: '#94a3b8', fontWeight: 400, fontSize: '13px' }}>{t('orders.incVat')}</span></span>
                                     <span style={{ fontWeight: 800, fontSize: '17px', color: '#0f172a' }}><CurrencyPrice amount={orderTotal} /></span>

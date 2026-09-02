@@ -322,7 +322,8 @@
     "total": "Total",
     "shipping": "Shipping",
     "vat": "VAT",
-    "taxableAmount": "Total taxable amount"
+    "taxableAmount": "Total taxable amount",
+    "settlementFee": "Settlement Fee"
   },
   "ticker": {
     "restaurantSupply": "RESTAURANT SUPPLY & KITCHEN EQUIPMENT",

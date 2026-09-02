@@ -21,3 +21,28 @@ export const TABBY_ENABLED = false;
  * quote request, the method selector, and the requirement to pick one before paying.
  */
 export const SHIPPING_QUOTES_ENABLED = false;
+
+/**
+ * Settlement fee on Buy-Now-Pay-Later orders (Tabby / Tamara).
+ *
+ * These providers keep a percentage of what they settle, so the cost is passed on as its
+ * own line on the order. It is charged on the whole pre-fee total -- goods INCLUDING the
+ * 5% VAT, plus delivery -- and is itself outside the taxable base.
+ *
+ * Display rule: show the amount, never the rate. Nothing customer-facing may name the
+ * percentage.
+ *
+ * This mirrors backend/config/settlementFee.js, which is the authority: the server
+ * recomputes the fee on every order and charges its own figure. This copy exists only so
+ * checkout can show the customer the same number before they commit.
+ */
+export const SETTLEMENT_FEE_RATE = 0.07;
+
+export const SETTLEMENT_FEE_METHODS = ['tabby', 'tamara'];
+
+export const settlementFeeFor = (paymentMethod: string, baseAmount: number): number => {
+    if (!SETTLEMENT_FEE_METHODS.includes(String(paymentMethod || '').toLowerCase())) return 0;
+    if (!Number.isFinite(baseAmount) || baseAmount <= 0) return 0;
+    // Rounded to 2dp exactly as the server does, so the displayed total matches the charge.
+    return Math.round(baseAmount * SETTLEMENT_FEE_RATE * 100) / 100;
+};

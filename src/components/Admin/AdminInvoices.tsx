@@ -39,6 +39,7 @@ const AdminInvoices = () => {
                 given_by_name: inv.given_by_name || '',
                 final_amount: Number(inv.order_total || inv.final_amount || 0),
                 delivery_charge: Number(orderData?.data?.delivery_charge) || 0,
+                settlement_fee: Number(orderData?.data?.settlement_fee) || 0,
                 items
             });
 
@@ -87,6 +88,7 @@ const AdminInvoices = () => {
                 given_by_name: inv.given_by_name || '',
                 final_amount: Number(inv.order_total || inv.final_amount || 0),
                 delivery_charge: Number(orderData?.data?.delivery_charge) || 0,
+                settlement_fee: Number(orderData?.data?.settlement_fee) || 0,
                 items
             });
 

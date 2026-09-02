@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, TABBY_ENABLED, SHIPPING_QUOTES_ENABLED } from '@/config';
+import { settlementFeeFor } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { formatCustomDims } from '@/utils/customDimensions';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -284,7 +285,12 @@ function CheckoutContent() {
     // Prices are VAT-exclusive — add 5% VAT on top of the discounted total (cartTotal),
     // then add per-product delivery charges (delivery is not VAT-taxed) and the carrier's
     // charge for the chosen delivery method.
-    const finalTotal = cartTotal * 1.05 + deliveryTotal + shippingCost;
+    const preFeeTotal = cartTotal * 1.05 + deliveryTotal + shippingCost;
+    // BNPL providers keep a slice of what they settle; that cost is passed on as its own
+    // line. Computed from the same rule the server uses, so the figure shown here is the
+    // figure charged -- the server still recomputes it and its answer is authoritative.
+    const settlementFee = settlementFeeFor(paymentMethod, preFeeTotal);
+    const finalTotal = preFeeTotal + settlementFee;
 
     // Re-quote whenever the destination or the cart changes. The previous selection is
     // cleared first: a price quoted for one address must never be charged for another.
@@ -1695,6 +1701,13 @@ function CheckoutContent() {
                                             ? <span><CurrencyPrice amount={deliveryTotal} /></span>
                                             : <span style={{ color: '#16a34a', fontWeight: 700 }}>{locale === 'ar' ? 'مجاني' : 'FREE'}</span>}
                                     </div>
+
+                                    {settlementFee > 0 && (
+                                        <div className={styles.totalRow}>
+                                            <span>{common('settlementFee')}</span>
+                                            <span><CurrencyPrice amount={settlementFee} /></span>
+                                        </div>
+                                    )}
 
                                     <div className={styles.grandTotalRow}>
                                         <span>{common('total')}</span>
