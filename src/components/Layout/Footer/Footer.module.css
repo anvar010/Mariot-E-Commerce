@@ -197,6 +197,19 @@
     color: #111;
 }
 
+/* Each phone number is its own tel: link now, so it needs the value styling without an
+   anchor's default colour and underline. */
+.itemValueLink {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    text-decoration: none;
+}
+
+.itemValueLink:hover {
+    text-decoration: underline;
+}
+
 .itemSub {
     font-size: 11px;
     color: #888;
@@ -556,7 +569,8 @@
         overflow: hidden;
     }
 
-    .itemValue {
+    .itemValue,
+    .itemValueLink {
         font-size: 14px;
         white-space: nowrap;
         overflow: hidden;
@@ -653,7 +667,8 @@
         text-transform: uppercase;
     }
 
-    .itemValue {
+    .itemValue,
+    .itemValueLink {
         font-size: 15.5px;
         /* Fine-tuned for fit */
         color: #1a1a1a;

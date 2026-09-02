@@ -47,19 +47,25 @@ const Footer = () => {
                         </div>
                     </div>
                     <div className={styles.supportIcons}>
-                        <a href="tel:+97142882777" className={styles.supportItem}>
+                        {/* Two numbers, so the card itself is no longer the link -- an anchor
+                            cannot contain another anchor, and each number has to stay
+                            separately tappable on a phone. */}
+                        <div className={styles.supportItem}>
                             <div className={styles.iconCircle}>
                                 <Phone size={24} color="#ffffff" strokeWidth={2.5} />
                             </div>
                             <div className={styles.itemInfo}>
                                 <span className={styles.itemLabel}>{t('phoneSupport')}</span>
-                                <span className={styles.itemValue} dir="ltr">+971 4 288 2777</span>
+                                {/* dir="ltr" keeps the digits and the leading + in the right
+                                    order on the Arabic site. */}
+                                <a href="tel:+97142882777" className={styles.itemValueLink} dir="ltr">+971 4 288 2777</a>
+                                <a href="tel:+971503114080" className={styles.itemValueLink} dir="ltr">+971 50 311 4080</a>
                                 <span className={styles.itemSub}>{t('available247')}</span>
                             </div>
                             <div className={styles.chevronIcon}>
                                 <ChevronRight size={24} />
                             </div>
-                        </a>
+                        </div>
                         <a href="mailto:support@mariot-group.com" className={styles.supportItem}>
                             <div className={styles.iconCircle}>
                                 <Mail size={24} color="#ffffff" strokeWidth={2.5} />
