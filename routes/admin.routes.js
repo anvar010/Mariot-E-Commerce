@@ -29,6 +29,7 @@ const {
 const { getAllReviews } = require('../controllers/review.controller');
 const { adminGetTrendingProducts, adminSetTrendingProducts } = require('../controllers/product.controller');
 const { protect, authorize, authorizeAdminOrStaff } = require('../middlewares/auth.middleware');
+const { getActivityCounts } = require('../controllers/activity.controller');
 
 const router = express.Router();
 
@@ -36,6 +37,9 @@ router.use(protect);
 
 // Dashboard / SEO / Analytics all draw from the same stats endpoint
 router.get('/stats', authorizeAdminOrStaff('dashboard', 'seo', 'analytics'), getDashboardStats);
+
+// Sidebar badges. Open to any signed-in staff member: it returns counts, nothing more.
+router.get('/activity', getActivityCounts);
 
 // Roles — any admin or staff with users permission (needed for user create/edit dropdowns)
 router.get('/roles', authorizeAdminOrStaff('users'), getRoles);
