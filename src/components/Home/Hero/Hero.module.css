@@ -17,6 +17,15 @@
 .carouselStage {
     --carousel-peek: clamp(112px, 8.8vw, 170px);
     --carousel-gap: 9px;
+    /* The track is wider than this stage and is positioned by transform from a LEFT
+       origin. A block that overflows its container is anchored by the CONTAINING
+       block's direction, not its own -- so under the page's rtl the track was pinned
+       to the stage's right edge and every offset pushed it further out of view: in
+       Arabic the hero rendered as a blank white band. The track already declares
+       direction: ltr, but that only fixes the order of the cards inside it, not where
+       the track itself starts. Both have to be ltr. Arabic text is unaffected: each
+       card sets its own dir on .textContent. */
+    direction: ltr;
     position: relative;
     width: calc(100% + 44px);
     height: clamp(500px, 30vw, 590px);
