@@ -339,12 +339,18 @@
 /* Phones: no peek, no arrows, copy sits at the bottom over a vertical scrim. */
 @media (max-width: 768px) {
     .heroSection {
-        padding: 18px 14px 22px;
+        /* 4px here + the 10px carousel gap below puts the card edge at the same
+           14px from the screen as before. The gutter is split between the two so
+           the gap can exist between the cards without widening the margin. */
+        padding: 18px 4px 22px;
     }
 
     .carouselStage {
         --carousel-peek: 0px;
-        --carousel-gap: 0px;
+        /* Neighbouring slides used to touch mid-swipe, which read as one smeared
+           image rather than two cards. The gap is the only thing separating them
+           here, since the peek is collapsed on phones. */
+        --carousel-gap: 10px;
         width: 100%;
         height: min(72vh, 570px);
         min-height: 460px;
