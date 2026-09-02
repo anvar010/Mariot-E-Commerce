@@ -487,13 +487,18 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
     const vatNum = Number(orderData.vat_amount || 0);
     const deliveryNum = Number(orderData.delivery_charge || 0);
     const totalNum = Number(finalAmount || 0);
+    // BNPL orders carry a settlement fee. It is part of the total but not of the goods,
+    // so it has to come back out before the discount can be inferred below -- otherwise
+    // the fee reads as a smaller discount and the summary stops adding up.
+    const settlementNum = Number(orderData.settlement_fee || 0);
     // Combined discount (coupon + reward points), derived from the stored amounts so the
-    // summary always reconciles:  items − discount + VAT + delivery = total.
-    const discountNum = Math.max(0, subtotalNum - (totalNum - vatNum - deliveryNum));
+    // summary always reconciles:  items − discount + VAT + delivery + fee = total.
+    const discountNum = Math.max(0, subtotalNum - (totalNum - vatNum - deliveryNum - settlementNum));
     const subtotal = subtotalNum.toFixed(2);
     const vat = vatNum.toFixed(2);
     const delivery = deliveryNum.toFixed(2);
     const discount = discountNum.toFixed(2);
+    const settlement = settlementNum.toFixed(2);
     const total = totalNum.toFixed(2);
     const date = new Date(orderData.created_at || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -520,7 +525,7 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
         title: `شكراً لطلبك، ${firstName}.`,
         intro: `لقد استلمنا الطلب <strong style="color:#17181c;font-weight:600;">#${orderId}</strong> وسنراسلك مجدداً فور شحنه.`,
         mOrder: 'الطلب', mDate: 'التاريخ', mTotal: 'الإجمالي',
-        subtotalL: 'المجموع الفرعي', shippingL: 'الشحن', discountL: 'الخصم', vatL: 'ضريبة القيمة المضافة (5%، شاملة)', totalL: 'الإجمالي',
+        subtotalL: 'المجموع الفرعي', shippingL: 'الشحن', discountL: 'الخصم', vatL: 'ضريبة القيمة المضافة (5%، شاملة)', settlementL: 'رسوم التسوية', totalL: 'الإجمالي',
         free: 'مجاني', cta: 'عرض الطلب والفاتورة',
         deliveryAddr: 'عنوان التوصيل', paymentL: 'الدفع', paidLine: (p) => `${p} · مدفوع`
     } : {
@@ -531,7 +536,7 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
         title: `Thanks for your order, ${firstName}.`,
         intro: `We've received order <strong style="color:#17181c;font-weight:600;">#${orderId}</strong> and will email you again the moment it ships.`,
         mOrder: 'Order', mDate: 'Date', mTotal: 'Total',
-        subtotalL: 'Subtotal', shippingL: 'Shipping', discountL: 'Discount', vatL: 'VAT (5%, included)', totalL: 'Total',
+        subtotalL: 'Subtotal', shippingL: 'Shipping', discountL: 'Discount', vatL: 'VAT (5%, included)', settlementL: 'Settlement Fee', totalL: 'Total',
         free: 'Free', cta: 'View order &amp; invoice',
         deliveryAddr: 'Delivery address', paymentL: 'Payment', paidLine: (p) => `${p} · Paid`
     };
@@ -608,6 +613,7 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
   ${totalRow(L.shippingL, deliveryNum > 0 ? `AED ${delivery}` : L.free)}
   ${Number(discount) > 0 ? totalRow(L.discountL, `-AED ${discount}`, { danger: true }) : ''}
   ${totalRow(L.vatL, `AED ${vat}`)}
+  ${settlementNum > 0 ? totalRow(L.settlementL, `AED ${settlement}`) : ''}
   <tr><td colspan="2" style="border-top:1px solid #d9dade;padding-top:6px;"></td></tr>
   <tr><td style="padding:6px 0;font-family:${SERIF};font-size:17px;font-weight:600;color:#17181c;">${L.totalL}</td><td align="${endAlign}" style="padding:6px 0;font-family:${SERIF};font-size:20px;font-weight:700;color:#17181c;">AED ${total}</td></tr>
 </table>
@@ -643,6 +649,7 @@ ${dsButton(orderSummaryUrl, L.cta, ar)}
   ${totalRow(L.shippingL, deliveryNum > 0 ? `AED ${delivery}` : L.free)}
   ${Number(discount) > 0 ? totalRow(L.discountL, `-AED ${discount}`, { danger: true }) : ''}
   ${totalRow(L.vatL, `AED ${vat}`)}
+  ${settlementNum > 0 ? totalRow(L.settlementL, `AED ${settlement}`) : ''}
   <tr><td colspan="2" style="border-top:1px solid #d9dade;padding-top:6px;"></td></tr>
   <tr><td style="padding:6px 0;font-family:${DS_SERIF};font-size:17px;font-weight:600;color:#17181c;">${L.totalL}</td><td align="right" style="padding:6px 0;font-family:${DS_SERIF};font-size:20px;font-weight:700;color:#17181c;">AED ${total}</td></tr>
 </table>`;

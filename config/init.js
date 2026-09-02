@@ -134,7 +134,10 @@ const initDb = async () => {
                 { name: 'receiver_phone', definition: "VARCHAR(50) AFTER receiver_name" },
                 // Tamara's own order id. Its webhook carries this alongside our reference,
                 // and the authorise call is addressed to it, not to our numeric id.
-                { name: 'tamara_order_id', definition: "VARCHAR(64) NULL AFTER payment_method" }
+                { name: 'tamara_order_id', definition: "VARCHAR(64) NULL AFTER payment_method" },
+                // BNPL settlement fee, in AED. Stored rather than recomputed because the
+                // rate can change and an old order must still add up to what was charged.
+                { name: 'settlement_fee', definition: "DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER delivery_charge" }
             ];
 
             for (const col of orderColumns) {

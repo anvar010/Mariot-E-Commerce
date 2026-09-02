@@ -8,6 +8,7 @@ const axios = require('axios');
 const { sendOrderConfirmationEmail, sendEmail } = require('../utils/sendEmail');
 const tamaraService = require('../services/tamara.service');
 const refundService = require('../services/refund.service');
+const { settlementFeeFor } = require('../config/settlementFee');
 
 // Initialize Stripe with secret key
 const { ensureStripeCustomer, ownedPaymentMethod } = require('./paymentMethod.controller');
@@ -186,7 +187,12 @@ exports.createOrder = async (req, res, next) => {
             if (Number(item.is_free_gift) === 1) return sum;
             return sum + (Number(item.delivery_charge) || 0) * (Number(item.quantity) || 0);
         }, 0);
-        const finalAmount = discountedSubtotal + vatAmount + deliveryTotal;
+        // BNPL providers keep a percentage of what they settle, so that cost is added as
+        // its own line. It sits OUTSIDE the taxable base -- VAT is already in the figure
+        // it is charged on, and no VAT is levied on the fee itself.
+        const preFeeTotal = discountedSubtotal + vatAmount + deliveryTotal;
+        const settlementFee = settlementFeeFor(payment_method, preFeeTotal);
+        const finalAmount = preFeeTotal + settlementFee;
 
         const orderData = {
             items,
@@ -197,6 +203,7 @@ exports.createOrder = async (req, res, next) => {
             vat_amount: vatAmount,
             delivery_charge: deliveryTotal,
             final_amount: finalAmount,
+            settlement_fee: settlementFee,
             points_to_use: validatedPointsToUse,
             coupon_id: validatedCouponId,
             discount_amount: calculatedCouponDiscount

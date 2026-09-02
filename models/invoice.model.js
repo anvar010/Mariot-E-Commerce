@@ -24,7 +24,7 @@ const Invoice = {
     async findAll() {
         const [rows] = await db.execute(`
             SELECT i.*,
-                   o.final_amount, o.status AS order_status, o.payment_status,
+                   o.final_amount, o.settlement_fee, o.status AS order_status, o.payment_status,
                    u.name AS customer_name_from_users
             FROM invoices i
             LEFT JOIN orders o ON i.order_id = o.id
@@ -36,7 +36,7 @@ const Invoice = {
 
     async findById(id) {
         const [rows] = await db.execute(
-            `SELECT i.*, o.final_amount, o.status AS order_status
+            `SELECT i.*, o.final_amount, o.settlement_fee, o.status AS order_status
              FROM invoices i
              LEFT JOIN orders o ON i.order_id = o.id
              WHERE i.id = ?`,

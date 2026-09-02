@@ -35,7 +35,7 @@ async function ensureCustomColumns(connection) {
 }
 
 class Order {
-    static async create(userId, { items, shipping_address_id, billing_details, payment_method, total_amount, vat_amount, final_amount, points_to_use = 0, coupon_id = null, discount_amount = 0, delivery_charge = 0 }) {
+    static async create(userId, { items, shipping_address_id, billing_details, payment_method, total_amount, vat_amount, final_amount, points_to_use = 0, coupon_id = null, discount_amount = 0, delivery_charge = 0, settlement_fee = 0 }) {
         await ensureCustomColumns(null);
         const connection = await db.getConnection();
         try {
@@ -82,9 +82,9 @@ class Order {
 
             // 1. Create order
             const [orderResult] = await connection.execute(
-                `INSERT INTO orders (user_id, total_amount, vat_amount, final_amount, shipping_address_id, receiver_name, receiver_phone, payment_method, payment_status, points_used, points_discount, coupon_id, discount_amount, delivery_charge)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [userId, total_amount, vat_amount, adjustedFinalAmount, finalAddressId, receiverName, receiverPhone, payment_method, initialPaymentStatus, points_to_use, pointsDiscount, coupon_id, discount_amount, delivery_charge]
+                `INSERT INTO orders (user_id, total_amount, vat_amount, final_amount, shipping_address_id, receiver_name, receiver_phone, payment_method, payment_status, points_used, points_discount, coupon_id, discount_amount, delivery_charge, settlement_fee)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [userId, total_amount, vat_amount, adjustedFinalAmount, finalAddressId, receiverName, receiverPhone, payment_method, initialPaymentStatus, points_to_use, pointsDiscount, coupon_id, discount_amount, delivery_charge, settlement_fee]
             );
             const orderId = orderResult.insertId;
 
