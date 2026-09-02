@@ -147,6 +147,28 @@ const initDb = async () => {
             console.error('[DB] Error migrating orders table:', err.message);
         }
 
+        // 4b. Refund ledger. One row per refund actually accepted by the gateway, so a
+        // partially refunded order can be reconciled and a repeat click can be refused.
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS order_refunds (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    order_id INT NOT NULL,
+                    amount DECIMAL(10, 2) NOT NULL,
+                    currency VARCHAR(3) NOT NULL DEFAULT 'AED',
+                    gateway VARCHAR(20) NOT NULL,
+                    gateway_refund_id VARCHAR(255) NULL,
+                    reason VARCHAR(255) NULL,
+                    refunded_by INT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_order_refunds_order (order_id)
+                )
+            `);
+            console.log('[DB] order_refunds table verified');
+        } catch (err) {
+            console.error('[DB] Error creating order_refunds table:', err.message);
+        }
+
         // 5. Products missing columns migration
         try {
             const [columns] = await db.query("SHOW COLUMNS FROM products");

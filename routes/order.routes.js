@@ -1,6 +1,6 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const { createOrder, getMyOrders, getOrder, updateOrderStatus, tabbyWebhook, stripeWebhook, tamaraWebhook } = require('../controllers/order.controller');
+const { createOrder, getMyOrders, getOrder, updateOrderStatus, tabbyWebhook, stripeWebhook, tamaraWebhook, refundOrder, getOrderRefunds } = require('../controllers/order.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
@@ -38,5 +38,10 @@ router.route('/')
 router.route('/:id')
     .get(getOrder)
     .put(authorize('admin'), updateOrderStatus);
+
+// Refunds are admin-only and move real money, so they sit behind the same authorisation
+// as status changes rather than anything looser.
+router.get('/:id/refunds', authorize('admin'), getOrderRefunds);
+router.post('/:id/refund', authorize('admin'), refundOrder);
 
 module.exports = router;

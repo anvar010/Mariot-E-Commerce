@@ -7,6 +7,7 @@ const db = require('../config/db');
 const axios = require('axios');
 const { sendOrderConfirmationEmail, sendEmail } = require('../utils/sendEmail');
 const tamaraService = require('../services/tamara.service');
+const refundService = require('../services/refund.service');
 
 // Initialize Stripe with secret key
 const { ensureStripeCustomer, ownedPaymentMethod } = require('./paymentMethod.controller');
@@ -939,5 +940,116 @@ exports.tamaraWebhook = async (req, res) => {
         console.error('[Tamara Webhook] error:', error.response?.data || error.message);
         // 500 tells Tamara to retry, which is what we want for a transient failure.
         return res.status(500).json({ success: false, message: 'Webhook processing failed' });
+    }
+};
+
+/**
+ * POST /api/v1/orders/:id/refund   (admin)
+ *
+ * Sends money back through the gateway that took it, then records what happened.
+ *
+ * Ordering matters: the gateway is called first and the ledger row written only once it
+ * confirms. The reverse would let a failed call leave the books saying a customer was repaid
+ * when they were not. The trade-off is a refund that succeeds at the gateway but fails to
+ * record — far rarer, and visible in the gateway dashboard rather than silently wrong here.
+ */
+exports.refundOrder = async (req, res, next) => {
+    try {
+        const orderId = parseInt(req.params.id, 10);
+        const { amount, reason } = req.body || {};
+
+        const summary = await Order.getRefundSummary(orderId);
+        if (!summary) return res.status(404).json({ success: false, message: 'Order not found' });
+
+        const { order, captured, refunded, remaining } = summary;
+
+        if (order.payment_status !== 'paid' && refunded === 0) {
+            return res.status(422).json({
+                success: false,
+                message: `Only a paid order can be refunded (this one is ${order.payment_status}).`
+            });
+        }
+
+        const blocker = refundService.refundBlocker(order);
+        if (blocker) return res.status(422).json({ success: false, message: blocker });
+
+        // Default to whatever is left, so "refund everything" needs no arithmetic upstream.
+        const requested = amount === undefined || amount === null || amount === ''
+            ? remaining
+            : Math.round(Number(amount) * 100) / 100;
+
+        if (!Number.isFinite(requested) || requested <= 0) {
+            return res.status(422).json({ success: false, message: 'Refund amount must be greater than zero.' });
+        }
+        if (requested > remaining) {
+            return res.status(422).json({
+                success: false,
+                message: `Only AED ${remaining.toFixed(2)} is left to refund on this order (AED ${refunded.toFixed(2)} of AED ${captured.toFixed(2)} already returned).`
+            });
+        }
+
+        // Ties a retry of the same refund to the same gateway request. Two operators clicking
+        // at once, or one double-click, produces one refund rather than two.
+        const idempotencyKey = `mariot-refund-${orderId}-${refunded.toFixed(2)}-${requested.toFixed(2)}`;
+
+        const result = await refundService.issueRefund({ order, amount: requested, reason, idempotencyKey });
+
+        const recorded = await Order.recordRefund({
+            orderId,
+            amount: requested,
+            gateway: result.gateway,
+            gatewayRefundId: result.gatewayRefundId,
+            reason,
+            refundedBy: req.user?.id || null,
+        });
+
+        console.log(`[refund] order #${orderId}: AED ${requested.toFixed(2)} via ${result.gateway} (${result.gatewayRefundId || 'no id'})`);
+
+        return res.json({
+            success: true,
+            message: recorded.fullyRefunded
+                ? `Refunded AED ${requested.toFixed(2)}. This order is now fully refunded.`
+                : `Refunded AED ${requested.toFixed(2)}. AED ${(recorded.captured - recorded.refunded).toFixed(2)} still refundable.`,
+            data: {
+                amount: requested,
+                gateway: result.gateway,
+                gateway_refund_id: result.gatewayRefundId,
+                total_refunded: recorded.refunded,
+                fully_refunded: recorded.fullyRefunded,
+            },
+        });
+    } catch (error) {
+        console.error('[refund] failed:', error.message);
+        return res.status(502).json({
+            success: false,
+            message: error.message || 'The refund could not be completed. Nothing was charged back.',
+        });
+    }
+};
+
+/** GET /api/v1/orders/:id/refunds  (admin) — what has been refunded, and what remains. */
+exports.getOrderRefunds = async (req, res, next) => {
+    try {
+        const orderId = parseInt(req.params.id, 10);
+        const summary = await Order.getRefundSummary(orderId);
+        if (!summary) return res.status(404).json({ success: false, message: 'Order not found' });
+
+        const [rows] = await db.execute(
+            'SELECT id, amount, currency, gateway, gateway_refund_id, reason, created_at FROM order_refunds WHERE order_id = ? ORDER BY id DESC',
+            [orderId]
+        );
+
+        return res.json({
+            success: true,
+            data: {
+                captured: summary.captured,
+                refunded: summary.refunded,
+                remaining: summary.remaining,
+                blocker: refundService.refundBlocker(summary.order),
+                refunds: rows,
+            },
+        });
+    } catch (error) {
+        next(error);
     }
 };

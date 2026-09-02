@@ -305,6 +305,153 @@ class Order {
         return rows[0];
     }
 
+    /**
+     * Undo an order's point movements: claw back what it earned, hand back what it redeemed.
+     *
+     * Shared by cancellation and full refunds so the two can never drift apart. Callers are
+     * responsible for the "has this already happened" guard -- both check for an existing
+     * 'reversed'/'refunded' row first, which is what makes a repeat safe.
+     *
+     * Redeemed points come from the ledger rather than orders.points_used, so only points
+     * that were genuinely deducted are returned; an order that never processed deducted none.
+     */
+    /**
+     * What has been refunded so far, and what is still refundable.
+     *
+     * Sums the ledger rather than reading a column, so a partial refund recorded by any path
+     * is counted and the remaining figure cannot drift from what actually happened.
+     */
+    static async getRefundSummary(id) {
+        const [[order]] = await db.execute(
+            'SELECT id, user_id, payment_method, payment_status, final_amount, stripe_payment_intent_id, tamara_order_id, is_processed FROM orders WHERE id = ?',
+            [id]
+        );
+        if (!order) return null;
+        const [[sum]] = await db.execute(
+            'SELECT COALESCE(SUM(amount), 0) AS refunded FROM order_refunds WHERE order_id = ?',
+            [id]
+        );
+        const captured = Number(order.final_amount) || 0;
+        const refunded = Number(sum.refunded) || 0;
+        return {
+            order,
+            captured,
+            refunded,
+            // Rounded to fils: floating point subtraction otherwise leaves 0.004999 behind
+            // and a "refund the rest" click is refused for being a hair over.
+            remaining: Math.max(0, Math.round((captured - refunded) * 100) / 100),
+        };
+    }
+
+    /**
+     * Records a refund the gateway has already accepted, and settles the order's side of it:
+     * once nothing is left to refund the payment reads as refunded, and the points and stock
+     * the order consumed are given back exactly once.
+     */
+    static async recordRefund({ orderId, amount, currency = 'AED', gateway, gatewayRefundId, reason, refundedBy }) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            await connection.execute(
+                `INSERT INTO order_refunds (order_id, amount, currency, gateway, gateway_refund_id, reason, refunded_by)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [orderId, amount, currency, gateway, gatewayRefundId || null, reason || null, refundedBy || null]
+            );
+
+            const [[order]] = await connection.execute(
+                'SELECT user_id, final_amount, is_processed, payment_status FROM orders WHERE id = ? FOR UPDATE',
+                [orderId]
+            );
+            const [[sum]] = await connection.execute(
+                'SELECT COALESCE(SUM(amount), 0) AS refunded FROM order_refunds WHERE order_id = ?',
+                [orderId]
+            );
+
+            const captured = Number(order.final_amount) || 0;
+            const refunded = Number(sum.refunded) || 0;
+            const fullyRefunded = refunded >= captured - 0.005;
+
+            if (fullyRefunded) {
+                await connection.execute("UPDATE orders SET payment_status = 'refunded' WHERE id = ?", [orderId]);
+
+                // Same guard the cancel path uses: act only if this order's credits have not
+                // already been unwound, so refunding then cancelling cannot double-reverse.
+                const [[rev]] = await connection.execute(
+                    "SELECT COUNT(*) AS c FROM reward_points_history WHERE order_id = ? AND transaction_type IN ('reversed','refunded')",
+                    [orderId]
+                );
+                if (rev.c === 0) {
+                    await Order.reversePointsFor(connection, orderId, order.user_id, 'refunded');
+                }
+
+                // Stock was only taken when the order processed; is_processed is cleared so a
+                // later cancellation cannot restock the same items a second time.
+                if (Number(order.is_processed) === 1) {
+                    const [items] = await connection.execute(
+                        'SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ?',
+                        [orderId]
+                    );
+                    for (const it of items) {
+                        await connection.execute(
+                            'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
+                            [it.quantity, it.product_id]
+                        );
+                        if (it.variant_id) {
+                            await connection.execute(
+                                'UPDATE product_variants SET stock_quantity = stock_quantity + ? WHERE id = ?',
+                                [it.quantity, it.variant_id]
+                            ).catch(() => {});
+                        }
+                    }
+                    await connection.execute('UPDATE orders SET is_processed = 0 WHERE id = ?', [orderId]);
+                }
+            }
+
+            await connection.commit();
+            return { refunded, captured, fullyRefunded };
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    static async reversePointsFor(connection, id, userId, reasonWord) {
+        const [[pe]] = await connection.execute(
+            "SELECT COALESCE(SUM(points), 0) AS earned FROM reward_points_history WHERE order_id = ? AND transaction_type = 'earned'",
+            [id]
+        );
+        const earned = Number(pe.earned) || 0;
+        if (earned > 0) {
+            await connection.execute(
+                'UPDATE users SET reward_points = GREATEST(0, reward_points - ?) WHERE id = ?',
+                [earned, userId]
+            );
+            await connection.execute(
+                "INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, 'reversed', ?, ?)",
+                [userId, earned, id, `Points reversed — order #${id} ${reasonWord}`]
+            );
+        }
+
+        const [[pr]] = await connection.execute(
+            "SELECT COALESCE(SUM(points), 0) AS redeemed FROM reward_points_history WHERE order_id = ? AND transaction_type = 'redeemed'",
+            [id]
+        );
+        const redeemed = Number(pr.redeemed) || 0;
+        if (redeemed > 0) {
+            await connection.execute(
+                'UPDATE users SET reward_points = reward_points + ? WHERE id = ?',
+                [redeemed, userId]
+            );
+            await connection.execute(
+                "INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, 'refunded', ?, ?)",
+                [userId, redeemed, id, `Points refunded — order #${id} ${reasonWord}`]
+            );
+        }
+    }
+
     static async updateStatus(id, status) {
         // Cancelling an order must claw back the reward points it credited, and
         // record that reversal in the user's points ledger. Done in a transaction
@@ -331,42 +478,7 @@ class Order {
                 );
 
                 if (!alreadyCancelled && rev.c === 0) {
-                    // 1. Claw back points the order CREDITED (earned).
-                    const [[pe]] = await connection.execute(
-                        "SELECT COALESCE(SUM(points), 0) AS earned FROM reward_points_history WHERE order_id = ? AND transaction_type = 'earned'",
-                        [id]
-                    );
-                    const earned = Number(pe.earned) || 0;
-
-                    if (earned > 0) {
-                        await connection.execute(
-                            'UPDATE users SET reward_points = GREATEST(0, reward_points - ?) WHERE id = ?',
-                            [earned, order.user_id]
-                        );
-                        await connection.execute(
-                            "INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, 'reversed', ?, ?)",
-                            [order.user_id, earned, id, `Points reversed — order #${id} cancelled`]
-                        );
-                    }
-
-                    // 2. Refund points the order actually REDEEMED. Base this on the
-                    // ledger (not orders.points_used) so we only give back points that
-                    // were truly deducted — an unpaid/unprocessed order never deducted.
-                    const [[pr]] = await connection.execute(
-                        "SELECT COALESCE(SUM(points), 0) AS redeemed FROM reward_points_history WHERE order_id = ? AND transaction_type = 'redeemed'",
-                        [id]
-                    );
-                    const redeemed = Number(pr.redeemed) || 0;
-                    if (redeemed > 0) {
-                        await connection.execute(
-                            'UPDATE users SET reward_points = reward_points + ? WHERE id = ?',
-                            [redeemed, order.user_id]
-                        );
-                        await connection.execute(
-                            "INSERT INTO reward_points_history (user_id, points, transaction_type, order_id, description) VALUES (?, ?, 'refunded', ?, ?)",
-                            [order.user_id, redeemed, id, `Points refunded — order #${id} cancelled`]
-                        );
-                    }
+                    await Order.reversePointsFor(connection, id, order.user_id, 'cancelled');
                 }
 
                 // 3. Restock items. Stock was only reduced when the order was processed
