@@ -101,6 +101,7 @@
   },
   "product": {
       "genericError": "Something went wrong. Please try again.",
+      "genericError": "Something went wrong. Please try again.",
     "share": "Share",
     "shareText": "What do you think of this? Found it on Mariot Store!",
     "linkCopied": "Link copied to clipboard",
@@ -718,6 +719,7 @@
   },
   "userDashboard": {
       "common": {
+          "loading": "Loading…",
           "loading": "Loading…"
       },
     "yourAccount": "Your Account",
@@ -839,6 +841,7 @@
       "addToCart": "Add to Cart"
     },
     "profile": {
+        "verifySuccess": "Mobile number verified successfully!",
         "verifySuccess": "Mobile number verified successfully!",
       "title": "Profile & Security",
       "personalInfo": "Personal Info",
@@ -1093,6 +1096,9 @@
     "applicableProducts": "Applicable Products"
   },
   "checkout": {
+      "addressLabelPlaceholder": "e.g. Warehouse, Branch 2",
+      "addressLabelName": "Label name",
+      "saveAddressAs": "Save this address as",
       "walletAddressRequired": "Please fill in your delivery address before paying with Apple Pay or Google Pay.",
     "default": "Default",
     "title": "Secure Checkout",

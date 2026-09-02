@@ -61,6 +61,26 @@ export const getDeliveryZones = async (): Promise<DeliveryZone[]> => {
     return inFlight;
 };
 
+/**
+ * The visitor's country, as the API sees their address.
+ *
+ * Only worth asking when the shopper has never chosen one: a stored choice is deliberate
+ * and must outrank detection, not least because a VPN or a roaming mobile carrier can put
+ * someone in the wrong country. Returns null on any failure, leaving the default in place —
+ * a delivery promise that renders is better than one that waits on geolocation.
+ */
+export const detectCountry = async (): Promise<string | null> => {
+    try {
+        const res = await fetch(`${API_BASE_URL}/geo/country`, { credentials: 'omit' });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const code = typeof data?.country_code === 'string' ? data.country_code.toUpperCase() : null;
+        return code && /^[A-Z]{2}$/.test(code) ? code : null;
+    } catch {
+        return null;
+    }
+};
+
 /** The shopper's last choice, so it carries between products. */
 export const readStoredCountry = (): string | null => {
     try {

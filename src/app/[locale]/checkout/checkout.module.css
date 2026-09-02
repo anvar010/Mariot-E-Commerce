@@ -2445,3 +2445,60 @@
     font-size: 13.5px;
     line-height: 1.55;
 }
+
+/* "Save this address as" — Home / Work / Other, shown to a signed-in shopper who has
+   no address saved yet. Mirrors the address book's chooser so the two agree. */
+.saveAsBlock {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.saveAsLabel {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.saveAsRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.saveAsBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    color: #475569;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+
+.saveAsBtn:hover {
+    border-color: #cbd5e1;
+}
+
+.saveAsBtnActive,
+.saveAsBtnActive:hover {
+    border-color: #16a1db;
+    background: #f0f9ff;
+    color: #0c7ba8;
+    font-weight: 600;
+}
+
+@media (max-width: 480px) {
+    .saveAsBtn {
+        flex: 1 1 0;
+        justify-content: center;
+        padding: 9px 10px;
+    }
+}

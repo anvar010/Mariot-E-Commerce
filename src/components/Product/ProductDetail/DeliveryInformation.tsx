@@ -6,8 +6,7 @@ import { MapPin } from 'lucide-react';
 import { deliveryDateLabel, isExpressDelivery, normalizeDeliveryDays, timeUntilMidnight } from '@/utils/delivery';
 import {
     DEFAULT_ZONE_CODE, DeliveryZone, FALLBACK_ZONES, findZone,
-    getDeliveryZones, readStoredCountry, storeCountry,
-} from '@/utils/deliveryZones';
+    getDeliveryZones, readStoredCountry, storeCountry, detectCountry } from '@/utils/deliveryZones';
 import DeliveryCountrySelect from './DeliveryCountrySelect';
 import styles from './DeliveryInformation.module.css';
 
@@ -47,13 +46,26 @@ export default function DeliveryInformation({ days, locale = 'en' }: DeliveryInf
         if (stored) setCountry(stored);
 
         let cancelled = false;
-        getDeliveryZones().then(list => {
+        (async () => {
+            const list = await getDeliveryZones();
             if (cancelled) return;
             setZones(list);
+
             // A stored country that has since been removed or deactivated would leave
             // the selector showing a code with no matching row.
-            setCountry(current => (list.some(z => z.country_code === current) ? current : DEFAULT_ZONE_CODE));
-        });
+            const valid = (code: string) => list.some(z => z.country_code === code);
+            if (stored && valid(stored)) {
+                setCountry(stored);
+                return;
+            }
+
+            // Nothing chosen before, so start from where the visitor actually is. Detection
+            // never overrides a stored choice: a VPN or a roaming SIM reports the wrong
+            // country often enough that the shopper's own pick has to win.
+            const detected = await detectCountry();
+            if (cancelled) return;
+            setCountry(detected && valid(detected) ? detected : DEFAULT_ZONE_CODE);
+        })();
         return () => { cancelled = true; };
     }, []);
 

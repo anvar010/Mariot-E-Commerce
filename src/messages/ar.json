@@ -101,6 +101,7 @@
     },
     "product": {
         "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+        "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
         "share": "مشاركة",
         "shareText": "ما رأيك في هذا؟ وجدته على متجر ماريوت!",
         "linkCopied": "تم نسخ الرابط",
@@ -718,6 +719,7 @@
     },
     "userDashboard": {
         "common": {
+            "loading": "جارٍ التحميل…",
             "loading": "جارٍ التحميل…"
         },
         "yourAccount": "حسابك",
@@ -839,6 +841,7 @@
             "addToCart": "أضف إلى السلة"
         },
         "profile": {
+            "verifySuccess": "تم التحقق من رقم الجوال بنجاح!",
             "verifySuccess": "تم التحقق من رقم الجوال بنجاح!",
             "title": "الملف الشخصي والأمان",
             "personalInfo": "المعلومات الشخصية",
@@ -1093,6 +1096,9 @@
         "applicableProducts": "المنتجات المشمولة"
     },
     "checkout": {
+        "addressLabelPlaceholder": "مثال: المستودع، الفرع 2",
+        "addressLabelName": "اسم العنوان",
+        "saveAddressAs": "حفظ هذا العنوان كـ",
         "walletAddressRequired": "يرجى إدخال عنوان التوصيل قبل الدفع عبر Apple Pay أو Google Pay.",
         "default": "افتراضي",
         "title": "إتمام الشراء بأمان",

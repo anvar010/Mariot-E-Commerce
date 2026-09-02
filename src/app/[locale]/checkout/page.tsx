@@ -115,7 +115,10 @@ function CheckoutContent() {
         postcode: '',
         phone: user?.phone_number || '',
         email: user?.email || '',
-        orderNotes: ''
+        orderNotes: '',
+        // How this address is saved to the account once the order is placed.
+        addressType: 'home',
+        addressLabel: ''
     });
 
     // Empty until the shopper picks one: Complete Purchase stays disabled until both a
@@ -530,6 +533,54 @@ function CheckoutContent() {
     // and the wallet sheet. They must send the server an identical order — the only
     // difference is that a wallet supplies the payment method itself, so the
     // saved-card fields do not apply.
+    /**
+     * Saves the address typed on this page to the shopper's account and returns its id.
+     *
+     * Until now a shopper without a saved address had theirs thrown away: the order went out
+     * with shipping_address_id 1, a hardcoded placeholder pointing at somebody else's row.
+     * Saving it here means the order references the real address and the shopper does not
+     * retype it next time. A failure is not fatal -- the order still carries the same details
+     * in billing_details -- so checkout continues rather than blocking on a save.
+     */
+    const saveTypedAddress = async (): Promise<number | null> => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/users/addresses`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    address_type: form.addressType || 'home',
+                    address_label: form.addressType === 'other' ? form.addressLabel.trim() : '',
+                    first_name: form.firstName,
+                    last_name: form.lastName,
+                    company_name: form.companyName,
+                    email: form.email,
+                    address_line1: form.streetAddress,
+                    address_line2: form.additionalAddress,
+                    city: form.city,
+                    state: 'UAE',
+                    zip_code: form.postcode,
+                    country: form.country,
+                    phone: form.phone,
+                    is_default: true,
+                }),
+            });
+            const data = await res.json();
+            if (data?.success) {
+                const id = data.data?.id ?? data.id ?? null;
+                if (id) {
+                    setSelectedAddressId(id);
+                    fetchAddresses();
+                }
+                return id;
+            }
+            console.warn('[checkout] address not saved:', data?.message);
+        } catch (err) {
+            console.warn('[checkout] address save failed:', err);
+        }
+        return null;
+    };
+
     const buildOrderData = (overrides: Record<string, any> = {}) => ({
         items: cartItems.map(item => ({
             product_id: item.id,
@@ -539,7 +590,7 @@ function CheckoutContent() {
             custom_dimensions: item.custom_dimensions || null,
             custom_label: item.variant_label || null
         })),
-        shipping_address_id: selectedAddressId || 1, // Use selected if exists, 1 is placeholder
+        shipping_address_id: overrides.shipping_address_id ?? (selectedAddressId || 1),
         payment_method: paymentMethod,
         // Either charge a card the shopper already saved, or offer to keep the
         // one being entered now. Never both.
@@ -630,6 +681,14 @@ function CheckoutContent() {
             return;
         }
 
+        // A signed-in shopper with nothing in their address book is typing one now: file it
+        // under the type they chose, and hang this order off the saved row rather than the
+        // placeholder id.
+        let savedAddressId: number | null = null;
+        if (user && userAddresses.length === 0) {
+            savedAddressId = await saveTypedAddress();
+        }
+
         // DISABLED: WhatsApp OTP phone verification – re-enable when ready
         // if (!user?.phone_verified) {
         //     setOtpOpen(true);
@@ -662,7 +721,7 @@ function CheckoutContent() {
                 }
             }
 
-            const orderData = buildOrderData();
+            const orderData = buildOrderData(savedAddressId ? { shipping_address_id: savedAddressId } : {});
 
             const res = await fetch(`${API_BASE_URL}/orders`, {
                 credentials: "include",
@@ -958,6 +1017,49 @@ function CheckoutContent() {
                                 <div className={styles.stepNumber}>1</div>
                                 <h2 className={styles.sectionTitle}>{t('shippingInfo')}</h2>
                             </div>
+
+                            {/* Where this address is filed on the account. Only offered to a
+                                signed-in shopper, because a guest has no account to save to. */}
+                            {user && (
+                                <div className={styles.saveAsBlock}>
+                                    <span className={styles.saveAsLabel}>{t('saveAddressAs')}</span>
+                                    <div className={styles.saveAsRow}>
+                                        {[
+                                            { key: 'home', label: t('typeHome'), icon: <Home size={16} /> },
+                                            { key: 'work', label: t('typeWork'), icon: <Building2 size={16} /> },
+                                            { key: 'other', label: t('typeOther'), icon: <MapPin size={16} /> },
+                                        ].map(tp => (
+                                            <button
+                                                type="button"
+                                                key={tp.key}
+                                                className={`${styles.saveAsBtn} ${form.addressType === tp.key ? styles.saveAsBtnActive : ''}`}
+                                                onClick={() => setForm(prev => ({ ...prev, addressType: tp.key }))}
+                                            >
+                                                {tp.icon}
+                                                <span>{tp.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {form.addressType === 'other' && (
+                                        <div className={styles.formGroup} style={{ marginTop: 12 }}>
+                                            <label>{t('addressLabelName')} <span>*</span></label>
+                                            <div className={styles.inputWrapper}>
+                                                <input
+                                                    className={styles.formInput}
+                                                    type="text"
+                                                    name="addressLabel"
+                                                    maxLength={100}
+                                                    value={form.addressLabel}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                    placeholder={t('addressLabelPlaceholder')}
+                                                />
+                                                <MapPin className={styles.inputIcon} size={15} />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div className={styles.formGrid}>
                                 <div className={styles.formGroup}>
