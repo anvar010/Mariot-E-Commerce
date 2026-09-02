@@ -286,7 +286,7 @@ const CartDrawer = () => {
                             <HelpCircle size={20} />
                             <span>{t('helpTitle')}</span>
                         </div>
-                        <a href="https://wa.me/971501234567" target="_blank" rel="noopener noreferrer" className={styles.expertLink}>
+                        <a href="https://wa.me/97142882777" target="_blank" rel="noopener noreferrer" className={styles.expertLink}>
                             <span>{t('talkExpert')}</span>
                         </a>
                     </div>
