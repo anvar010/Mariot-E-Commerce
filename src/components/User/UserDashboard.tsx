@@ -1880,7 +1880,8 @@ const UserDashboard = () => {
                                         </div>
                                         <div className={`${styles.paymentStatusBadge} ${order.payment_status === 'paid' ? styles.paySuccess :
                                             order.payment_status === 'failed' ? styles.payFailed :
-                                                styles.payPending
+                                                order.payment_status === 'refunded' ? styles.payRefunded :
+                                                    styles.payPending
                                             }`}>
                                             <span className={styles.statusIndicatorDot}></span>
                                             {order.payment_status ? t(`payments.${order.payment_status}`) : t('payments.pending')}

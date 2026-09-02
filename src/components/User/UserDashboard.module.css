@@ -2337,6 +2337,13 @@
     color: #d97706;
 }
 
+/* Refunded is neither a success nor a failure: the money came back, which the customer
+   should read as settled rather than as something that went wrong. */
+.payRefunded {
+    background: #f1f5f9;
+    color: #475569;
+}
+
 .statusIndicatorDot {
     width: 6px;
     height: 6px;

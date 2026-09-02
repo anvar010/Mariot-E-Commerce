@@ -927,6 +927,7 @@
       "addError": "Failed to add address"
     },
     "payments": {
+        "refunded": "Refunded",
       "title": "Payment History",
       "transactions": "Transactions",
       "noPayments": "No payments found",

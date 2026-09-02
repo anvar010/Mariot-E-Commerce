@@ -927,6 +927,7 @@
             "addError": "فشل إضافة العنوان"
         },
         "payments": {
+            "refunded": "مسترد",
             "title": "سجل المدفوعات",
             "transactions": "المعاملات",
             "noPayments": "لا توجد مدفوعات",
