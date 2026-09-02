@@ -32,6 +32,25 @@ const refundBlocker = (order) => {
 };
 
 const refundStripe = async (order, amount, reason, idempotencyKey) => {
+    try {
+        return await createStripeRefund(order, amount, reason, idempotencyKey);
+    } catch (err) {
+        // Stripe keys are per-mode: a payment taken with the test key does not exist to the
+        // live key, and vice versa. Orders placed before the live switch therefore fail here
+        // with a bare "No such payment_intent", which reads like a broken integration rather
+        // than what it is.
+        if (err?.code === 'resource_missing' || /No such payment_intent/i.test(err?.message || '')) {
+            throw new Error(
+                'Stripe does not recognise this payment. It was almost certainly taken in a '
+                + 'different Stripe mode (test vs live) from the key in use now, so it has to be '
+                + 'refunded from the Stripe dashboard where it was charged.'
+            );
+        }
+        throw err;
+    }
+};
+
+const createStripeRefund = async (order, amount, reason, idempotencyKey) => {
     const refund = await stripeClient().refunds.create(
         {
             payment_intent: order.stripe_payment_intent_id,
