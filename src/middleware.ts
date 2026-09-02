@@ -14,12 +14,12 @@ const intlMiddleware = createMiddleware(routing);
  * wallets are enabled per registered domain. It is also a duplicate of the whole shop
  * for search engines. So it is sent to the canonical host instead.
  *
- * Set CANONICAL_HOST to move the site to a new domain. Set DISABLE_CANONICAL_REDIRECT
- * to turn the redirect off entirely -- needed while standing a new site up, when the
+ * Set CANONICAL_HOST to override the target. Set DISABLE_CANONICAL_REDIRECT to turn the
+ * redirect off entirely -- needed while standing a new site up, when the
  * *.hostingersite.com hostname is the only way to reach it before its real domain is
  * attached, and redirecting away from it would make the new site impossible to verify.
  */
-const CANONICAL_HOST = process.env.CANONICAL_HOST || 'uae.mariotstore.com';
+const CANONICAL_HOST = process.env.CANONICAL_HOST || 'mariotstore.com';
 const CANONICAL_REDIRECT_ENABLED = process.env.DISABLE_CANONICAL_REDIRECT !== '1';
 
 export default function middleware(req: NextRequest) {
