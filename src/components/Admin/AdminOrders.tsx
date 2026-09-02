@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
-import { Search, Package, Download, FileText, X, Loader2, Eye } from 'lucide-react';
+import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -52,6 +52,61 @@ const AdminOrders = () => {
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     const { showNotification } = useNotification();
+
+    // Refunds move real money, so the panel loads the order's actual refund position from
+    // the server rather than assuming the full total is still refundable.
+    const [refundModal, setRefundModal] = useState<{
+        isOpen: boolean; order: any; amount: string; reason: string;
+        captured: number; refunded: number; remaining: number; blocker: string | null;
+        loading: boolean; submitting: boolean;
+    }>({ isOpen: false, order: null, amount: '', reason: '', captured: 0, refunded: 0, remaining: 0, blocker: null, loading: false, submitting: false });
+
+    const openRefund = async (order: any) => {
+        setRefundModal({ isOpen: true, order, amount: '', reason: '', captured: 0, refunded: 0, remaining: 0, blocker: null, loading: true, submitting: false });
+        try {
+            const res = await fetch(`${API_BASE_URL}/orders/${order.id}/refunds`, {
+                credentials: 'include', headers: getAuthHeaders(),
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || 'Could not load refund details');
+            setRefundModal(prev => ({
+                ...prev,
+                captured: Number(data.data.captured) || 0,
+                refunded: Number(data.data.refunded) || 0,
+                remaining: Number(data.data.remaining) || 0,
+                blocker: data.data.blocker || null,
+                // Prefilled with the whole remaining balance: refunding everything is the
+                // common case, and typing it by hand is where a wrong figure creeps in.
+                amount: (Number(data.data.remaining) || 0).toFixed(2),
+                loading: false,
+            }));
+        } catch (err: any) {
+            showNotification(err.message || 'Could not load refund details', 'error');
+            setRefundModal(prev => ({ ...prev, isOpen: false, loading: false }));
+        }
+    };
+
+    const submitRefund = async () => {
+        const { order, amount, reason } = refundModal;
+        setRefundModal(prev => ({ ...prev, submitting: true }));
+        try {
+            const res = await fetch(`${API_BASE_URL}/orders/${order.id}/refund`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: Number(amount), reason }),
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || 'Refund failed');
+            showNotification(data.message, 'success');
+            setRefundModal(prev => ({ ...prev, isOpen: false, submitting: false }));
+            fetchOrders();
+        } catch (err: any) {
+            showNotification(err.message || 'Refund failed', 'error');
+            setRefundModal(prev => ({ ...prev, submitting: false }));
+        }
+    };
+
 
     // Invoice modal state
     const [invoiceModal, setInvoiceModal] = useState<{
@@ -597,6 +652,18 @@ const AdminOrders = () => {
                                                 ))}
                                             </div>
                                         </div>
+                                        {/* Only offered once money has actually been taken. */}
+                                        {(order.payment_status === 'paid' || order.payment_status === 'refunded') && (
+                                            <button
+                                                type="button"
+                                                className={styles.refundBtn}
+                                                onClick={() => openRefund(order)}
+                                                title="Refund this order"
+                                            >
+                                                <RotateCcw size={13} />
+                                                <span>Refund</span>
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))
@@ -604,6 +671,81 @@ const AdminOrders = () => {
                     </tbody>
                 </table>
             </div>
+
+            {refundModal.isOpen && (
+                <div className={styles.invoiceOverlay} onClick={() => !refundModal.submitting && setRefundModal(prev => ({ ...prev, isOpen: false }))}>
+                    <div className={styles.refundModal} onClick={e => e.stopPropagation()}>
+                        <div className={styles.invoiceModalHeader}>
+                            <div className={styles.invoiceModalTitle}>
+                                <RotateCcw size={20} />
+                                <span>Refund order #{refundModal.order?.id}</span>
+                            </div>
+                            <button className={styles.closeModal} onClick={() => setRefundModal(prev => ({ ...prev, isOpen: false }))} disabled={refundModal.submitting}>
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className={styles.refundBody}>
+                            {refundModal.loading ? (
+                                <AdminLoader message="Checking what can be refunded…" />
+                            ) : refundModal.blocker ? (
+                                <p className={styles.refundBlocked}>{refundModal.blocker}</p>
+                            ) : (
+                                <>
+                                    <div className={styles.refundFigures}>
+                                        <div><span>Order total</span><strong>AED {refundModal.captured.toFixed(2)}</strong></div>
+                                        <div><span>Already refunded</span><strong>AED {refundModal.refunded.toFixed(2)}</strong></div>
+                                        <div><span>Refundable now</span><strong>AED {refundModal.remaining.toFixed(2)}</strong></div>
+                                    </div>
+
+                                    <label className={styles.refundLabel}>Amount to refund (AED)</label>
+                                    <input
+                                        type="number"
+                                        className={styles.refundInput}
+                                        min="0.01"
+                                        max={refundModal.remaining}
+                                        step="0.01"
+                                        value={refundModal.amount}
+                                        onChange={e => setRefundModal(prev => ({ ...prev, amount: e.target.value }))}
+                                        disabled={refundModal.submitting}
+                                    />
+
+                                    <label className={styles.refundLabel}>Reason (optional)</label>
+                                    <input
+                                        type="text"
+                                        className={styles.refundInput}
+                                        maxLength={255}
+                                        placeholder="e.g. Item returned"
+                                        value={refundModal.reason}
+                                        onChange={e => setRefundModal(prev => ({ ...prev, reason: e.target.value }))}
+                                        disabled={refundModal.submitting}
+                                    />
+
+                                    <p className={styles.refundWarning}>
+                                        This sends money back to the customer through {formatPaymentMethod(refundModal.order?.payment_method)}.
+                                        It cannot be undone.
+                                    </p>
+
+                                    <button
+                                        type="button"
+                                        className={styles.refundConfirm}
+                                        onClick={submitRefund}
+                                        disabled={
+                                            refundModal.submitting
+                                            || !(Number(refundModal.amount) > 0)
+                                            || Number(refundModal.amount) > refundModal.remaining
+                                        }
+                                    >
+                                        {refundModal.submitting
+                                            ? <><Loader2 size={16} className={styles.spin} /> Refunding…</>
+                                            : `Refund AED ${(Number(refundModal.amount) || 0).toFixed(2)}`}
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <ConfirmModal
                 isOpen={confirmModal.isOpen}

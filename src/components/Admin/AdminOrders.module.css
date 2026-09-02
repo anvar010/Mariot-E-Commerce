@@ -588,3 +588,129 @@
     font-weight: 600;
     white-space: nowrap;
 }
+
+/* ── Refunds ─────────────────────────────────────────────────────────────── */
+.refundBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    padding: 5px 11px;
+    border: 1px solid #fecaca;
+    border-radius: 7px;
+    background: #fff5f5;
+    color: #b91c1c;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.refundBtn:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
+.refundModal {
+    width: min(460px, 94vw);
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.refundBody {
+    padding: 20px;
+}
+
+.refundFigures {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.refundFigures > div {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13.5px;
+    color: #475569;
+}
+
+.refundFigures strong {
+    color: #0f172a;
+}
+
+.refundLabel {
+    display: block;
+    margin: 0 0 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.refundInput {
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    font-size: 14px;
+}
+
+.refundInput:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+/* Deliberately loud: this is the last screen before money leaves the account. */
+.refundWarning {
+    margin: 0 0 16px;
+    padding: 11px 13px;
+    border-radius: 9px;
+    background: #fff7ed;
+    color: #9a3412;
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+
+.refundBlocked {
+    margin: 0;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #fff7ed;
+    color: #9a3412;
+    font-size: 13.5px;
+    line-height: 1.6;
+}
+
+.refundConfirm {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.refundConfirm:disabled {
+    background: #fca5a5;
+    cursor: not-allowed;
+}
+
+.spin {
+    animation: adminSpin 1s linear infinite;
+}
+
+@keyframes adminSpin {
+    to { transform: rotate(360deg); }
+}
