@@ -287,10 +287,11 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
 
                                 <div className={styles.heroContent}>
                                     {isActive && (
-                                        <div className={styles.textContent} dir={isRtl ? 'rtl' : 'ltr'}>
+                                        <div className={styles.textContent}>
                                             {slide?.tagline && (
                                                 <motion.span
                                                     className={styles.tagline}
+                                                    dir="auto"
                                                     custom={0} variants={textItem} initial="hidden" animate="visible"
                                                     key={`tag-${activeIndex}`}
                                                 >
@@ -300,6 +301,7 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
 
                                             <motion.h1
                                                 className={styles.title}
+                                                dir="auto"
                                                 custom={1} variants={textItem} initial="hidden" animate="visible"
                                                 key={`title-${activeIndex}`}
                                             >
@@ -315,6 +317,7 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                                             {slide?.description && (
                                                 <motion.p
                                                     className={styles.description}
+                                                    dir="auto"
                                                     custom={2} variants={textItem} initial="hidden" animate="visible"
                                                     key={`desc-${activeIndex}`}
                                                 >
