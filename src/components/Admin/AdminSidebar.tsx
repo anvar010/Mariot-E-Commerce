@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchActivityCounts, markSeen, ensureSeenInitialised } from '@/utils/adminActivity';
 import styles from './AdminSidebar.module.css';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -39,7 +40,33 @@ const AdminSidebar = () => {
     const pathname = usePathname();
     const { user, logout } = useAuth();
 
-    const menuItems: MenuItem[] = [
+    
+    // Badge counts, refreshed on a slow poll. 60s is deliberately unhurried: this is a
+    // "something arrived" hint, not a live feed, and the sidebar is mounted on every admin
+    // page, so anything faster multiplies into constant background traffic.
+    const [activityCounts, setActivityCounts] = useState<Record<string, number>>({});
+
+    useEffect(() => {
+        ensureSeenInitialised();
+        let cancelled = false;
+        const load = async () => {
+            const counts = await fetchActivityCounts();
+            if (!cancelled) setActivityCounts(counts);
+        };
+        load();
+        const id = setInterval(load, 60000);
+        return () => { cancelled = true; clearInterval(id); };
+    }, []);
+
+    // Opening a section is what marks it read, so the badge clears where it was answered.
+    const handleSectionOpen = (key: string) => {
+        if (activityCounts[key]) {
+            markSeen(key);
+            setActivityCounts((prev: Record<string, number>) => ({ ...prev, [key]: 0 }));
+        }
+    };
+
+const menuItems: MenuItem[] = [
         { name: 'Dashboard', key: 'dashboard', icon: <LayoutDashboard size={18} />, path: '/admin' },
         { name: 'Products', key: 'products', icon: <Package size={18} />, path: '/admin/products' },
         { name: 'Categories', key: 'categories', icon: <FolderTree size={18} />, path: '/admin/categories' },
@@ -97,9 +124,15 @@ const AdminSidebar = () => {
                                         <Link
                                             href={item.path}
                                             className={`${styles.menuItem} ${isActive ? styles.active : ''}`}
+                                            onClick={() => handleSectionOpen(item.key)}
                                         >
                                             <span className={styles.icon}>{item.icon}</span>
                                             <span className={styles.name}>{item.name}</span>
+                                            {activityCounts[item.key] > 0 && (
+                                                <span className={styles.badge} aria-label={`${activityCounts[item.key]} new`}>
+                                                    {activityCounts[item.key] > 99 ? '99+' : activityCounts[item.key]}
+                                                </span>
+                                            )}
                                             {isActive && <div className={styles.activeIndicator} />}
                                         </Link>
                                     </li>
@@ -120,9 +153,15 @@ const AdminSidebar = () => {
                                         <Link
                                             href={item.path}
                                             className={`${styles.menuItem} ${isActive ? styles.active : ''}`}
+                                            onClick={() => handleSectionOpen(item.key)}
                                         >
                                             <span className={styles.icon}>{item.icon}</span>
                                             <span className={styles.name}>{item.name}</span>
+                                            {activityCounts[item.key] > 0 && (
+                                                <span className={styles.badge} aria-label={`${activityCounts[item.key]} new`}>
+                                                    {activityCounts[item.key] > 99 ? '99+' : activityCounts[item.key]}
+                                                </span>
+                                            )}
                                             {isActive && <div className={styles.activeIndicator} />}
                                         </Link>
                                     </li>

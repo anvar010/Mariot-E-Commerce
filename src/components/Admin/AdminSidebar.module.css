@@ -282,3 +282,19 @@
         color: white;
     }
 }
+
+/* "Something arrived here" count. Sits at the end of the row so it reads after the section
+   name rather than competing with it, and stays legible on the dark sidebar. */
+.badge {
+    margin-inline-start: auto;
+    min-width: 20px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    white-space: nowrap;
+}
