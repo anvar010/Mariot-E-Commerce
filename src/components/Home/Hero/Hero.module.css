@@ -134,6 +134,27 @@
     align-items: flex-start;
 }
 
+/* Arabic mirrors the whole composition, not just the text.
+   The stage itself has to stay ltr for the carousel transform maths, so the mirroring is
+   done here with explicit physical values rather than by flipping direction -- which is
+   also why these read "flex-end" and "right" instead of logical properties.
+   The gradient has to move with the copy: it is what makes the text legible, and leaving
+   it on the left would put right-aligned Arabic over the bright half of the photo. */
+.rtlSlide .heroContent {
+    justify-content: flex-end;
+}
+
+.rtlSlide .textContent {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.rtlSlide .overlay {
+    background:
+        linear-gradient(270deg, rgba(22, 24, 22, .78), rgba(22, 24, 22, .55) 46%, rgba(22, 24, 22, .12) 78%),
+        linear-gradient(0deg, rgba(13, 14, 13, .3), transparent 55%);
+}
+
 /* ── copy ─────────────────────────────────────────────────────────────────── */
 .tagline {
     color: #f0d6ad;
@@ -378,7 +399,12 @@
         display: none;
     }
 
-    .overlay {
+    .overlay,
+    /* .rtlSlide .overlay is more specific than a bare .overlay, so without naming it here
+       the desktop side-gradient would survive into the phone layout and sit behind copy
+       that has moved to the bottom. On phones the gradient is vertical, so there is
+       nothing to mirror -- both directions want exactly this. */
+    .rtlSlide .overlay {
         background: linear-gradient(0deg, rgba(16, 18, 17, .88), rgba(16, 18, 17, .58) 55%, rgba(16, 18, 17, .2));
     }
 

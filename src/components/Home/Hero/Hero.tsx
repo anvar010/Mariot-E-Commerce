@@ -265,7 +265,7 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                         return (
                             <article
                                 key={`${slide?.title ?? 'slide'}-${i}`}
-                                className={`${styles.slideCard} ${isActive ? '' : styles.sideSlide}`}
+                                className={`${styles.slideCard} ${isActive ? '' : styles.sideSlide} ${isRtl ? styles.rtlSlide : ''}`}
                                 aria-hidden={!isActive}
                             >
                                 <div className={styles.imageLayer}>
