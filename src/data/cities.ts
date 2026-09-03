@@ -80,8 +80,21 @@ export const COUNTRIES: Country[] = [
                     { value: 'Yas Island', ar: 'جزيرة ياس' },
                     { value: 'Saadiyat Island', ar: 'جزيرة السعديات' },
                     { value: 'Al Reem Island', ar: 'جزيرة الريم' },
-                    { value: 'Al Ruwais', ar: 'الرويس' },
+                    { value: 'Al Wathba', ar: 'الوثبة' },
+                    { value: 'Al Shamkha', ar: 'الشامخة' },
+                    { value: 'Al Rahba', ar: 'الرحبة' },
+                    // Al Dhafra, the emirate's western region. Named as its own entry as well
+                    // as by town: it starts around 150km from the capital, so an order out
+                    // here is a different delivery proposition from one to Musaffah, and the
+                    // warehouse needs to see that before it books a courier.
+                    { value: 'Al Dhafra', ar: 'الظفرة' },
                     { value: 'Madinat Zayed', ar: 'مدينة زايد' },
+                    { value: 'Al Ruwais', ar: 'الرويس' },
+                    { value: 'Ghayathi', ar: 'غياثي' },
+                    { value: 'Liwa', ar: 'ليوا' },
+                    { value: 'Mirfa', ar: 'المرفأ' },
+                    { value: 'Sila', ar: 'السلع' },
+                    { value: 'Delma Island', ar: 'جزيرة دلما' },
                 ],
             },
             {
