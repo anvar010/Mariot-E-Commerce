@@ -12,7 +12,12 @@
 .sheet {
     width: 100%;
     max-width: 560px;
+    /* dvh tracks the viewport actually on screen. A phone's vh is measured against the
+       viewport with the browser chrome hidden, so 92vh is taller than what the shopper
+       can see and the bottom of the sheet -- the Save button -- sits under the address
+       bar. vh stays first as the fallback for browsers without dvh. */
     max-height: 92vh;
+    max-height: 92dvh;
     display: flex;
     flex-direction: column;
     background: #fff;
@@ -87,6 +92,13 @@
     padding: 18px 20px calc(24px + env(safe-area-inset-bottom));
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    /* overflow-y alone did nothing here. A flex item defaults to min-height:auto, which
+       refuses to shrink below its content, so this grew to the full height of the form
+       and pushed the sheet past its max-height; .sheet clips with overflow:hidden, so
+       the overflowing part was cut off rather than scrolled to -- the form opened full
+       height with its buttons unreachable. min-height:0 is what lets it scroll. */
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 /* Add new dashed button */
@@ -419,7 +431,11 @@
     color: #ef4444;
 }
 
-.field input {
+/* select is named alongside input so the new country and city dropdowns match the
+   fields around them; on its own a select falls back to the browser's own control and
+   reads as a different form. */
+.field input,
+.field select {
     width: 100%;
     box-sizing: border-box;
     border: 1px solid #cbd5e1;
@@ -431,7 +447,25 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.field input:focus {
+.field select {
+    /* Native selects ignore the padding above on iOS unless the appearance is reset,
+       and the arrow needs room the reset takes away. */
+    appearance: none;
+    -webkit-appearance: none;
+    padding-inline-end: 34px;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+    background-size: 16px;
+    cursor: pointer;
+}
+
+[dir='rtl'] .field select {
+    background-position: left 11px center;
+}
+
+.field input:focus,
+.field select:focus {
     outline: none;
     border-color: #16a1db;
     box-shadow: 0 0 0 3px rgba(22, 161, 219, 0.15);
@@ -497,6 +531,13 @@
 }
 
 @media (max-width: 560px) {
+    /* Leaving a strip of the page visible above the sheet keeps it reading as a sheet
+       over the checkout rather than a screen that has replaced it. */
+    .sheet {
+        max-height: 88vh;
+        max-height: 88dvh;
+    }
+
     .grid {
         grid-template-columns: 1fr;
     }

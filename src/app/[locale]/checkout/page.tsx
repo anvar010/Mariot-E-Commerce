@@ -40,7 +40,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, TABBY_ENABLED, SHIPPING_QUOTES_ENABLED } from '@/config';
 import { settlementFeeFor } from '@/config';
-import { citiesFor } from '@/data/cities';
+import { citiesFor, SHIPPING_COUNTRIES } from '@/data/cities';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { formatCustomDims } from '@/utils/customDimensions';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -1105,11 +1105,9 @@ function CheckoutContent() {
                                     <label>{t('country')} <span>*</span></label>
                                     <div className={styles.inputWrapper}>
                                         <select className={styles.formSelect} name="country" value={form.country} onChange={handleCountryChange} required>
-                                            <option value="United Arab Emirates">United Arab Emirates</option>
-                                            <option value="Saudi Arabia">Saudi Arabia</option>
-                                            <option value="Oman">Oman</option>
-                                            <option value="Bahrain">Bahrain</option>
-                                            <option value="Kuwait">Kuwait</option>
+                                            {/* Shared with the address sheet, so the two pickers
+                                                cannot offer different countries. */}
+                                            {SHIPPING_COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
                                         <MapPin className={styles.inputIcon} size={15} />
                                     </div>

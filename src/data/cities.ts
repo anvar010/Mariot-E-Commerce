@@ -77,6 +77,15 @@ export const CITIES_BY_COUNTRY: Record<string, City[]> = {
     ],
 };
 
+/**
+ * The countries the shop ships to, in the order they are offered.
+ *
+ * Derived from the data above rather than typed out again, so a country can never appear
+ * in a picker without a city list behind it -- which is how the checkout form and this
+ * sheet came to disagree in the first place.
+ */
+export const SHIPPING_COUNTRIES: string[] = Object.keys(CITIES_BY_COUNTRY);
+
 export const citiesFor = (country: string): City[] => CITIES_BY_COUNTRY[country] || [];
 
 /** The label to show for a stored city value, in the shopper's language. */

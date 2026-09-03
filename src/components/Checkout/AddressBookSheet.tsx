@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations, useLocale } from 'next-intl';
+import { citiesFor, SHIPPING_COUNTRIES } from '@/data/cities';
 import {
     X as CloseIcon,
     Plus,
@@ -51,6 +52,14 @@ const emptyForm = (user?: any) => {
 
 export default function AddressBookSheet({ open, onClose, onSelect, onAddressesChange, selectedAddressId, user }: AddressBookSheetProps) {
     const t = useTranslations('userDashboard.addresses');
+
+    // Changing country drops a city that does not exist in the new one, so an address
+    // can never be saved reading "Saudi Arabia / Dubai".
+    const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const country = e.target.value;
+        const stillValid = citiesFor(country).some(c => c.value === form.city);
+        setForm(f => ({ ...f, country, city: stillValid ? f.city : '' }));
+    };
     const locale = useLocale();
 
     const [addresses, setAddresses] = useState<any[]>([]);
@@ -240,9 +249,35 @@ export default function AddressBookSheet({ open, onClose, onSelect, onAddressesC
                                     <label>{t('line2')}</label>
                                     <input type="text" value={form.address_line2} onChange={(e) => setForm({ ...form, address_line2: e.target.value })} placeholder={t('line2Placeholder')} />
                                 </div>
+                                {/* The sheet held a country in its state but never offered a way to
+                                    change it, so every address saved here was United Arab Emirates
+                                    whatever the shopper actually wanted -- and this sheet is the
+                                    path most people take, since it is what "Edit address" opens. */}
+                                <div className={`${styles.field} ${styles.full}`}>
+                                    <label>{t('country')} <span className={styles.req}>*</span></label>
+                                    <select required value={form.country} onChange={handleCountryChange}>
+                                        {SHIPPING_COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
                                 <div className={styles.field}>
                                     <label>{t('city')} <span className={styles.req}>*</span></label>
-                                    <input type="text" required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder={t('cityPlaceholder')} />
+                                    {/* Same list the checkout form uses, so an address saved here and
+                                        one typed there cannot disagree about what a city is called. */}
+                                    {citiesFor(form.country).length > 0 ? (
+                                        <select required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}>
+                                            <option value="" disabled>{t('selectCity')}</option>
+                                            {citiesFor(form.country).map(c => (
+                                                <option key={c.value} value={c.value}>{locale === 'ar' ? c.ar : c.value}</option>
+                                            ))}
+                                            {/* An address saved before this list existed keeps its own
+                                                city rather than being silently blanked on edit. */}
+                                            {form.city && !citiesFor(form.country).some(c => c.value === form.city) && (
+                                                <option value={form.city}>{form.city}</option>
+                                            )}
+                                        </select>
+                                    ) : (
+                                        <input type="text" required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder={t('cityPlaceholder')} />
+                                    )}
                                 </div>
                                 <div className={styles.field}>
                                     <label>{t('state')}</label>
