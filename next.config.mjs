@@ -154,6 +154,34 @@ const nextConfig = {
             { source: '/product-tag/:slug*', destination: '/en/shop', permanent: true },
             { source: '/:locale(en|ar)/product-tag/:slug*', destination: '/:locale/shop', permanent: true },
 
+            // 4b. Pagination. MUST stay above sections 5 and 6.
+            //
+            // Those rules end in :slug, so "/shop/page/2" matched with cat1="page" and
+            // slug="2" and redirected to /en/product/2 -- a page that answers 200 with the
+            // title "2 | Mariot Store". A soft 404 is worse than a plain one: Google
+            // indexes it as a real page. WordPress paginated the shop to at least page 20
+            // and every category on top of that, so this was hundreds of URLs.
+            //
+            // The literal "page" segment is what discriminates, so :n needs no pattern of
+            // its own -- and a regex here is a trap: written as :n(\d+) in this file it
+            // reaches path-to-regexp as (d+), which matches the letter d and nothing else.
+            { source: '/shop/page/:n', destination: '/en/shop', permanent: true },
+            { source: '/shop/:cat1/page/:n', destination: '/en/shop', permanent: true },
+            { source: '/shop/:cat1/:cat2/page/:n', destination: '/en/shop', permanent: true },
+            { source: '/shop/:cat1/:cat2/:cat3/page/:n', destination: '/en/shop', permanent: true },
+            { source: '/:locale(en|ar)/shop/page/:n', destination: '/:locale/shop', permanent: true },
+            { source: '/:locale(en|ar)/shop/:cat1/page/:n', destination: '/:locale/shop', permanent: true },
+            { source: '/:locale(en|ar)/shop/:cat1/:cat2/page/:n', destination: '/:locale/shop', permanent: true },
+            { source: '/:locale(en|ar)/shop/:cat1/:cat2/:cat3/page/:n', destination: '/:locale/shop', permanent: true },
+            // The deepest category segment is the one that survived into the new site, so
+            // paginated category pages land on that category rather than the whole shop.
+            { source: '/product-category/:cat1/page/:n', destination: '/en/category/:cat1', permanent: true },
+            { source: '/product-category/:cat1/:cat2/page/:n', destination: '/en/category/:cat2', permanent: true },
+            { source: '/product-category/:cat1/:cat2/:cat3/page/:n', destination: '/en/category/:cat3', permanent: true },
+            { source: '/:locale(en|ar)/product-category/:cat1/page/:n', destination: '/:locale/category/:cat1', permanent: true },
+            { source: '/:locale(en|ar)/product-category/:cat1/:cat2/page/:n', destination: '/:locale/category/:cat2', permanent: true },
+            { source: '/:locale(en|ar)/product-category/:cat1/:cat2/:cat3/page/:n', destination: '/:locale/category/:cat3', permanent: true },
+
             // 5. WooCommerce Categories (1, 2, or 3 levels) -> Next.js Category
             { source: '/product-category/:cat1/:cat2/:slug', destination: '/en/category/:slug', permanent: true },
             { source: '/product-category/:cat1/:slug', destination: '/en/category/:slug', permanent: true },
