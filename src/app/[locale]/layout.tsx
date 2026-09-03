@@ -90,7 +90,10 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
                 ? 'معدات مطابخ تجارية بجودة فائقة مع التوصيل إلى الإمارات ودول الخليج وجميع أنحاء العالم.'
                 : 'Premium commercial kitchen equipment with delivery across the UAE, GCC and worldwide.',
             images: [OG_IMAGE.url],
-        }
+        },
+        verification: {
+            google: 'L9HUDmwW2qLibo7hQqA6JUzRXY7RO8u65fXgiaGcE-I',
+        },
     };
 }
 

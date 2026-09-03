@@ -324,6 +324,56 @@ const FbtSection = ({ currentProduct, fbtProducts, locale, isArabic, resolveUrl,
     );
 };
 
+/**
+ * A YouTube still that survives a size YouTube never generated.
+ *
+ * Asking for a thumbnail size that does not exist does NOT produce a failed request.
+ * YouTube answers with HTTP 404 and a body that is a perfectly valid 120x90 grey
+ * placeholder JPEG. Browsers decode it and fire load, not error -- so an onError
+ * fallback never runs, and the grey square is what the shopper sees. Inside a 16:9
+ * frame it is 4:3, which is where the black bars either side of it come from.
+ *
+ * maxresdefault is missing for 8 of the 18 product videos on the site, so this is the
+ * normal case, not an edge case. The placeholder is detected by its size instead: no
+ * real still is 120px wide.
+ *
+ * The current source is state rather than a mutated img.src, so the choice survives the
+ * re-renders Swiper triggers as slides change.
+ */
+const YouTubeStill: React.FC<{
+    sources: string[];
+    className?: string;
+    alt?: string;
+    loading?: 'lazy' | 'eager';
+    onExhausted?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+}> = ({ sources, className, alt = '', loading = 'lazy', onExhausted }) => {
+    const [index, setIndex] = useState(0);
+    // A different video resets the ladder; without this the last video's fallback level
+    // would be carried over to the next one.
+    useEffect(() => { setIndex(0); }, [sources[0]]);
+
+    const demote = (e: React.SyntheticEvent<HTMLImageElement>) => {
+        if (index < sources.length - 1) setIndex(index + 1);
+        else onExhausted?.(e);
+    };
+
+    const src = sources[index];
+    if (!src) return null;
+
+    return (
+        <img
+            src={src}
+            alt={alt}
+            className={className}
+            loading={loading}
+            // 120px wide is YouTube's "this size does not exist" placeholder. Real stills
+            // start at 320px, so the test needs no allowance either way.
+            onLoad={(e) => { if (e.currentTarget.naturalWidth <= 120) demote(e); }}
+            onError={demote}
+        />
+    );
+};
+
 const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     const [product, setProduct] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -1597,19 +1647,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                             aria-label="Play product video"
                                                         >
                                                             {item.still && (
-                                                                <img
-                                                                    src={item.still}
-                                                                    alt=""
+                                                                <YouTubeStill
+                                                                    sources={[item.still, item.stillFallback]}
                                                                     className={styles.posterImage}
-                                                                    loading="lazy"
-                                                                    // maxres does not exist for every upload; drop to
-                                                                    // the smaller 16:9 still rather than a broken image.
-                                                                    onError={(e) => {
-                                                                        const img = e.currentTarget;
-                                                                        if (item.stillFallback && img.src !== item.stillFallback) {
-                                                                            img.src = item.stillFallback;
-                                                                        }
-                                                                    }}
                                                                 />
                                                             )}
                                                             {/* YouTube's own play button, so the still reads as a video
@@ -1675,7 +1715,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                             >
                                                 {item.kind === 'video' ? (
                                                     <>
-                                                        <img src={item.still} alt="Product video" className={styles.thumbImage} onError={swapToLogoOnError} />
+                                                        {/* Same placeholder problem as the poster. This one also fell
+                                                            back to the Mariot logo, so a video whose maxres is missing
+                                                            showed the logo in the strip instead of the video. */}
+                                                        <YouTubeStill
+                                                            sources={[item.still, item.stillFallback]}
+                                                            alt="Product video"
+                                                            className={styles.thumbImage}
+                                                            onExhausted={swapToLogoOnError}
+                                                        />
                                                         <span className={styles.thumbPlayBadge}><PlayCircle size={20} /></span>
                                                     </>
                                                 ) : (

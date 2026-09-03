@@ -108,6 +108,69 @@ const nextConfig = {
         config.infrastructureLogging = { ...config.infrastructureLogging, level: 'error' };
         return config;
     },
+    async redirects() {
+        return [
+            // 1. Static Pages & Content Migrations
+            { source: '/about-us', destination: '/en/about', permanent: true },
+            { source: '/:locale(en|ar)/about-us', destination: '/:locale/about', permanent: true },
+            { source: '/contact-us', destination: '/en/contact', permanent: true },
+            { source: '/:locale(en|ar)/contact-us', destination: '/:locale/contact', permanent: true },
+            { source: '/my-account', destination: '/en/profile', permanent: true },
+            { source: '/my-account-2', destination: '/en/profile', permanent: true },
+            { source: '/my-account/:path*', destination: '/en/profile', permanent: true },
+            { source: '/:locale(en|ar)/my-account/:path*', destination: '/:locale/profile', permanent: true },
+            { source: '/registration', destination: '/en/signup', permanent: true },
+            { source: '/:locale(en|ar)/registration', destination: '/:locale/signup', permanent: true },
+            { source: '/wishlist', destination: '/en/profile', permanent: true },
+            { source: '/:locale(en|ar)/wishlist', destination: '/:locale/profile', permanent: true },
+            { source: '/request-quote', destination: '/en/contact', permanent: true },
+            { source: '/kitchen-equipment-in-dubai', destination: '/en/category/kitchen-equipment', permanent: true },
+            { source: '/laundry-equipment', destination: '/en/category/laundry', permanent: true },
+            { source: '/super-market', destination: '/en/shop', permanent: true },
+            { source: '/faq', destination: '/en/about', permanent: true },
+            { source: '/news-best-kitchen-equipments-in-dubai', destination: '/en/about', permanent: true },
+
+            // 2. Policy Pages
+            { source: '/terms-of-service', destination: '/en/terms-and-conditions', permanent: true },
+            { source: '/terms', destination: '/en/terms-and-conditions', permanent: true },
+            { source: '/refund-policy', destination: '/en/return-policy', permanent: true },
+            { source: '/refund_returns', destination: '/en/return-policy', permanent: true },
+            { source: '/shipping-policy', destination: '/en/shipping-details', permanent: true },
+            { source: '/shipping', destination: '/en/shipping-details', permanent: true },
+
+            // 3. WooCommerce Brands -> Next.js Brand Filter
+            { source: '/brand/:slug', destination: '/en/shop?brand=:slug', permanent: true },
+            { source: '/:locale(en|ar)/brand/:slug', destination: '/:locale/shop?brand=:slug', permanent: true },
+
+            // 4. WooCommerce Tags -> Next.js Shop
+            { source: '/product-tag/:slug*', destination: '/en/shop', permanent: true },
+            { source: '/:locale(en|ar)/product-tag/:slug*', destination: '/:locale/shop', permanent: true },
+
+            // 5. WooCommerce Categories (1, 2, or 3 levels) -> Next.js Category
+            { source: '/product-category/:cat1/:cat2/:slug', destination: '/en/category/:slug', permanent: true },
+            { source: '/product-category/:cat1/:slug', destination: '/en/category/:slug', permanent: true },
+            { source: '/product-category/:slug', destination: '/en/category/:slug', permanent: true },
+            { source: '/:locale(en|ar)/product-category/:cat1/:cat2/:slug', destination: '/:locale/category/:slug', permanent: true },
+            { source: '/:locale(en|ar)/product-category/:cat1/:slug', destination: '/:locale/category/:slug', permanent: true },
+            { source: '/:locale(en|ar)/product-category/:slug', destination: '/:locale/category/:slug', permanent: true },
+
+            // 6. WooCommerce Products under /shop/ (nested categories) -> Next.js Product Detail
+            // Example: /shop/coffee-bar-line/slush-machine/slush-machine-oasis-2-10-std/ -> /en/product/slush-machine-oasis-2-10-std
+            { source: '/shop/:cat1/:cat2/:cat3/:slug', destination: '/en/product/:slug', permanent: true },
+            { source: '/shop/:cat1/:cat2/:slug', destination: '/en/product/:slug', permanent: true },
+            { source: '/shop/:cat1/:slug', destination: '/en/product/:slug', permanent: true },
+            { source: '/:locale(en|ar)/shop/:cat1/:cat2/:cat3/:slug', destination: '/:locale/product/:slug', permanent: true },
+            { source: '/:locale(en|ar)/shop/:cat1/:cat2/:slug', destination: '/:locale/product/:slug', permanent: true },
+            { source: '/:locale(en|ar)/shop/:cat1/:slug', destination: '/:locale/product/:slug', permanent: true },
+
+            // 7. Direct /product/:slug when requested without locale
+            { source: '/product/:slug', destination: '/en/product/:slug', permanent: true },
+
+            // 8. Old WordPress & Rank Math Sitemaps -> Next.js Sitemap
+            { source: '/sitemap_index.xml', destination: '/sitemap.xml', permanent: true },
+            { source: '/wp-sitemap.xml', destination: '/sitemap.xml', permanent: true },
+        ];
+    },
     async rewrites() {
         return [
             {

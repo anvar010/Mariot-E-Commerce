@@ -310,9 +310,6 @@ html[dir="rtl"] .searchInput {
     font-size: 14px;
 }
 
-.badge span {
-    font-style: italic;
-}
 
 /* Updated Responsive Design - Fixing mobile issues while keeping original style */
 @media (max-width: 1400px) {

@@ -633,11 +633,11 @@
     },
     "aboutSection": {
         "title": "About Mariot Group",
-        "desc1": "Marriott Kitchen Equipment is a leading supplier of high-quality commercial kitchen solutions based in the United Arab Emirates. Renowned for its innovation, superior craftsmanship, and exceptional customer service, Marriott is committed to providing cutting-edge kitchen equipment and systems that meet the ever-evolving needs of businesses in the hospitality, restaurant, and catering sectors.",
-        "desc2": "Commitment to Quality At Marriott Kitchen Equipment, quality is at the forefront of everything we do. All of our products are sourced from trusted manufacturers and go through rigorous testing to ensure they meet international standards. Our partnerships with world-renowned brands allow us to offer cutting-edge technologies and products designed to withstand the daily demands of busy commercial kitchens.",
-        "desc3": "Custom Solutions for Every Need Understanding that no two kitchens are the same, Marriott offers customized kitchen solutions tailored to meet the specific needs of each client. Whether it's designing a complete kitchen layout, recommending the best equipment for a particular space, or providing ongoing maintenance and support, Marriott works closely with clients to ensure their kitchen is fully equipped to handle high volumes and produce exceptional results.",
+        "desc1": "Mariot Kitchen Equipment is a leading supplier of high-quality commercial kitchen solutions based in the United Arab Emirates. Renowned for its innovation, superior craftsmanship, and exceptional customer service, Mariot is committed to providing cutting-edge kitchen equipment and systems that meet the ever-evolving needs of businesses in the hospitality, restaurant, and catering sectors.",
+        "desc2": "Commitment to Quality At Mariot Kitchen Equipment, quality is at the forefront of everything we do. All of our products are sourced from trusted manufacturers and go through rigorous testing to ensure they meet international standards. Our partnerships with world-renowned brands allow us to offer cutting-edge technologies and products designed to withstand the daily demands of busy commercial kitchens.",
+        "desc3": "Custom Solutions for Every Need Understanding that no two kitchens are the same, Mariot offers customized kitchen solutions tailored to meet the specific needs of each client. Whether it's designing a complete kitchen layout, recommending the best equipment for a particular space, or providing ongoing maintenance and support, Mariot works closely with clients to ensure their kitchen is fully equipped to handle high volumes and produce exceptional results.",
         "freeShipping": "Free shipping on all orders from UAE",
-        "safeShopping": "We offer a safe shopping guarantee",
+        "safeShopping": "We ship across the GCC and worldwide",
         "warranty": "We provide 1 year Warranty",
         "logoAlt": "Mariot Group Logo"
     },
@@ -713,7 +713,7 @@
         "callout1": "Mariot is offering \"Shop by Brand\" for the convenience of its customers. Click here to see all brands.",
         "callout2": "If you want to shop within a specific category, click on the category for brand-specific shopping.",
         "freeShipping": "Free shipping on all orders from UAE",
-        "safeShopping": "We offer a safe shopping guarantee",
+        "safeShopping": "We ship across the GCC and worldwide",
         "warranty": "We provide 1 year Warranty"
     },
     "userDashboard": {
@@ -1127,6 +1127,7 @@
         "houseNumberPlaceholder": "House number and street name",
         "apartmentPlaceholder": "Apartment, suite, unit, etc. (optional)",
         "city": "Town / City",
+        "selectCity": "Select a city",
         "postcode": "Postcode / ZIP (Optional)",
         "phone": "Phone",
         "email": "Email Address",

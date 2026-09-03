@@ -40,6 +40,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, TABBY_ENABLED, SHIPPING_QUOTES_ENABLED } from '@/config';
 import { settlementFeeFor } from '@/config';
+import { citiesFor } from '@/data/cities';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { formatCustomDims } from '@/utils/customDimensions';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -533,6 +534,15 @@ function CheckoutContent() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    // Changing country clears the city, unless that city exists in the new country too.
+    // Leaving it would let an order go out reading "Saudi Arabia / Dubai" -- the shopper
+    // has already moved past the field and would not see it.
+    const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const country = e.target.value;
+        const stillValid = citiesFor(country).some(c => c.value === form.city);
+        setForm({ ...form, country, city: stillValid ? form.city : '' });
     };
 
     // One payload builder for both routes into checkout: the Place Order button
@@ -1094,7 +1104,7 @@ function CheckoutContent() {
                                 <div className={`${styles.formGroup} ${styles.fullWidth}`}>
                                     <label>{t('country')} <span>*</span></label>
                                     <div className={styles.inputWrapper}>
-                                        <select className={styles.formSelect} name="country" value={form.country} onChange={handleInputChange} required>
+                                        <select className={styles.formSelect} name="country" value={form.country} onChange={handleCountryChange} required>
                                             <option value="United Arab Emirates">United Arab Emirates</option>
                                             <option value="Saudi Arabia">Saudi Arabia</option>
                                             <option value="Oman">Oman</option>
@@ -1122,7 +1132,27 @@ function CheckoutContent() {
                                 <div className={styles.formGroup}>
                                     <label>{t('city')} <span>*</span></label>
                                     <div className={styles.inputWrapper}>
-                                        <input className={styles.formInput} type="text" name="city" value={form.city} onChange={handleInputChange} required placeholder="e.g. Dubai" />
+                                        {/* A list rather than free text: "Dubay", "DXB" and a blank
+                                            all reach the warehouse looking like an address, and the
+                                            courier is the one who finds out. If a country ever has no
+                                            list, the field stays free text rather than trapping the
+                                            shopper with nothing to pick. */}
+                                        {citiesFor(form.country).length > 0 ? (
+                                            <select className={styles.formSelect} name="city" value={form.city} onChange={handleInputChange} required>
+                                                <option value="" disabled>{t('selectCity')}</option>
+                                                {citiesFor(form.country).map(c => (
+                                                    <option key={c.value} value={c.value}>{locale === 'ar' ? c.ar : c.value}</option>
+                                                ))}
+                                                {/* A saved address may hold a city that predates this list.
+                                                    Listing it keeps the shopper's own address intact instead
+                                                    of silently emptying the field when they reach checkout. */}
+                                                {form.city && !citiesFor(form.country).some(c => c.value === form.city) && (
+                                                    <option value={form.city}>{form.city}</option>
+                                                )}
+                                            </select>
+                                        ) : (
+                                            <input className={styles.formInput} type="text" name="city" value={form.city} onChange={handleInputChange} required placeholder="e.g. Dubai" />
+                                        )}
                                         <MapPin className={styles.inputIcon} size={15} />
                                     </div>
                                 </div>
