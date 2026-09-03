@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const User = require('../models/user.model');
 const { sendPasswordResetEmail, sendWelcomeEmail } = require('../utils/sendEmail');
+const { siteUrl } = require('../config/siteUrl');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -233,7 +234,7 @@ exports.forgotPassword = async (req, res, next) => {
         await User.setResetToken(user.id, hashedToken, expires);
 
         // Build the reset URL — the unhashed token goes in the URL
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = siteUrl();
         const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
         // Send email in the user's preferred language (fall back to request locale)

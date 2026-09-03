@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const dns = require('dns');
+const { siteUrl } = require('../config/siteUrl');
 const dnsp = require('dns').promises;
 
 // SMTP provider is configurable via env so we can switch between Gmail,
@@ -265,7 +266,7 @@ const dsLogoAttrs = (ar, height) => {
 // The attached footer card (logo · address · contacts · copyright · socials),
 // mirrored for RTL. Pulls the live site URL from FRONTEND_URL.
 const dsFooter = (ar) => {
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     const sans = ar ? DS_SANS_AR : DS_SANS;
     const dir = ar ? 'rtl' : 'ltr';
     const endAlign = ar ? 'left' : 'right'; // contacts / socials sit at the line end
@@ -292,7 +293,7 @@ const dsFooter = (ar) => {
           <td align="${endAlign}" style="vertical-align:top;font-family:${sans};font-size:12px;line-height:1.9;color:#17181c;" dir="ltr">
             <a href="tel:+97142882777" style="color:#17181c;text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/724/724664.png" alt="Phone" width="13" height="13" style="vertical-align:middle;margin-right:6px;border:0;">+971 4 288 2777</a><br>
             <a href="https://wa.me/971503114080" style="color:#17181c;text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/733/733585.png" alt="WhatsApp" width="12" height="12" style="vertical-align:middle;margin-right:6px;border:0;">+971 50 311 4080</a><br>
-            <a href="mailto:support@mariotstore.com" style="color:#1488c0;text-decoration:none;font-weight:600;">support@mariotstore.com</a><br>
+            <a href="mailto:admin@mariotkitchen.com" style="color:#1488c0;text-decoration:none;font-weight:600;">admin@mariotkitchen.com</a><br>
             <a href="${SITE}" style="color:#1488c0;text-decoration:none;font-weight:600;">www.mariotstore.com</a>
           </td>
         </tr></table>
@@ -506,7 +507,7 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
     const shipping = orderData.shipping_address || billing;
     const isPaid = (orderData.payment_status === 'paid' || orderData.payment_status === 'PAID');
     const isAdmin = orderData.is_admin_copy === true;
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     // Locale-prefixed so the profile deep-link guard fires (not logged in →
     // /signin?redirectTo=… → returns to orders tab → download invoice).
     const orderSummaryUrl = `${SITE}/${ar ? 'ar' : 'en'}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
@@ -672,7 +673,7 @@ ${dsButton(orderSummaryUrl, L.cta, ar)}
 const sendWelcomeEmail = async (toEmail, userName, locale = 'en') => {
     const transporter = createTransporter();
     const ar = isAr(locale);
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     const SANS = ar ? DS_SANS_AR : DS_SANS;
     const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
     const firstName = String(userName || '').split(' ')[0] || (ar ? 'صديقنا' : 'there');
@@ -726,7 +727,7 @@ const sendWelcomeEmail = async (toEmail, userName, locale = 'en') => {
 ${dsButton(SITE, L.cta, ar)}
 <div style="height:34px;"></div>
 <div style="border-top:1px solid #ecedef;padding-top:22px;">
-  <p style="margin:0;font-family:${SANS};font-size:14px;line-height:1.65;color:#17181c;">${L.help} <a href="mailto:support@mariotstore.com" style="color:#1488c0;text-decoration:none;font-weight:600;">support@mariotstore.com</a>.</p>
+  <p style="margin:0;font-family:${SANS};font-size:14px;line-height:1.65;color:#17181c;">${L.help} <a href="mailto:admin@mariotkitchen.com" style="color:#1488c0;text-decoration:none;font-weight:600;">admin@mariotkitchen.com</a>.</p>
 </div>`;
 
     const mailOptions = {
@@ -752,7 +753,7 @@ ${dsButton(SITE, L.cta, ar)}
 const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, items = [], locale = 'en', totals = {}, pdfBuffer = null) => {
     const transporter = createTransporter();
     const ar = isAr(locale);
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     const SANS = ar ? DS_SANS_AR : DS_SANS;
     const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
     const endAlign = ar ? 'left' : 'right';
@@ -859,7 +860,7 @@ const sendOrderStatusUpdateEmail = async (toEmail, userName, orderId, status, or
     const orderItems = orderData.items || [];
     const total = Number(orderData.final_amount || 0).toFixed(2);
     const date = new Date(orderData.created_at || Date.now()).toLocaleDateString(ar ? 'ar-AE' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     // Locale-prefixed so the profile page's deep-link guard (tab/orderId) fires:
     // not logged in → /signin?redirectTo=… → returns to the orders tab after login.
     const orderSummaryUrl = `${SITE}/${ar ? 'ar' : 'en'}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
@@ -1009,7 +1010,7 @@ ${dsButton(orderSummaryUrl, L.cta, ar)}
  */
 const sendAbandonedCartEmail = async (toEmail, userName, cartItems = [], reminderNumber = 1, locale = 'en') => {
     const transporter = createTransporter();
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     const ar = isAr(locale);
 
     const SANS = ar ? DS_SANS_AR : DS_SANS;
@@ -1093,7 +1094,7 @@ ${dsButton(`${SITE}/cart`, L.cta, ar)}
 const sendOfferNotificationEmail = async (toEmail, userName, product, offerLabel, locale = 'en') => {
     const transporter = createTransporter();
     const ar = isAr(locale);
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     const productUrl = `${SITE}/${ar ? 'ar' : 'en'}/product/${product.slug}`;
     const imageUrl = absolutizeEmailImage(product.primaryImage);
     const productName = (ar && product.name_ar) ? product.name_ar : product.name;
@@ -1170,7 +1171,7 @@ ${dsButton(productUrl, L.cta, ar)}
 const sendInvoiceEmail = async (toEmail, userName, invoiceNumber, orderId, totalAmount, items = [], givenByName = '', pdfBuffer = null, locale = 'en') => {
     const transporter = createTransporter();
     const ar = isAr(locale);
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     const orderSummaryUrl = `${SITE}/${ar ? 'ar' : 'en'}/profile?tab=yourOrders&orderId=${orderId}&view=summary`;
 
     const invoiceDate = new Date().toLocaleDateString(ar ? 'ar-AE' : 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -1277,7 +1278,7 @@ const sendOtpEmail = async (toEmail, userName, otp, opts = {}) => {
     const transporter = createTransporter();
     const firstName = (userName || '').split(' ')[0] || '';
     const digits = String(otp).split('');
-    const helpCentreUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/${ar ? 'ar' : 'en'}/contact`;
+    const helpCentreUrl = `${siteUrl()}/${ar ? 'ar' : 'en'}/contact`;
 
     const SANS = ar ? DS_SANS_AR : DS_SANS;
     const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
@@ -1347,7 +1348,7 @@ const sendOtpEmail = async (toEmail, userName, otp, opts = {}) => {
 const sendMonthlyStatementEmail = async (toEmail, userName, stats = {}, locale = 'en') => {
     const transporter = createTransporter();
     const ar = isAr(locale);
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     const rewardsUrl = `${SITE}/${ar ? 'ar' : 'en'}/profile?tab=myRewards`;
 
     const firstName = String(userName || '').split(' ')[0] || (ar ? 'عميلنا' : 'there');
@@ -1453,7 +1454,7 @@ ${dsButton(rewardsUrl, L.cta, ar)}
 const sendBackInStockEmail = async (toEmail, product = {}, locale = 'en') => {
     const transporter = createTransporter();
     const ar = isAr(locale);
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     const SANS = ar ? DS_SANS_AR : DS_SANS;
     const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
     const productName = (ar && product.name_ar) ? product.name_ar : (product.name || '');
@@ -1520,7 +1521,7 @@ ${dsButton(productUrl, L.cta, ar)}
 const sendReviewRequestEmail = async (toEmail, userName, products = [], orderId = '', locale = 'en') => {
     const transporter = createTransporter();
     const ar = isAr(locale);
-    const SITE = process.env.FRONTEND_URL || 'https://mariotstore.com';
+    const SITE = siteUrl();
     const SANS = ar ? DS_SANS_AR : DS_SANS;
     const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
 

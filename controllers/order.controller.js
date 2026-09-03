@@ -9,6 +9,7 @@ const { sendOrderConfirmationEmail, sendEmail } = require('../utils/sendEmail');
 const tamaraService = require('../services/tamara.service');
 const refundService = require('../services/refund.service');
 const { settlementFeeFor } = require('../config/settlementFee');
+const { siteUrl } = require('../config/siteUrl');
 
 // Initialize Stripe with secret key
 const { ensureStripeCustomer, ownedPaymentMethod } = require('./paymentMethod.controller');
@@ -344,7 +345,7 @@ exports.createOrder = async (req, res, next) => {
                 let finalPhone = rawPhone.replace(/[^0-9+]/g, '');
                 if (finalPhone.length < 8) finalPhone = '+971500000001';
 
-                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+                const frontendUrl = siteUrl();
                 const localePath = locale === 'ar' ? '/ar' : '/en';
 
                 // --- TABBY MOCK FOR DEVELOPMENT TESTING ---
@@ -448,7 +449,7 @@ exports.createOrder = async (req, res, next) => {
                     });
                 }
 
-                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+                const frontendUrl = siteUrl();
 
                 let rawPhone = billing_details?.phone || req.user.phone || '';
                 const finalPhone = rawPhone.replace(/[^0-9+]/g, '');
