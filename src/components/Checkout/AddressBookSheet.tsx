@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations, useLocale } from 'next-intl';
-import { citiesFor, SHIPPING_COUNTRIES } from '@/data/cities';
+import { statesFor, areasFor, countryLabel, SHIPPING_COUNTRIES } from '@/data/cities';
 import {
     X as CloseIcon,
     Plus,
@@ -42,7 +42,9 @@ const emptyForm = (user?: any) => {
         address_line1: '',
         address_line2: '',
         city: '',
-        state: 'UAE',
+        // Blank, not "UAE". The old default was free text that meant nothing to the new
+        // emirate list, and it left the field looking answered when nothing had been chosen.
+        state: '',
         zip_code: '',
         country: 'United Arab Emirates',
         phone: user?.phone_number || '',
@@ -52,14 +54,6 @@ const emptyForm = (user?: any) => {
 
 export default function AddressBookSheet({ open, onClose, onSelect, onAddressesChange, selectedAddressId, user }: AddressBookSheetProps) {
     const t = useTranslations('userDashboard.addresses');
-
-    // Changing country drops a city that does not exist in the new one, so an address
-    // can never be saved reading "Saudi Arabia / Dubai".
-    const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const country = e.target.value;
-        const stillValid = citiesFor(country).some(c => c.value === form.city);
-        setForm(f => ({ ...f, country, city: stillValid ? f.city : '' }));
-    };
     const locale = useLocale();
 
     const [addresses, setAddresses] = useState<any[]>([]);
@@ -71,6 +65,20 @@ export default function AddressBookSheet({ open, onClose, onSelect, onAddressesC
     const [error, setError] = useState<string | null>(null);
     const [openMenu, setOpenMenu] = useState<number | null>(null);
     const [editReceiver, setEditReceiver] = useState(false);
+
+    const states = statesFor(form.country);
+    const areas = areasFor(form.country, form.state);
+
+    // Each level clears the ones under it. Keeping them would let an address be saved
+    // reading "Saudi Arabia / Dubai / Deira", and the shopper has already scrolled past
+    // those fields by then, so they would never see it.
+    const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setForm(f => ({ ...f, country: e.target.value, state: '', city: '' }));
+    };
+
+    const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setForm(f => ({ ...f, state: e.target.value, city: '' }));
+    };
 
     const fetchAddresses = async () => {
         setLoading(true);
@@ -249,39 +257,55 @@ export default function AddressBookSheet({ open, onClose, onSelect, onAddressesC
                                     <label>{t('line2')}</label>
                                     <input type="text" value={form.address_line2} onChange={(e) => setForm({ ...form, address_line2: e.target.value })} placeholder={t('line2Placeholder')} />
                                 </div>
-                                {/* The sheet held a country in its state but never offered a way to
-                                    change it, so every address saved here was United Arab Emirates
-                                    whatever the shopper actually wanted -- and this sheet is the
-                                    path most people take, since it is what "Edit address" opens. */}
+                                {/* Country -> State/Emirate -> City/Area, each filled from the one
+                                    above it. The sheet used to hold a country it never let anyone
+                                    change, and a free-text city, so every address saved here read
+                                    "United Arab Emirates" with whatever the shopper typed. */}
                                 <div className={`${styles.field} ${styles.full}`}>
                                     <label>{t('country')} <span className={styles.req}>*</span></label>
                                     <select required value={form.country} onChange={handleCountryChange}>
-                                        {SHIPPING_COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        {SHIPPING_COUNTRIES.map(c => (
+                                            <option key={c} value={c}>{countryLabel(c, locale)}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className={styles.field}>
+                                    <label>{t('state')} <span className={styles.req}>*</span></label>
+                                    {states.length > 0 ? (
+                                        <select required value={form.state} onChange={handleStateChange}>
+                                            <option value="" disabled>{t('selectState')}</option>
+                                            {states.map(st => (
+                                                <option key={st.value} value={st.value}>{locale === 'ar' ? st.ar : st.value}</option>
+                                            ))}
+                                            {/* Addresses saved before these lists existed hold free text --
+                                                "UAE" was the old default. Showing whatever is stored keeps
+                                                the shopper's own address intact rather than blanking a
+                                                field they already filled in. */}
+                                            {form.state && !states.some(st => st.value === form.state) && (
+                                                <option value={form.state}>{form.state}</option>
+                                            )}
+                                        </select>
+                                    ) : (
+                                        <input type="text" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder={t('statePlaceholder')} />
+                                    )}
+                                </div>
+                                <div className={styles.field}>
                                     <label>{t('city')} <span className={styles.req}>*</span></label>
-                                    {/* Same list the checkout form uses, so an address saved here and
-                                        one typed there cannot disagree about what a city is called. */}
-                                    {citiesFor(form.country).length > 0 ? (
+                                    {areas.length > 0 ? (
                                         <select required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}>
                                             <option value="" disabled>{t('selectCity')}</option>
-                                            {citiesFor(form.country).map(c => (
-                                                <option key={c.value} value={c.value}>{locale === 'ar' ? c.ar : c.value}</option>
+                                            {areas.map(a => (
+                                                <option key={a.value} value={a.value}>{locale === 'ar' ? a.ar : a.value}</option>
                                             ))}
-                                            {/* An address saved before this list existed keeps its own
-                                                city rather than being silently blanked on edit. */}
-                                            {form.city && !citiesFor(form.country).some(c => c.value === form.city) && (
+                                            {form.city && !areas.some(a => a.value === form.city) && (
                                                 <option value={form.city}>{form.city}</option>
                                             )}
                                         </select>
                                     ) : (
+                                        // Nothing chosen above yet, or a state these lists do not know:
+                                        // typing beats a dropdown with nothing in it.
                                         <input type="text" required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder={t('cityPlaceholder')} />
                                     )}
-                                </div>
-                                <div className={styles.field}>
-                                    <label>{t('state')}</label>
-                                    <input type="text" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder={t('statePlaceholder')} />
                                 </div>
                                 <div className={styles.field}>
                                     <label>{t('zip')}</label>

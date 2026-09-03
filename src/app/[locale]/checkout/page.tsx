@@ -40,7 +40,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, TABBY_ENABLED, SHIPPING_QUOTES_ENABLED } from '@/config';
 import { settlementFeeFor } from '@/config';
-import { citiesFor, SHIPPING_COUNTRIES } from '@/data/cities';
+import { statesFor, areasFor, countryLabel, SHIPPING_COUNTRIES } from '@/data/cities';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { formatCustomDims } from '@/utils/customDimensions';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -111,6 +111,7 @@ function CheckoutContent() {
         lastName: user?.name ? user.name.split(' ').slice(1).join(' ') : '',
         companyName: '',
         country: 'United Arab Emirates',
+        state: '',
         streetAddress: '',
         additionalAddress: '',
         city: '',
@@ -234,6 +235,7 @@ function CheckoutContent() {
             city: addr.city || '',
             postcode: addr.zip_code || '',
             phone: addr.phone || '',
+            state: addr.state || '',
             country: addr.country || 'United Arab Emirates'
         }));
 
@@ -286,6 +288,9 @@ function CheckoutContent() {
     // Prices are VAT-exclusive — add 5% VAT on top of the discounted total (cartTotal),
     // then add per-product delivery charges (delivery is not VAT-taxed) and the carrier's
     // charge for the chosen delivery method.
+    const addressStates = statesFor(form.country);
+    const addressAreas = areasFor(form.country, form.state);
+
     const preFeeTotal = cartTotal * 1.05 + deliveryTotal + shippingCost;
     // BNPL providers keep a slice of what they settle; that cost is passed on as its own
     // line. Computed from the same rule the server uses, so the figure shown here is the
@@ -376,6 +381,7 @@ function CheckoutContent() {
                         city: defaultAddr.city || '',
                         postcode: defaultAddr.zip_code || '',
                         phone: defaultAddr.phone || '',
+                        state: defaultAddr.state || '',
                         country: defaultAddr.country || 'United Arab Emirates'
                     }));
                     setReceiverName(`${defaultAddr.first_name || ''} ${defaultAddr.last_name || ''}`.trim());
@@ -536,13 +542,15 @@ function CheckoutContent() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    // Changing country clears the city, unless that city exists in the new country too.
-    // Leaving it would let an order go out reading "Saudi Arabia / Dubai" -- the shopper
-    // has already moved past the field and would not see it.
+    // Each level of the address clears the ones under it. Leaving them would let an order
+    // go out reading "Saudi Arabia / Dubai / Deira" -- the shopper has already moved past
+    // those fields and would never see it.
     const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const country = e.target.value;
-        const stillValid = citiesFor(country).some(c => c.value === form.city);
-        setForm({ ...form, country, city: stillValid ? form.city : '' });
+        setForm({ ...form, country: e.target.value, state: '', city: '' });
+    };
+
+    const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setForm({ ...form, state: e.target.value, city: '' });
     };
 
     // One payload builder for both routes into checkout: the Place Order button
@@ -574,7 +582,7 @@ function CheckoutContent() {
                     address_line1: form.streetAddress,
                     address_line2: form.additionalAddress,
                     city: form.city,
-                    state: 'UAE',
+                    state: form.state,
                     zip_code: form.postcode,
                     country: form.country,
                     phone: form.phone,
@@ -647,7 +655,7 @@ function CheckoutContent() {
         const hasSavedAddress = Boolean(user && userAddresses.length > 0 && selectedAddressId);
         if (!hasSavedAddress) {
             const missing = !form.firstName?.trim() || !form.streetAddress?.trim()
-                || !form.city?.trim() || !form.phone?.trim() || !form.email?.trim();
+                || !form.state?.trim() || !form.city?.trim() || !form.phone?.trim() || !form.email?.trim();
             if (missing) return t('walletAddressRequired');
         }
         return null;
@@ -1107,7 +1115,9 @@ function CheckoutContent() {
                                         <select className={styles.formSelect} name="country" value={form.country} onChange={handleCountryChange} required>
                                             {/* Shared with the address sheet, so the two pickers
                                                 cannot offer different countries. */}
-                                            {SHIPPING_COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                            {SHIPPING_COUNTRIES.map(c => (
+                                                <option key={c} value={c}>{countryLabel(c, locale)}</option>
+                                            ))}
                                         </select>
                                         <MapPin className={styles.inputIcon} size={15} />
                                     </div>
@@ -1127,28 +1137,49 @@ function CheckoutContent() {
                                     </div>
                                 </div>
 
+                                {/* State/Emirate, then City/Area within it. Each picker is filled
+                                    from the one above, so an order cannot be placed for Deira in
+                                    Saudi Arabia, and the warehouse gets a state to sort by rather
+                                    than a dozen spellings of the same town. */}
+                                <div className={styles.formGroup}>
+                                    <label>{t('state')} <span>*</span></label>
+                                    <div className={styles.inputWrapper}>
+                                        {addressStates.length > 0 ? (
+                                            <select className={styles.formSelect} name="state" value={form.state} onChange={handleStateChange} required>
+                                                <option value="" disabled>{t('selectState')}</option>
+                                                {addressStates.map(st => (
+                                                    <option key={st.value} value={st.value}>{locale === 'ar' ? st.ar : st.value}</option>
+                                                ))}
+                                                {/* A saved address may hold free text from before these
+                                                    lists existed; showing it keeps the shopper's own
+                                                    address rather than blanking a filled-in field. */}
+                                                {form.state && !addressStates.some(st => st.value === form.state) && (
+                                                    <option value={form.state}>{form.state}</option>
+                                                )}
+                                            </select>
+                                        ) : (
+                                            <input className={styles.formInput} type="text" name="state" value={form.state} onChange={handleInputChange} />
+                                        )}
+                                        <MapPin className={styles.inputIcon} size={15} />
+                                    </div>
+                                </div>
+
                                 <div className={styles.formGroup}>
                                     <label>{t('city')} <span>*</span></label>
                                     <div className={styles.inputWrapper}>
-                                        {/* A list rather than free text: "Dubay", "DXB" and a blank
-                                            all reach the warehouse looking like an address, and the
-                                            courier is the one who finds out. If a country ever has no
-                                            list, the field stays free text rather than trapping the
-                                            shopper with nothing to pick. */}
-                                        {citiesFor(form.country).length > 0 ? (
+                                        {addressAreas.length > 0 ? (
                                             <select className={styles.formSelect} name="city" value={form.city} onChange={handleInputChange} required>
                                                 <option value="" disabled>{t('selectCity')}</option>
-                                                {citiesFor(form.country).map(c => (
-                                                    <option key={c.value} value={c.value}>{locale === 'ar' ? c.ar : c.value}</option>
+                                                {addressAreas.map(a => (
+                                                    <option key={a.value} value={a.value}>{locale === 'ar' ? a.ar : a.value}</option>
                                                 ))}
-                                                {/* A saved address may hold a city that predates this list.
-                                                    Listing it keeps the shopper's own address intact instead
-                                                    of silently emptying the field when they reach checkout. */}
-                                                {form.city && !citiesFor(form.country).some(c => c.value === form.city) && (
+                                                {form.city && !addressAreas.some(a => a.value === form.city) && (
                                                     <option value={form.city}>{form.city}</option>
                                                 )}
                                             </select>
                                         ) : (
+                                            // No emirate picked yet, or one these lists do not know:
+                                            // typing beats a dropdown with nothing in it.
                                             <input className={styles.formInput} type="text" name="city" value={form.city} onChange={handleInputChange} required placeholder="e.g. Dubai" />
                                         )}
                                         <MapPin className={styles.inputIcon} size={15} />
