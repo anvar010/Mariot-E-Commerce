@@ -140,7 +140,10 @@ export default function AddressBookSheet({ open, onClose, onSelect, onAddressesC
             address_line1: addr.address_line1 || '',
             address_line2: addr.address_line2 || '',
             city: addr.city || '',
-            state: addr.state || 'UAE',
+            // An address with no state left must open with the field empty, not invent
+            // "UAE" -- that is not an emirate, so it would look answered while the shopper
+            // still has nothing real selected.
+            state: addr.state || '',
             zip_code: addr.zip_code || '',
             country: addr.country || 'United Arab Emirates',
             phone: addr.phone || '',
@@ -249,14 +252,6 @@ export default function AddressBookSheet({ open, onClose, onSelect, onAddressesC
 
                             <span className={styles.sectionLabel}>{t('addressDetails')}</span>
                             <div className={styles.grid}>
-                                <div className={`${styles.field} ${styles.full}`}>
-                                    <label>{t('line1')} <span className={styles.req}>*</span></label>
-                                    <input type="text" required value={form.address_line1} onChange={(e) => setForm({ ...form, address_line1: e.target.value })} placeholder={t('line1Placeholder')} />
-                                </div>
-                                <div className={`${styles.field} ${styles.full}`}>
-                                    <label>{t('line2')}</label>
-                                    <input type="text" value={form.address_line2} onChange={(e) => setForm({ ...form, address_line2: e.target.value })} placeholder={t('line2Placeholder')} />
-                                </div>
                                 {/* Country -> State/Emirate -> City/Area, each filled from the one
                                     above it. The sheet used to hold a country it never let anyone
                                     change, and a free-text city, so every address saved here read
@@ -306,6 +301,14 @@ export default function AddressBookSheet({ open, onClose, onSelect, onAddressesC
                                         // typing beats a dropdown with nothing in it.
                                         <input type="text" required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder={t('cityPlaceholder')} />
                                     )}
+                                </div>
+                                <div className={`${styles.field} ${styles.full}`}>
+                                    <label>{t('line1')} <span className={styles.req}>*</span></label>
+                                    <input type="text" required value={form.address_line1} onChange={(e) => setForm({ ...form, address_line1: e.target.value })} placeholder={t('line1Placeholder')} />
+                                </div>
+                                <div className={`${styles.field} ${styles.full}`}>
+                                    <label>{t('line2')}</label>
+                                    <input type="text" value={form.address_line2} onChange={(e) => setForm({ ...form, address_line2: e.target.value })} placeholder={t('line2Placeholder')} />
                                 </div>
                                 <div className={styles.field}>
                                     <label>{t('zip')}</label>

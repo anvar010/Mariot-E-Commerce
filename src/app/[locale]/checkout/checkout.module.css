@@ -102,6 +102,16 @@
     gap: 8px;
 }
 
+/* The two street lines are one field in two boxes, so they need their own spacing --
+   .formGroup's gap sits between the label and the control, not between the inputs.
+   This class was referenced in the markup but never defined, so the boxes rendered
+   flush against each other with no gap at all. */
+.streetAddressWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 .formGroup label {
     font-size: 12px;
     font-weight: 600;

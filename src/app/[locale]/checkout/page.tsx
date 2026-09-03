@@ -1123,20 +1123,6 @@ function CheckoutContent() {
                                     </div>
                                 </div>
 
-                                <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-                                    <label>{t('streetAddress')} <span>*</span></label>
-                                    <div className={styles.streetAddressWrapper}>
-                                        <div style={{ position: 'relative', width: '100%' }}>
-                                            <input className={styles.formInput} type="text" name="streetAddress" placeholder={t('houseNumberPlaceholder')} value={form.streetAddress} onChange={handleInputChange} required />
-                                            <MapPin className={styles.inputIcon} size={15} />
-                                        </div>
-                                        <div style={{ position: 'relative', width: '100%' }}>
-                                            <input className={styles.formInput} type="text" name="additionalAddress" placeholder={t('apartmentPlaceholder')} value={form.additionalAddress} onChange={handleInputChange} />
-                                            <Building className={styles.inputIcon} size={15} />
-                                        </div>
-                                    </div>
-                                </div>
-
                                 {/* State/Emirate, then City/Area within it. Each picker is filled
                                     from the one above, so an order cannot be placed for Deira in
                                     Saudi Arabia, and the warehouse gets a state to sort by rather
@@ -1183,6 +1169,20 @@ function CheckoutContent() {
                                             <input className={styles.formInput} type="text" name="city" value={form.city} onChange={handleInputChange} required placeholder="e.g. Dubai" />
                                         )}
                                         <MapPin className={styles.inputIcon} size={15} />
+                                    </div>
+                                </div>
+
+                                <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+                                    <label>{t('streetAddress')} <span>*</span></label>
+                                    <div className={styles.streetAddressWrapper}>
+                                        <div style={{ position: 'relative', width: '100%' }}>
+                                            <input className={styles.formInput} type="text" name="streetAddress" placeholder={t('houseNumberPlaceholder')} value={form.streetAddress} onChange={handleInputChange} required />
+                                            <MapPin className={styles.inputIcon} size={15} />
+                                        </div>
+                                        <div style={{ position: 'relative', width: '100%' }}>
+                                            <input className={styles.formInput} type="text" name="additionalAddress" placeholder={t('apartmentPlaceholder')} value={form.additionalAddress} onChange={handleInputChange} />
+                                            <Building className={styles.inputIcon} size={15} />
+                                        </div>
                                     </div>
                                 </div>
 
