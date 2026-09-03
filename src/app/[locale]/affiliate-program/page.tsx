@@ -322,7 +322,7 @@ export default function AffiliateProgramPage() {
                                         </div>
                                         <div className={styles.contactItemContent}>
                                             <div className={styles.contactItemLabel}>SUPPORT EMAIL</div>
-                                            <div className={styles.contactItemValue}>info@mariotstore.com</div>
+                                            <div className={styles.contactItemValue}>admin@mariotkitchen.com</div>
                                         </div>
                                     </div>
 

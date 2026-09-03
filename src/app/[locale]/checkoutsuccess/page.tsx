@@ -164,7 +164,7 @@ const SuccessContent = () => {
                             <h3 className={styles.cardTitle}>{t('needHelp')}</h3>
                             <p className={styles.cardText}>{t('supportText')}</p>
                             <div className={styles.supportLinks}>
-                                <span>Email: support@mariotstore.com</span>
+                                <span>Email: admin@mariotkitchen.com</span>
                                 <span dir="ltr">Phone: +971 4 288 2777</span>
                             </div>
                         </div>
