@@ -124,7 +124,15 @@ const nextConfig = {
             { source: '/wishlist', destination: '/en/profile', permanent: true },
             { source: '/:locale(en|ar)/wishlist', destination: '/:locale/profile', permanent: true },
             { source: '/request-quote', destination: '/en/contact', permanent: true },
-            { source: '/kitchen-equipment-in-dubai', destination: '/en/category/kitchen-equipment', permanent: true },
+            // Both of these were broad WordPress landing pages, and there is no single
+            // category that answers them: "kitchen-equipment" is not a category at all
+            // (0 products), so pointing here rendered an empty page under a 200 -- a soft
+            // 404, which Google indexes as real and then finds nothing on. /shop lists
+            // actual products, which is also what somebody arriving from that search wants.
+            { source: '/kitchen-equipment-in-dubai', destination: '/en/shop', permanent: true },
+            { source: '/kitchen-ware', destination: '/en/shop', permanent: true },
+            { source: '/:locale(en|ar)/kitchen-ware', destination: '/:locale/shop', permanent: true },
+            // laundry is a real category with products, so this one resolves properly.
             { source: '/laundry-equipment', destination: '/en/category/laundry', permanent: true },
             { source: '/super-market', destination: '/en/shop', permanent: true },
             { source: '/faq', destination: '/en/about', permanent: true },
