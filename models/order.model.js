@@ -105,10 +105,17 @@ class Order {
                 const bundleParentProductId = item.bundle_parent_id != null
                     ? (cartItemToProduct[Number(item.bundle_parent_id)] || null)
                     : null;
+                // The name and model are copied onto the line, not just referenced. An order
+                // is a financial record: it has to still say what was bought after the
+                // product is renamed, repriced or deleted.
+                const [[snapshot]] = await connection.execute(
+                    'SELECT name, model FROM products WHERE id = ?',
+                    [item.product_id]
+                );
                 await connection.execute(
-                    `INSERT INTO order_items (order_id, product_id, variant_id, quantity, price_at_purchase, custom_dimensions, custom_label, is_free_gift, bundle_parent_product_id)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [orderId, item.product_id, item.variant_id || null, item.quantity, item.price, customDims, customLabel, isFreeGift, bundleParentProductId]
+                    `INSERT INTO order_items (order_id, product_id, product_name, product_model, variant_id, quantity, price_at_purchase, custom_dimensions, custom_label, is_free_gift, bundle_parent_product_id)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [orderId, item.product_id, snapshot?.name || null, snapshot?.model || null, item.variant_id || null, item.quantity, item.price, customDims, customLabel, isFreeGift, bundleParentProductId]
                 );
             }
 
@@ -236,7 +243,14 @@ class Order {
 
         const [items] = await db.execute(`
             SELECT oi.*,
-                   p.name, p.name_ar, p.slug, p.model AS product_model,
+                   -- The live product where it still exists, otherwise what was recorded on
+                   -- the line when the order was placed.
+                   COALESCE(p.name, oi.product_name) AS name,
+                   p.name_ar, p.slug,
+                   COALESCE(p.model, oi.product_model) AS product_model,
+                   -- Lets callers say "this product is no longer in the catalogue" rather
+                   -- than showing a nameless row.
+                   (p.id IS NULL) AS product_removed,
                    b.name AS brand_name, b.name_ar AS brand_name_ar,
                    pv.sku AS variant_sku, pv.options_signature AS variant_options,
                    pp.name AS bundle_parent_name, pp.name_ar AS bundle_parent_name_ar,
@@ -255,7 +269,9 @@ class Order {
                         ORDER BY v3.is_default DESC, v3.id ASC LIMIT 1)
                    ) as image
             FROM order_items oi
-            JOIN products p ON oi.product_id = p.id
+            -- LEFT, so a line whose product has since been deleted still appears. An inner
+            -- join silently dropped it, and the order's total then matched nothing.
+            LEFT JOIN products p ON oi.product_id = p.id
             LEFT JOIN brands b ON p.brand_id = b.id
             LEFT JOIN product_variants pv ON pv.id = oi.variant_id
             LEFT JOIN products pp ON pp.id = oi.bundle_parent_product_id
