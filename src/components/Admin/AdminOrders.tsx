@@ -4,8 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
-import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt, AlertTriangle } from 'lucide-react';
+import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt, AlertTriangle, MessageCircle } from 'lucide-react';
 import { resolveUrl } from '@/utils/resolveUrl';
+import { readSeen } from '@/utils/adminActivity';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -38,6 +39,22 @@ const formatPaymentMethod = (method?: string) => {
     return labels[method.toLowerCase()] || method.toUpperCase();
 };
 
+/**
+ * wa.me link for a stored phone number.
+ *
+ * Numbers are entered locally -- "0509995446" -- and wa.me needs the country code with no
+ * leading zero. Anything already carrying 971, or a number from another country, is passed
+ * through untouched rather than guessed at.
+ */
+const whatsappLink = (phone?: string): string | null => {
+    const digits = String(phone || '').replace(/\D/g, '');
+    if (digits.length < 7) return null;
+    const intl = digits.startsWith('971') ? digits
+        : digits.startsWith('0') ? `971${digits.slice(1)}`
+            : digits;
+    return `https://wa.me/${intl}`;
+};
+
 const AdminOrders = () => {
     const router = useRouter();
     const pathname = usePathname();
@@ -46,6 +63,9 @@ const AdminOrders = () => {
     const { user } = useAuth();
 
     const [orders, setOrders] = useState<any[]>([]);
+    // Read once at mount. Opening this tab marks orders as seen, so reading it later would
+    // always come back as "nothing is new" and no row would ever be flagged.
+    const [newSince] = useState<string | null>(() => (typeof window === 'undefined' ? null : readSeen('orders')));
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<StatusFilter>(
         STATUS_FILTERS.some(f => f.key === initialStatus) ? initialStatus : 'all'
@@ -683,7 +703,24 @@ const AdminOrders = () => {
                                             <div className={styles.detailLine}><UserIcon size={14} /><span>{o.receiver_name}</span></div>
                                         )}
                                         {o.receiver_phone && (
-                                            <div className={styles.detailLine}><Phone size={14} /><span dir="ltr">{o.receiver_phone}</span></div>
+                                            <div className={styles.detailLine}>
+                                                <Phone size={14} />
+                                                <span dir="ltr">{o.receiver_phone}</span>
+                                                {/* Chasing a delivery usually starts with a WhatsApp
+                                                    message, so the number carries the link. */}
+                                                {whatsappLink(o.receiver_phone) && (
+                                                <a
+                                                    className={styles.waBtn}
+                                                    href={whatsappLink(o.receiver_phone) as string}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title="Message on WhatsApp"
+                                                    aria-label="Message on WhatsApp"
+                                                >
+                                                    <MessageCircle size={13} /> WhatsApp
+                                                </a>
+                                            )}
+                                            </div>
                                         )}
                                     </div>
                                 )}
@@ -699,7 +736,24 @@ const AdminOrders = () => {
                                     )}
                                     {addr.company_name && <div><Package size={14} /><span>{addr.company_name}</span></div>}
                                     <div><MapPin size={14} /><span>{addrLine}</span></div>
-                                    {addr.phone && <div><Phone size={14} /><span dir="ltr">{addr.phone}</span></div>}
+                                    {addr.phone && (
+                                        <div className={styles.detailLine}>
+                                            <Phone size={14} />
+                                            <span dir="ltr">{addr.phone}</span>
+                                            {whatsappLink(addr.phone) && (
+                                                <a
+                                                    className={styles.waBtn}
+                                                    href={whatsappLink(addr.phone) as string}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title="Message on WhatsApp"
+                                                    aria-label="Message on WhatsApp"
+                                                >
+                                                    <MessageCircle size={13} /> WhatsApp
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
                                     {(addr.address_label || addr.address_type) && (
                                         <span className={styles.addrTag}>{addr.address_label?.trim() || addr.address_type}</span>
                                     )}
@@ -786,7 +840,7 @@ const AdminOrders = () => {
                     <thead>
                         <tr>
                             <th>Order ID</th>
-                            <th>Date</th>
+                            <th>Date &amp; Time</th>
                             <th>Customer</th>
                             <th>Total Amount</th>
                             <th>Status</th>
@@ -803,8 +857,26 @@ const AdminOrders = () => {
                         ) : (
                             filteredOrders.map((order) => (
                                 <tr key={order.id}>
-                                    <td className={styles.id}>#{order.id}</td>
-                                    <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                                    <td className={styles.id}>
+                                        #{order.id}
+                                        {/* Same idea as the sidebar dot: what has arrived since
+                                            this tab was last opened. */}
+                                        {newSince && order.created_at && new Date(order.created_at) > new Date(newSince) && (
+                                            <span className={styles.newTag}>NEW</span>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <div className={styles.dateCell}>
+                                            <span>{new Date(order.created_at).toLocaleDateString('en-GB', {
+                                                day: '2-digit', month: 'short', year: 'numeric',
+                                            })}</span>
+                                            <span className={styles.timeCell}>
+                                                {new Date(order.created_at).toLocaleTimeString('en-GB', {
+                                                    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+                                                })}
+                                            </span>
+                                        </div>
+                                    </td>
                                     <td>
                                         <div className={styles.clientInfo}>
                                             <span className={styles.customerName}>{order.user_name}</span>

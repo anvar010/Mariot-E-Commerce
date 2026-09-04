@@ -872,10 +872,14 @@
 
 .detailGrid {
     display: grid;
-    /* Items on the left, the three short cards stacked on the right. Four equal cells
-       left holes wherever two neighbours had different heights, which on a one-line
-       order is most of the page. */
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    /* Items on the left, the three short cards stacked on the right. Four equal cells left
+       holes wherever two neighbours had different heights, which on a one-line order is
+       most of the page.
+
+       auto-fit against a minimum, rather than a viewport breakpoint: the admin sidebar
+       takes ~260px, so a laptop with room for two columns was still being measured as a
+       narrow viewport and collapsing to one. This asks the content how much room it has. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
     gap: 18px;
     align-items: start;
 }
@@ -1118,10 +1122,7 @@
 }
 
 @media (max-width: 900px) {
-    .detailGrid {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
+    /* The grid handles its own wrapping now; this breakpoint only tidies the header. */
     .detailBadges {
         /* On one column the badges belong under the title, not shoved to the edge. */
         margin-inline-start: 0;
@@ -1143,4 +1144,59 @@
     color: #92400e;
     font-size: 11px;
     font-weight: 700;
+}
+
+
+/* Orders arrived since this tab was last opened -- the row-level counterpart to the dot
+   on the sidebar. */
+.newTag {
+    display: inline-block;
+    margin-inline-start: 7px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    vertical-align: middle;
+}
+
+.dateCell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.3;
+}
+
+/* Tabular figures so the seconds column does not jitter down the table. */
+.timeCell {
+    font-size: 11.5px;
+    color: #64748b;
+    font-variant-numeric: tabular-nums;
+}
+
+.waBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-inline-start: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color .15s ease;
+}
+
+.waBtn:hover {
+    background: #bbf7d0;
+}
+
+.waBtn:focus-visible {
+    outline: 2px solid #16a34a;
+    outline-offset: 2px;
 }
