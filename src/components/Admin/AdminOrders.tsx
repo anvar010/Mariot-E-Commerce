@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
-import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt } from 'lucide-react';
+import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt, AlertTriangle } from 'lucide-react';
 import { resolveUrl } from '@/utils/resolveUrl';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
@@ -602,13 +602,23 @@ const AdminOrders = () => {
                                                 )}
                                             </div>
                                             <div className={styles.itemInfo}>
-                                                <span className={styles.itemName}>{it.name || 'Product ' + it.product_id}</span>
+                                                {/* The name is copied onto the line at checkout, so it reads
+                                                    correctly even once the product is gone. Only a line
+                                                    predating that snapshot has nothing to show. */}
+                                                <span className={styles.itemName}>
+                                                    {it.name || 'Product no longer in the catalogue'}
+                                                </span>
                                                 <span className={styles.itemMeta}>
                                                     {it.brand_name ? it.brand_name + ' · ' : ''}
-                                                    {it.model_number ? 'Model ' + it.model_number : 'ID ' + it.product_id}
+                                                    {it.model_number ? 'Model ' + it.model_number : 'ID ' + (it.product_id ?? '—')}
                                                 </span>
                                                 {it.variant_options && (
                                                     <span className={styles.itemMeta}>{it.variant_options}</span>
+                                                )}
+                                                {Number(it.product_removed) === 1 && (
+                                                    <span className={styles.removedTag}>
+                                                        <AlertTriangle size={11} /> Removed from the store
+                                                    </span>
                                                 )}
                                                 {Number(it.is_free_gift) === 1 && (
                                                     <span className={styles.freeGiftTag}>Free gift</span>

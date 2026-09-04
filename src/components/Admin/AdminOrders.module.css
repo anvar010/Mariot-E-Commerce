@@ -1128,3 +1128,19 @@
         width: 100%;
     }
 }
+
+/* A line whose product has since been deleted. The order still has to read correctly --
+   it is a financial record -- so the line stays and says plainly what happened. */
+.removedTag {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 3px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 11px;
+    font-weight: 700;
+}
