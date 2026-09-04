@@ -871,24 +871,24 @@
 }
 
 .detailGrid {
-    display: grid;
-    /* Items on the left, the three short cards stacked on the right. Four equal cells left
-       holes wherever two neighbours had different heights, which on a one-line order is
-       most of the page.
-
-       auto-fit against a minimum, rather than a viewport breakpoint: the admin sidebar
-       takes ~260px, so a laptop with room for two columns was still being measured as a
-       narrow viewport and collapsing to one. This asks the content how much room it has. */
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
-    gap: 18px;
-    align-items: start;
-}
-
-.detailSide {
+    /* Items across the top, then the summary cards in a row beneath.
+       Side by side, the two columns were never the same height -- one item on the left
+       against payment, customer and address stacked on the right left a tall empty band,
+       and the emptier the order the worse it looked. Stacking removes the comparison:
+       each band is as tall as it needs to be and nothing sits beside a hole. */
     display: flex;
     flex-direction: column;
     gap: 18px;
-    min-width: 0;
+}
+
+.detailSide {
+    display: grid;
+    /* Three across on a wide screen, folding to two then one as the room runs out.
+       Sized against the content rather than the viewport: the admin sidebar takes 260px,
+       so a viewport breakpoint misjudges how much space these actually have. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 18px;
+    align-items: start;
 }
 
 .detailCard {
@@ -1003,6 +1003,9 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 2px;
+    /* The card is full width now, so the price column is pinned rather than drifting to
+       the far edge away from the quantity it belongs to. */
+    min-width: 130px;
     font-size: 13.5px;
     font-weight: 700;
     color: #0f172a;
