@@ -788,3 +788,331 @@
     font-size: 13.5px;
     line-height: 1.55;
 }
+
+/* ── Order detail ─────────────────────────────────────────────────────────────
+   The eye icon on a row swaps the table for this view rather than opening a
+   dialog: an order carries items, money, customer and address, which is more
+   than a modal holds comfortably on a laptop. */
+
+.viewBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    padding: 5px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+
+.viewBtn:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+.detailTopBar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.backBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .15s ease;
+}
+
+.backBtn:hover {
+    background: #f1f5f9;
+}
+
+.detailTitle {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.detailTitle h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.detailDate {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.detailBadges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* Pushed to the far end so status reads as a summary of the order rather than
+       part of its title. */
+    margin-inline-start: auto;
+    flex-wrap: wrap;
+}
+
+.detailGrid {
+    display: grid;
+    /* Items get the wider column: it is the part with pictures and the part the
+       office is usually checking. */
+    grid-template-columns: 1.6fr 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.detailCard {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px 20px;
+}
+
+.detailCardTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: .01em;
+}
+
+.detailEmpty {
+    margin: 0;
+    padding: 18px 0;
+    color: #64748b;
+    font-size: 13.5px;
+}
+
+.itemList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.itemRow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.itemRow:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.itemThumb {
+    flex-shrink: 0;
+    width: 58px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #94a3b8;
+    overflow: hidden;
+}
+
+.itemThumb img {
+    width: 100%;
+    height: 100%;
+    /* contain, not cover: a kitchen machine cropped to a square stops being
+       recognisable, and recognising it is the whole point of the picture here. */
+    object-fit: contain;
+}
+
+.itemInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+}
+
+.itemName {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.35;
+}
+
+.itemMeta {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.freeGiftTag {
+    align-self: flex-start;
+    margin-top: 2px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.itemQty {
+    flex-shrink: 0;
+    min-width: 34px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+}
+
+.itemPrice {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.itemUnit {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #94a3b8;
+}
+
+.moneyRows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.moneyRows > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 13.5px;
+    color: #475569;
+}
+
+.moneyRows > div > span:last-child {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.moneyMinus {
+    color: #16a34a !important;
+}
+
+.moneyTotal {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 15px !important;
+    font-weight: 800;
+}
+
+.moneyTotal > span:last-child {
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.moneyMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #f1f5f9;
+    font-size: 12.5px;
+    color: #64748b;
+}
+
+.moneyMeta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.detailLines {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 13.5px;
+    color: #334155;
+}
+
+.detailLines > div {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    line-height: 1.5;
+}
+
+.detailLines svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: #94a3b8;
+}
+
+.receiverBlock {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.detailSubLabel {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.addrTag {
+    align-self: flex-start;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+@media (max-width: 900px) {
+    .detailGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .detailBadges {
+        /* On one column the badges belong under the title, not shoved to the edge. */
+        margin-inline-start: 0;
+        width: 100%;
+    }
+}

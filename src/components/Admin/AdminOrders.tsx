@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
-import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw } from 'lucide-react';
+import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt } from 'lucide-react';
+import { resolveUrl } from '@/utils/resolveUrl';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -440,6 +441,40 @@ const AdminOrders = () => {
 
     const [activeDropdown, setActiveDropdown] = useState<{ id: number, type: 'status' | 'payment' } | null>(null);
 
+    // Full order behind the eye icon. The list endpoint returns a summary row; items,
+    // shipping address and invoice only come from GET /orders/:id, so it is fetched on open.
+    const [detailOrder, setDetailOrder] = useState<any | null>(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    // The list row is kept because it carries the customer's name and email, which the
+    // single-order payload does not include.
+    const [detailSummary, setDetailSummary] = useState<any | null>(null);
+
+    const openDetail = async (order: any) => {
+        setDetailSummary(order);
+        setDetailOrder(null);
+        setDetailLoading(true);
+        // Back to the top -- the admin may have opened this from far down a long table.
+        window.scrollTo({ top: 0 });
+        try {
+            const res = await fetch(`${API_BASE_URL}/orders/${order.id}`, {
+                credentials: 'include',
+                headers: getAuthHeaders(),
+            });
+            const data = await res.json();
+            if (data.success) setDetailOrder(data.data);
+            else showNotification(data.message || 'Could not load that order', 'error');
+        } catch {
+            showNotification('Could not load that order', 'error');
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
+    const closeDetail = () => {
+        setDetailOrder(null);
+        setDetailSummary(null);
+    };
+
     const toggleDropdown = (id: number, type: 'status' | 'payment', e: React.MouseEvent) => {
         e.stopPropagation();
         if (activeDropdown?.id === id && activeDropdown?.type === type) {
@@ -481,6 +516,175 @@ const AdminOrders = () => {
             default: return '';
         }
     };
+
+    // --- Order detail --------------------------------------------------------------
+    // Replaces the table rather than opening over it. An order carries more than fits a
+    // dialog on a laptop, and the back office reads it alongside a phone call rather than
+    // scrolling a modal.
+    if (detailSummary) {
+        const o = detailOrder;
+        const addr = o?.shipping_address;
+        const items: any[] = o?.items || [];
+
+        // Every part is stored on the order row, so nothing is re-derived here; a missing
+        // value reads as zero rather than being guessed at.
+        const num = (v: any) => Number(v) || 0;
+        const goods = num(o?.total_amount);
+        const vat = num(o?.vat_amount);
+        const delivery = num(o?.delivery_charge);
+        const settlement = num(o?.settlement_fee);
+        const coupon = num(o?.discount_amount);
+        const pointsOff = num(o?.points_discount);
+        const total = num(o?.final_amount);
+
+        const addrLine = addr
+            ? [addr.address_line1, addr.address_line2, addr.city, addr.state, addr.zip_code, addr.country]
+                .filter(Boolean).join(', ')
+            : null;
+
+        return (
+            <div className={styles.adminOrders}>
+                <div className={styles.detailTopBar}>
+                    <button type="button" className={styles.backBtn} onClick={closeDetail}>
+                        <ArrowLeft size={16} /> Back to Orders
+                    </button>
+                    <div className={styles.detailTitle}>
+                        <h1>Order #{detailSummary.id}</h1>
+                        <span className={styles.detailDate}>
+                            {new Date(detailSummary.created_at).toLocaleString('en-GB', {
+                                day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                            })}
+                        </span>
+                    </div>
+                    <div className={styles.detailBadges}>
+                        <span className={`${styles.statusBadge} ${getStatusStyle(detailSummary.status)}`}>
+                            {String(detailSummary.status).toUpperCase()}
+                        </span>
+                        <span className={`${styles.statusBadge} ${detailSummary.payment_status === 'paid' ? styles.statusDelivered
+                            : detailSummary.payment_status === 'refunded' ? styles.statusCancelled : ''}`}>
+                            {String(detailSummary.payment_status || 'pending').toUpperCase()}
+                        </span>
+                        <span className={styles.methodBadge}>{formatPaymentMethod(detailSummary.payment_method)}</span>
+                    </div>
+                </div>
+
+                {detailLoading && !o ? (
+                    <AdminLoader message="Loading order..." />
+                ) : !o ? (
+                    <div className={styles.detailEmpty}>That order could not be loaded.</div>
+                ) : (
+                    <div className={styles.detailGrid}>
+                        <section className={styles.detailCard}>
+                            <h2 className={styles.detailCardTitle}>
+                                <Package size={16} /> Items ({items.length})
+                            </h2>
+                            {items.length === 0 ? (
+                                <p className={styles.detailEmpty}>No line items recorded for this order.</p>
+                            ) : (
+                                <div className={styles.itemList}>
+                                    {items.map((it, i) => (
+                                        <div key={i} className={styles.itemRow}>
+                                            <div className={styles.itemThumb}>
+                                                {it.image ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img src={resolveUrl(it.image)} alt={it.name || 'Product'} />
+                                                ) : (
+                                                    <Package size={18} />
+                                                )}
+                                            </div>
+                                            <div className={styles.itemInfo}>
+                                                <span className={styles.itemName}>{it.name || 'Product ' + it.product_id}</span>
+                                                <span className={styles.itemMeta}>
+                                                    {it.brand_name ? it.brand_name + ' · ' : ''}
+                                                    {it.model_number ? 'Model ' + it.model_number : 'ID ' + it.product_id}
+                                                </span>
+                                                {it.variant_options && (
+                                                    <span className={styles.itemMeta}>{it.variant_options}</span>
+                                                )}
+                                                {Number(it.is_free_gift) === 1 && (
+                                                    <span className={styles.freeGiftTag}>Free gift</span>
+                                                )}
+                                            </div>
+                                            <div className={styles.itemQty}>&times;{it.quantity}</div>
+                                            <div className={styles.itemPrice}>
+                                                <CurrencyPrice amount={num(it.price_at_purchase) * num(it.quantity)} />
+                                                <span className={styles.itemUnit}>
+                                                    <CurrencyPrice amount={num(it.price_at_purchase)} /> each
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+
+                        <section className={styles.detailCard}>
+                            <h2 className={styles.detailCardTitle}><Receipt size={16} /> Payment</h2>
+                            <div className={styles.moneyRows}>
+                                <div><span>Subtotal (excl. VAT)</span><span><CurrencyPrice amount={goods} /></span></div>
+                                {coupon > 0 && (
+                                    <div><span>Coupon discount</span><span className={styles.moneyMinus}>-<CurrencyPrice amount={coupon} /></span></div>
+                                )}
+                                {pointsOff > 0 && (
+                                    <div><span>Points redeemed ({o.points_used})</span><span className={styles.moneyMinus}>-<CurrencyPrice amount={pointsOff} /></span></div>
+                                )}
+                                <div><span>VAT (5%)</span><span><CurrencyPrice amount={vat} /></span></div>
+                                <div><span>Delivery</span><span>{delivery > 0 ? <CurrencyPrice amount={delivery} /> : 'Free'}</span></div>
+                                {/* Tabby and Tamara only; zero on every other method. */}
+                                {settlement > 0 && (
+                                    <div><span>Settlement fee</span><span><CurrencyPrice amount={settlement} /></span></div>
+                                )}
+                                <div className={styles.moneyTotal}><span>Total</span><span><CurrencyPrice amount={total} /></span></div>
+                            </div>
+                            <div className={styles.moneyMeta}>
+                                <span><CreditCard size={13} /> {formatPaymentMethod(detailSummary.payment_method)}</span>
+                                {num(o.points_earned) > 0 && <span>{o.points_earned} points earned</span>}
+                                {o.invoice?.invoice_number && <span><FileText size={13} /> Invoice {o.invoice.invoice_number}</span>}
+                            </div>
+                        </section>
+
+                        <section className={styles.detailCard}>
+                            <h2 className={styles.detailCardTitle}><UserIcon size={16} /> Customer</h2>
+                            <div className={styles.detailLines}>
+                                <div><UserIcon size={14} /><span>{detailSummary.user_name || '—'}</span></div>
+                                {detailSummary.user_email && (
+                                    <div><Mail size={14} /><span>{detailSummary.user_email}</span></div>
+                                )}
+                                {(o.receiver_name || o.receiver_phone) && (
+                                    <div className={styles.receiverBlock}>
+                                        <span className={styles.detailSubLabel}>Receiving this delivery</span>
+                                        <div><UserIcon size={14} /><span>{o.receiver_name || '—'}</span></div>
+                                        {o.receiver_phone && (
+                                            <div><Phone size={14} /><span dir="ltr">{o.receiver_phone}</span></div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+
+                        <section className={styles.detailCard}>
+                            <h2 className={styles.detailCardTitle}><MapPin size={16} /> Shipping address</h2>
+                            {addrLine ? (
+                                <div className={styles.detailLines}>
+                                    {(addr.first_name || addr.last_name) && (
+                                        <div><UserIcon size={14} /><span>{[addr.first_name, addr.last_name].filter(Boolean).join(' ')}</span></div>
+                                    )}
+                                    {addr.company_name && <div><Package size={14} /><span>{addr.company_name}</span></div>}
+                                    <div><MapPin size={14} /><span>{addrLine}</span></div>
+                                    {addr.phone && <div><Phone size={14} /><span dir="ltr">{addr.phone}</span></div>}
+                                    {(addr.address_label || addr.address_type) && (
+                                        <span className={styles.addrTag}>{addr.address_label?.trim() || addr.address_type}</span>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className={styles.detailEmpty}>No shipping address stored on this order.</p>
+                            )}
+                        </section>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className={styles.adminOrders}>
@@ -658,6 +862,15 @@ const AdminOrders = () => {
                                                 ))}
                                             </div>
                                         </div>
+                                        <button
+                                            type="button"
+                                            className={styles.viewBtn}
+                                            onClick={() => openDetail(order)}
+                                            title="View this order"
+                                        >
+                                            <Eye size={14} /> View
+                                        </button>
+
                                         {/* Only offered once money has actually been taken. */}
                                         {(order.payment_status === 'paid' || order.payment_status === 'refunded') && (
                                             <button
