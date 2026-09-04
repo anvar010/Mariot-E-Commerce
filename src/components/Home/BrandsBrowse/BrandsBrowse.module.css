@@ -157,8 +157,9 @@
     width: 100%;
     aspect-ratio: 2 / 1;
     background: linear-gradient(150deg, rgba(255, 255, 255, 0.9) 0%, rgba(246, 248, 251, 0.82) 100%);
-    backdrop-filter: blur(12px) saturate(160%);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    /* No backdrop-filter. The background above is 90%/82% opaque, so the blur behind it
+       was barely perceptible -- and 101 brand logos render on the homepage, each one its
+       own backdrop layer re-sampling what is behind it on every scroll frame. */
     border: 1px solid rgba(148, 163, 184, 0.4);
     border-radius: 16px;
     display: flex;

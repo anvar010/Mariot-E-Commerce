@@ -114,3 +114,16 @@ ul {
     font-size: 16px !important;
   }
 }
+
+/* Offscreen homepage sections cost nothing to scroll past.
+   The homepage builds ~5,800 DOM nodes, and every scroll frame the browser restyles and
+   repaints all of them whether or not they are on screen. content-visibility lets it skip
+   layout and paint for a section that is out of view entirely.
+   contain-intrinsic-size is not optional here: without it a skipped section collapses to
+   zero height, the page shortens, and the scrollbar jumps under the reader's thumb. "auto"
+   makes the browser remember each section's real height once it has been rendered, so the
+   400px is only ever a first guess before that. */
+.revealSection {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 400px;
+}

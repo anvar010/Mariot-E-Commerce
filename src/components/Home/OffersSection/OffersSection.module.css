@@ -102,7 +102,7 @@
     text-transform: uppercase;
     border-radius: 20px;
     z-index: 5;
-    backdrop-filter: blur(4px);
+    /* Sits on a 90% opaque background; the blur was not visible. */
 }
 
 /* Content overlaid at the bottom of the card */

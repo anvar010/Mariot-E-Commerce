@@ -21,7 +21,11 @@ const Reveal: React.FC<RevealProps> = ({ children, width = "100%", delay = 0.25 
     }, [isInView, mainControls]);
 
     return (
-        <div ref={ref} style={{ position: "relative", width, overflow: "hidden" }}>
+        // revealSection lets the browser skip layout and paint for this section while it is
+        // offscreen. Every homepage section is wrapped in one of these, so it is the natural
+        // boundary for that. The ref still sees the intersection either way -- containment
+        // skips the contents, not the element being observed.
+        <div ref={ref} className="revealSection" style={{ position: "relative", width, overflow: "hidden" }}>
             <motion.div
                 variants={{
                     hidden: { opacity: 0, y: 75 },

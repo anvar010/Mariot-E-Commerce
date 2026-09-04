@@ -106,7 +106,7 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    backdrop-filter: blur(4px);
+    /* Sits on a 90% opaque background; the blur was not visible. */
 }
 
 .content {

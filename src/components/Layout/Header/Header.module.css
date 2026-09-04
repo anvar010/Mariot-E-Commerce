@@ -23,15 +23,18 @@
     }
 }
 
+/* No backdrop-filter here any more. The sticky header sets an opaque white background,
+   so nothing behind it was ever visible through the blur -- and animating backdrop-filter
+   is the most expensive form of it, re-sampling the whole area behind a fixed element on
+   every frame of the animation and then holding that layer for as long as the header is
+   stuck. The mobile breakpoint already switched it off for the same reason. */
 @keyframes headerReveal {
     from {
         transform: translateY(-100%);
-        backdrop-filter: blur(0px);
     }
 
     to {
         transform: translateY(0);
-        backdrop-filter: blur(15px);
     }
 }
 
