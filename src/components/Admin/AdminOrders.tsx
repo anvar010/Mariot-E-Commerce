@@ -537,10 +537,19 @@ const AdminOrders = () => {
         const pointsOff = num(o?.points_discount);
         const total = num(o?.final_amount);
 
-        const addrLine = addr
+        // Addresses repeat themselves constantly: someone types "Dubai" as the street, the
+        // city is Dubai and the emirate is Dubai, and the country lands twice because the
+        // old form defaulted state to the country name. Joining them raw produced
+        // "Dubai, Dubai, Dubai, United Arab Emirates, 00000, United Arab Emirates".
+        // Repeats are dropped case-insensitively, keeping the first of each.
+        const addrParts = addr
             ? [addr.address_line1, addr.address_line2, addr.city, addr.state, addr.zip_code, addr.country]
-                .filter(Boolean).join(', ')
-            : null;
+                .map((v: any) => String(v ?? '').trim())
+                .filter(Boolean)
+                .filter((v: string, i: number, all: string[]) =>
+                    all.findIndex(x => x.toLowerCase() === v.toLowerCase()) === i)
+            : [];
+        const addrLine = addrParts.length ? addrParts.join(', ') : null;
 
         return (
             <div className={styles.adminOrders}>
@@ -618,6 +627,11 @@ const AdminOrders = () => {
                             )}
                         </section>
 
+                        {/* The three short cards stack in their own column. Laid out as four
+                            equal grid cells, a one-line order left a hole beside the items and
+                            another under the customer, because no two of these are ever the
+                            same height. */}
+                        <div className={styles.detailSide}>
                         <section className={styles.detailCard}>
                             <h2 className={styles.detailCardTitle}><Receipt size={16} /> Payment</h2>
                             <div className={styles.moneyRows}>
@@ -653,9 +667,13 @@ const AdminOrders = () => {
                                 {(o.receiver_name || o.receiver_phone) && (
                                     <div className={styles.receiverBlock}>
                                         <span className={styles.detailSubLabel}>Receiving this delivery</span>
-                                        <div><UserIcon size={14} /><span>{o.receiver_name || '—'}</span></div>
+                                        {/* Only the parts that exist. A row reading "—" looks like the
+                                            view failed rather than like an absent name. */}
+                                        {o.receiver_name && (
+                                            <div className={styles.detailLine}><UserIcon size={14} /><span>{o.receiver_name}</span></div>
+                                        )}
                                         {o.receiver_phone && (
-                                            <div><Phone size={14} /><span dir="ltr">{o.receiver_phone}</span></div>
+                                            <div className={styles.detailLine}><Phone size={14} /><span dir="ltr">{o.receiver_phone}</span></div>
                                         )}
                                     </div>
                                 )}
@@ -680,6 +698,7 @@ const AdminOrders = () => {
                                 <p className={styles.detailEmpty}>No shipping address stored on this order.</p>
                             )}
                         </section>
+                        </div>
                     </div>
                 )}
             </div>

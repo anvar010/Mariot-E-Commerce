@@ -872,11 +872,19 @@
 
 .detailGrid {
     display: grid;
-    /* Items get the wider column: it is the part with pictures and the part the
-       office is usually checking. */
-    grid-template-columns: 1.6fr 1fr;
+    /* Items on the left, the three short cards stacked on the right. Four equal cells
+       left holes wherever two neighbours had different heights, which on a one-line
+       order is most of the page. */
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
     gap: 18px;
     align-items: start;
+}
+
+.detailSide {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
 }
 
 .detailCard {
@@ -1064,7 +1072,11 @@
     color: #334155;
 }
 
-.detailLines > div {
+/* Named rather than matched as a direct child. The receiver rows sit one level deeper,
+   inside .receiverBlock, so "> div" never reached them: they lost the flex row and the
+   gap, and their icon ended up jammed against the text while every row above lined up. */
+.detailLines > div,
+.detailLine {
     display: flex;
     align-items: flex-start;
     gap: 9px;
@@ -1078,7 +1090,7 @@
 }
 
 .receiverBlock {
-    display: flex !important;
+    display: flex;
     flex-direction: column;
     gap: 8px;
     margin-top: 4px;
@@ -1107,7 +1119,7 @@
 
 @media (max-width: 900px) {
     .detailGrid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .detailBadges {
