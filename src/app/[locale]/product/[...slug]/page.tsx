@@ -5,6 +5,7 @@ import Footer from '@/components/Layout/Footer/Footer';
 import ProductDetail from '@/components/Product/ProductDetail/ProductDetail';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import { localeAlternates, ogLocale } from '@/lib/seo';
+import { notFound } from 'next/navigation';
 import { fetchJsonWithRetry } from '@/utils/readJson';
 
 const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://mariot-backend.onrender.com/api/v1';
@@ -147,6 +148,8 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
     const SITE_URL = 'https://mariotstore.com';
 
     let jsonLd = null;
+    // Distinguished from "the API did not answer" on purpose -- see below.
+    let productMissing = false;
 
     try {
         const data = await fetchJsonWithRetry(
@@ -154,6 +157,13 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
             { next: { revalidate: 60 }, signal: AbortSignal.timeout(8000) },
             `product JSON-LD "${slug}"`,
         );
+
+        // The API answered and said there is no such product. Anything else here -- a
+        // timeout, a 500, the API being down -- must NOT reach this branch: a temporary
+        // outage would otherwise 404 the entire live catalogue, and Google would drop it.
+        if (data && data.success === false) {
+            productMissing = true;
+        }
 
         if (data.success && data.data) {
             const product = data.data;
@@ -213,6 +223,14 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
         }
     } catch (e) {
         console.error("Failed to generate JSON-LD", e);
+    }
+
+    // A slug with no product behind it used to render the page shell anyway and answer 200:
+    // a title made from the slug, no price, no Product markup. Google indexes those as real
+    // pages, and Merchant Center disapproves any feed item that lands on one. An honest 404
+    // says the page is gone, which is what both of them need to hear.
+    if (productMissing) {
+        notFound();
     }
 
     return (
