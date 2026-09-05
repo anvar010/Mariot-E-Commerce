@@ -92,7 +92,14 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
             images: [OG_IMAGE.url],
         },
         verification: {
-            google: 'L9HUDmwW2qLibo7hQqA6JUzRXY7RO8u65fXgiaGcE-I',
+            // Two tokens, two Google accounts. A verification tag only proves ownership for
+            // the account that issued it, so Search Console and Merchant Center each need
+            // their own; Google reads every tag on the page and they do not interfere.
+            // The first is Search Console, the second Merchant Center.
+            google: [
+                'L9HUDmwW2qLibo7hQqA6JUzRXY7RO8u65fXgiaGcE-I',
+                '5sQKLpdh4YW2kLqW6cbRW8EcriIX_hd8fUFh-fxld00',
+            ],
         },
     };
 }
