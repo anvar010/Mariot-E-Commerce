@@ -83,18 +83,22 @@ export const COUNTRIES: Country[] = [
                     { value: 'Al Wathba', ar: 'الوثبة' },
                     { value: 'Al Shamkha', ar: 'الشامخة' },
                     { value: 'Al Rahba', ar: 'الرحبة' },
-                    // Al Dhafra, the emirate's western region. Named as its own entry as well
-                    // as by town: it starts around 150km from the capital, so an order out
-                    // here is a different delivery proposition from one to Musaffah, and the
-                    // warehouse needs to see that before it books a courier.
-                    { value: 'Al Dhafra', ar: 'الظفرة' },
-                    { value: 'Madinat Zayed', ar: 'مدينة زايد' },
+                ],
+            },
+            {
+                // Al Dhafra is one of Abu Dhabi's three regions, not a town in it, so it
+                // belongs at this level rather than in the list above. It is also the one
+                // that matters most for delivery: it begins around 150km from the capital
+                // and reaches an island, so an order here is a different proposition from
+                // one to Musaffah, and picking the region says that before the town does.
+                value: 'Al Dhafra Region', ar: 'منطقة الظفرة', areas: [
+                    { value: 'Zayed City', ar: 'مدينة زايد' },
                     { value: 'Al Ruwais', ar: 'الرويس' },
+                    { value: 'Al Mirfa', ar: 'المرفأ' },
                     { value: 'Ghayathi', ar: 'غياثي' },
+                    { value: 'Al Sila', ar: 'السلع' },
                     { value: 'Liwa', ar: 'ليوا' },
-                    { value: 'Mirfa', ar: 'المرفأ' },
-                    { value: 'Sila', ar: 'السلع' },
-                    { value: 'Delma Island', ar: 'جزيرة دلما' },
+                    { value: 'Dalma Island', ar: 'جزيرة دلما' },
                 ],
             },
             {
