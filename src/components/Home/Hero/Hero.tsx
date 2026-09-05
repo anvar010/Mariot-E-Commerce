@@ -186,11 +186,39 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
         return () => cancelAnimationFrame(id);
     }, [resetting]);
 
+    // Safety net for a position that has run past the clones.
+    //
+    // handleTransitionEnd is the only thing that folds position back into range, and it
+    // waits on a CSS transitionend. A hidden tab keeps the autoplay timer running but does
+    // not run transitions, so the event never arrives and nothing resets. It also tests for
+    // exactly count + 1, so a single miss puts position permanently out of reach of it --
+    // the track then translates far off screen and the hero renders blank until a reload,
+    // which is what someone sees on returning to a tab left open for an hour.
+    //
+    // Folding on the value itself needs no event, so it recovers however it got out.
     useEffect(() => {
-        if (isPaused || count <= 1 || drag) return;
+        if (count <= 1) return;
+        if (position >= 0 && position <= count + 1) return;
+        setResetting(true);
+        setPosition((((position - 1) % count) + count) % count + 1);
+    }, [position, count]);
+
+    // A background tab still fires timers but paints nothing, so advancing there only
+    // stacks up slides nobody sees -- and it is what let position run away in the first
+    // place. Stopping while hidden is also simply less work.
+    const [tabHidden, setTabHidden] = useState(false);
+    useEffect(() => {
+        const onVisibility = () => setTabHidden(document.hidden);
+        onVisibility();
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => document.removeEventListener('visibilitychange', onVisibility);
+    }, []);
+
+    useEffect(() => {
+        if (isPaused || tabHidden || count <= 1 || drag) return;
         const timer = setInterval(() => setPosition(p => p + 1), AUTOPLAY_MS);
         return () => clearInterval(timer);
-    }, [isPaused, count, drag]);
+    }, [isPaused, tabHidden, count, drag]);
 
     // ── drag / swipe ────────────────────────────────────────────────────────
     const onPointerDown = (e: React.PointerEvent) => {
