@@ -203,7 +203,20 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                     "price": product.offer_price ? Number(product.offer_price) : Number(product.price || 0),
                     // Keep the offer "valid" for a year out so Google doesn't flag a stale price.
                     "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                    "availability": product.stock_quantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                    // Same rule the shop itself uses (see ProductDetail): a product with
+                    // track_inventory off is always available, and stock_quantity on it is
+                    // meaningless. Reading the quantity alone declared 1,272 of 1,417
+                    // products unavailable when only 4 genuinely were -- and Google drops
+                    // an out-of-stock item from Shopping, so nine tenths of the catalogue
+                    // was being withheld from it. Variant products are always tracked,
+                    // because the backend forces track_inventory on for variant lines.
+                    "availability": (() => {
+                        const hasVariants = Number(product.has_variants) === 1
+                            || (Array.isArray(product.variants) && product.variants.length > 0);
+                        const tracks = hasVariants || Number(product.track_inventory) === 1;
+                        const available = !tracks || Number(product.stock_quantity) > 0;
+                        return available ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
+                    })(),
                     "itemCondition": "https://schema.org/NewCondition"
                 }
             };
