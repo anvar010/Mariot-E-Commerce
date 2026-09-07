@@ -222,7 +222,27 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                     "@type": "Offer",
                     "url": `${SITE_URL}/${params.locale}/product/${encodeURIComponent(slug)}`,
                     "priceCurrency": "AED",
-                    "price": product.offer_price ? Number(product.offer_price) : Number(product.price || 0),
+                    // A variant product carries nothing useful on its own row: price and
+                    // stock live on the variants, and the parent reads 0.00 / 0. Publishing
+                    // that put "price 0, out of stock" on 22 products whose feed correctly
+                    // says 7,500 and in stock -- and Google compares the two.
+                    //
+                    // The lowest active variant price is what the shop shows and what the
+                    // list endpoint reports, so it is what belongs here.
+                    "price": (() => {
+                        const variants = Array.isArray(product.variants)
+                            ? product.variants.filter((v: any) => Number(v.is_active) === 1)
+                            : [];
+                        if (variants.length) {
+                            const prices = variants
+                                .map((v: any) => Number(v.offer_price) > 0 ? Number(v.offer_price) : Number(v.price))
+                                .filter((n: number) => n > 0);
+                            if (prices.length) return Math.min(...prices);
+                        }
+                        return Number(product.offer_price) > 0
+                            ? Number(product.offer_price)
+                            : Number(product.price || 0);
+                    })(),
                     // Keep the offer "valid" for a year out so Google doesn't flag a stale price.
                     "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                     // Same rule the shop itself uses (see ProductDetail): a product with
@@ -233,10 +253,20 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                     // was being withheld from it. Variant products are always tracked,
                     // because the backend forces track_inventory on for variant lines.
                     "availability": (() => {
-                        const hasVariants = Number(product.has_variants) === 1
-                            || (Array.isArray(product.variants) && product.variants.length > 0);
-                        const tracks = hasVariants || Number(product.track_inventory) === 1;
-                        const available = !tracks || Number(product.stock_quantity) > 0;
+                        const variants = Array.isArray(product.variants)
+                            ? product.variants.filter((v: any) => Number(v.is_active) === 1)
+                            : [];
+                        // Variant stock is on the variants; the parent row's own count is 0
+                        // for all of them and means nothing.
+                        if (Number(product.has_variants) === 1 || variants.length) {
+                            const anyInStock = variants.some((v: any) => Number(v.stock_quantity) > 0);
+                            return anyInStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
+                        }
+                        // Same rule the shop uses: only a product that tracks inventory can
+                        // run out. Most of the catalogue is "always in stock", where
+                        // stock_quantity is meaningless.
+                        const available = Number(product.track_inventory) !== 1
+                            || Number(product.stock_quantity) > 0;
                         return available ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
                     })(),
                     "itemCondition": "https://schema.org/NewCondition"
