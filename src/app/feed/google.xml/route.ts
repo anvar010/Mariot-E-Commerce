@@ -17,9 +17,18 @@ import { SITE_URL } from '@/lib/seo';
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.mariotstore.com/api/v1';
 const MEDIA_BASE = API_BASE.replace(/\/api\/v1\/?$/, '');
 
-// Refetched hourly. Merchant Center only pulls once a day, so this is about keeping the
-// cached copy from drifting far from the catalogue, not about matching Google's schedule.
-export const revalidate = 3600;
+// Built on request, not at build time.
+//
+// As a static route this fetched the whole catalogue -- nearly 8MB of JSON -- during every
+// deployment, alongside the sitemap doing the same and 2,834 product pages being generated.
+// Next logs "items over 2MB can not be cached" for it, so the work was repeated and thrown
+// away each time, and on a build container with less memory than a laptop that is enough to
+// get the process killed: a build that dies partway with no log output at all.
+//
+// Merchant Center fetches this once a day, so there was never anything to gain from having
+// it ready in advance. The CDN caches the response for an hour, which is what actually
+// spares the origin.
+export const dynamic = 'force-dynamic';
 
 /** XML text, with the five characters that would otherwise break the document escaped. */
 const esc = (v: unknown): string =>
@@ -70,7 +79,7 @@ export async function GET() {
     let products: any[] = [];
     try {
         const res = await fetch(`${API_BASE}/products?limit=5000`, {
-            next: { revalidate },
+            cache: 'no-store',
             signal: AbortSignal.timeout(25000),
         });
         const data = await res.json();
