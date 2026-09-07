@@ -152,18 +152,25 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
     let productMissing = false;
 
     try {
-        const data = await fetchJsonWithRetry(
+        // Fetched directly rather than through fetchJsonWithRetry, because that helper
+        // returns {} for any non-2xx response -- the body never reaches the caller. Asking
+        // it whether the product was missing could therefore never be true, which is why an
+        // earlier version of this check compiled, deployed and did nothing at all.
+        //
+        // The status is what carries the answer, so the status is what gets read.
+        const res = await fetch(
             `${API_BASE_URL_SERVER}/products/${encodeURIComponent(slug)}`,
             { next: { revalidate: 60 }, signal: AbortSignal.timeout(8000) },
-            `product JSON-LD "${slug}"`,
         );
 
-        // The API answered and said there is no such product. Anything else here -- a
-        // timeout, a 500, the API being down -- must NOT reach this branch: a temporary
-        // outage would otherwise 404 the entire live catalogue, and Google would drop it.
-        if (data && data.success === false) {
+        // Only a 404 means the product is gone. A 500, a timeout or the API being
+        // unreachable leaves this false on purpose: treating an outage as "gone" would
+        // 404 the whole live catalogue at once and Google would drop it.
+        if (res.status === 404) {
             productMissing = true;
         }
+
+        const data = res.ok ? await res.json() : {};
 
         if (data.success && data.data) {
             const product = data.data;
