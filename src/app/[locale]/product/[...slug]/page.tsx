@@ -51,14 +51,29 @@ export async function generateMetadata(props: { params: Promise<{ slug: string |
     };
 
     try {
-        // Retries once when the response isn't even JSON — the CDN in front of the API
-        // intermittently answers a render with an HTML 403. Falls through to the
-        // slug-derived metadata below rather than throwing if it fails twice.
-        const data = await fetchJsonWithRetry(
+        // Fetched directly, and here rather than in the page component, for two reasons.
+        //
+        // fetchJsonWithRetry returns {} for any non-2xx response, so the body never reaches
+        // the caller and a "was it missing?" test on it can never be true.
+        //
+        // And this route streams -- there is a loading.tsx above it -- so Next sends the
+        // 200 headers before the page component has finished. notFound() called down there
+        // renders the 404 page but cannot change a status that has already gone out, which
+        // is exactly what a soft 404 is. generateMetadata runs before any of that starts,
+        // so it is the last place a status can still be decided.
+        const res = await fetch(
             `${API_BASE_URL_SERVER}/products/${encodeURIComponent(id)}`,
-            { next: { revalidate: 300 }, signal: AbortSignal.timeout(8000) },
-            `product metadata "${id}"`,
+            { next: { revalidate: 300 } },
         );
+
+        // Only a 404. A 500, a timeout or an unreachable API must fall through to the
+        // slug-derived metadata below: treating an outage as "gone" would 404 the entire
+        // live catalogue at once and Google would drop it.
+        if (res.status === 404) {
+            notFound();
+        }
+
+        const data = res.ok ? await res.json() : {};
 
         if (data.success && data.data) {
             const product = data.data;
@@ -245,10 +260,9 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
         console.error("Failed to generate JSON-LD", e);
     }
 
-    // A slug with no product behind it used to render the page shell anyway and answer 200:
-    // a title made from the slug, no price, no Product markup. Google indexes those as real
-    // pages, and Merchant Center disapproves any feed item that lands on one. An honest 404
-    // says the page is gone, which is what both of them need to hear.
+    // The missing-product check lives in generateMetadata, which runs before this route
+    // starts streaming. Calling notFound() from here renders the 404 page but leaves the
+    // status at the 200 already sent, which is the soft 404 we were trying to remove.
     if (productMissing) {
         notFound();
     }
