@@ -2,7 +2,15 @@ const db = require('../config/db');
 
 class Address {
     static async getByUser(userId) {
-        const [rows] = await db.execute('SELECT * FROM addresses WHERE user_id = ?', [userId]);
+        // Explicitly ordered. Without ORDER BY, MySQL returns these rows in whatever order
+        // suits it, and that order changes between calls -- so checkout, which falls back to
+        // the first row when no address is flagged default, would pre-select a different
+        // address on different visits. Default first, then newest, which is also the order a
+        // shopper expects to see them listed in.
+        const [rows] = await db.execute(
+            'SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC, id DESC',
+            [userId]
+        );
         return rows;
     }
 
@@ -33,6 +41,40 @@ class Address {
             [userId, address_type, address_label, first_name || null, last_name || null, company_name || null, email || null, address_line1, address_line2 || null, city, state || null, zip_code, country, phone, is_default]
         );
         return result.insertId;
+    }
+
+    /**
+     * Make one address the default, without touching anything else about it.
+     *
+     * Separate from update() because that expects a whole address body: setting a default
+     * from a list -- where only the id is known -- would otherwise mean sending every field
+     * back, and any field missed would be overwritten with null.
+     *
+     * Ownership is enforced in the second statement's WHERE, and the clear-then-set order
+     * means a failed id leaves the user with no default rather than two.
+     */
+    static async setDefault(userId, addressId) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+            await connection.execute('UPDATE addresses SET is_default = 0 WHERE user_id = ?', [userId]);
+            const [res] = await connection.execute(
+                'UPDATE addresses SET is_default = 1 WHERE id = ? AND user_id = ?',
+                [addressId, userId]
+            );
+            if (res.affectedRows === 0) {
+                // Not theirs, or gone. Roll back rather than leave them with none.
+                await connection.rollback();
+                return false;
+            }
+            await connection.commit();
+            return true;
+        } catch (err) {
+            await connection.rollback();
+            throw err;
+        } finally {
+            connection.release();
+        }
     }
 
     static async delete(userId, addressId) {

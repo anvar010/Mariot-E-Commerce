@@ -37,6 +37,18 @@ exports.getAddresses = async (req, res, next) => {
     }
 };
 
+exports.setDefaultAddress = async (req, res, next) => {
+    try {
+        const ok = await Address.setDefault(req.user.id, req.params.id);
+        if (!ok) {
+            return res.status(404).json({ success: false, message: 'Address not found' });
+        }
+        res.json({ success: true, data: await Address.getByUser(req.user.id) });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.addAddress = async (req, res, next) => {
     try {
         const addressId = await Address.create(req.user.id, req.body);

@@ -263,6 +263,103 @@ const initDb = async () => {
             console.error('[DB] Error creating order_refunds table:', err.message);
         }
 
+        // 4c. Shipping quote requests.
+        //
+        // Outside the UAE the shipping cost cannot be worked out automatically, so a shopper
+        // there asks for a price instead of placing an order. Nothing is charged and no order
+        // exists until they accept a figure and pay.
+        //
+        // The cart is copied onto the request rather than referenced. A quote is an offer:
+        // it has to still mean what it said when the shopper comes back to it days later,
+        // whatever has happened to their cart or to the catalogue in between.
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS shipping_quote_requests (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    reference VARCHAR(32) NOT NULL UNIQUE,
+                    user_id INT NULL,
+                    status ENUM('pending','quoted','accepted','declined','expired','ordered')
+                        NOT NULL DEFAULT 'pending',
+
+                    country VARCHAR(120) NOT NULL,
+                    state VARCHAR(120) NULL,
+                    city VARCHAR(120) NULL,
+                    address_line1 VARCHAR(255) NULL,
+                    address_line2 VARCHAR(255) NULL,
+                    zip_code VARCHAR(32) NULL,
+                    contact_name VARCHAR(160) NULL,
+                    contact_phone VARCHAR(50) NULL,
+                    contact_email VARCHAR(190) NULL,
+                    customer_note TEXT NULL,
+
+                    -- Locked when the request is made. Only delivery is decided later.
+                    subtotal DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    coupon_id INT NULL,
+                    points_used INT NOT NULL DEFAULT 0,
+                    points_discount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    vat_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+
+                    delivery_charge DECIMAL(10,2) NULL,
+                    quoted_total DECIMAL(10,2) NULL,
+                    admin_note TEXT NULL,
+                    quoted_at DATETIME NULL,
+                    quoted_by INT NULL,
+                    responded_at DATETIME NULL,
+                    -- A quote holds its prices, so it cannot be left open indefinitely.
+                    expires_at DATETIME NULL,
+
+                    order_id INT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+                    INDEX idx_sqr_user (user_id),
+                    INDEX idx_sqr_status (status),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+                    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+                )
+            `);
+
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS shipping_quote_items (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    quote_id INT NOT NULL,
+                    -- Nullable and named, for the same reason as order_items: the quote has
+                    -- to still read correctly if the product is deleted meanwhile.
+                    product_id INT NULL,
+                    product_name VARCHAR(255) NULL,
+                    product_model VARCHAR(120) NULL,
+                    variant_id INT NULL,
+                    quantity INT NOT NULL,
+                    price_at_request DECIMAL(10,2) NOT NULL,
+                    custom_dimensions TEXT NULL,
+                    custom_label VARCHAR(255) NULL,
+                    is_free_gift TINYINT(1) NOT NULL DEFAULT 0,
+                    bundle_parent_product_id INT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_sqi_quote (quote_id),
+                    FOREIGN KEY (quote_id) REFERENCES shipping_quote_requests(id) ON DELETE CASCADE,
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
+                )
+            `);
+            // The language the shopper was browsing in when they asked. Their quote email is
+            // sent in it, which is only knowable at request time -- by the time an admin
+            // prices it there is no shopper in the request to ask.
+            const [localeCol] = await db.query(
+                "SHOW COLUMNS FROM shipping_quote_requests LIKE 'locale'"
+            );
+            if (localeCol.length === 0) {
+                await db.query(
+                    "ALTER TABLE shipping_quote_requests ADD COLUMN locale VARCHAR(5) NOT NULL DEFAULT 'en' AFTER status"
+                );
+                console.log('[DB] shipping_quote_requests.locale added');
+            }
+
+            console.log('[DB] shipping_quote tables verified');
+        } catch (err) {
+            console.error('[DB] Error creating shipping_quote tables:', err.message);
+        }
+
         // 5. Products missing columns migration
         try {
             const [columns] = await db.query("SHOW COLUMNS FROM products");

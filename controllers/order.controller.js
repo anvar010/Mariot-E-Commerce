@@ -10,6 +10,7 @@ const tamaraService = require('../services/tamara.service');
 const refundService = require('../services/refund.service');
 const { settlementFeeFor } = require('../config/settlementFee');
 const { siteUrl } = require('../config/siteUrl');
+const ShippingQuote = require('../models/shippingQuote.model');
 
 // Initialize Stripe with secret key
 const { ensureStripeCustomer, ownedPaymentMethod } = require('./paymentMethod.controller');
@@ -54,9 +55,53 @@ exports.createOrder = async (req, res, next) => {
         //     });
         // }
 
-        const items = await Cart.getCartItems(req.user.id);
+        // An accepted shipping quote pays from its own snapshot, not from the cart. The
+        // quote is an offer the shop already made: the shopper agreed to those lines at
+        // those prices, and their cart may have moved on since.
+        const quoteId = req.body.shipping_quote_id ? Number(req.body.shipping_quote_id) : null;
+        let sourceQuote = null;
+        if (quoteId) {
+            sourceQuote = await ShippingQuote.findById(quoteId);
+            if (!sourceQuote) {
+                return res.status(404).json({ success: false, message: 'Shipping quote not found' });
+            }
+            if (sourceQuote.user_id !== req.user.id) {
+                return res.status(403).json({ success: false, message: 'Not authorized to pay this quote' });
+            }
+            if (sourceQuote.status !== 'accepted') {
+                return res.status(422).json({
+                    success: false,
+                    message: sourceQuote.status === 'ordered'
+                        ? 'This quote has already been paid.'
+                        : 'Accept the quote before paying for it.',
+                });
+            }
+            if (ShippingQuote.isExpired(sourceQuote)) {
+                return res.status(422).json({ success: false, message: 'This quote has expired. Please request a new one.' });
+            }
+        }
+
+        const items = sourceQuote
+            // Shaped like cart lines so everything downstream is unchanged. delivery_charge
+            // is zero per line because the quote prices delivery as one agreed figure.
+            ? sourceQuote.items.map(i => ({
+                product_id: i.product_id,
+                name: i.name,
+                quantity: i.quantity,
+                price: Number(i.price_at_request),
+                offer_price: 0,
+                delivery_charge: 0,
+                is_free_gift: i.is_free_gift,
+                variant_id: i.variant_id,
+                custom_dimensions: i.custom_dimensions,
+                custom_label: i.custom_label,
+                bundle_parent_product_id: i.bundle_parent_product_id,
+                track_inventory: 0,
+            }))
+            : await Cart.getCartItems(req.user.id);
+
         if (items.length === 0) {
-            return res.status(400).json({ success: false, message: 'Cart is empty' });
+            return res.status(400).json({ success: false, message: sourceQuote ? 'This quote has no items' : 'Cart is empty' });
         }
 
         // Final Stock Validation
@@ -191,7 +236,14 @@ exports.createOrder = async (req, res, next) => {
         // BNPL providers keep a percentage of what they settle, so that cost is added as
         // its own line. It sits OUTSIDE the taxable base -- VAT is already in the figure
         // it is charged on, and no VAT is levied on the fee itself.
-        const preFeeTotal = discountedSubtotal + vatAmount + deliveryTotal;
+        // A quote's figures were agreed with the customer, so they are used as they stand
+        // rather than recomputed -- the shop must charge what it offered. The settlement fee
+        // is the exception: it depends on the payment method, which is only chosen now.
+        const finalGoods = sourceQuote ? Number(sourceQuote.subtotal) : discountedSubtotal;
+        const finalVat = sourceQuote ? Number(sourceQuote.vat_amount) : vatAmount;
+        const finalDelivery = sourceQuote ? Number(sourceQuote.delivery_charge || 0) : deliveryTotal;
+
+        const preFeeTotal = finalGoods + finalVat + finalDelivery;
         const settlementFee = settlementFeeFor(payment_method, preFeeTotal);
         const finalAmount = preFeeTotal + settlementFee;
 
@@ -200,9 +252,9 @@ exports.createOrder = async (req, res, next) => {
             shipping_address_id,
             billing_details,
             payment_method,
-            total_amount: subtotal,
-            vat_amount: vatAmount,
-            delivery_charge: deliveryTotal,
+            total_amount: sourceQuote ? Number(sourceQuote.subtotal) : subtotal,
+            vat_amount: finalVat,
+            delivery_charge: finalDelivery,
             final_amount: finalAmount,
             settlement_fee: settlementFee,
             points_to_use: validatedPointsToUse,
@@ -211,6 +263,16 @@ exports.createOrder = async (req, res, next) => {
         };
 
         const orderId = await Order.create(req.user.id, orderData);
+
+        // Tie the quote to the order it became. Also what stops a second payment against
+        // the same quote: createOrder above refuses anything not still 'accepted'.
+        if (sourceQuote) {
+            try {
+                await ShippingQuote.markOrdered(sourceQuote.id, orderId);
+            } catch (err) {
+                console.error(`[QUOTE] Could not mark ${sourceQuote.reference} as ordered:`, err.message);
+            }
+        }
 
         // --- ASYNC ORDER NOTIFICATIONS (Immediate "Order Placed" notification) ---
         // Only for methods that are settled by the time we get here. A redirect gateway

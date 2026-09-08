@@ -1597,6 +1597,166 @@ ${productRows}
     }
 };
 
+
+/* -- Shipping quotes --------------------------------------------------------
+ * Delivery outside the UAE is priced by hand, so a quote is a short conversation:
+ * the customer asks, the office prices it, the customer accepts or declines.
+ * Three emails carry that conversation, all on the same shell as the rest of the
+ * shop's mail rather than the bare HTML they started as.
+ */
+
+const dsMoney = (n) => `AED ${(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** One totals row. `strong` marks the grand total. */
+const dsQuoteRow = (label, value, ar, strong = false) => `
+<tr>
+  <td style="padding:${strong ? '12px 0 0' : '6px 0'};font-family:${ar ? DS_SANS_AR : DS_SANS};font-size:${strong ? '16px' : '14px'};font-weight:${strong ? '800' : '400'};color:#17181c;text-align:${ar ? 'right' : 'left'};${strong ? 'border-top:1px solid #ecedef;' : ''}">${label}</td>
+  <td style="padding:${strong ? '12px 0 0' : '6px 0'};font-family:${ar ? DS_SANS_AR : DS_SANS};font-size:${strong ? '16px' : '14px'};font-weight:${strong ? '800' : '600'};color:#17181c;text-align:${ar ? 'left' : 'right'};${strong ? 'border-top:1px solid #ecedef;' : ''}">${value}</td>
+</tr>`;
+
+/**
+ * To the office: a customer has asked what delivery will cost.
+ * Always English -- this one is read by staff, not customers.
+ */
+const sendShippingQuoteRequestEmail = async (toEmail, quote = {}) => {
+    const transporter = createTransporter();
+    const SANS = DS_SANS, SERIF = DS_SERIF;
+    const where = [quote.address_line1, quote.city, quote.state, quote.country].filter(Boolean).join(', ');
+    const subject = `Shipping quote requested - ${quote.reference}`;
+
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#16a1db;">New request</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:30px;line-height:1.18;font-weight:600;color:#17181c;">${quote.reference}</h1>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">
+  ${quote.contact_name || quote.user_name || 'A customer'} has asked for a delivery price.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #ecedef;border-radius:14px;margin:0 0 22px;">
+  <tr><td style="padding:18px 20px;">
+    <p style="margin:0 0 6px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a8f98;">Deliver to</p>
+    <p style="margin:0 0 14px;font-family:${SANS};font-size:15px;line-height:1.6;color:#17181c;">${where || '-'}</p>
+    <p style="margin:0 0 6px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a8f98;">Contact</p>
+    <p style="margin:0 0 14px;font-family:${SANS};font-size:15px;line-height:1.6;color:#17181c;">${quote.contact_phone || '-'}<br>${quote.contact_email || quote.user_email || '-'}</p>
+    <p style="margin:0 0 6px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a8f98;">Goods</p>
+    <p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.6;color:#17181c;">${dsMoney(quote.subtotal)} + ${dsMoney(quote.vat_amount)} VAT &middot; ${(quote.items || []).length} line(s)</p>
+    ${quote.customer_note ? `<p style="margin:14px 0 0;padding:10px 12px;background:#f7f8f9;border-radius:8px;font-family:${SANS};font-size:14px;line-height:1.6;color:#17181c;font-style:italic;">${quote.customer_note}</p>` : ''}
+  </td></tr>
+</table>
+${dsButton(`${siteUrl()}/en/admin/shipping-quotes`, 'Add the delivery cost', false)}`;
+
+    await transporter.sendMail({
+        from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
+        to: toEmail,
+        subject,
+        html: dsShell({ ar: false, preheader: subject, content }),
+        attachments: dsEmailAttachments(false)
+    });
+    console.log(`[EMAIL] Shipping quote request sent to ${toEmail}`);
+};
+
+/** To the customer: their delivery price is ready to accept. EN/AR. */
+const sendShippingQuotePricedEmail = async (toEmail, quote = {}, locale = 'en') => {
+    const transporter = createTransporter();
+    const ar = isAr(locale);
+    const SANS = ar ? DS_SANS_AR : DS_SANS;
+    const SERIF = ar ? DS_SERIF_AR : DS_SERIF;
+    const loc = ar ? 'ar' : 'en';
+    // Where the button goes depends on what is left to do. A freshly priced quote has to be
+    // accepted first, so it opens the quote; one already accepted is only waiting on money,
+    // so it goes straight to checkout. Signed-out recipients are sent through sign-in by the
+    // checkout page itself, which carries the quote id across.
+    const quoteUrl = `${siteUrl()}/${loc}/profile?tab=shipping-quotes&quote=${quote.id}`;
+    const payUrl = `${siteUrl()}/${loc}/checkout?quote=${quote.id}`;
+    const accepted = quote.status === 'accepted';
+    const link = accepted ? payUrl : quoteUrl;
+    const until = quote.expires_at ? new Date(quote.expires_at).toLocaleDateString(ar ? 'ar-AE' : 'en-GB') : '';
+
+    const L = ar ? {
+        subject: accepted ? `أكمل طلبك - ${quote.reference}` : `عرض سعر الشحن جاهز - ${quote.reference}`,
+        eyebrow: accepted ? 'تم القبول' : 'عرض السعر جاهز',
+        title: accepted ? 'أنت جاهز للدفع' : 'تكلفة التوصيل الخاصة بك',
+        intro: accepted
+            ? `لقد قبلت عرض السعر ${quote.reference}. أكمل الدفع لتأكيد طلبك.`
+            : `لقد قمنا بتسعير التوصيل لطلبك ${quote.reference}.`,
+        goods: 'قيمة المنتجات', vat: 'ضريبة القيمة المضافة (٥٪)',
+        delivery: `التوصيل إلى ${quote.country}`, total: 'الإجمالي',
+        cta: 'عرض وقبول عرض السعر',
+        ctaPay: 'إتمام الدفع',
+        altViewQuote: 'عرض تفاصيل عرض السعر',
+        altPayNow: 'الانتقال مباشرة إلى الدفع',
+        note: until ? `هذا السعر ساري حتى ${until}. لن يتم إنشاء أي طلب ولن يُخصم أي مبلغ حتى تقوم بالقبول والدفع.`
+                    : 'لن يتم إنشاء أي طلب ولن يُخصم أي مبلغ حتى تقوم بالقبول والدفع.'
+    } : {
+        subject: accepted ? `Complete your order - ${quote.reference}` : `Your shipping quote is ready - ${quote.reference}`,
+        eyebrow: accepted ? 'Accepted' : 'Quote ready',
+        title: accepted ? "You're ready to pay" : 'Your delivery cost',
+        intro: accepted
+            ? `You accepted quote ${quote.reference}. Complete payment to confirm your order.`
+            : `We have priced delivery for ${quote.reference}.`,
+        goods: 'Goods', vat: 'VAT (5%)',
+        delivery: `Delivery to ${quote.country}`, total: 'Total',
+        cta: 'View and accept your quote',
+        ctaPay: 'Continue to payment',
+        altViewQuote: 'View the quote details',
+        altPayNow: 'Go straight to payment',
+        note: until ? `This price holds until ${until}. No order is placed and nothing is charged until you accept and pay.`
+                    : 'No order is placed and nothing is charged until you accept and pay.'
+    };
+
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#16a1db;">${L.eyebrow}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:32px;line-height:1.18;font-weight:600;color:#17181c;">${L.title}</h1>
+<p style="margin:0 0 20px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">${L.intro}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #ecedef;border-radius:14px;margin:0 0 24px;">
+  <tr><td style="padding:18px 22px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      ${dsQuoteRow(L.goods, dsMoney(quote.subtotal), ar)}
+      ${dsQuoteRow(L.vat, dsMoney(quote.vat_amount), ar)}
+      ${dsQuoteRow(L.delivery, dsMoney(quote.delivery_charge), ar)}
+      ${dsQuoteRow(L.total, dsMoney(quote.quoted_total), ar, true)}
+    </table>
+    ${quote.admin_note ? `<p style="margin:16px 0 0;padding:10px 12px;background:#f7f8f9;border-radius:8px;font-family:${SANS};font-size:14px;line-height:1.6;color:#17181c;">${quote.admin_note}</p>` : ''}
+  </td></tr>
+</table>
+${dsButton(link, accepted ? L.ctaPay : L.cta, ar)}
+<div style="height:14px;"></div>
+<p style="margin:0;text-align:center;font-family:${SANS};font-size:13px;line-height:1.6;">
+  <a href="${accepted ? quoteUrl : payUrl}" style="color:#16a1db;text-decoration:underline;">${accepted ? L.altViewQuote : L.altPayNow}</a>
+</p>
+<div style="height:14px;"></div>
+<p style="margin:0;text-align:center;font-family:${SANS};font-size:12px;line-height:1.6;color:#8a8f98;">${L.note}</p>`;
+
+    await transporter.sendMail({
+        from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
+        to: toEmail,
+        subject: L.subject,
+        html: dsShell({ ar, preheader: L.subject, content }),
+        attachments: dsEmailAttachments(ar)
+    });
+    console.log(`[EMAIL] Shipping quote price sent to ${toEmail}`);
+};
+
+/** To the office: the customer answered. Always English. */
+const sendShippingQuoteResponseEmail = async (toEmail, quote = {}, accepted = false) => {
+    const transporter = createTransporter();
+    const SANS = DS_SANS, SERIF = DS_SERIF;
+    const subject = `Quote ${accepted ? 'accepted' : 'declined'} - ${quote.reference}`;
+
+    const content = `
+<p style="margin:0 0 14px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${accepted ? '#10b981' : '#ef4444'};">${accepted ? 'Accepted' : 'Declined'}</p>
+<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:30px;line-height:1.18;font-weight:600;color:#17181c;">${quote.reference}</h1>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">
+  ${quote.user_name || quote.contact_name || 'The customer'} ${accepted ? 'accepted' : 'declined'} the delivery price of ${dsMoney(quote.delivery_charge)}.</p>
+${accepted ? `<p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.65;color:#17181c;">They can now pay. The order is created once payment completes.</p>` : ''}`;
+
+    await transporter.sendMail({
+        from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
+        to: toEmail,
+        subject,
+        html: dsShell({ ar: false, preheader: subject, content }),
+        attachments: dsEmailAttachments(false)
+    });
+    console.log(`[EMAIL] Shipping quote response sent to ${toEmail}`);
+};
+
 module.exports = {
     sendPasswordResetEmail,
     sendOrderConfirmationEmail,
@@ -1611,7 +1771,10 @@ module.exports = {
     sendOtpEmail,
     sendMonthlyStatementEmail,
     sendBackInStockEmail,
-    sendReviewRequestEmail
+    sendReviewRequestEmail,
+    sendShippingQuoteRequestEmail,
+    sendShippingQuotePricedEmail,
+    sendShippingQuoteResponseEmail
 };
 
 
