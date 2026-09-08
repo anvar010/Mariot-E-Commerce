@@ -6,6 +6,7 @@ import Providers from './providers';
 import DeferredChrome from './DeferredChrome';
 import { Inter, Alexandria } from 'next/font/google';
 import { localeAlternates, ogLocale, SITE_URL, SITE_NAME, OG_IMAGE } from '@/lib/seo';
+import GoogleAnalytics from '@/components/shared/Analytics/GoogleAnalytics';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -141,6 +142,9 @@ export default async function LocaleLayout(
                         {children}
                     </Providers>
                 </NextIntlClientProvider>
+                {/* Last in the body and loaded afterInteractive, so measuring the shop never
+                    slows it down. Renders nothing unless NEXT_PUBLIC_GA_ID is set. */}
+                <GoogleAnalytics />
             </body>
         </html>
     );
