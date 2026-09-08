@@ -149,6 +149,22 @@
     text-align: right;
 }
 
+/* Arabic needs more room between lines than Latin does.
+   The headline's line height and letter spacing are set for English -- 1.08 on desktop, 1.2
+   on a phone, with negative tracking to tighten a short bold line. Arabic has tall ascenders
+   and deep descenders, so at that leading two stacked lines collide. Negative tracking is
+   wrong for it besides: Arabic is drawn joined rather than letter by letter, and pulling it
+   tighter only crushes the joins. */
+.rtlSlide .title {
+    line-height: 1.5;
+    letter-spacing: normal;
+}
+
+.rtlSlide .tagline,
+.rtlSlide .description {
+    line-height: 1.8;
+}
+
 .rtlSlide .overlay {
     background:
         linear-gradient(270deg, rgba(22, 24, 22, .78), rgba(22, 24, 22, .55) 46%, rgba(22, 24, 22, .12) 78%),
