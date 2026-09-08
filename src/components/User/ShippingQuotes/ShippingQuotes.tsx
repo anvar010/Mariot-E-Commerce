@@ -232,7 +232,12 @@ const ShippingQuotes: React.FC<Props> = ({ focusId }) => {
                                 <div><span>{t('goods')}</span><span><CurrencyPrice amount={Number(detail.subtotal) || 0} /></span></div>
                                 <div><span>{t('vat')}</span><span><CurrencyPrice amount={Number(detail.vat_amount) || 0} /></span></div>
                                 <div>
-                                    <span>{t('delivery')}</span>
+                                    <span>
+                                        {t('delivery')}
+                                        {/* Says what the figure already covers, so nobody is
+                                            expecting a customs bill on the doorstep. */}
+                                        <em className={styles.deliveryNote}>{t('deliveryIncludes')}</em>
+                                    </span>
                                     <span>
                                         {detail.delivery_charge != null
                                             ? <CurrencyPrice amount={Number(detail.delivery_charge) || 0} />

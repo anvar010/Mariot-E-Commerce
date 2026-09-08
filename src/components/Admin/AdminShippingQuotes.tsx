@@ -348,6 +348,14 @@ const AdminShippingQuotes: React.FC = () => {
                                             onChange={e => setCharge(e.target.value)}
                                             placeholder="0.00"
                                         />
+                                        {/* The customer is told this figure covers taxes and
+                                            customs, so it has to be entered that way -- a
+                                            shipping-only number leaves the shop absorbing
+                                            duty it never charged for. */}
+                                        <em className={styles.fieldNote}>
+                                            Enter the all-in cost: shipping plus any taxes and customs duty.
+                                            The customer is shown this as including both.
+                                        </em>
                                     </label>
                                     <label className={styles.field}>
                                         <span>Note to the customer (optional)</span>

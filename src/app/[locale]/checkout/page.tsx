@@ -1108,7 +1108,26 @@ function CheckoutContent() {
                     <p>{t('subtitle')}</p>
                 </div>
 
+                {/* Paying a quote: the destination is part of what was priced, so it is shown
+                    rather than offered for editing. Changing it would mean a different
+                    delivery cost, and the server enforces this too -- it builds the order's
+                    address from the quote and ignores whatever the page sends. */}
+                {payingQuote && (
+                    <div className={styles.quoteLockedAddress} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+                        <div className={styles.deliverIcon}><MapPin size={20} /></div>
+                        <div className={styles.deliverText}>
+                            <span className={styles.deliverTitle}>{t('deliverTo')} · {payingQuote.reference}</span>
+                            <span className={styles.deliverAddr}>
+                                {[payingQuote.address_line1, payingQuote.city, payingQuote.state,
+                                  countryLabel(payingQuote.country, locale)].filter(Boolean).join(', ')}
+                            </span>
+                            <span className={styles.quoteLockedHint}>{t('quoteAddressLocked')}</span>
+                        </div>
+                    </div>
+                )}
+
                 {(() => {
+                    if (payingQuote) return null;
                     const selAddr = userAddresses.find(a => a.id.toString() === selectedAddressId.toString());
                     if (!user || !selAddr) return null;
                     const icon = selAddr.address_type === 'home' ? <Home size={20} /> : selAddr.address_type === 'work' ? <Building2 size={20} /> : <MapPin size={20} />;
@@ -1132,7 +1151,7 @@ function CheckoutContent() {
                     );
                 })()}
 
-                {user && userAddresses.length > 0 && (
+                {!payingQuote && user && userAddresses.length > 0 && (
                     <div className={styles.receiverCard} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
                         <h3 className={styles.receiverHeading}>{t('whoReceives')}</h3>
 
@@ -1272,8 +1291,9 @@ function CheckoutContent() {
 
                 <form className={styles.checkoutLayout} onSubmit={handlePlaceOrder}>
                     <div className={styles.leftColumn}>
-                        {/* Step 1: Shipping Information — only for users without a saved address */}
-                        {!(user && userAddresses.length > 0) && (
+                        {/* Step 1: Shipping Information — only for users without a saved address,
+                            and never when paying a quote, whose destination is already fixed. */}
+                        {!payingQuote && !(user && userAddresses.length > 0) && (
                         <div className={styles.checkoutSection}>
                             <div className={styles.sectionHeader}>
                                 <div className={styles.stepNumber}>1</div>
@@ -2000,12 +2020,27 @@ function CheckoutContent() {
                                         <span><CurrencyPrice amount={vatAmount} /></span>
                                     </div>
 
-                                    <div className={styles.totalRow}>
-                                        <span>{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery charge'}</span>
-                                        {deliveryTotal > 0
-                                            ? <span><CurrencyPrice amount={deliveryTotal} /></span>
-                                            : <span style={{ color: '#16a34a', fontWeight: 700 }}>{locale === 'ar' ? 'مجاني' : 'FREE'}</span>}
-                                    </div>
+                                    {/* On a quote this is the figure the shop actually quoted, not
+                                        the cart's per-product delivery -- which is zero for these
+                                        orders and was rendering as "FREE" next to a paid delivery. */}
+                                    {(() => {
+                                        const delivery = payingQuote
+                                            ? Number(payingQuote.delivery_charge) || 0
+                                            : deliveryTotal;
+                                        return (
+                                            <div className={styles.totalRow}>
+                                                <span>
+                                                    {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery charge'}
+                                                    {payingQuote && (
+                                                        <em className={styles.deliveryNote}>{t('deliveryIncludes')}</em>
+                                                    )}
+                                                </span>
+                                                {delivery > 0
+                                                    ? <span><CurrencyPrice amount={delivery} /></span>
+                                                    : <span style={{ color: '#16a34a', fontWeight: 700 }}>{locale === 'ar' ? 'مجاني' : 'FREE'}</span>}
+                                            </div>
+                                        );
+                                    })()}
 
                                     {settlementFee > 0 && (
                                         <div className={styles.totalRow}>

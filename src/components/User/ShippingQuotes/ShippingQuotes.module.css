@@ -464,3 +464,13 @@
 .payBtnSmall:hover {
     background: #15803d;
 }
+
+/* Says what the delivery figure already covers. */
+.deliveryNote {
+    display: block;
+    margin-top: 2px;
+    font-size: 11.5px;
+    font-style: normal;
+    color: #94a3b8;
+    line-height: 1.4;
+}

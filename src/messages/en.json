@@ -1254,7 +1254,9 @@
     "quoteSentStepAccept": "You can then accept or decline the price before paying — nothing is charged until you do.",
     "quoteSentViewQuote": "View my quote",
     "quoteSentKeepShopping": "Continue shopping",
-    "quoteNotPayable": "This quote is not ready for payment."
+    "quoteNotPayable": "This quote is not ready for payment.",
+    "quoteAddressLocked": "This order ships to the address the delivery price was quoted for, so it cannot be changed here. Need a different address? Request a new quote.",
+    "deliveryIncludes": "Includes taxes and customs"
   },
   "success": {
     "thankYou": "Thank you!",
@@ -2059,6 +2061,7 @@
     },
     "proceedToCheckout": "Proceed to checkout",
     "payNow": "Pay now",
-    "orderedMessage": "This quote has been paid. You can follow it in Your Orders."
+    "orderedMessage": "This quote has been paid. You can follow it in Your Orders.",
+    "deliveryIncludes": "Includes taxes and customs"
   }
 }
