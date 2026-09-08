@@ -7,6 +7,7 @@ import DeferredChrome from './DeferredChrome';
 import { Inter, Alexandria } from 'next/font/google';
 import { localeAlternates, ogLocale, SITE_URL, SITE_NAME, OG_IMAGE } from '@/lib/seo';
 import GoogleAnalytics from '@/components/shared/Analytics/GoogleAnalytics';
+import GoogleTagManager from '@/components/shared/Analytics/GoogleTagManager';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -143,7 +144,11 @@ export default async function LocaleLayout(
                     </Providers>
                 </NextIntlClientProvider>
                 {/* Last in the body and loaded afterInteractive, so measuring the shop never
-                    slows it down. Renders nothing unless NEXT_PUBLIC_GA_ID is set. */}
+                    slows it down. Each renders nothing unless its id is set.
+
+                    Use one or the other. Tag Manager with a GA4 tag inside it already reports
+                    pageviews, so setting both ids would count every one of them twice. */}
+                <GoogleTagManager />
                 <GoogleAnalytics />
             </body>
         </html>
