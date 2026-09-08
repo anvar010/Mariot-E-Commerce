@@ -46,14 +46,23 @@ class Order {
             // If a form was given AND the user did NOT select an existing address (so shipping_address_id is the placeholder '1' or null),
             // ONLY THEN do we create a brand new address manually.
             if ((!shipping_address_id || shipping_address_id === 1) && billing_details && billing_details.streetAddress) {
+                // country used to be written into the state column, and the real country
+                // column was left empty -- so an order to Jeddah was stored with no country
+                // at all and "Saudi Arabia" sitting where the emirate belongs. Both are
+                // filled correctly now, and state keeps the state.
                 const [addrResult] = await connection.execute(
-                    `INSERT INTO addresses (user_id, address_line1, address_line2, city, state, zip_code, phone) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    `INSERT INTO addresses (user_id, first_name, last_name, email, address_line1, address_line2, city, state, country, zip_code, phone)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         userId,
+                        billing_details.firstName || null,
+                        billing_details.lastName || null,
+                        billing_details.email || null,
                         billing_details.streetAddress,
                         billing_details.additionalAddress || null,
                         billing_details.city || 'Dubai',
-                        billing_details.country || 'UAE',
+                        billing_details.state || null,
+                        billing_details.country || 'United Arab Emirates',
                         billing_details.postcode || '00000',
                         billing_details.phone || ''
                     ]

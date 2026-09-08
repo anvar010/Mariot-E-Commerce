@@ -60,6 +60,7 @@ exports.createOrder = async (req, res, next) => {
         // those prices, and their cart may have moved on since.
         const quoteId = req.body.shipping_quote_id ? Number(req.body.shipping_quote_id) : null;
         let sourceQuote = null;
+        let quoteAddress = null;
         if (quoteId) {
             sourceQuote = await ShippingQuote.findById(quoteId);
             if (!sourceQuote) {
@@ -79,6 +80,27 @@ exports.createOrder = async (req, res, next) => {
             if (ShippingQuote.isExpired(sourceQuote)) {
                 return res.status(422).json({ success: false, message: 'This quote has expired. Please request a new one.' });
             }
+
+            // The delivery figure was worked out for one destination, so that destination is
+            // part of what was agreed. Taking shipping_address_id from the request here would
+            // let a shopper accept a price quoted for Jeddah and then have the goods sent to
+            // Dubai -- or the reverse, quoted for Dubai and shipped abroad for the same money.
+            //
+            // The quote holds the address as text rather than an id, so the order is given a
+            // fresh address built from it. Everything else on the order still comes from the
+            // request; only where it is going is fixed.
+            quoteAddress = {
+                first_name: sourceQuote.contact_name || req.user.name || '',
+                last_name: '',
+                email: sourceQuote.contact_email || req.user.email || null,
+                phone: sourceQuote.contact_phone || '',
+                address_line1: sourceQuote.address_line1 || '',
+                address_line2: sourceQuote.address_line2 || null,
+                city: sourceQuote.city || '',
+                state: sourceQuote.state || null,
+                zip_code: sourceQuote.zip_code || '',
+                country: sourceQuote.country,
+            };
         }
 
         const items = sourceQuote
@@ -249,8 +271,24 @@ exports.createOrder = async (req, res, next) => {
 
         const orderData = {
             items,
-            shipping_address_id,
-            billing_details,
+            // A quote's address wins over anything the client sent. Passing the placeholder
+            // id alongside it is what makes Order.create build a fresh address row from
+            // billing_details rather than reusing a saved one the shopper may have switched to.
+            shipping_address_id: quoteAddress ? 1 : shipping_address_id,
+            billing_details: quoteAddress
+                ? {
+                    firstName: quoteAddress.first_name,
+                    lastName: quoteAddress.last_name,
+                    email: quoteAddress.email,
+                    phone: quoteAddress.phone,
+                    streetAddress: quoteAddress.address_line1,
+                    additionalAddress: quoteAddress.address_line2,
+                    city: quoteAddress.city,
+                    state: quoteAddress.state,
+                    postcode: quoteAddress.zip_code,
+                    country: quoteAddress.country,
+                }
+                : billing_details,
             payment_method,
             total_amount: sourceQuote ? Number(sourceQuote.subtotal) : subtotal,
             vat_amount: finalVat,

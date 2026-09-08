@@ -1677,7 +1677,9 @@ const sendShippingQuotePricedEmail = async (toEmail, quote = {}, locale = 'en') 
             ? `لقد قبلت عرض السعر ${quote.reference}. أكمل الدفع لتأكيد طلبك.`
             : `لقد قمنا بتسعير التوصيل لطلبك ${quote.reference}.`,
         goods: 'قيمة المنتجات', vat: 'ضريبة القيمة المضافة (٥٪)',
-        delivery: `التوصيل إلى ${quote.country}`, total: 'الإجمالي',
+        delivery: `التوصيل إلى ${quote.country}`,
+        deliveryNote: 'شامل الضرائب والرسوم الجمركية',
+        total: 'الإجمالي',
         cta: 'عرض وقبول عرض السعر',
         ctaPay: 'إتمام الدفع',
         altViewQuote: 'عرض تفاصيل عرض السعر',
@@ -1692,7 +1694,9 @@ const sendShippingQuotePricedEmail = async (toEmail, quote = {}, locale = 'en') 
             ? `You accepted quote ${quote.reference}. Complete payment to confirm your order.`
             : `We have priced delivery for ${quote.reference}.`,
         goods: 'Goods', vat: 'VAT (5%)',
-        delivery: `Delivery to ${quote.country}`, total: 'Total',
+        delivery: `Delivery to ${quote.country}`,
+        deliveryNote: 'Includes taxes and customs',
+        total: 'Total',
         cta: 'View and accept your quote',
         ctaPay: 'Continue to payment',
         altViewQuote: 'View the quote details',
@@ -1710,7 +1714,7 @@ const sendShippingQuotePricedEmail = async (toEmail, quote = {}, locale = 'en') 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       ${dsQuoteRow(L.goods, dsMoney(quote.subtotal), ar)}
       ${dsQuoteRow(L.vat, dsMoney(quote.vat_amount), ar)}
-      ${dsQuoteRow(L.delivery, dsMoney(quote.delivery_charge), ar)}
+      ${dsQuoteRow(`${L.delivery}<br><span style="font-size:12px;color:#8a8f98;">${L.deliveryNote}</span>`, dsMoney(quote.delivery_charge), ar)}
       ${dsQuoteRow(L.total, dsMoney(quote.quoted_total), ar, true)}
     </table>
     ${quote.admin_note ? `<p style="margin:16px 0 0;padding:10px 12px;background:#f7f8f9;border-radius:8px;font-family:${SANS};font-size:14px;line-height:1.6;color:#17181c;">${quote.admin_note}</p>` : ''}
