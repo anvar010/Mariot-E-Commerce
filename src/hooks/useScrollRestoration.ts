@@ -72,15 +72,31 @@ export default function useScrollRestoration(): void {
         const previous = supported ? window.history.scrollRestoration : undefined;
         if (supported) window.history.scrollRestoration = 'manual';
 
+        /**
+         * True from the moment a back/forward starts until we have finished restoring.
+         *
+         * The browser swaps the history entry BEFORE popstate fires, while the old page is
+         * still painted at its old offset. Any scroll event in that window would be saved
+         * under the entry being restored -- overwriting its real position with the position
+         * of the page being left. That is not a missed restore but a wrong one: come back to
+         * a short category page from a long listing and it would be sent to the listing's
+         * offset, which lands on the footer.
+         *
+         * So saving is suspended for the whole restore, including the scrolls our own
+         * scrollTo generates.
+         */
+        let restoring = false;
+
         // Written continuously rather than on unload: a client-side navigation replaces
         // the entry without firing any unload event, and pagehide does not fire reliably
         // on mobile Safari. rAF-throttled, so a scroll costs one write per frame at most.
         let ticking = false;
         const onScroll = () => {
-            if (ticking) return;
+            if (restoring || ticking) return;
             ticking = true;
             requestAnimationFrame(() => {
                 ticking = false;
+                if (restoring) return;
                 write(entryKey(), window.scrollY);
             });
         };
@@ -107,9 +123,19 @@ export default function useScrollRestoration(): void {
          * category that lost products since the visit) the page is left where it is
          * rather than being scrolled somewhere arbitrary.
          */
+        const done = () => {
+            restoring = false;
+        };
+
         const restore = (target: number) => {
             cancel();
-            if (target <= 0) return;
+            if (target <= 0) {
+                // Nothing to restore, but the page must not keep the offset it was left at:
+                // going back to a page that was never scrolled belongs at the top.
+                window.scrollTo(0, 0);
+                done();
+                return;
+            }
 
             const started = Date.now();
             const tick = () => {
@@ -118,10 +144,16 @@ export default function useScrollRestoration(): void {
                     window.scrollTo(0, target);
                     // One more frame: an image decoding right after the scroll can shift
                     // layout, and the second application settles it.
-                    raf = requestAnimationFrame(() => window.scrollTo(0, target));
+                    raf = requestAnimationFrame(() => {
+                        window.scrollTo(0, target);
+                        done();
+                    });
                     return;
                 }
-                if (Date.now() - started > 3000) return;
+                if (Date.now() - started > 3000) {
+                    done();
+                    return;
+                }
                 timer = window.setTimeout(tick, 60) as unknown as number;
             };
             tick();
@@ -129,14 +161,22 @@ export default function useScrollRestoration(): void {
 
         // popstate is back/forward. A fresh push gets no restore -- it should start at the
         // top, which is what Next already does for it.
+        //
+        // The saved value is read synchronously here, before any scroll handler can run:
+        // by the time popstate fires the entry has already changed, so a late write would
+        // clobber exactly the number being read.
         const onPopState = () => {
+            restoring = true;
             const saved = read(entryKey());
-            if (saved !== null) restore(saved);
+            restore(saved ?? 0);
         };
 
         // Covers a reload landing on an entry that already has an offset.
         const initial = read(entryKey());
-        if (initial !== null && initial > 0) restore(initial);
+        if (initial !== null && initial > 0) {
+            restoring = true;
+            restore(initial);
+        }
 
         window.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('popstate', onPopState);
