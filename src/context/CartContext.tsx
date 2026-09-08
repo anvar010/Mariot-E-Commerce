@@ -11,6 +11,7 @@ import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { resolveUrl } from '@/utils/resolveUrl';
 import { useTranslations, useLocale } from 'next-intl';
+import { trackAddToCart } from '@/utils/analytics';
 
 interface CartItem {
     id: string | number;
@@ -428,6 +429,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             );
         }
+
+        // Tag Manager's Google Ads conversion tag listens for exactly this event, and GA4
+        // reads the same object. Fired here, after the validation above has passed, so a
+        // rejected add -- out of stock, over the stock limit -- is not counted as one.
+        trackAddToCart({
+            id: product.id,
+            name: (product.name || product.model || 'Product') as string,
+            price: displayPrice,
+            quantity: quantityToAdd,
+            brand: product.brand_name || null,
+            category: product.category_name || null,
+            variant: product.variant_sku || null,
+        });
 
         // Backend Sync if logged in
         if (tokenRef.current) {

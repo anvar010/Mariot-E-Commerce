@@ -19,6 +19,7 @@ import { useAuth } from '@/context/AuthContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import styles from './success.module.css';
+import { trackPurchase } from '@/utils/analytics';
 
 const SuccessContent = () => {
     const t = useTranslations('success');
@@ -68,7 +69,30 @@ const SuccessContent = () => {
                         headers: getAuthHeaders(),
                     });
                     const data = await res.json();
-                    if (data?.data?.payment_status === 'paid') break;
+                    if (data?.data?.payment_status === 'paid') {
+                        // Reported only once the order is actually paid. Firing on arrival
+                        // would count abandoned card and BNPL redirects as sales, since the
+                        // shopper reaches this page before the payment has settled.
+                        //
+                        // The order id is the transaction id, which is what makes a refresh
+                        // of this page harmless: Google Ads and GA4 both deduplicate on it,
+                        // so the same order can never be counted twice.
+                        const o = data.data;
+                        trackPurchase({
+                            id: o.id,
+                            value: o.final_amount,
+                            tax: o.vat_amount,
+                            shipping: o.delivery_charge,
+                            items: (o.items || []).map((it: any) => ({
+                                id: it.product_id,
+                                name: it.name || `Product ${it.product_id}`,
+                                price: it.price_at_purchase,
+                                quantity: it.quantity,
+                                brand: it.brand_name || null,
+                            })),
+                        });
+                        break;
+                    }
                 } catch {
                     // A failed read just means trying again, or giving up quietly:
                     // the balance is only ever cosmetic on this page.
