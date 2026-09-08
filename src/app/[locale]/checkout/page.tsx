@@ -1496,7 +1496,17 @@ function CheckoutContent() {
                             {/* Apple Pay / Google Pay. Renders nothing unless the visitor
                                 actually has a usable wallet, so it costs nothing when it
                                 cannot be used. Sits above the payment tabs because a wallet
-                                skips every field below it. */}
+                                skips every field below it.
+
+                                UAE deliveries only. A wallet pays in one tap, straight from
+                                the sheet -- there is no step in it where a delivery cost that
+                                has not been quoted yet could be added, so offering it on a
+                                foreign address would take the money at the wrong total.
+
+                                Paying an accepted quote is the exception: its delivery is
+                                already agreed and the total is final, so the one tap is
+                                charging the right amount. */}
+                            {(destinationCountry === DOMESTIC_COUNTRY || payingQuote) && (
                             <WalletExpressCheckout
                                 amount={finalTotal}
                                 validate={walletValidate}
@@ -1512,6 +1522,7 @@ function CheckoutContent() {
                                 dividerText={t('cards.orPayAnotherWay')}
                                 isRtl={locale === 'ar'}
                             />
+                            )}
 
                             <div className={styles.paymentGrid}>
                                 {/* Card Payment */}
@@ -2005,10 +2016,18 @@ function CheckoutContent() {
                                         </div>
                                     )}
 
-                                    <div className={styles.totalRow}>
-                                        <span>{common('shipping')}</span>
-                                        <span className={styles.freeText}>{common('free')}</span>
-                                    </div>
+                                    {/* This row was hardcoded to "Free" and reflected nothing. It
+                                        sat directly above the real Delivery charge line, so an
+                                        order with 1,200 of delivery read as free shipping and
+                                        charged for delivery in the same summary. The delivery
+                                        line below is the one that carries the figure, so this is
+                                        only shown when there genuinely is nothing to pay. */}
+                                    {!payingQuote && deliveryTotal === 0 && shippingCost === 0 && (
+                                        <div className={styles.totalRow}>
+                                            <span>{common('shipping')}</span>
+                                            <span className={styles.freeText}>{common('free')}</span>
+                                        </div>
+                                    )}
 
                                     <div className={styles.totalRow}>
                                         <span>{common('taxableAmount')} (Excl. VAT)</span>
@@ -2134,8 +2153,14 @@ function CheckoutContent() {
                                 <div className={styles.trustBadges}>
                                     <img src="/assets/visa-logo.svg" alt="Visa" className={`${styles.trustBadge} ${styles.visaBadge}`} />
                                     <img src="/assets/mastercard-logo.svg" alt="Mastercard" className={styles.trustBadge} />
-                                    <img src="/assets/apple-pay-logo.svg" alt="Apple Pay" className={styles.trustBadge} />
-                                    <img src="/assets/google-pay-logo.svg" alt="Google Pay" className={styles.trustBadge} />
+                                    {/* Not advertised where they cannot be used -- a wallet logo
+                                        under the button implies an option that is not offered. */}
+                                    {(destinationCountry === DOMESTIC_COUNTRY || payingQuote) && (
+                                        <>
+                                            <img src="/assets/apple-pay-logo.svg" alt="Apple Pay" className={styles.trustBadge} />
+                                            <img src="/assets/google-pay-logo.svg" alt="Google Pay" className={styles.trustBadge} />
+                                        </>
+                                    )}
                                 </div>
 
                                 <p style={{ textAlign: 'center', fontSize: '12px', color: '#94a3b8', marginTop: '16px' }}>
