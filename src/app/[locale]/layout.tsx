@@ -8,6 +8,7 @@ import { Inter, Alexandria } from 'next/font/google';
 import { localeAlternates, ogLocale, SITE_URL, SITE_NAME, OG_IMAGE } from '@/lib/seo';
 import GoogleAnalytics from '@/components/shared/Analytics/GoogleAnalytics';
 import GoogleTagManager from '@/components/shared/Analytics/GoogleTagManager';
+import ScrollRestoration from '@/components/shared/ScrollRestoration/ScrollRestoration';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -139,6 +140,11 @@ export default async function LocaleLayout(
             <body suppressHydrationWarning>
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <Providers>
+                        {/* Renders nothing. Restores the scroll position on back/forward
+                            once the page's client-side fetches have given it its height --
+                            see useScrollRestoration for why the browser cannot do this
+                            itself here. */}
+                        <ScrollRestoration />
                         <DeferredChrome />
                         {children}
                     </Providers>
