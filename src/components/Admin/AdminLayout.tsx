@@ -21,6 +21,7 @@ const PATH_PERM_MAP: Record<string, string> = {
     '/admin/cms': 'cms',
     '/admin/settings': 'settings',
     '/admin/quotations': 'quotations',
+    '/admin/shipping-quotes': 'shipping_quotes',
     '/admin/reviews': 'reviews',
     '/admin': 'dashboard',
 };

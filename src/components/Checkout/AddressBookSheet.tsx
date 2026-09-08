@@ -16,6 +16,7 @@ import {
     Trash2,
     Check,
     Pencil,
+    Star,
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -64,6 +65,7 @@ export default function AddressBookSheet({ open, onClose, onSelect, onAddressesC
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [openMenu, setOpenMenu] = useState<number | null>(null);
+    const [settingDefault, setSettingDefault] = useState<number | null>(null);
     const [editReceiver, setEditReceiver] = useState(false);
 
     const states = statesFor(form.country);
@@ -182,6 +184,37 @@ export default function AddressBookSheet({ open, onClose, onSelect, onAddressesC
             setError(t('addError'));
         } finally {
             setSaving(false);
+        }
+    };
+
+    /**
+     * Make this address the default, for this order and every one after it.
+     *
+     * The endpoint clears the previous default in the same transaction, so there is never a
+     * moment with two -- and it returns the refreshed list, which is what the sheet renders.
+     */
+    const handleSetDefault = async (id: number) => {
+        setOpenMenu(null);
+        setSettingDefault(id);
+        try {
+            const res = await fetch(`${API_BASE_URL}/users/addresses/${id}/default`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: getAuthHeaders(),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAddresses(data.data || []);
+                onAddressesChange?.(data.data || []);
+                // A new default is a statement about where orders go, so it takes effect
+                // here too rather than only from the next visit.
+                const chosen = (data.data || []).find((a: any) => a.id === id);
+                if (chosen) onSelect(chosen);
+            }
+        } catch (e) {
+            console.error('Failed to set default address', e);
+        } finally {
+            setSettingDefault(null);
         }
     };
 
@@ -403,6 +436,20 @@ export default function AddressBookSheet({ open, onClose, onSelect, onAddressesC
                                                                         <button type="button" className={styles.menuItem} onClick={() => openEditForm(addr)}>
                                                                             <Edit2 size={15} /> {t('edit')}
                                                                         </button>
+                                                                        {/* Selecting an address applies to this order only. Making it
+                                                                            the default is the deliberate, lasting version of that --
+                                                                            so it lives here rather than happening as a side effect
+                                                                            of picking one. */}
+                                                                        {!addr.is_default && (
+                                                                            <button
+                                                                                type="button"
+                                                                                className={styles.menuItem}
+                                                                                onClick={() => handleSetDefault(addr.id)}
+                                                                                disabled={settingDefault === addr.id}
+                                                                            >
+                                                                                <Star size={15} /> {t('setAsDefault')}
+                                                                            </button>
+                                                                        )}
                                                                         <button type="button" className={`${styles.menuItem} ${styles.menuItemDanger}`} onClick={() => handleDelete(addr.id)}>
                                                                             <Trash2 size={15} /> {t('delete')}
                                                                         </button>

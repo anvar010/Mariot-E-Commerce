@@ -19,7 +19,8 @@ import {
     FileText,
     Receipt,
     Layout,
-    FilePlus
+    FilePlus,
+    Truck
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -82,6 +83,7 @@ const menuItems: MenuItem[] = [
 
     const activityItems: MenuItem[] = [
         { name: 'Quotations', key: 'quotations', icon: <FileText size={20} />, path: '/admin/quotations' },
+        { name: 'Shipping Quotes', key: 'shipping_quotes', icon: <Truck size={20} />, path: '/admin/shipping-quotes' },
         { name: 'Staff Quotations', key: 'staff_quotations', icon: <FilePlus size={20} />, path: '/admin/staff-quotations' },
         { name: 'Invoices', key: 'invoices', icon: <Receipt size={20} />, path: '/admin/invoices' },
         { name: 'Reviews', key: 'reviews', icon: <Layout size={20} />, path: '/admin/reviews' },

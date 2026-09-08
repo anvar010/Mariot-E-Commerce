@@ -23,6 +23,16 @@ export const TABBY_ENABLED = false;
 export const SHIPPING_QUOTES_ENABLED = false;
 
 /**
+ * The one country the shop can price delivery for on its own. Everywhere else is quoted
+ * by hand: the shopper asks, an admin adds a delivery cost, and only then can they pay.
+ *
+ * Kept in step with DOMESTIC_COUNTRY in backend/controllers/shippingQuote.controller.js,
+ * which enforces the same rule -- the endpoint refuses a UAE request outright, so a
+ * mismatch here shows up as a rejected request rather than a wrongly-priced order.
+ */
+export const DOMESTIC_COUNTRY = 'United Arab Emirates';
+
+/**
  * Settlement fee on Buy-Now-Pay-Later orders (Tabby / Tamara).
  *
  * These providers keep a percentage of what they settle, so the cost is passed on as its

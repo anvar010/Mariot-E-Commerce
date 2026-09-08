@@ -2512,3 +2512,158 @@
         padding: 9px 10px;
     }
 }
+
+/* Shipping quote -----------------------------------------------------------
+   Shown instead of the pay button when the destination is outside the UAE and
+   delivery has to be priced by hand. */
+
+.quoteNotice {
+    margin: 0 0 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 13px;
+    line-height: 1.55;
+    text-align: center;
+}
+
+.quoteHint {
+    margin: 10px 0 0;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.55;
+    text-align: center;
+}
+
+/* A step that cannot be used yet -- payment, while delivery is still being priced.
+   pointer-events on the inner content rather than the whole block, so the heading
+   and the explanation stay selectable and readable. */
+
+.sectionDisabled .paymentMethods,
+.sectionDisabled .paymentOptions,
+.sectionDisabled form,
+.sectionDisabled input,
+.sectionDisabled button {
+    opacity: 0.45;
+    pointer-events: none;
+    user-select: none;
+}
+
+.sectionDisabledHint {
+    margin: 0 0 4px;
+    padding: 11px 13px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+/* Quote requested confirmation ---------------------------------------------
+   Replaces the checkout once a shipping quote has been filed. */
+
+.quoteSentCard {
+    max-width: 560px;
+    margin: 40px auto 60px;
+    padding: 40px 32px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    text-align: center;
+}
+
+.quoteSentIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 78px;
+    height: 78px;
+    margin: 0 auto 20px;
+    background: #dcfce7;
+    color: #16a34a;
+    border-radius: 50%;
+}
+
+.quoteSentCard h1 {
+    margin: 0 0 8px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.quoteSentRef {
+    margin: 0 0 18px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #16a1db;
+}
+
+.quoteSentBody {
+    margin: 0 0 26px;
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: #475569;
+}
+
+.quoteSentSteps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0 0 28px;
+    padding: 18px 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    text-align: start;
+}
+
+.quoteSentStep {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #334155;
+}
+
+.quoteSentStep svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: #16a1db;
+}
+
+.quoteSentPrimary,
+.quoteSentSecondary {
+    display: block;
+    width: 100%;
+    padding: 13px 20px;
+    font-size: 14.5px;
+    font-weight: 700;
+    border-radius: 10px;
+    text-decoration: none;
+    text-align: center;
+}
+
+.quoteSentPrimary {
+    color: #fff;
+    background: #16a1db;
+    margin-bottom: 10px;
+}
+
+.quoteSentPrimary:hover {
+    background: #1289bb;
+}
+
+.quoteSentSecondary {
+    color: #475569;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+}
+
+.quoteSentSecondary:hover {
+    background: #f8fafc;
+}

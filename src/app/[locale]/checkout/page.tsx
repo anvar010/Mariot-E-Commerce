@@ -10,6 +10,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { useTranslations, useLocale } from 'next-intl';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
+import { Link } from '@/i18n/navigation';
 import Script from 'next/script';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';
 import {
@@ -22,6 +23,7 @@ import {
     Clock,
     User,
     Mail,
+    CheckCircle,
     Phone,
     MapPin,
     Building,
@@ -38,7 +40,7 @@ import {
     Settings2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { API_BASE_URL, TABBY_ENABLED, SHIPPING_QUOTES_ENABLED } from '@/config';
+import { API_BASE_URL, TABBY_ENABLED, SHIPPING_QUOTES_ENABLED, DOMESTIC_COUNTRY } from '@/config';
 import { settlementFeeFor } from '@/config';
 import { statesFor, areasFor, countryLabel, SHIPPING_COUNTRIES } from '@/data/cities';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -291,7 +293,49 @@ function CheckoutContent() {
     const addressStates = statesFor(form.country);
     const addressAreas = areasFor(form.country, form.state);
 
-    const preFeeTotal = cartTotal * 1.05 + deliveryTotal + shippingCost;
+    /**
+     * Paying for an accepted shipping quote rather than the basket.
+     *
+     * Arrives as /checkout?quote=<id> from the customer's quote in their profile. The goods
+     * and the delivery figure were agreed when they accepted, so this checkout only has to
+     * collect payment: the address is already on the quote and the totals come from it.
+     */
+    const payingQuoteId = searchParams.get('quote');
+    const [payingQuote, setPayingQuote] = useState<any>(null);
+
+    /**
+     * What this checkout is actually buying.
+     *
+     * Paying a quote buys the quote's own lines, not the basket's. The two are unrelated by
+     * design: the shopper's cart was deliberately left untouched when they asked for the
+     * quote, so by now it may be empty, or hold entirely different goods. The server prices
+     * from the quote's snapshot either way, so showing the cart here would display one set
+     * of products and charge for another.
+     */
+    const lineItems = payingQuote
+        ? (payingQuote.items || []).map((i: any) => ({
+            id: i.product_id,
+            variant_id: i.variant_id ?? null,
+            name: i.name,
+            name_ar: i.name_ar ?? null,
+            slug: i.slug ?? null,
+            image: i.image,
+            quantity: i.quantity,
+            price: Number(i.price_at_request) || 0,
+            variant_label: i.variant_label ?? null,
+            custom_dimensions: i.custom_dimensions ?? null,
+            custom_signature: null,
+            product_removed: Number(i.product_removed) === 1,
+        }))
+        : cartItems;
+
+    // Paying a quote charges what was agreed on it, not what the basket says. The shopper
+    // accepted a specific figure; the cart may have changed in the days since, and the
+    // server prices from the quote's snapshot regardless, so showing the cart's number here
+    // would only disagree with what is actually taken.
+    const preFeeTotal = payingQuote
+        ? Number(payingQuote.quoted_total) || 0
+        : cartTotal * 1.05 + deliveryTotal + shippingCost;
     // BNPL providers keep a slice of what they settle; that cost is passed on as its own
     // line. Computed from the same rule the server uses, so the figure shown here is the
     // figure charged -- the server still recomputes it and its answer is authoritative.
@@ -355,7 +399,151 @@ function CheckoutContent() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedAddressId, userAddresses, cartItems, form.country, form.city, form.postcode]);
 
-    const fetchAddresses = async () => {
+    /**
+     * Where this order is going, from whichever address the shopper is actually using --
+     * the saved one they picked, or the form they are filling in.
+     */
+    const destinationCountry = (() => {
+        const saved = userAddresses.find(a => a.id?.toString() === selectedAddressId?.toString());
+        if (saved?.country) return saved.country;
+        return form.country || DOMESTIC_COUNTRY;
+    })();
+
+    // Delivery outside the UAE cannot be priced automatically, so there is nothing to pay
+    // yet: the shopper asks for a quote instead of placing an order.
+    //
+    // Unless they are here to pay for one. An accepted quote already carries an agreed
+    // delivery figure, so asking for another would be a loop with no way out of it -- the
+    // shopper would be sent to request a quote for goods they have just been quoted for.
+    const needsShippingQuote = destinationCountry !== DOMESTIC_COUNTRY && !payingQuoteId;
+
+    useEffect(() => {
+        if (!payingQuoteId || !token) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/shipping-quotes/${payingQuoteId}`, {
+                    credentials: 'include',
+                    headers: getAuthHeaders(),
+                });
+                const data = await res.json();
+                if (cancelled) return;
+                if (data.success && data.data?.status === 'accepted') {
+                    setPayingQuote(data.data);
+                } else {
+                    showNotification(data.message || t('quoteNotPayable'), 'error');
+                    router.push('/profile?tab=shipping-quotes');
+                }
+            } catch {
+                if (!cancelled) showNotification(t('quoteFailed'), 'error');
+            }
+        })();
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [payingQuoteId, token]);
+
+    const [quoteSubmitting, setQuoteSubmitting] = useState(false);
+    // Set once the request is filed. The checkout form is replaced by a confirmation rather
+    // than the shopper being dropped on their profile with no explanation of what happened.
+    const [quoteSent, setQuoteSent] = useState<{ id: number; reference: string } | null>(null);
+
+    const handleRequestQuote = async () => {
+        if (!token) {
+            showNotification(n('checkoutSignin'), 'error');
+            return;
+        }
+        if (cartItems.length === 0) {
+            showNotification(n('cartEmpty'), 'error');
+            return;
+        }
+
+        const saved = userAddresses.find(a => a.id?.toString() === selectedAddressId?.toString());
+        // A saved row and the form spell the same fields differently, so both are read into
+        // one shape here rather than being branched on at every use below.
+        const address = saved
+            ? {
+                country: saved.country,
+                state: saved.state,
+                city: saved.city,
+                line1: saved.address_line1,
+                line2: saved.address_line2,
+                zip: saved.zip_code,
+                name: saved.name || user?.name,
+                phone: saved.phone || form.phone,
+            }
+            : {
+                country: form.country,
+                state: form.state,
+                city: form.city,
+                line1: form.streetAddress,
+                line2: form.additionalAddress,
+                zip: form.postcode,
+                name: `${form.firstName} ${form.lastName}`.trim(),
+                phone: form.phone,
+            };
+
+        if (!address.country || !address.city || !address.line1) {
+            showNotification(t('quoteAddressRequired'), 'error');
+            return;
+        }
+
+        setQuoteSubmitting(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/shipping-quotes`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    country: address.country,
+                    state: address.state || null,
+                    city: address.city || null,
+                    address_line1: address.line1,
+                    address_line2: address.line2 || null,
+                    zip_code: address.zip || null,
+                    contact_name: address.name || null,
+                    contact_phone: address.phone || null,
+                    contact_email: form.email || user?.email || null,
+                    customer_note: form.orderNotes || null,
+                    // Prices are re-read from the database server-side; these are only
+                    // identity and quantity.
+                    items: cartItems.map(item => ({
+                        product_id: item.id,
+                        variant_id: item.variant_id ?? null,
+                        quantity: item.quantity,
+                        custom_dimensions: item.custom_dimensions || null,
+                        custom_label: item.variant_label || null,
+                    })),
+                    coupon_id: appliedCoupon?.id ?? null,
+                    points_to_use: pointsToUse || 0,
+                    // Stored on the quote so the price email, sent days later by an admin,
+                    // still reaches the shopper in the language they were shopping in.
+                    locale,
+                }),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                showNotification(data.message || t('quoteFailed'), 'error');
+                return;
+            }
+            // The cart is deliberately left as it is. A quote is an offer, not a purchase --
+            // it can be declined or left to expire, and emptying the basket would strand a
+            // shopper who does either with nothing to go back to.
+            setQuoteSent({ id: data.data.id, reference: data.data.reference });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch {
+            showNotification(t('quoteFailed'), 'error');
+        } finally {
+            setQuoteSubmitting(false);
+        }
+    };
+
+    /**
+     * @param keepSelection leave the current choice alone rather than jumping to the default.
+     *        Used after saving a new address, which has just been selected deliberately --
+     *        re-selecting the default there would silently move the order to a different
+     *        address than the one the shopper had just typed in.
+     */
+    const fetchAddresses = async (keepSelection = false) => {
         if (!user) return;
         setLoadingAddresses(true);
         try {
@@ -368,7 +556,7 @@ function CheckoutContent() {
                 setUserAddresses(data.data || []);
                 // Pre-select the default address, else fall back to the first saved one.
                 const defaultAddr = data.data.find((a: any) => a.is_default) || data.data[0];
-                if (defaultAddr) {
+                if (defaultAddr && !keepSelection) {
                     setSelectedAddressId(defaultAddr.id);
                     setForm(prev => ({
                         ...prev,
@@ -421,9 +609,14 @@ function CheckoutContent() {
 
     useEffect(() => {
         if (!loading && !user && !token) {
-            router.push(`/signin?redirectTo=/checkout&reason=purchase`);
+            // The quote has to survive the round trip through sign-in. Someone arriving from
+            // the "pay now" button in their email is signed out as often as not, and losing
+            // the id here would land them on an ordinary checkout with an empty basket and
+            // no sign of the quote they came to pay.
+            const target = payingQuoteId ? `/checkout?quote=${payingQuoteId}` : '/checkout';
+            router.push(`/signin?redirectTo=${encodeURIComponent(target)}&reason=purchase`);
         }
-    }, [user, token, loading, router, locale]);
+    }, [user, token, loading, router, locale, payingQuoteId]);
 
     useEffect(() => {
         if (user) {
@@ -594,7 +787,7 @@ function CheckoutContent() {
                 const id = data.data?.id ?? data.id ?? null;
                 if (id) {
                     setSelectedAddressId(id);
-                    fetchAddresses();
+                    fetchAddresses(true);
                 }
                 return id;
             }
@@ -606,6 +799,10 @@ function CheckoutContent() {
     };
 
     const buildOrderData = (overrides: Record<string, any> = {}) => ({
+        // Paying for an accepted quote: the backend rebuilds the order from the quote's own
+        // snapshot -- the lines and prices the shopper actually agreed to -- and ignores the
+        // items below, which may have moved on since the quote was made.
+        ...(payingQuoteId ? { shipping_quote_id: payingQuoteId } : {}),
         items: cartItems.map(item => ({
             product_id: item.id,
             variant_id: item.variant_id ?? null,
@@ -645,7 +842,7 @@ function CheckoutContent() {
     // the order is created here and its PaymentIntent handed straight back for
     // confirmation. Nothing about the card form is involved.
     const walletValidate = () => {
-        if (cartItems.length === 0) return n('orderFailed');
+        if (lineItems.length === 0) return n('orderFailed');
         if (!token) return n('checkoutSignin');
         if (SHIPPING_QUOTES_ENABLED && !selectedShipping) return t('selectShippingFirst');
 
@@ -689,7 +886,7 @@ function CheckoutContent() {
             return;
         }
 
-        if (cartItems.length === 0) {
+        if (lineItems.length === 0) {
             showNotification(n('cartEmpty'), 'error');
             return;
         }
@@ -844,7 +1041,7 @@ function CheckoutContent() {
         }
     };
 
-    const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const subtotal = lineItems.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
     // Prices are VAT-exclusive — 5% VAT is added on top of the discounted total (cartTotal).
     const vatAmount = cartTotal * 0.05;
     if (loading || (!user && !token)) {
@@ -854,6 +1051,47 @@ function CheckoutContent() {
                 <div className={styles.loaderContainer}>
                     <div className={styles.spinner}></div>
                     <p>{t('processing') || 'Loading...'}</p>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    // The request is filed: say so, say what happens next, and give them the way back to it.
+    // Shown in place of the checkout rather than as a toast, because there is nothing left
+    // to do on this page and a toast would vanish before it had been read.
+    if (quoteSent) {
+        return (
+            <div className={styles.checkoutPage}>
+                <Header />
+                <div className={styles.checkoutContainer}>
+                    <div className={styles.quoteSentCard}>
+                        <div className={styles.quoteSentIcon}><CheckCircle size={44} /></div>
+                        <h1>{t('quoteSentTitle')}</h1>
+                        <p className={styles.quoteSentRef}>{quoteSent.reference}</p>
+                        <p className={styles.quoteSentBody}>{t('quoteSentBody')}</p>
+
+                        <div className={styles.quoteSentSteps}>
+                            <div className={styles.quoteSentStep}>
+                                <Mail size={18} />
+                                <span>{t('quoteSentStepEmail')}</span>
+                            </div>
+                            <div className={styles.quoteSentStep}>
+                                <Truck size={18} />
+                                <span>{t('quoteSentStepAccept')}</span>
+                            </div>
+                        </div>
+
+                        <Link
+                            href={`/profile?tab=shipping-quotes&quote=${quoteSent.id}`}
+                            className={styles.quoteSentPrimary}
+                        >
+                            {t('quoteSentViewQuote')}
+                        </Link>
+                        <Link href="/shop" className={styles.quoteSentSecondary}>
+                            {t('quoteSentKeepShopping')}
+                        </Link>
+                    </div>
                 </div>
                 <Footer />
             </div>
@@ -1220,12 +1458,20 @@ function CheckoutContent() {
                         </div>
                         )}
 
-                        {/* Step 2: Payment Method */}
-                        <div className={styles.checkoutSection}>
+                        {/* Step 2: Payment Method.
+                            Left visible but inert while a shipping quote is needed -- the
+                            total is not known yet, so there is nothing to pay for. Disabling
+                            rather than hiding keeps the checkout's shape familiar and says
+                            why, instead of silently dropping a step. */}
+                        <div className={`${styles.checkoutSection} ${needsShippingQuote ? styles.sectionDisabled : ''}`}>
                             <div className={styles.sectionHeader}>
                                 <div className={styles.stepNumber}>2</div>
                                 <h2 className={styles.sectionTitle}>{t('paymentMethod')}</h2>
                             </div>
+
+                            {needsShippingQuote && (
+                                <p className={styles.sectionDisabledHint}>{t('paymentAfterQuote')}</p>
+                            )}
 
                             {/* Apple Pay / Google Pay. Renders nothing unless the visitor
                                 actually has a usable wallet, so it costs nothing when it
@@ -1687,7 +1933,7 @@ function CheckoutContent() {
                                 )}
 
                                 <div className={styles.itemList}>
-                                    {cartItems.map(item => (
+                                    {lineItems.map((item: any) => (
                                         <div key={`${item.id}-${item.variant_id ?? 'base'}-${item.custom_signature ?? ''}`} className={styles.itemRow}>
                                             <img
                                                 src={resolveUrl(item.image) || '/assets/mariot-logo2.webp'}
@@ -1803,7 +2049,7 @@ function CheckoutContent() {
                                     )}
                                 </div>
 
-                                {!isProcessing && cartItems.length > 0 && ((SHIPPING_QUOTES_ENABLED && !selectedShipping) || !paymentMethod) && (
+                                {!isProcessing && !needsShippingQuote && lineItems.length > 0 && ((SHIPPING_QUOTES_ENABLED && !selectedShipping) || !paymentMethod) && (
                                     <p className={styles.checkoutBlockedHint}>
                                         {SHIPPING_QUOTES_ENABLED && !selectedShipping && !paymentMethod
                                             ? t('selectShippingAndPayment')
@@ -1813,18 +2059,42 @@ function CheckoutContent() {
                                     </p>
                                 )}
 
-                                <button
-                                    type="submit"
-                                    className={styles.checkoutBtn}
-                                    disabled={isProcessing || cartItems.length === 0 || (SHIPPING_QUOTES_ENABLED && !selectedShipping) || !paymentMethod}
-                                >
-                                    {isProcessing ? (
-                                        <Clock size={20} className={styles.animateSpin} />
-                                    ) : (
-                                        <ShieldCheck size={20} />
-                                    )}
-                                    {isProcessing ? t('processing') : t('completePurchase')}
-                                </button>
+                                {/* Outside the UAE there is no price to pay yet, so the order button
+                                    is replaced by a request. Payment happens later, from the quote. */}
+                                {needsShippingQuote ? (
+                                    <>
+                                        <p className={styles.quoteNotice}>
+                                            {t('quoteNotice', { country: countryLabel(destinationCountry, locale) })}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            className={styles.checkoutBtn}
+                                            onClick={handleRequestQuote}
+                                            disabled={quoteSubmitting || cartItems.length === 0}
+                                        >
+                                            {quoteSubmitting ? (
+                                                <Clock size={20} className={styles.animateSpin} />
+                                            ) : (
+                                                <Truck size={20} />
+                                            )}
+                                            {quoteSubmitting ? t('processing') : t('requestShippingQuote')}
+                                        </button>
+                                        <p className={styles.quoteHint}>{t('quoteHint')}</p>
+                                    </>
+                                ) : (
+                                    <button
+                                        type="submit"
+                                        className={styles.checkoutBtn}
+                                        disabled={isProcessing || lineItems.length === 0 || (SHIPPING_QUOTES_ENABLED && !selectedShipping) || !paymentMethod}
+                                    >
+                                        {isProcessing ? (
+                                            <Clock size={20} className={styles.animateSpin} />
+                                        ) : (
+                                            <ShieldCheck size={20} />
+                                        )}
+                                        {isProcessing ? t('processing') : t('completePurchase')}
+                                    </button>
+                                )}
 
                                 <div className={styles.trustBadges}>
                                     <img src="/assets/visa-logo.svg" alt="Visa" className={`${styles.trustBadge} ${styles.visaBadge}`} />

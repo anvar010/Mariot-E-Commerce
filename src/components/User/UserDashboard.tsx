@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useCart } from '@/context/CartContext';
 import { useNotification } from '@/context/NotificationContext';
+import ShippingQuotes from '@/components/User/ShippingQuotes/ShippingQuotes';
 import {
     Package,
     Heart,
@@ -36,7 +37,8 @@ import {
     Building2,
     MoreHorizontal,
     BadgeCheck,
-    Plus
+    Plus,
+    Truck
 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
@@ -599,9 +601,13 @@ const UserDashboard = () => {
         { name: 'favorites', translationName: t('nav.favorites'), icon: <Heart size={20} /> },
         { name: 'profileSecurity', translationName: t('nav.profileSecurity'), icon: <User size={20} /> },
         { name: 'quotations', translationName: t('nav.quotations'), icon: <FileText size={20} /> },
+        { name: 'shipping-quotes', translationName: t('nav.shippingQuotes'), icon: <Truck size={20} /> },
         { name: 'addresses', translationName: t('nav.addresses'), icon: <MapPin size={20} /> },
         { name: 'payments', translationName: t('nav.payments'), icon: <CreditCard size={20} /> },
-        ...(['seller', 'admin'].includes(user?.role) ? [{ name: 'sellerDashboard', translationName: t('nav.sellerDashboard'), icon: <Store size={20} /> }] : []),
+        // Hidden for now at the owner's request. The route, its handler below and the
+        // translation key are all left in place, so restoring the tab is uncommenting
+        // this one line.
+        // ...(['seller', 'admin'].includes(user?.role) ? [{ name: 'sellerDashboard', translationName: t('nav.sellerDashboard'), icon: <Store size={20} /> }] : []),
     ];
 
     if (authLoading) return <Loader fullPage={true} />;
@@ -1483,6 +1489,10 @@ const UserDashboard = () => {
                     </form>
                 </div>
             );
+        }
+
+        if (activeSection === 'shipping-quotes') {
+            return <ShippingQuotes focusId={searchParams.get('quote')} />;
         }
 
         if (activeSection === 'quotations') {
