@@ -1502,11 +1502,9 @@ function CheckoutContent() {
                                 the sheet -- there is no step in it where a delivery cost that
                                 has not been quoted yet could be added, so offering it on a
                                 foreign address would take the money at the wrong total.
-
-                                Paying an accepted quote is the exception: its delivery is
-                                already agreed and the total is final, so the one tap is
-                                charging the right amount. */}
-                            {(destinationCountry === DOMESTIC_COUNTRY || payingQuote) && (
+                                That holds for a quoted order too: its delivery is settled, but
+                                the wallets are a UAE-only payment option here regardless. */}
+                            {destinationCountry === DOMESTIC_COUNTRY && (
                             <WalletExpressCheckout
                                 amount={finalTotal}
                                 validate={walletValidate}
@@ -2155,7 +2153,7 @@ function CheckoutContent() {
                                     <img src="/assets/mastercard-logo.svg" alt="Mastercard" className={styles.trustBadge} />
                                     {/* Not advertised where they cannot be used -- a wallet logo
                                         under the button implies an option that is not offered. */}
-                                    {(destinationCountry === DOMESTIC_COUNTRY || payingQuote) && (
+                                    {destinationCountry === DOMESTIC_COUNTRY && (
                                         <>
                                             <img src="/assets/apple-pay-logo.svg" alt="Apple Pay" className={styles.trustBadge} />
                                             <img src="/assets/google-pay-logo.svg" alt="Google Pay" className={styles.trustBadge} />
