@@ -1727,6 +1727,11 @@ const AdminProducts = () => {
                 ...formDataClean,
                 delivery_charge: formData.charge_delivery ? (Number(formData.delivery_charge) || 0) : 0,
                 images,
+                // Set explicitly, the same way images are, rather than relying on the spread
+                // above to carry it. The server logged this arriving as undefined even though
+                // the field was in the form state -- naming it here removes the doubt, and
+                // costs nothing. An empty string means "no model" and clears the column.
+                model_3d_url: formData.model_3d_url || '',
                 youtube_video_link: JSON.stringify({
                     links: formData.youtube_video_links,
                     featuredIndex: formData.featured_video_index
