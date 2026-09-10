@@ -36,6 +36,8 @@ class Review {
     static async getAll() {
         const [rows] = await db.execute(`
             SELECT r.*, u.name as user_name, p.name as product_name,
+            -- Lets the admin list link each review straight to the product it is about.
+            p.slug as product_slug,
             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as product_image
             FROM reviews r
             LEFT JOIN users u ON r.user_id = u.id
