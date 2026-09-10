@@ -35,10 +35,13 @@ interface IndexProduct {
     primary_image?: string | null;
 }
 
+/** What ProductCard shows when a product has no photo, so the two agree. */
+const FALLBACK_IMAGE = '/assets/mariot-logo2.webp';
+
 /** Image paths come back relative to the API host. */
-const imageUrl = (path?: string | null): string | null => {
+const imageUrl = (path?: string | null): string => {
     const p = String(path ?? '').trim();
-    if (!p) return null;
+    if (!p) return FALLBACK_IMAGE;
     if (p.startsWith('http')) return p;
     return `${MEDIA_BASE_URL}${p.startsWith('/') ? '' : '/'}${p}`;
 };
@@ -86,22 +89,21 @@ export default async function CategoryProductIndex({ categorySlug, locale, headi
                                     what scrolls into view, and the fixed box keeps the row
                                     from jumping as each one arrives.
 
+                                    A product with no photo falls back to the Mariot logo, the
+                                    same as its product card does, rather than to an empty box.
+
                                     The alt is empty because the product name sits right
                                     beside it -- announcing it twice makes the list slower to
                                     read with a screen reader, not clearer. */}
-                                {src ? (
-                                    <img
-                                        src={src}
-                                        alt=""
-                                        width={40}
-                                        height={40}
-                                        loading="lazy"
-                                        decoding="async"
-                                        className={styles.thumb}
-                                    />
-                                ) : (
-                                    <span className={styles.thumbFallback} aria-hidden="true" />
-                                )}
+                                <img
+                                    src={src}
+                                    alt=""
+                                    width={40}
+                                    height={40}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className={styles.thumb}
+                                />
                                 <span className={styles.name}>{name}</span>
                             </Link>
                         </li>

@@ -61,8 +61,7 @@
    A fixed 40px box whether or not the image loads, so a row never shifts as
    lazy-loaded images arrive. */
 
-.thumb,
-.thumbFallback {
+.thumb {
     flex-shrink: 0;
     width: 40px;
     height: 40px;
@@ -72,7 +71,9 @@
 }
 
 .thumb {
+    /* contain, and a little inset, so a logo fallback is not cropped to its edges. */
     object-fit: contain;
+    padding: 3px;
 }
 
 .name {
