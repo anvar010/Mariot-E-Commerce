@@ -1,0 +1,56 @@
+/* A plain, readable index of everything in the category.
+   Sits below the curated landing page for the shopper who wants the whole list. */
+
+.index {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 22px 56px;
+}
+
+.heading {
+    margin: 0 0 20px;
+    font-size: 19px;
+    font-weight: 700;
+    color: #0f172a;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 6px 28px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.link {
+    display: block;
+    padding: 7px 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #475569;
+    text-decoration: none;
+}
+
+.link:hover {
+    color: #16a1db;
+    text-decoration: underline;
+}
+
+.link:focus-visible {
+    outline: 2px solid #16a1db;
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+@media (max-width: 640px) {
+    .index {
+        padding: 28px 16px 40px;
+    }
+
+    .list {
+        grid-template-columns: 1fr;
+    }
+}
