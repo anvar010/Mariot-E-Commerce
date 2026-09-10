@@ -158,10 +158,10 @@ const Footer = () => {
                             <h4>{t('productCategories')}</h4>
                             <ul>
                                 <li><Link href="/shop?category=coffee-makers">{t('accessories')}</Link></li>
-                                <li><Link href="/shop?category=bakery">{t('bakeryLine')}</Link></li>
+                                <li><Link href="/shop?category=commercial-ovens">{t('bakeryLine')}</Link></li>
                                 <li><Link href="/shop?category=cooking-equipment">{t('cookingLine')}</Link></li>
                                 <li><Link href="/shop?category=food-preparation">{t('foodProcessing')}</Link></li>
-                                <li><Link href="/shop?category=dishwashing">{t('laundryDishWasher')}</Link></li>
+                                <li><Link href="/shop?category=dishwashing-equipment">{t('laundryDishWasher')}</Link></li>
                                 <li><Link href="/shop?category=refrigeration">{t('refrigerationLine')}</Link></li>
                             </ul>
                         </div>
