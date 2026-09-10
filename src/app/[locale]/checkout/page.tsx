@@ -42,6 +42,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, TABBY_ENABLED, SHIPPING_QUOTES_ENABLED, DOMESTIC_COUNTRY } from '@/config';
 import { settlementFeeFor } from '@/config';
+import { regionalDeliveryFor } from '@/config/regionalDelivery';
 import { statesFor, areasFor, countryLabel, SHIPPING_COUNTRIES } from '@/data/cities';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { formatCustomDims } from '@/utils/customDimensions';
@@ -333,9 +334,30 @@ function CheckoutContent() {
     // accepted a specific figure; the cart may have changed in the days since, and the
     // server prices from the quote's snapshot regardless, so showing the cart's number here
     // would only disagree with what is actually taken.
+    /**
+     * Where this order is going, from whichever address is actually in use -- the saved one
+     * they picked, or the form they are filling in. Needed before the totals, because some
+     * destinations carry a delivery charge of their own.
+     */
+    const destination = (() => {
+        const saved = userAddresses.find(a => a.id?.toString() === selectedAddressId?.toString());
+        if (saved) return { state: saved.state, country: saved.country };
+        return { state: form.state, country: form.country };
+    })();
+
+    /**
+     * Al Dhafra and anywhere else too far out for the flat rate. Shown here so the shopper
+     * sees it before they commit; the server recomputes it from the saved address and its
+     * answer is what is charged.
+     *
+     * The larger of the two is taken rather than the sum -- both pay for the same journey.
+     */
+    const regionalDelivery = payingQuote ? 0 : regionalDeliveryFor(destination, cartTotal);
+    const effectiveDelivery = Math.max(deliveryTotal, regionalDelivery);
+
     const preFeeTotal = payingQuote
         ? Number(payingQuote.quoted_total) || 0
-        : cartTotal * 1.05 + deliveryTotal + shippingCost;
+        : cartTotal * 1.05 + effectiveDelivery + shippingCost;
     // BNPL providers keep a slice of what they settle; that cost is passed on as its own
     // line. Computed from the same rule the server uses, so the figure shown here is the
     // figure charged -- the server still recomputes it and its answer is authoritative.
@@ -2020,7 +2042,7 @@ function CheckoutContent() {
                                         charged for delivery in the same summary. The delivery
                                         line below is the one that carries the figure, so this is
                                         only shown when there genuinely is nothing to pay. */}
-                                    {!payingQuote && deliveryTotal === 0 && shippingCost === 0 && (
+                                    {!payingQuote && effectiveDelivery === 0 && shippingCost === 0 && (
                                         <div className={styles.totalRow}>
                                             <span>{common('shipping')}</span>
                                             <span className={styles.freeText}>{common('free')}</span>
@@ -2043,7 +2065,7 @@ function CheckoutContent() {
                                     {(() => {
                                         const delivery = payingQuote
                                             ? Number(payingQuote.delivery_charge) || 0
-                                            : deliveryTotal;
+                                            : effectiveDelivery;
                                         return (
                                             <div className={styles.totalRow}>
                                                 <span>
