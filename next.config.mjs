@@ -252,7 +252,7 @@ const nextConfig = {
                         key: 'Content-Security-Policy',
                         value: [
                             "default-src 'self'",
-                            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://js.stripe.com https://*.tabby.ai https://cdn.jsdelivr.net https://accounts.google.com https://www.youtube.com https://s.ytimg.com",
+                            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://js.stripe.com https://*.tabby.ai https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com https://www.youtube.com https://s.ytimg.com",
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.tabby.ai",
                             "img-src 'self' data: blob: https://www.google-analytics.com https://*.google-analytics.com https://ui-avatars.com https://upload.wikimedia.org https://flagcdn.com https://images.unsplash.com https://plus.unsplash.com https://via.placeholder.com https://www.rational-online.com https://mariotstore.com https://api.mariotstore.com https://mariotgroup.com https://mariot-backend.onrender.com http://localhost:5000 https://www.gstatic.com https://*.googleusercontent.com https://*.tabby.ai https://*.pinterest.com https://*.pinimg.com https://i.ytimg.com https://img.youtube.com",
                             "font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com https://*.tabby.ai",

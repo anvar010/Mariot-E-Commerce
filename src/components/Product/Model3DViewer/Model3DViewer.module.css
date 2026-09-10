@@ -1,0 +1,96 @@
+/* Trigger --------------------------------------------------------------------
+   Sits with the product gallery. Only rendered when the product has a model. */
+
+.trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease;
+}
+
+.trigger:hover {
+    background: #f8fafc;
+    border-color: #16a1db;
+    color: #16a1db;
+}
+
+.trigger:focus-visible {
+    outline: 2px solid #16a1db;
+    outline-offset: 2px;
+}
+
+/* Viewer ---------------------------------------------------------------------- */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, .62);
+}
+
+.frame {
+    position: relative;
+    width: min(900px, 100%);
+    height: min(640px, 84vh);
+    background: #f8fafc;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, .3);
+}
+
+.close {
+    position: absolute;
+    top: 12px;
+    /* Logical, so it stays on the outer corner in Arabic too. */
+    inset-inline-end: 12px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: #334155;
+    background: rgba(255, 255, 255, .92);
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.close:hover {
+    background: #fff;
+    color: #0f172a;
+}
+
+.message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    margin: 0;
+    font-size: 14px;
+    color: #64748b;
+}
+
+@media (max-width: 640px) {
+    .overlay {
+        padding: 12px;
+    }
+
+    .frame {
+        height: 70vh;
+    }
+}

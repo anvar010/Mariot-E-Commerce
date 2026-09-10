@@ -51,6 +51,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import styles from './ProductDetail.module.css';
 import DeliveryInformation from './DeliveryInformation';
+import Model3DViewer from '@/components/Product/Model3DViewer/Model3DViewer';
 import ProductTags from './ProductTags';
 import { API_BASE_URL, BASE_URL, TABBY_ENABLED } from '@/config';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -1739,6 +1740,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         <ChevronRight size={32} />
                                     </button>
                                 </div>
+
+                                {/* Renders nothing unless this product has a model attached. */}
+                                <Model3DViewer
+                                    modelUrl={product?.model_3d_url}
+                                    productName={getLocalizedField('name', 'name_ar')}
+                                    posterImage={resolveUrl(product?.primary_image)}
+                                    label={isArabic ? 'عرض ثلاثي الأبعاد' : 'View in 3D'}
+                                />
 
                                 <ProductTags tags={product?.tags} tagsAr={product?.tags_ar} isArabic={isArabic} variant="desktop" />
                             </div>

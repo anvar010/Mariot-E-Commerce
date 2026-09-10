@@ -2984,3 +2984,49 @@
     color: #1d4ed8;
     font-weight: 600;
 }
+
+/* 3D model field ----------------------------------------------------------- */
+
+.model3dRow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 12px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+}
+
+.model3dLink {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    color: #166534;
+    text-decoration: none;
+}
+
+.model3dLink:hover {
+    text-decoration: underline;
+}
+
+.model3dRemove {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #991b1b;
+    background: #fff;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.model3dHint {
+    display: block;
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: #94a3b8;
+}

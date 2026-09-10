@@ -7,11 +7,11 @@ import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminProducts.module.css';
 import { DELIVERY_PRESETS, DEFAULT_DELIVERY_DAYS, deliveryDateLabel, normalizeDeliveryDays } from '@/utils/delivery';
 import { PERFECT_FOR_PRESETS, splitTags, joinTags, type PerfectForPreset } from '@/utils/productTags';
-import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag, Ruler, MoveHorizontal, MoveVertical, Scale, Info, GripVertical } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, X, Upload, ChevronDown, ChevronLeft, ChevronRight, Loader2, FileDown, FileUp, CheckCircle2, AlertCircle, AlertTriangle, ClipboardCheck, Banknote, LayoutGrid, Images, FileText, BarChart3, Eye, EyeOff, Video, ShoppingCart, Check, Layers, Tag, Ruler, MoveHorizontal, MoveVertical, Scale, Info, GripVertical, Box } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
 import { stripHtml } from '@/utils/formatters';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -744,6 +744,7 @@ const AdminProducts = () => {
         name_ar: '',
         model: '',
         youtube_video_links: [''],
+        model_3d_url: '',
         featured_video_index: 0,
         description: '',
         description_ar: '',
@@ -799,6 +800,7 @@ const AdminProducts = () => {
             setFormData({
                 name: '', name_ar: '', model: '',
                 youtube_video_links: [''],
+                model_3d_url: '',
                 featured_video_index: 0,
                 description: '', description_ar: '',
                 short_description: '', short_description_ar: '',
@@ -1271,6 +1273,54 @@ const AdminProducts = () => {
         }
     };
 
+    /**
+     * Upload a 3D model for this product.
+     *
+     * Goes through the same /upload/document endpoint as a spec sheet -- it stores the file
+     * untouched under /uploads and returns the path, which is exactly what a .glb needs. An
+     * image upload would be the wrong route: those get resized, and resizing a 3D model
+     * would corrupt it.
+     */
+    const handleModel3dUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+
+        const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+        if (!['.glb', '.gltf', '.usdz'].includes(ext)) {
+            showNotification('Use a .glb, .gltf or .usdz file.', 'error');
+            return;
+        }
+        if (file.size > 40 * 1024 * 1024) {
+            showNotification('3D models must be 40MB or smaller.', 'error');
+            return;
+        }
+
+        const body = new FormData();
+        body.append('file', file);
+
+        setUploading(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/upload/document?folder=models`, {
+                credentials: 'include',
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body,
+            });
+            const data = await res.json();
+            if (data.success) {
+                setFormData((prev: any) => ({ ...prev, model_3d_url: data.data }));
+                showNotification(t('notifications.uploadSuccess'));
+            } else {
+                showNotification(data.message || t('notifications.uploadError'), 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showNotification('Upload error', 'error');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleResourceUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         if (!e.target.files || e.target.files.length === 0) return;
 
@@ -1344,6 +1394,7 @@ const AdminProducts = () => {
         }
 
         setFormData({
+            model_3d_url: product.model_3d_url || '',
             name: stripHtml(product.name),
             name_ar: stripHtml(product.name_ar || ''),
             model: product.model || '',
@@ -1576,6 +1627,7 @@ const AdminProducts = () => {
             router.push('/admin/products');
         }
         setFormData({
+            model_3d_url: '',
             name: '',
             name_ar: '',
             model: '',
@@ -2570,6 +2622,43 @@ const AdminProducts = () => {
                                                     <input type="text" value={products.find(p => p.id === editingId)?.slug || 'Auto-generated'} disabled className={styles.disabledInput} />
                                                 </div>
                                             </div>
+                                            {/* Optional. The product page shows a 3D viewer only
+                                                where a model has been attached; every other
+                                                product is unaffected. */}
+                                            <div className={styles.formGroup}>
+                                                <label>3D Model (optional)</label>
+                                                {formData.model_3d_url ? (
+                                                    <div className={styles.model3dRow}>
+                                                        <Box size={16} color="#16a34a" />
+                                                        <a
+                                                            href={`${MEDIA_BASE_URL}${formData.model_3d_url}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className={styles.model3dLink}
+                                                        >
+                                                            {String(formData.model_3d_url).split('/').pop()}
+                                                        </a>
+                                                        <button
+                                                            type="button"
+                                                            className={styles.model3dRemove}
+                                                            onClick={() => setFormData((prev: any) => ({ ...prev, model_3d_url: '' }))}
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <input
+                                                        type="file"
+                                                        accept=".glb,.gltf,.usdz"
+                                                        onChange={handleModel3dUpload}
+                                                        disabled={uploading}
+                                                    />
+                                                )}
+                                                <small className={styles.model3dHint}>
+                                                    .glb, .gltf or .usdz — up to 40MB. Leave empty for no 3D view.
+                                                </small>
+                                            </div>
+
                                             <div className={styles.formGroup}>
                                                 <label>{t('modal.fields.videos')}</label>
                                                 <div className={styles.videoLinksList}>
