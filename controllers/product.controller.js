@@ -429,9 +429,9 @@ exports.updateProduct = async (req, res, next) => {
             console.error('[notify] Could not read previous product state:', e.message);
         }
 
-        // Temporary: 3D model uploads were not persisting and the code path reads correctly,
-        // so this records what actually arrives. Remove once the cause is confirmed.
-        console.log('[UPDATE %s] model_3d_url received: %j', req.params.id, req.body.model_3d_url);
+        // Temporary: 3D model uploads were not persisting. Kept until one save is confirmed
+        // to work, then removed.
+        console.log(`[UPDATE ${req.params.id}] model_3d_url=${JSON.stringify(req.body.model_3d_url)} keyPresent=${'model_3d_url' in req.body}`);
 
         await Product.update(req.params.id, req.body);
 

@@ -1046,6 +1046,11 @@ class Product {
                     cleanData[key] = normalizeTags(data[key]);
                 } else if (key === 'weight_kg') {
                     cleanData[key] = normalizeWeightKg(data[key]);
+                } else if (key === 'model_3d_url') {
+                    // Empty means "no model", and the viewer keys off a null/empty value.
+                    // Stored as NULL rather than '' so the two cannot drift apart.
+                    const v = String(data[key] ?? '').trim();
+                    cleanData[key] = v === '' ? null : v;
                 } else if (['offer_start', 'offer_end'].includes(key)) {
                     // Handle datetime columns: empty string -> null (strict MySQL rejects '')
                     cleanData[key] = (data[key] && data[key] !== '') ? data[key] : null;
