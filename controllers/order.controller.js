@@ -9,6 +9,7 @@ const { sendOrderConfirmationEmail, sendEmail } = require('../utils/sendEmail');
 const tamaraService = require('../services/tamara.service');
 const refundService = require('../services/refund.service');
 const { settlementFeeFor } = require('../config/settlementFee');
+const { regionalDeliveryFor } = require('../config/regionalDelivery');
 const { siteUrl } = require('../config/siteUrl');
 const ShippingQuote = require('../models/shippingQuote.model');
 
@@ -251,10 +252,35 @@ exports.createOrder = async (req, res, next) => {
         // Prices are VAT-exclusive: add 5% VAT on top of the (discounted) subtotal.
         const vatAmount = discountedSubtotal * 0.05;
         // Per-product delivery charge (0 = free). Free-gift lines never ship-charged.
-        const deliveryTotal = items.reduce((sum, item) => {
+        const perProductDelivery = items.reduce((sum, item) => {
             if (Number(item.is_free_gift) === 1) return sum;
             return sum + (Number(item.delivery_charge) || 0) * (Number(item.quantity) || 0);
         }, 0);
+
+        /**
+         * Somewhere far enough out that the flat rate does not cover getting there -- Al
+         * Dhafra, currently. Read from the saved address rather than from the request: the
+         * charge depends on where this is going, and that is not the client's to declare.
+         *
+         * The larger of the two is charged, not the sum. Both are paying for the same
+         * journey, so adding them would charge twice for one delivery.
+         */
+        let regionalDelivery = 0;
+        if (!sourceQuote) {
+            let destination = null;
+            if (shipping_address_id && shipping_address_id !== 1) {
+                const [[row]] = await db.execute(
+                    'SELECT state, country FROM addresses WHERE id = ? AND user_id = ?',
+                    [shipping_address_id, req.user.id]
+                );
+                destination = row || null;
+            } else if (billing_details) {
+                destination = { state: billing_details.state, country: billing_details.country };
+            }
+            regionalDelivery = regionalDeliveryFor(destination, discountedSubtotal);
+        }
+
+        const deliveryTotal = Math.max(perProductDelivery, regionalDelivery);
         // BNPL providers keep a percentage of what they settle, so that cost is added as
         // its own line. It sits OUTSIDE the taxable base -- VAT is already in the figure
         // it is charged on, and no VAT is levied on the fee itself.
