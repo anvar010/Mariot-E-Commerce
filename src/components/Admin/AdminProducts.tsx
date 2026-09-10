@@ -1299,8 +1299,21 @@ const AdminProducts = () => {
         }
         // The path may carry a query string, so the extension is checked before any "?".
         const path = url.split('?')[0].split('#')[0].toLowerCase();
-        if (!['.glb', '.gltf', '.usdz'].some(ext => path.endsWith(ext))) {
-            showNotification('The link must point at a .glb, .gltf or .usdz file.', 'error');
+        const isModelFile = ['.glb', '.gltf', '.usdz'].some(ext => path.endsWith(ext));
+        const isSketchfabEmbed = /sketchfab\.com\/models\/[a-z0-9]+\/embed/i.test(path);
+
+        if (!isModelFile && !isSketchfabEmbed) {
+            // A Sketchfab viewer page is the usual mistake -- it is the page you land on,
+            // not something that can be shown inside our own. The /embed URL behind its
+            // Share button is the one that works.
+            if (path.includes('sketchfab.com')) {
+                showNotification(
+                    'Use the Sketchfab embed link: open Share on the model, copy the iframe URL ending in /embed.',
+                    'error',
+                );
+                return;
+            }
+            showNotification('Use a .glb, .gltf or .usdz file, or a Sketchfab /embed link.', 'error');
             return;
         }
 
@@ -2713,8 +2726,8 @@ const AdminProducts = () => {
                                                     </div>
                                                 )}
                                                 <small className={styles.model3dHint}>
-                                                    .glb, .gltf or .usdz — upload up to 40MB, or link to one hosted
-                                                    elsewhere. Leave empty for no 3D view.
+                                                    .glb, .gltf or .usdz — upload up to 40MB, or paste a Sketchfab
+                                                    embed link. Leave empty for no 3D view.
                                                 </small>
                                             </div>
 

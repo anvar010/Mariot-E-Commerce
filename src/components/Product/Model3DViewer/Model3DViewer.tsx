@@ -42,9 +42,19 @@ export default function Model3DViewer({ modelUrl, productName, posterImage, acti
         ? (modelUrl.startsWith('http') ? modelUrl : `${MEDIA_BASE_URL}${modelUrl.startsWith('/') ? '' : '/'}${modelUrl}`)
         : null;
 
-    // Loaded the first time this slide is looked at, once per page.
+    /**
+     * Two kinds of 3D source, and they are shown in completely different ways.
+     *
+     * A .glb/.gltf/.usdz file is loaded into model-viewer, which we control and which can
+     * offer AR. A Sketchfab embed is somebody else's viewer in an iframe -- no library to
+     * load, no AR, but it works with a link and nothing to host.
+     */
+    const isEmbed = !!src && !/\.(glb|gltf|usdz)(\?|#|$)/i.test(src);
+
+    // Loaded the first time this slide is looked at, once per page. An embed needs no
+    // library at all, so this is skipped entirely for one.
     useEffect(() => {
-        if (!active || ready || failed) return;
+        if (isEmbed || !active || ready || failed) return;
 
         if (customElements.get('model-viewer')) {
             setReady(true);
@@ -64,9 +74,35 @@ export default function Model3DViewer({ modelUrl, productName, posterImage, acti
         // A blocked CDN leaves the poster in place rather than a permanent spinner.
         script.onerror = () => setFailed(true);
         document.head.appendChild(script);
-    }, [active, ready, failed]);
+    }, [isEmbed, active, ready, failed]);
 
     if (!src) return null;
+
+    // An embed is just an iframe, mounted only while its slide is active: an iframe
+    // swallows touch events, so one left mounted on an inactive slide would trap a finger
+    // that landed on it and stop the gallery being swiped -- the same trap the video had.
+    if (isEmbed) {
+        if (!active) {
+            return (
+                <div className={styles.stage}>
+                    {posterImage && <img src={posterImage} alt={productName} className={styles.poster} />}
+                    <span className={styles.badge}>{label}</span>
+                </div>
+            );
+        }
+        return (
+            <div className={styles.stage}>
+                <iframe
+                    src={src}
+                    title={productName}
+                    className={styles.viewer}
+                    allow="autoplay; fullscreen; xr-spatial-tracking"
+                    allowFullScreen
+                    frameBorder="0"
+                />
+            </div>
+        );
+    }
 
     // Until the slide is reached -- or if the library will not load -- the product photo
     // stands in, so the slide always has something in it and never jumps in height.
