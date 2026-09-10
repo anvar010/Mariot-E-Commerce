@@ -1442,16 +1442,26 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
     // frame as the photos instead of sitting in its own column beside the copy.
     type GalleryItem =
         | { kind: 'image'; src: string }
-        | { kind: 'video'; embed: string; still: string; stillFallback: string };
+        | { kind: 'video'; embed: string; still: string; stillFallback: string }
+        | { kind: 'model'; src: string };
+
+    // The 3D view is a slide in the gallery, not a separate button beside it: it is another
+    // way of looking at the product, so it belongs where the photos are and is reached by
+    // swiping to it. Last, after the photos and the video, and only when there is one.
+    const model3dUrl = (product?.model_3d_url || '').trim();
 
     const galleryItems: GalleryItem[] = [
         ...images.map((src: string) => ({ kind: 'image' as const, src })),
         ...(featuredVideoUrl
             ? [{ kind: 'video' as const, embed: toEmbedUrl(featuredVideoUrl), still: youTubeStill(featuredVideoUrl), stillFallback: youTubeStillFallback(featuredVideoUrl) }]
             : []),
+        ...(model3dUrl ? [{ kind: 'model' as const, src: model3dUrl }] : []),
     ];
 
     const activeIsVideo = galleryItems[currentImageIndex]?.kind === 'video';
+    // The lightbox zooms photographs. The video and the 3D view each have their own
+    // controls, and blowing either up in an image viewer makes no sense.
+    const activeIsPhoto = galleryItems[currentImageIndex]?.kind === 'image';
 
     // Calculate Rating Stats once per render
     const reviewsCount = reviews.length;
@@ -1527,7 +1537,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                             <div className={styles.gallerySection}>
                                 {/* Stock is a fact about the product, but pinned over a playing
                                     video it reads as a label on the video and covers it. */}
-                                {!activeIsVideo && (
+                                {activeIsPhoto && (
                                     <div
                                         className={styles.stockBadge}
                                         style={{ backgroundColor: !outOfStock ? '#62d972' : '#ff4d4f' }}
@@ -1666,6 +1676,19 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                             </span>
                                                         </button>
                                                     )
+                                                ) : item.kind === 'model' ? (
+                                                    // Mounted only while this slide is the active one. The viewer
+                                                    // library is ~300KB and takes the pointer for its own
+                                                    // rotate-and-zoom, so keeping it mounted on a slide nobody is
+                                                    // looking at would both cost the download and swallow swipes
+                                                    // meant for the gallery -- the same trap the video had.
+                                                    <Model3DViewer
+                                                        modelUrl={item.src}
+                                                        productName={getLocalizedField('name', 'name_ar')}
+                                                        posterImage={images[0] || null}
+                                                        active={currentImageIndex === idx}
+                                                        label={isArabic ? 'عرض ثلاثي الأبعاد' : 'View in 3D'}
+                                                    />
                                                 ) : (
                                                     <img
                                                         src={item.src}
@@ -1679,7 +1702,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </Swiper>
                                     {/* The lightbox zooms photographs; the video has its own
                                         fullscreen control inside the player. */}
-                                    {!activeIsVideo && (
+                                    {activeIsPhoto && (
                                         <button
                                             className={styles.expandBtn}
                                             onClick={() => setIsFullScreen(true)}
@@ -1727,6 +1750,19 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                                         />
                                                         <span className={styles.thumbPlayBadge}><PlayCircle size={20} /></span>
                                                     </>
+                                                ) : item.kind === 'model' ? (
+                                                    <>
+                                                        {/* The product photo carries the thumbnail -- a .glb cannot be
+                                                            drawn as an image -- with a badge marking it as the 3D one,
+                                                            the same way the video slide is marked. */}
+                                                        <img
+                                                            src={images[0] || ''}
+                                                            alt="3D model"
+                                                            className={styles.thumbImage}
+                                                            onError={swapToLogoOnError}
+                                                        />
+                                                        <span className={styles.thumb3dBadge}>3D</span>
+                                                    </>
                                                 ) : (
                                                     <img src={item.src} alt={`Thumb ${idx}`} className={styles.thumbImage} onError={swapToLogoOnError} />
                                                 )}
@@ -1740,14 +1776,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                         <ChevronRight size={32} />
                                     </button>
                                 </div>
-
-                                {/* Renders nothing unless this product has a model attached. */}
-                                <Model3DViewer
-                                    modelUrl={product?.model_3d_url}
-                                    productName={getLocalizedField('name', 'name_ar')}
-                                    posterImage={resolveUrl(product?.primary_image)}
-                                    label={isArabic ? 'عرض ثلاثي الأبعاد' : 'View in 3D'}
-                                />
 
                                 <ProductTags tags={product?.tags} tagsAr={product?.tags_ar} isArabic={isArabic} variant="desktop" />
                             </div>

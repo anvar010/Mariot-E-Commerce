@@ -5618,6 +5618,22 @@
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .6));
 }
 
+/* Marks the 3D slide in the thumbnail strip, the same way the play badge marks the
+   video. A word rather than an icon, because "3D" is the clearer label. */
+.thumb3dBadge {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    background: rgba(0, 0, 0, .28);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    pointer-events: none;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, .6);
+}
+
 /* The play badge is positioned against the thumbnail box. */
 .thumbWrapper {
     position: relative;
