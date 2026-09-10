@@ -113,8 +113,8 @@
 .overlay {
     z-index: 2;
     background:
-        linear-gradient(90deg, rgba(22, 24, 22, .78), rgba(22, 24, 22, .55) 46%, rgba(22, 24, 22, .12) 78%),
-        linear-gradient(0deg, rgba(13, 14, 13, .3), transparent 55%);
+        linear-gradient(90deg, rgba(22, 24, 22, .78), rgba(22, 24, 22, .5) 42%, rgba(22, 24, 22, 0) 72%),
+        linear-gradient(0deg, rgba(13, 14, 13, .28), transparent 42%);
 }
 
 .heroContent {
@@ -167,8 +167,8 @@
 
 .rtlSlide .overlay {
     background:
-        linear-gradient(270deg, rgba(22, 24, 22, .78), rgba(22, 24, 22, .55) 46%, rgba(22, 24, 22, .12) 78%),
-        linear-gradient(0deg, rgba(13, 14, 13, .3), transparent 55%);
+        linear-gradient(270deg, rgba(22, 24, 22, .78), rgba(22, 24, 22, .5) 42%, rgba(22, 24, 22, 0) 72%),
+        linear-gradient(0deg, rgba(13, 14, 13, .28), transparent 42%);
 }
 
 /* ── copy ─────────────────────────────────────────────────────────────────── */
@@ -421,7 +421,17 @@
        that has moved to the bottom. On phones the gradient is vertical, so there is
        nothing to mirror -- both directions want exactly this. */
     .rtlSlide .overlay {
-        background: linear-gradient(0deg, rgba(16, 18, 17, .88), rgba(16, 18, 17, .58) 55%, rgba(16, 18, 17, .2));
+        /* Clears completely by the halfway mark instead of holding 20% black all the way
+           up. The copy is anchored to the bottom, so shading above it was dimming the
+           artwork -- badges, the plane, the skyline -- for nothing. Full strength stays
+           under the text, which is the only part that needs it to stay readable. */
+        background: linear-gradient(
+            0deg,
+            rgba(16, 18, 17, .9) 0%,
+            rgba(16, 18, 17, .82) 28%,
+            rgba(16, 18, 17, .45) 45%,
+            rgba(16, 18, 17, 0) 58%
+        );
     }
 
     .heroContent {
