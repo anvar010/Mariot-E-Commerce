@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from '@/i18n/navigation';
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
 import styles from './CategoryProductIndex.module.css';
 
 /**
@@ -11,10 +11,9 @@ import styles from './CategoryProductIndex.module.css';
  * with 7,983 words of chrome and not one link to a product. Category pages are where
  * commercial intent lands, so that was the catalogue's biggest blind spot.
  *
- * This renders the same products as plain anchors in the server HTML. It is deliberately
- * simple -- no state, no effects, no images to lay out -- because its job is to be readable
- * by something that does not run JavaScript. The interactive landing page renders above it
- * and is unaffected.
+ * This renders the same products as real anchors in the server HTML, each with its thumbnail.
+ * No state and no effects: its job is to be readable by something that does not run
+ * JavaScript. The interactive landing page renders above it and is unaffected.
  *
  * Not hidden with display:none or a zero height. Content served only to crawlers is cloaking;
  * this is a real, visible index of what the category contains, which is useful to a shopper
@@ -33,7 +32,16 @@ interface IndexProduct {
     name: string;
     name_ar?: string | null;
     slug: string;
+    primary_image?: string | null;
 }
+
+/** Image paths come back relative to the API host. */
+const imageUrl = (path?: string | null): string | null => {
+    const p = String(path ?? '').trim();
+    if (!p) return null;
+    if (p.startsWith('http')) return p;
+    return `${MEDIA_BASE_URL}${p.startsWith('/') ? '' : '/'}${p}`;
+};
 
 /**
  * ISR rather than per-request: the catalogue changes a few times a day at most, and a
@@ -66,13 +74,39 @@ export default async function CategoryProductIndex({ categorySlug, locale, headi
         <section className={styles.index} aria-label={heading}>
             <h2 className={styles.heading}>{heading}</h2>
             <ul className={styles.list}>
-                {products.map(p => (
-                    <li key={p.id}>
-                        <Link href={`/product/${p.slug}`} className={styles.link}>
-                            {isArabic && p.name_ar ? p.name_ar : p.name}
-                        </Link>
-                    </li>
-                ))}
+                {products.map(p => {
+                    const src = imageUrl(p.primary_image);
+                    const name = isArabic && p.name_ar ? p.name_ar : p.name;
+                    return (
+                        <li key={p.id}>
+                            <Link href={`/product/${p.slug}`} className={styles.link}>
+                                {/* A plain img, not next/image: there can be 169 of these on
+                                    one page and the optimiser would be asked for 169 separate
+                                    transforms. loading="lazy" means the browser fetches only
+                                    what scrolls into view, and the fixed box keeps the row
+                                    from jumping as each one arrives.
+
+                                    The alt is empty because the product name sits right
+                                    beside it -- announcing it twice makes the list slower to
+                                    read with a screen reader, not clearer. */}
+                                {src ? (
+                                    <img
+                                        src={src}
+                                        alt=""
+                                        width={40}
+                                        height={40}
+                                        loading="lazy"
+                                        decoding="async"
+                                        className={styles.thumb}
+                                    />
+                                ) : (
+                                    <span className={styles.thumbFallback} aria-hidden="true" />
+                                )}
+                                <span className={styles.name}>{name}</span>
+                            </Link>
+                        </li>
+                    );
+                })}
             </ul>
         </section>
     );

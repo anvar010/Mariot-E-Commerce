@@ -19,15 +19,17 @@
 .list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 6px 28px;
+    gap: 4px 28px;
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
 .link {
-    display: block;
-    padding: 7px 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 6px 0;
     font-size: 13.5px;
     line-height: 1.5;
     color: #475569;
@@ -53,4 +55,29 @@
     .list {
         grid-template-columns: 1fr;
     }
+}
+
+/* Thumbnails ---------------------------------------------------------------
+   A fixed 40px box whether or not the image loads, so a row never shifts as
+   lazy-loaded images arrive. */
+
+.thumb,
+.thumbFallback {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+}
+
+.thumb {
+    object-fit: contain;
+}
+
+.name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
