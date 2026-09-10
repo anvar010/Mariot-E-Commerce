@@ -539,6 +539,9 @@ const AdminProducts = () => {
     };
     const [brands, setBrands] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
+    // What is being typed into the 3D link box. Kept apart from formData.model_3d_url
+    // so a half-typed URL never becomes the product's model.
+    const [model3dLink, setModel3dLink] = useState('');
     const [exporting, setExporting] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importing, setImporting] = useState(false);
@@ -1281,6 +1284,31 @@ const AdminProducts = () => {
      * image upload would be the wrong route: those get resized, and resizing a 3D model
      * would corrupt it.
      */
+    /**
+     * Accept a link to a model hosted elsewhere -- a supplier's own catalogue, say -- instead
+     * of uploading a file. It is stored in the same column; the viewer resolves an absolute
+     * URL directly and a relative one against the media host.
+     */
+    const applyModel3dLink = () => {
+        const url = model3dLink.trim();
+        if (!url) return;
+
+        if (!/^https?:\/\//i.test(url)) {
+            showNotification('Enter a full link starting with https://', 'error');
+            return;
+        }
+        // The path may carry a query string, so the extension is checked before any "?".
+        const path = url.split('?')[0].split('#')[0].toLowerCase();
+        if (!['.glb', '.gltf', '.usdz'].some(ext => path.endsWith(ext))) {
+            showNotification('The link must point at a .glb, .gltf or .usdz file.', 'error');
+            return;
+        }
+
+        setFormData((prev: any) => ({ ...prev, model_3d_url: url }));
+        setModel3dLink('');
+        showNotification('3D model link added. Save the product to keep it.');
+    };
+
     const handleModel3dUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
         const file = e.target.files[0];
@@ -2636,12 +2664,16 @@ const AdminProducts = () => {
                                                     <div className={styles.model3dRow}>
                                                         <Box size={16} color="#16a34a" />
                                                         <a
-                                                            href={`${MEDIA_BASE_URL}${formData.model_3d_url}`}
+                                                            href={String(formData.model_3d_url).startsWith('http')
+                                                                ? formData.model_3d_url
+                                                                : `${MEDIA_BASE_URL}${formData.model_3d_url}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className={styles.model3dLink}
                                                         >
-                                                            {String(formData.model_3d_url).split('/').pop()}
+                                                            {String(formData.model_3d_url).startsWith('http')
+                                                                ? formData.model_3d_url
+                                                                : String(formData.model_3d_url).split('/').pop()}
                                                         </a>
                                                         <button
                                                             type="button"
@@ -2652,15 +2684,37 @@ const AdminProducts = () => {
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <input
-                                                        type="file"
-                                                        accept=".glb,.gltf,.usdz"
-                                                        onChange={handleModel3dUpload}
-                                                        disabled={uploading}
-                                                    />
+                                                    // Two ways in: upload a file, or point at one a
+                                                    // supplier already hosts. Both end up in the same
+                                                    // column, and the viewer resolves an absolute URL
+                                                    // as readily as an uploaded path.
+                                                    <div className={styles.model3dInputs}>
+                                                        <input
+                                                            type="file"
+                                                            accept=".glb,.gltf,.usdz"
+                                                            onChange={handleModel3dUpload}
+                                                            disabled={uploading}
+                                                        />
+                                                        <div className={styles.model3dOr}>
+                                                            <span>or paste a link</span>
+                                                        </div>
+                                                        <input
+                                                            type="url"
+                                                            placeholder="https://supplier.com/model.glb"
+                                                            value={model3dLink}
+                                                            onChange={e => setModel3dLink(e.target.value)}
+                                                            onBlur={applyModel3dLink}
+                                                            onKeyDown={e => {
+                                                                // Enter inside a product form would otherwise
+                                                                // submit the whole thing.
+                                                                if (e.key === 'Enter') { e.preventDefault(); applyModel3dLink(); }
+                                                            }}
+                                                        />
+                                                    </div>
                                                 )}
                                                 <small className={styles.model3dHint}>
-                                                    .glb, .gltf or .usdz — up to 40MB. Leave empty for no 3D view.
+                                                    .glb, .gltf or .usdz — upload up to 40MB, or link to one hosted
+                                                    elsewhere. Leave empty for no 3D view.
                                                 </small>
                                             </div>
 
