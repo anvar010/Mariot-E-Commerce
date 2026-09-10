@@ -1,175 +1,36 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { ChevronRight, Headphones } from 'lucide-react';
 import styles from './CategoryLanding.module.css';
-import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
+import { MEDIA_BASE_URL } from '@/config';
 import { useLocale, useTranslations } from 'next-intl';
-import Loader from '@/components/shared/Loader/Loader';
-import { sortByOrderIndex } from '@/utils/sortByOrderIndex';
+import type { CategoryLandingData } from './categoryData';
 
 interface CategoryLandingProps {
   categorySlug: string;
+  /**
+   * Fetched on the server by getCategoryLandingData and handed in, rather than pulled from
+   * the API after mount. That is what puts the subcategory cards and product links into the
+   * HTML a crawler receives, and what removes the spinner the page used to open with.
+   */
+  data: CategoryLandingData;
 }
 
-const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
+const CategoryLanding = ({ categorySlug, data }: CategoryLandingProps) => {
   const locale = useLocale();
   const isArabic = locale === 'ar';
   const t = useTranslations('categories');
   const tCommon = useTranslations('header');
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const [category, setCategory] = useState<any>(null);
-  const [subCategories, setSubCategories] = useState<any[]>([]);
-  const [topProducts, setTopProducts] = useState<any[]>([]);
-  const [promoProduct, setPromoProduct] = useState<any>(null);
-  const [brands, setBrands] = useState<any[]>([]);
+  const { category, subCategories, topProducts, promoProduct, brands, failed } = data;
 
-  useEffect(() => {
-    const fetchCategoryData = async () => {
-      try {
-        setLoading(true);
-        setError(false);
-        // 1. Fetch all categories
-        const catRes = await fetch(`${API_BASE_URL}/categories`);
-        const catData = await catRes.json();
 
-        if (catData.success) {
-          const allCats = catData.data;
 
-          // Virtual "Kitchen Equipments" page (no DB category): aggregate every
-          // MAIN category as a heading section, minus the non-kitchen departments.
-          if (categorySlug === 'kitchen-equipment') {
-            const EXCLUDE = new Set(['kitchen-equipment', 'stainless-steel-fabrications', 'supermarket', 'laundry']);
-            setCategory({
-              name: 'Kitchen Equipments',
-              name_ar: 'معدات المطبخ',
-              description: 'Explore our full range of commercial kitchen equipment — from coffee machines and refrigeration to cooking lines, ovens, and food preparation. Browse every category below.',
-              description_ar: 'استكشف مجموعتنا الكاملة من معدات المطابخ التجارية — من ماكينات القهوة والتبريد إلى خطوط الطهي والأفران وتحضير الطعام. تصفّح جميع الفئات أدناه.'
-            });
-
-            const mains = sortByOrderIndex(
-              allCats.filter((c: any) => !c.parent_id && c.is_active && !EXCLUDE.has(c.slug))
-            ).map((main: any) => {
-              // sub-categories, each carrying its own sub-sub-categories
-              const subs = sortByOrderIndex(
-                allCats.filter((sub: any) => sub.parent_id === main.id && sub.is_active)
-              ).map((sub: any) => ({
-                ...sub,
-                subCategories: sortByOrderIndex(
-                  allCats.filter((ss: any) => ss.parent_id === sub.id && ss.is_active)
-                )
-              }));
-              return { ...main, subCategories: subs };
-            });
-
-            // Fetch each main's products (a main slug also covers its sub /
-            // sub-sub products) — gives counts AND a pool to build the promo +
-            // "Top products" rail strictly from the listed categories.
-            const mainsWithProducts = await Promise.all(mains.map(async (m: any) => {
-              try {
-                const mSlug = m.slug || m.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
-                const pRes = await fetch(`${API_BASE_URL}/products?category=${mSlug}&limit=5&sort=price_desc`);
-                const pData = await pRes.json();
-                return { ...m, products_count: pData.total || 0, _products: pData.data || [] };
-              } catch (err) {
-                return { ...m, products_count: 0, _products: [] };
-              }
-            }));
-
-            setSubCategories(mainsWithProducts.map(({ _products, ...m }: any) => m));
-
-            // Pool products across the listed categories, dedupe, take top by price.
-            const seen = new Set<number>();
-            const pool: any[] = [];
-            for (const m of mainsWithProducts) {
-              for (const p of m._products) {
-                if (!seen.has(p.id)) { seen.add(p.id); pool.push(p); }
-              }
-            }
-            pool.sort((a, b) => Number(b.offer_price || b.price) - Number(a.offer_price || a.price));
-            if (pool.length > 0) {
-              setPromoProduct(pool[0]);
-              setTopProducts(pool.slice(1, 5));
-            }
-            return;
-          }
-
-          const activeCat = allCats.find((c: any) => c.slug === categorySlug);
-
-          if (activeCat) {
-            setCategory(activeCat);
-
-            // 2. Build sub-categories tree, sorted by order_index (slot-based)
-            const subs = sortByOrderIndex(
-              allCats.filter((c: any) => c.parent_id === activeCat.id && c.is_active)
-            ).map((sub: any) => {
-                const subSubs = sortByOrderIndex(
-                  allCats.filter((ss: any) => ss.parent_id === sub.id && ss.is_active)
-                );
-                return { ...sub, subCategories: subSubs };
-              });
-
-            // Wait for counts concurrently for the main subcategories
-            const subsWithCounts = await Promise.all(subs.map(async (sub: any) => {
-              try {
-                const subSlug = sub.slug || sub.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
-                const pRes = await fetch(`${API_BASE_URL}/products?category=${subSlug}&limit=1`);
-                const pData = await pRes.json();
-                return { ...sub, products_count: pData.total || 0 };
-              } catch (err) {
-                return { ...sub, products_count: 0 };
-              }
-            }));
-
-            setSubCategories(subsWithCounts);
-
-            // 3. Fetch top products and brands in parallel
-            const [prodRes, brandRes] = await Promise.all([
-              fetch(`${API_BASE_URL}/products?category=${categorySlug}&limit=5&sort=price_desc`),
-              fetch(`${API_BASE_URL}/brands?all=1`)
-            ]);
-
-            const prodData = await prodRes.json();
-            if (prodData.success && prodData.data.length > 0) {
-              setTopProducts(prodData.data.slice(1, 5));
-              setPromoProduct(prodData.data[0]);
-            }
-
-            const brandData = await brandRes.json();
-            if (brandData.success) {
-              const brandIds = activeCat.brand_ids || [];
-              const matchedBrands = brandData.data.filter((b: any) => brandIds.includes(b.id));
-              setBrands(matchedBrands);
-            }
-          }
-        }
-
-      } catch (err) {
-        console.error('Error fetching category landing data:', err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategoryData();
-  }, [categorySlug, retryCount]);
-
-  if (loading) {
-    return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader />
-      </div>
-    );
-  }
-
-  if (error) {
+  if (failed) {
     return (
       <div className={styles.landingPage}>
         <div className={styles.container}>
@@ -191,7 +52,7 @@ const CategoryLanding = ({ categorySlug }: CategoryLandingProps) => {
             </p>
             <button
               className={styles.backBtn}
-              onClick={() => { setError(false); setRetryCount(c => c + 1); }}
+              onClick={() => window.location.reload()}
             >
               {isArabic ? 'حاول مجدداً' : 'Try again'}
             </button>

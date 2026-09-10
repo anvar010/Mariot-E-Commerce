@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import CategoryLanding from '@/components/Categories/CategoryLanding/CategoryLanding';
-import CategoryProductIndex from '@/components/Categories/CategoryProductIndex/CategoryProductIndex';
+import { getCategoryLandingData } from '@/components/Categories/CategoryLanding/categoryData';
 import { Metadata } from 'next';
 import { API_BASE_URL } from '@/config';
 import { localeAlternates, ogLocale, SITE_URL, SITE_NAME } from '@/lib/seo';
@@ -79,6 +79,10 @@ const CategoryPage = async (props: CategoryPageProps) => {
     if (cat) categoryName = (isArabic && cat.name_ar) ? cat.name_ar : cat.name;
   } catch { /* fall back to the slug */ }
 
+  // Fetched here so the page arrives complete -- subcategory cards and product links
+  // included -- rather than being assembled in the browser afterwards.
+  const landingData = await getCategoryLandingData(params.slug);
+
   const url = `${SITE_URL}/${params.locale}/category/${params.slug}`;
 
   /**
@@ -113,14 +117,7 @@ const CategoryPage = async (props: CategoryPageProps) => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <CategoryLanding categorySlug={params.slug} />
-      {/* Rendered on the server: the interactive listing above fetches after mount, so
-          without this a crawler reached this page and found no link to any product. */}
-      <CategoryProductIndex
-        categorySlug={params.slug}
-        locale={params.locale}
-        heading={isArabic ? `كل منتجات ${categoryName}` : `All ${categoryName} products`}
-      />
+      <CategoryLanding categorySlug={params.slug} data={landingData} />
       <Footer />
     </main>
   );
