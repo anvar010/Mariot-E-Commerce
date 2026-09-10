@@ -384,6 +384,9 @@ const initDb = async () => {
                 { name: 'model', definition: "VARCHAR(255)" },
                 { name: 'youtube_video_link', definition: "JSON" },
                 { name: 'resources', definition: "JSON" },
+                // Path to a .glb/.gltf/.usdz model under /uploads. Null on almost every
+                // product: the 3D viewer only appears where one has been attached.
+                { name: 'model_3d_url', definition: "VARCHAR(500)" },
                 { name: 'offer_start', definition: "DATETIME" },
                 { name: 'offer_end', definition: "DATETIME" },
                 // Working days until delivery, shown on the product page as a date. 3 is the

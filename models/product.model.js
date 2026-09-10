@@ -888,11 +888,13 @@ class Product {
                 normalizeDeliveryDays(data.delivery_days),
                 normalizeTags(data.tags),
                 normalizeTags(data.tags_ar),
-                normalizeWeightKg(data.weight_kg)
+                normalizeWeightKg(data.weight_kg),
+                // Path under /uploads, or null. Almost every product has none.
+                data.model_3d_url ? String(data.model_3d_url) : null
             ].map(p => (p === undefined ? null : p));
 
             const [result] = await db.execute(
-                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions, delivery_charge, linked_parts, delivery_days, tags, tags_ar, weight_kg) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (name, name_ar, slug, description, description_ar, short_description, short_description_ar, specifications, specifications_ar, price, discount_percentage, offer_price, stock_quantity, track_inventory, category_id, sub_category_id, sub_sub_category_id, brand_id, seller_id, is_featured, is_weekly_deal, is_limited_offer, is_daily_offer, is_best_seller, status, product_group, sub_category, model, youtube_video_link, resources, offer_start, offer_end, frequently_bought_together, you_may_also_need, free_gift_product_ids, compare_config, warranty, warranty_ar, is_customizable, custom_dimensions, base_dimensions, delivery_charge, linked_parts, delivery_days, tags, tags_ar, weight_kg, model_3d_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 params
             );
 
@@ -965,7 +967,7 @@ class Product {
             'youtube_video_link', 'resources', 'offer_start', 'offer_end',
             'frequently_bought_together', 'you_may_also_need', 'free_gift_product_ids', 'compare_config', 'warranty', 'warranty_ar',
             'is_customizable', 'custom_dimensions', 'base_dimensions', 'delivery_charge', 'linked_parts',
-            'delivery_days', 'tags', 'tags_ar', 'weight_kg'
+            'delivery_days', 'tags', 'tags_ar', 'weight_kg', 'model_3d_url'
         ];
 
         const productId = parseInt(id);
