@@ -217,3 +217,24 @@
         transform: rotate(360deg);
     }
 }
+/* The product cell as a link to the product page. Inherits colour so the row keeps
+   reading as a table cell rather than turning blue and underlined. */
+.productLink {
+    text-decoration: none;
+    color: inherit;
+    border-radius: 8px;
+    transition: opacity .15s ease;
+}
+
+.productLink:hover {
+    opacity: .72;
+}
+
+.productLink:hover .productName {
+    text-decoration: underline;
+}
+
+.productLink:focus-visible {
+    outline: 2px solid #16a1db;
+    outline-offset: 2px;
+}

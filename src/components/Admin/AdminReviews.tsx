@@ -189,15 +189,40 @@ const AdminReviews = () => {
                             filteredReviews.map((r) => (
                                 <tr key={r.id}>
                                     <td>
-                                        <div className={styles.productInfo}>
-                                            <img
-                                                src={resolveUrl(r.product_image) || 'https://via.placeholder.com/40'}
-                                                alt={r.product_name}
-                                                className={styles.productImage}
-                                                onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/40'; }}
-                                            />
-                                            <span className={styles.productName} title={stripHtml(r.product_name)}>{stripHtml(r.product_name)}</span>
-                                        </div>
+                                        {/* Opens the product the review is about, in a new tab --
+                                            checking a review means looking at the product, and
+                                            losing the list to do it would mean finding your place
+                                            in it again afterwards.
+
+                                            A deleted product leaves the review with no slug, so
+                                            the cell falls back to plain text rather than a link
+                                            to nowhere. */}
+                                        {(() => {
+                                            const cell = (
+                                                <>
+                                                    <img
+                                                        src={resolveUrl(r.product_image) || 'https://via.placeholder.com/40'}
+                                                        alt={r.product_name}
+                                                        className={styles.productImage}
+                                                        onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/40'; }}
+                                                    />
+                                                    <span className={styles.productName} title={stripHtml(r.product_name)}>{stripHtml(r.product_name)}</span>
+                                                </>
+                                            );
+                                            return r.product_slug ? (
+                                                <a
+                                                    href={`/en/product/${r.product_slug}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`${styles.productInfo} ${styles.productLink}`}
+                                                    title={`Open ${stripHtml(r.product_name)}`}
+                                                >
+                                                    {cell}
+                                                </a>
+                                            ) : (
+                                                <div className={styles.productInfo}>{cell}</div>
+                                            );
+                                        })()}
                                     </td>
                                     <td>
                                         <div className={styles.userInfo}>
