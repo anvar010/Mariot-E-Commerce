@@ -7,6 +7,34 @@ import { FilterProps } from './FilterTypes';
 import { useTranslations, useLocale } from 'next-intl';
 import { BASE_URL } from '@/config';
 
+/**
+ * Orders a flat category list so each child follows its parent, and tags every row with the
+ * depth it should be indented by. Anything whose parent is not in the list is treated as a
+ * root, so nothing is dropped.
+ */
+const nestForDisplay = (list: any[]): any[] => {
+    const ids = new Set(list.map(c => c.id));
+    const childrenOf = new Map<any, any[]>();
+    const roots: any[] = [];
+
+    for (const c of list) {
+        if (c.parent_id && ids.has(c.parent_id)) {
+            if (!childrenOf.has(c.parent_id)) childrenOf.set(c.parent_id, []);
+            childrenOf.get(c.parent_id)!.push(c);
+        } else {
+            roots.push(c);
+        }
+    }
+
+    const out: any[] = [];
+    const walk = (node: any, depth: number) => {
+        out.push({ ...node, _depth: depth });
+        for (const child of childrenOf.get(node.id) || []) walk(child, depth + 1);
+    };
+    roots.forEach(r => walk(r, 0));
+    return out;
+};
+
 const DefaultShopFilter: React.FC<FilterProps> = ({
     inStockOnly,
     setInStockOnly,
@@ -14,6 +42,7 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
     selectedBrands,
     handleBrandToggle,
     allCategories,
+    brandCategories = [],
     subCategories = [],
     activeCategory,
     minPrice,
@@ -68,7 +97,16 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
                 category as before. */}
             {enableCategoryFilter && (() => {
                 const onCategoryPage = !!activeCategory;
-                const categoryList = onCategoryPage ? subCategories : allCategories;
+                /**
+                 * On a brand page, show every category that brand's products are in -- mains,
+                 * subs and sub-subs -- nested so the tree is readable. Previously this fell
+                 * through to the flat list of main categories, so a brand offered one entry
+                 * and no way to narrow.
+                 */
+                const onBrandPage = !onCategoryPage && brandCategories.length > 0;
+                const categoryList = onCategoryPage
+                    ? subCategories
+                    : onBrandPage ? brandCategories : allCategories;
                 // Leaf category with no children — nothing to scope to, hide section.
                 if (onCategoryPage && categoryList.length === 0) return null;
 
@@ -85,8 +123,16 @@ const DefaultShopFilter: React.FC<FilterProps> = ({
                     {expandedSections.includes('categories') && (
                         <div className={styles.sectionContent}>
                             {categoryList.length > 0 ? (
-                                categoryList.map(cat => (
-                                    <label key={cat.id} className={styles.checkboxLabel}>
+                                // On a brand page the list spans three levels, so it is
+                                // ordered parent-then-children and indented by depth; a flat
+                                // alphabetical list would scatter each child away from its
+                                // parent and read as noise.
+                                (onBrandPage ? nestForDisplay(categoryList) : categoryList).map(cat => (
+                                    <label
+                                        key={cat.id}
+                                        className={styles.checkboxLabel}
+                                        style={cat._depth ? { paddingInlineStart: `${cat._depth * 14}px` } : undefined}
+                                    >
                                         <input
                                             type="checkbox"
                                             checked={
