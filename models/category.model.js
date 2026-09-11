@@ -113,12 +113,20 @@ class Category {
     }
 
     static async findByBrand(brandSlug) {
-        // Categories that directly hold this brand's products (may be main OR sub).
+        // Every category this brand's products sit in, at any of the three levels.
+        //
+        // This used to join on p.category_id alone, so it only ever saw main categories --
+        // a brand page offered "Commercial Ovens" and nothing to narrow by, even where the
+        // products were properly filed under Combi Ovens and the rest. A product carries its
+        // main, sub and sub-sub ids separately, so all three have to be counted.
         const [leafRows] = await db.execute(`
-            SELECT DISTINCT c.id, c.name, c.name_ar, c.slug, c.type, c.is_active, c.parent_id, c.image_url,
-                   COUNT(p.id) as product_count
+            SELECT c.id, c.name, c.name_ar, c.slug, c.type, c.is_active, c.parent_id, c.image_url,
+                   COUNT(DISTINCT p.id) as product_count
             FROM categories c
-            JOIN products p ON p.category_id = c.id
+            JOIN products p
+              ON p.category_id = c.id
+              OR p.sub_category_id = c.id
+              OR p.sub_sub_category_id = c.id
             JOIN brands b ON p.brand_id = b.id
             WHERE b.slug = ? AND (p.status = 'active' OR p.status IS NULL) AND p.is_active = 1 AND c.is_active = 1
             GROUP BY c.id
@@ -143,12 +151,9 @@ class Category {
             }
         }
 
-        // Roll up subcategory counts into their parent main for display.
-        for (const row of byId.values()) {
-            if (row.parent_id && byId.has(row.parent_id)) {
-                byId.get(row.parent_id).product_count += row.product_count;
-            }
-        }
+        // No roll-up: the query above already counts a product against its main, its sub and
+        // its sub-sub, so adding a child's total to its parent would count the same product
+        // twice and a category would claim more products than it has.
 
         return [...byId.values()].sort((a, b) => String(a.name).localeCompare(String(b.name)));
     }
