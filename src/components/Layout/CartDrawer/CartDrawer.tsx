@@ -35,6 +35,20 @@ import { resolveUrl } from '@/utils/resolveUrl';
 import styles from './CartDrawer.module.css';
 import qStyles from './CartDrawer.quotation.module.css';
 
+/**
+ * The options a quantity dropdown offers.
+ *
+ * Ten was the cap, and a <select> whose value has no matching option silently falls back to
+ * showing the first one -- so a cart holding 18 of something displayed "1" while charging for
+ * 18. The list now always contains the quantity actually in the cart, however it got there
+ * (the product page lets a shopper type any number).
+ */
+const qtyOptions = (current: number): number[] => {
+    const n = Math.max(1, Number(current) || 1);
+    const base = Array.from({ length: Math.max(10, n) }, (_, i) => i + 1);
+    return base;
+};
+
 const CartDrawer = () => {
     const router = useRouter();
     const locale = useLocale();
@@ -449,8 +463,8 @@ const CartDrawer = () => {
                                                                 onChange={(e) => updateQuantity(item.id, parseInt(e.target.value), item.variant_id ?? null, item.custom_signature ?? null)}
                                                                 className={styles.qtySelect}
                                                             >
-                                                                {[...Array(10)].map((_, i) => (
-                                                                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                                                                {qtyOptions(item.quantity).map(n => (
+                                                                    <option key={n} value={n}>{n}</option>
                                                                 ))}
                                                             </select>
                                                         </div>
@@ -504,8 +518,8 @@ const CartDrawer = () => {
                                                             }}
                                                             className={styles.qtySelect}
                                                         >
-                                                            {[...Array(10)].map((_, i) => (
-                                                                <option key={i + 1} value={i + 1}>{i + 1}</option>
+                                                            {qtyOptions(parent.quantity).map(n => (
+                                                                <option key={n} value={n}>{n}</option>
                                                             ))}
                                                         </select>
                                                     </div>
