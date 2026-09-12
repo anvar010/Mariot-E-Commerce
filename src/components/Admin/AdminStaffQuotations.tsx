@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import styles from './AdminStaffQuotations.module.css';
+import StaffQuotationProductModal from './StaffQuotationProductModal';
 import {
     FilePlus, Search, Trash2, Eye, X, Plus, Minus, Printer,
     Mail, Loader2, ArrowLeft, Package, Percent, Check, Ban, Clock, FileText, Pencil, AlertTriangle
@@ -35,6 +36,10 @@ type Line = {
     discount_pct: number;
     /** Admin-set ceiling for staff, null when the product is uncapped. */
     max_staff_discount_pct: number | null;
+    /** Set when the line was configured in the modal rather than added from its card. */
+    variant_id?: number | null;
+    variant_label?: string | null;
+    custom_dimensions?: Record<string, string> | null;
 };
 
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
@@ -81,6 +86,15 @@ const AdminStaffQuotations = () => {
     const [productQuery, setProductQuery] = useState('');
     const [categories, setCategories] = useState<any[]>([]);
     const [categoryFilter, setCategoryFilter] = useState('');
+    const [brandFilter, setBrandFilter] = useState('');
+    const [brandOptions, setBrandOptions] = useState<any[]>([]);
+    /**
+     * The product open in the detail modal. A product whose price depends on a choice --
+     * a custom size, or a variant -- cannot be added straight from its card, because the
+     * card has no way to make that choice and the list endpoint does not even return the
+     * options. Those go through the modal; everything else still adds in one click.
+     */
+    const [modalProduct, setModalProduct] = useState<any>(null);
     const [productPage, setProductPage] = useState(1);
     const [productTotal, setProductTotal] = useState(0);
     const [productPages, setProductPages] = useState(1);
@@ -129,6 +143,27 @@ const AdminStaffQuotations = () => {
         })();
     }, []);
 
+    // Brands, for the picker's brand filter. Fetched once; the list is small.
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/brands?all=1`, {
+                    credentials: 'include',
+                    headers: getAuthHeaders(),
+                });
+                const data = await res.json();
+                const rows = data.success ? (data.data || []) : [];
+                setBrandOptions(
+                    rows
+                        .filter((b: any) => b.is_active === 1 || b.is_active === true || String(b.is_active) === '1')
+                        .sort((a: any, b: any) => String(a.name).localeCompare(String(b.name))),
+                );
+            } catch {
+                setBrandOptions([]);
+            }
+        })();
+    }, []);
+
     useEffect(() => {
         (async () => {
             try {
@@ -167,7 +202,7 @@ const AdminStaffQuotations = () => {
         return out;
     }, [categories]);
 
-    useEffect(() => { setProductPage(1); }, [productQuery, categoryFilter]);
+    useEffect(() => { setProductPage(1); }, [productQuery, categoryFilter, brandFilter]);
 
     // Debounced product lookup. Staff type a name or model; the same /products
     // endpoint the storefront uses backs this, so pricing always matches the site.
@@ -185,6 +220,7 @@ const AdminStaffQuotations = () => {
                 });
                 if (q.length >= 2) params.set('search', q);
                 if (categoryFilter) params.set('category', categoryFilter);
+                if (brandFilter) params.set('brand', brandFilter);
                 const res = await fetch(`${API_BASE_URL}/products?${params.toString()}`, {
                     credentials: 'include',
                     headers: getAuthHeaders(),
@@ -202,7 +238,65 @@ const AdminStaffQuotations = () => {
             }
         }, 300);
         return () => { cancelled = true; clearTimeout(t); };
-    }, [productQuery, categoryFilter, productPage]);
+    }, [productQuery, categoryFilter, brandFilter, productPage]);
+
+    /**
+     * A product needs the modal when its price is not a single number on the card: a
+     * customizable product is priced from the size chosen, and a variant product from the
+     * variant chosen. Clicking such a card straight onto the quotation would quote whatever
+     * the parent row happens to hold, which for variant products is routinely zero or a
+     * placeholder.
+     */
+    const needsChoice = (p: any): boolean =>
+        Number(p?.is_customizable) === 1
+        || Number(p?.has_variants) === 1
+        || (Array.isArray(p?.variants) && p.variants.length > 0);
+
+    /** Card click: add directly when there is nothing to choose, else open the modal. */
+    const handleCardAdd = (p: any) => {
+        if (needsChoice(p)) { setModalProduct(p); return; }
+        addProduct(p);
+    };
+
+    /** The modal resolved a price; put that on the quotation. */
+    const addFromModal = ({ product, unitPrice, variantId, variantLabel, customDimensions }: any) => {
+        setLines(prev => {
+            // A configured line is its own line: the same product at two sizes is two
+            // entries, so matching on product_id alone would merge them wrongly.
+            const key = (l: any) =>
+                `${l.product_id}|${l.variant_id ?? ''}|${JSON.stringify(l.custom_dimensions ?? null)}`;
+            const candidate = {
+                product_id: product.id,
+                variant_id: variantId ?? null,
+                custom_dimensions: customDimensions ?? null,
+            };
+            const existing = prev.findIndex(l => key(l) === key(candidate));
+            if (existing !== -1) {
+                const next = [...prev];
+                next[existing] = { ...next[existing], quantity: next[existing].quantity + 1 };
+                return next;
+            }
+            return [...prev, {
+                product_id: product.id,
+                slug: product.slug || '',
+                name: product.name || '',
+                model: product.model || '',
+                brand: product.brand_name || '',
+                image: product.primary_image || product.image || '',
+                description: product.description || '',
+                description_ar: product.description_ar || '',
+                unit_price: Number(unitPrice) || 0,
+                quantity: 1,
+                discount_pct: 0,
+                variant_id: variantId ?? null,
+                variant_label: variantLabel ?? null,
+                custom_dimensions: customDimensions ?? null,
+                max_staff_discount_pct: product.max_staff_discount_pct === null || product.max_staff_discount_pct === undefined
+                    ? null : Number(product.max_staff_discount_pct),
+            }];
+        });
+        setModalProduct(null);
+    };
 
     const addProduct = (p: any) => {
         // Variant products keep price 0 at product level; effectivePrice falls back to
@@ -551,6 +645,16 @@ const AdminStaffQuotations = () => {
                                     <option key={c.slug} value={c.slug}>{c.label}</option>
                                 ))}
                             </select>
+                            <select
+                                className={styles.categorySelect}
+                                value={brandFilter}
+                                onChange={e => setBrandFilter(e.target.value)}
+                            >
+                                <option value="">All brands</option>
+                                {brandOptions.map((b: any) => (
+                                    <option key={b.id} value={b.slug || b.name}>{b.name}</option>
+                                ))}
+                            </select>
                             <div className={styles.searchBox}>
                                 <Search size={16} />
                                 <input
@@ -571,12 +675,30 @@ const AdminStaffQuotations = () => {
                                         const added = lines.some(l => l.product_id === p.id);
                                         const cap = p.max_staff_discount_pct;
                                         return (
-                                            <button
+                                            // A div, not a button: the card holds two controls
+                                            // now -- add, and view -- and a button inside a
+                                            // button is invalid and unreachable by keyboard.
+                                            <div
                                                 key={p.id}
                                                 className={`${styles.productCard} ${added ? styles.productCardAdded : ''}`}
-                                                onClick={() => addProduct(p)}
-                                                title={added ? 'Already on the quotation — adds another unit' : 'Add to quotation'}
                                             >
+                                                <button
+                                                    type="button"
+                                                    className={styles.cardEye}
+                                                    onClick={() => setModalProduct(p)}
+                                                    title="View full details"
+                                                    aria-label={`View details for ${p.name}`}
+                                                >
+                                                    <Eye size={15} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={styles.cardMain}
+                                                    onClick={() => handleCardAdd(p)}
+                                                    title={needsChoice(p)
+                                                        ? 'Choose options before adding'
+                                                        : added ? 'Already on the quotation — adds another unit' : 'Add to quotation'}
+                                                >
                                                 <div className={styles.cardThumb}>
                                                     {p.primary_image
                                                         ? <img src={resolveUrl(p.primary_image)} alt="" />
@@ -604,10 +726,21 @@ const AdminStaffQuotations = () => {
                                                         <div className={styles.capHint}>max {cap}% discount</div>
                                                     )}
                                                 </div>
-                                            </button>
+                                                </button>
+                                            </div>
                                         );
                                     })}
                                 </div>
+                            )}
+                            {/* Opens for a product whose price depends on a choice, and for
+                                any product whose details are asked for by the eye icon. */}
+                            {modalProduct && (
+                                <StaffQuotationProductModal
+                                    productId={modalProduct.id}
+                                    preview={modalProduct}
+                                    onClose={() => setModalProduct(null)}
+                                    onAdd={addFromModal}
+                                />
                             )}
                             {productTotal > 0 && (
                                 <div className={styles.pager}>

@@ -1325,3 +1325,48 @@
 .customerRow:hover {
     background: #f8fafc;
 }
+
+/* Product card: an add target plus a view control -------------------------- */
+
+.productCard {
+    position: relative;
+}
+
+/* The card body is the add button; the eye sits above it in its own corner. */
+.cardMain {
+    display: block;
+    width: 100%;
+    padding: 0;
+    font-family: inherit;
+    text-align: start;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.cardEye {
+    position: absolute;
+    top: 8px;
+    inset-inline-end: 8px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: #475569;
+    background: rgba(255, 255, 255, .94);
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.cardEye:hover {
+    color: #16a1db;
+    border-color: #16a1db;
+}
+
+.cardEye:focus-visible {
+    outline: 2px solid #16a1db;
+    outline-offset: 2px;
+}
