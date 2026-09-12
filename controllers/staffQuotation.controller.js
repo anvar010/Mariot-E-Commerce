@@ -121,6 +121,15 @@ const priceItems = (rawItems, caps = new Map()) => {
             max_staff_discount_pct: cap,
             discount_amount: discount,
             line_total: round2(gross - discount),
+            // What the price was worked out from. A customizable product priced at 1,600 is
+            // meaningless on a quotation without the size that produced it, and the same
+            // product at two sizes is two lines -- so both are carried through to the saved
+            // items and the PDF rather than being rebuilt away here.
+            variant_id: it.variant_id !== undefined && it.variant_id !== null ? Number(it.variant_id) : null,
+            variant_label: it.variant_label || null,
+            custom_dimensions: it.custom_dimensions && typeof it.custom_dimensions === 'object'
+                ? it.custom_dimensions
+                : null,
         };
     });
 
