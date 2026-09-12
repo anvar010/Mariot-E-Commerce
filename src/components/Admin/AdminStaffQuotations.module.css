@@ -781,8 +781,12 @@
 
 .addedTick {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    /* Left, because the eye icon now occupies the right corner and the two were
+       drawn on top of each other. Logical, so it follows the text direction.
+       Sits below the offer badge, which shares this corner and can show at the
+       same time -- an added product may also be on offer. */
+    inset-inline-start: 6px;
+    top: 30px;
     background: #059669;
     color: #fff;
     font-size: 9.5px;

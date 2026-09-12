@@ -736,6 +736,9 @@ const AdminStaffQuotations = () => {
                                 any product whose details are asked for by the eye icon. */}
                             {modalProduct && (
                                 <StaffQuotationProductModal
+                                    // Keyed: opening a different product remounts rather than
+                                    // reusing the last one's size and variant state.
+                                    key={modalProduct.id}
                                     productId={modalProduct.id}
                                     preview={modalProduct}
                                     onClose={() => setModalProduct(null)}

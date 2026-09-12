@@ -287,7 +287,13 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
     // OH_CFOOTER: "continued on next page" text      (non-last pages)
     const OH_PAGE1   = 390;
     const OH_CONT    = 110;
-    const OH_TOTALS  = 330;
+    // The totals block is six rows at most -- subtotal, coupon, staff discount, delivery,
+    // VAT, total -- at ~23px each, inside ~100px of padding, heading and bottom margin.
+    // It was reserved at 330px, nearly 100px more than it can occupy, and that surplus came
+    // straight out of the room for items: a single-page quotation had only 302px for rows,
+    // so two ordinary lines were enough to force the second onto a page of its own and
+    // leave the first two-thirds empty. 260 covers the tallest case with room to spare.
+    const OH_TOTALS  = 260;
     const OH_CFOOTER =  50;
 
     const itemBudget = (isFirst: boolean, isLast: boolean) =>

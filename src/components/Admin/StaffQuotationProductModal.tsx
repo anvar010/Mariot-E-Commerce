@@ -51,6 +51,23 @@ const resolveImg = (p?: string | null): string => {
     return `${MEDIA_BASE_URL}${s.startsWith('/') ? '' : '/'}${s}`;
 };
 
+/**
+ * The product's picture, from whichever shape it arrived in.
+ *
+ * The list endpoint returns a flat `primary_image`; the single-product endpoint returns an
+ * `images` array and no such field. The modal shows the card's data first and then replaces
+ * it with the full product, so reading only `primary_image` made the image appear for a
+ * second and then vanish. The preview is the last fallback for the same reason.
+ */
+const productImage = (p: any, preview?: any): string => {
+    const fromArray = Array.isArray(p?.images) && p.images.length
+        ? (p.images.find((i: any) => Number(i.is_primary) === 1) || p.images[0])?.image_url
+        : null;
+    return resolveImg(
+        p?.primary_image || p?.image || fromArray || preview?.primary_image || preview?.image,
+    );
+};
+
 export default function StaffQuotationProductModal({ productId, preview, onClose, onAdd }: Props) {
     const [product, setProduct] = useState<any>(preview || null);
     const [loading, setLoading] = useState(true);
@@ -218,14 +235,21 @@ export default function StaffQuotationProductModal({ productId, preview, onClose
                     )}
 
                     <div className={styles.top}>
-                        <img src={resolveImg(p.primary_image || p.image)} alt="" className={styles.image} />
+                        <img src={productImage(p, preview)} alt="" className={styles.image} />
                         <div className={styles.meta}>
                             <div className={styles.metaRow}><span>Brand</span><strong>{p.brand_name || '—'}</strong></div>
                             <div className={styles.metaRow}><span>Model</span><strong>{p.model || '—'}</strong></div>
                             <div className={styles.metaRow}><span>Category</span><strong>{p.category_name || '—'}</strong></div>
-                            {p.stock_quantity != null && (
-                                <div className={styles.metaRow}><span>Stock</span><strong>{p.stock_quantity}</strong></div>
-                            )}
+                            {/* A product that does not track inventory always reads 0, which
+                                looks like "out of stock" rather than "not counted". */}
+                            <div className={styles.metaRow}>
+                                <span>Stock</span>
+                                <strong>
+                                    {Number(p.track_inventory) === 1 || variants.length > 0
+                                        ? (p.stock_quantity ?? 0)
+                                        : 'Not tracked'}
+                                </strong>
+                            </div>
                         </div>
                     </div>
 
