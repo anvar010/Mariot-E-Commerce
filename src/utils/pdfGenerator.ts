@@ -82,7 +82,12 @@ const siteOrigin = (): string => {
     return 'https://mariotstore.com';
 };
 
-export const generateQuotationPDF = async (quotation: any, shouldDownload = false, isArabic = false): Promise<string> => {
+/**
+ * @param mode 'download' saves a file, 'open' shows it in a new tab where the browser's own
+ *        print dialog lives, and 'silent' does neither -- it only returns the data URI, which
+ *        is what emailing needs. Booleans are still accepted so existing callers keep working.
+ */
+export const generateQuotationPDF = async (quotation: any, shouldDownload: boolean | 'download' | 'open' | 'silent' = false, isArabic = false): Promise<string> => {
     const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
 
     const formatDate = (dateStr: any) =>
@@ -562,7 +567,13 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload = fals
 
         const dataUri = pdf.output('datauristring');
 
-        if (shouldDownload) {
+        const mode = shouldDownload === true ? 'download'
+            : shouldDownload === false ? 'open'
+                : shouldDownload;
+
+        if (mode === 'silent') {
+            // Nothing to save or show: the caller only wants the bytes.
+        } else if (mode === 'download') {
             pdf.save(`${quotation.quotation_ref || 'Quotation'}.pdf`);
         } else {
             const blob = pdf.output('blob');

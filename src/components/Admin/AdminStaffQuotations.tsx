@@ -6,8 +6,7 @@ import styles from './AdminStaffQuotations.module.css';
 import StaffQuotationProductModal from './StaffQuotationProductModal';
 import {
     FilePlus, Search, Trash2, Eye, X, Plus, Minus, Printer,
-    Mail, Loader2, ArrowLeft, Package, Percent, Check, Ban, Clock, FileText, Pencil, AlertTriangle
-} from 'lucide-react';
+    Mail, Loader2, ArrowLeft, Package, Percent, Check, Ban, Clock, FileText, Pencil, AlertTriangle, Download} from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
 import { API_BASE_URL } from '@/config';
@@ -282,7 +281,15 @@ const AdminStaffQuotations = () => {
                 name: product.name || '',
                 model: product.model || '',
                 brand: product.brand_name || '',
-                image: product.primary_image || product.image || '',
+                // The modal's product came from the single-product endpoint, which returns an
+                // images array and no primary_image -- so reading only that saved an empty
+                // string and the quotation PDF fell back to the Mariot logo.
+                image: product.primary_image
+                    || product.image
+                    || (Array.isArray(product.images) && product.images.length
+                        ? (product.images.find((i: any) => Number(i.is_primary) === 1) || product.images[0])?.image_url
+                        : '')
+                    || '',
                 description: product.description || '',
                 description_ar: product.description_ar || '',
                 unit_price: Number(unitPrice) || 0,
@@ -432,7 +439,10 @@ const AdminStaffQuotations = () => {
         setCustomer({ customer_name: '', customer_email: '', customer_phone: '', vat_number: '', notes: '' });
         setLines([]);
         setProductQuery('');
-        setProductResults([]);
+        // Deliberately NOT clearing productResults. The fetch that fills it is keyed on the
+        // query, the filters and the page -- none of which change when the builder is reset,
+        // so emptying it here left the picker showing "No products match" beside a pager
+        // reading "1-20 of 72" until the page was reloaded.
         setEditingId(null);
         setEditingRef('');
         setEditingStatus('');
@@ -476,18 +486,35 @@ const AdminStaffQuotations = () => {
     };
 
     // Build the same branded PDF the cart flow produces, from a stored row.
-    const buildPdf = async (q: any) => {
+    /**
+     * @param download true saves a file; false opens the PDF in a tab, which is where the
+     *        browser's own print dialog lives. Email passes false and uses the returned
+     *        data URI, so nothing is saved or opened for it.
+     */
+    const buildPdf = async (q: any, mode: 'download' | 'open' | 'silent' = 'download') => {
         const items = typeof q.items === 'string' ? JSON.parse(q.items) : (q.items || []);
         return generateQuotationPDF({
             ...q,
             items: items.map((i: any) => ({ ...i, image: resolveUrl(i.image) })),
-        }, true, false);
+        }, mode, false);
     };
 
+    const downloadQuotation = async (q: any) => {
+        setBusyId(q.id);
+        try {
+            await buildPdf(q, 'download');
+        } catch {
+            showNotification('Could not generate the PDF', 'error');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    /** Opens the PDF in a new tab, where the browser's print dialog can take over. */
     const printQuotation = async (q: any) => {
         setBusyId(q.id);
         try {
-            await buildPdf(q);
+            await buildPdf(q, 'open');
         } catch {
             showNotification('Could not generate the PDF', 'error');
         } finally {
@@ -499,7 +526,8 @@ const AdminStaffQuotations = () => {
         if (!q.customer_email) { showNotification('This quotation has no customer email', 'error'); return; }
         setBusyId(q.id);
         try {
-            const pdfDataUri = await buildPdf(q);
+            // false: email wants the data URI only — nothing saved, nothing opened.
+            const pdfDataUri = await buildPdf(q, 'silent');
             const res = await fetch(`${API_BASE_URL}/staff-quotations/${q.id}/send-email`, {
                 method: 'POST',
                 credentials: 'include',
@@ -1083,13 +1111,20 @@ const AdminStaffQuotations = () => {
                                                 onClick={() => { setReviewNote(''); setReviewModal({ q, decision: 'rejected' }); }}
                                                 title="Mark as not approved"><Ban size={15} /></button>
                                         )}
-                                        <button onClick={() => printQuotation(q)}
-                                            disabled={busyId === q.id || (isStaff && (q.status || 'pending') !== 'approved')}
-                                            title={isStaff && (q.status || 'pending') !== 'approved'
-                                                ? 'Available once the quotation is approved'
-                                                : 'Download PDF'}>
-                                            {busyId === q.id ? <Loader2 size={15} className={styles.spin} /> : <Printer size={15} />}
-                                        </button>
+                                          <button onClick={() => downloadQuotation(q)}
+                                              disabled={busyId === q.id || (isStaff && (q.status || 'pending') !== 'approved')}
+                                              title={isStaff && (q.status || 'pending') !== 'approved'
+                                                  ? 'Available once the quotation is approved'
+                                                  : 'Download PDF'}>
+                                              {busyId === q.id ? <Loader2 size={15} className={styles.spin} /> : <Download size={15} />}
+                                          </button>
+                                          <button onClick={() => printQuotation(q)}
+                                              disabled={busyId === q.id || (isStaff && (q.status || 'pending') !== 'approved')}
+                                              title={isStaff && (q.status || 'pending') !== 'approved'
+                                                  ? 'Available once the quotation is approved'
+                                                  : 'Open in a new tab to print'}>
+                                              <Printer size={15} />
+                                          </button>
                                         <button onClick={() => emailQuotation(q)}
                                             disabled={busyId === q.id || !q.customer_email || (q.status || 'pending') !== 'approved'}
                                             title={(q.status || 'pending') !== 'approved'
