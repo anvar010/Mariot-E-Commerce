@@ -147,7 +147,13 @@ const AdminShippingQuotes: React.FC = () => {
                 setFeedback({ type: 'err', text: data.message || 'Could not send the price.' });
                 return;
             }
-            setFeedback({ type: 'ok', text: 'Price sent to the customer.' });
+            // The price always saves; the email may not. Say which happened, rather than
+            // reporting success for a message that never left the server.
+            setFeedback(
+                data.emailed === false
+                    ? { type: 'err', text: data.message || 'Price saved, but the email could not be sent.' }
+                    : { type: 'ok', text: data.message || 'Price sent to the customer.' },
+            );
             setDetail(d => (d ? { ...d, ...data.data } : d));
             load();
         } catch {
