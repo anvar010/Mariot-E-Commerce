@@ -211,18 +211,42 @@ exports.setQuotePrice = async (req, res, next) => {
             delivery_charge: amount, admin_note, adminId: req.user.id,
         });
 
+        /**
+         * The send is awaited, not fired and forgotten.
+         *
+         * It used to run in the background: a failure was logged and the admin was still told
+         * "Quote sent to the customer", so a quote could be priced twice and never reach
+         * anyone, with nothing on screen to say so. The price is already saved by this point,
+         * so waiting costs a second and buys the truth.
+         */
         const to = quote.contact_email || quote.user_email;
+        let emailed = false;
+        let emailError = null;
+
         if (to) {
-            (async () => {
-                try {
-                    await sendShippingQuotePricedEmail(to, quote, quote.locale || 'en');
-                } catch (err) {
-                    console.error(`[QUOTE] Customer email failed for ${quote.reference}:`, err.message);
-                }
-            })();
+            try {
+                await sendShippingQuotePricedEmail(to, quote, quote.locale || 'en');
+                emailed = true;
+                console.log(`[QUOTE] Priced email sent for ${quote.reference} to ${to}`);
+            } catch (err) {
+                emailError = err.message;
+                console.error(`[QUOTE] Customer email FAILED for ${quote.reference} -> ${to}:`, err);
+            }
+        } else {
+            emailError = 'This quote has no customer email address.';
+            console.error(`[QUOTE] No recipient for ${quote.reference}`);
         }
 
-        res.json({ success: true, message: 'Quote sent to the customer.', data: quote });
+        res.json({
+            success: true,
+            // The price saved either way; the message says what actually happened.
+            message: emailed
+                ? 'Quote sent to the customer.'
+                : `Price saved, but the email could not be sent: ${emailError}`,
+            emailed,
+            email_error: emailError,
+            data: quote,
+        });
     } catch (error) {
         next(error);
     }
