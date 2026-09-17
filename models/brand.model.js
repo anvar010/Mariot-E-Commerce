@@ -8,8 +8,8 @@ class Brand {
 
     static async findByCategoryId(categoryId) {
         const [catRows] = await db.execute(
-            'SELECT id FROM categories WHERE slug = ? OR id = ? LIMIT 1',
-            [categoryId, categoryId]
+            'SELECT id FROM categories WHERE slug = ? OR (? IS NOT NULL AND id = ?) LIMIT 1',
+            [categoryId, /^\d+$/.test(String(categoryId)) ? Number(categoryId) : null, /^\d+$/.test(String(categoryId)) ? Number(categoryId) : null]
         );
         if (catRows.length === 0) return [];
 
@@ -48,8 +48,8 @@ class Brand {
         let catIds = null;
         if (category) {
             const [catRows] = await db.execute(
-                'SELECT id FROM categories WHERE slug = ? OR id = ? LIMIT 1',
-                [category, category]
+                'SELECT id FROM categories WHERE slug = ? OR (? IS NOT NULL AND id = ?) LIMIT 1',
+                [category, /^\d+$/.test(String(category)) ? Number(category) : null, /^\d+$/.test(String(category)) ? Number(category) : null]
             );
             if (catRows.length > 0) {
                 const rootId = catRows[0].id;

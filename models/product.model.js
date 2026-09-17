@@ -178,8 +178,8 @@ class Product {
             } else {
                 // Collect the matched category ID and all its descendants
                 const [catRows] = await db.execute(
-                    'SELECT id FROM categories WHERE slug = ? OR id = ? LIMIT 1',
-                    [category, category]
+                    'SELECT id FROM categories WHERE slug = ? OR (? IS NOT NULL AND id = ?) LIMIT 1',
+                    [category, /^\d+$/.test(String(category)) ? Number(category) : null, /^\d+$/.test(String(category)) ? Number(category) : null]
                 );
             if (catRows.length > 0) {
                 const rootId = catRows[0].id;
@@ -578,6 +578,19 @@ class Product {
     }
 
     static async findById(id) {
+        /**
+         * This takes either a numeric id or a slug, and MySQL made that dangerous.
+         *
+         * Comparing a string against an INT column coerces it: "14-trolly-rotary-patisserie
+         * -oven-..." becomes 14, so that slug matched product 14 -- a SAB espresso machine --
+         * and the OR meant the id branch won before the slug was ever tried. Seven products
+         * whose slug starts with a digit opened as something else entirely.
+         *
+         * The id comparison now happens only when the input really is a whole number, so a
+         * slug can only ever match a slug.
+         */
+        const numericId = /^\d+$/.test(String(id)) ? Number(id) : null;
+
         await ensureFreeGiftColumn();
         await ensureCompareConfigColumn();
         await ensureSpecificationsArColumn();
@@ -598,8 +611,8 @@ class Product {
             LEFT JOIN categories ssc ON p.sub_sub_category_id = ssc.id
             LEFT JOIN brands b ON p.brand_id = b.id
             LEFT JOIN users s ON p.seller_id = s.id
-            WHERE p.id = ? OR p.slug = ?
-        `, [id, id]);
+            WHERE (? IS NOT NULL AND p.id = ?) OR p.slug = ?
+        `, [numericId, numericId, id]);
 
         if (rows.length > 0) {
             const product = rows[0];
