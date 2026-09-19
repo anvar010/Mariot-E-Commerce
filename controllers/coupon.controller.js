@@ -1,6 +1,22 @@
 const Coupon = require('../models/coupon.model');
 
 // Get all coupons (Admin)
+/**
+ * Does this cart line match one of the products a coupon is restricted to?
+ *
+ * The admin form stores the chosen products by NAME, but a cart line is identified by id --
+ * so a check that read only one of them refused every product-restricted coupon. Both are
+ * compared, and names case-insensitively, because the stored name and the line's name come
+ * from different places and only have to mean the same thing.
+ */
+const matchesAllowedProduct = (item, allowed) => {
+    if (!Array.isArray(allowed) || allowed.length === 0) return false;
+    const candidates = [item.name, item.id, item.product_id]
+        .filter(v => v !== undefined && v !== null)
+        .map(v => String(v).trim().toLowerCase());
+    return allowed.some(a => candidates.includes(String(a).trim().toLowerCase()));
+};
+
 exports.getCoupons = async (req, res, next) => {
     try {
         const coupons = await Coupon.getAll();
@@ -108,7 +124,7 @@ exports.validateCoupon = async (req, res, next) => {
         // Check Product Restrictions
         if (coupon.applicable_products) {
             const allowedProducts = JSON.parse(coupon.applicable_products);
-            const applicableItems = items.filter(item => allowedProducts.includes(item.name || item.id));
+            const applicableItems = items.filter(item => matchesAllowedProduct(item, allowedProducts));
 
             if (applicableItems.length === 0) {
                 return res.status(400).json({
@@ -119,7 +135,7 @@ exports.validateCoupon = async (req, res, next) => {
 
             // If brands were also restricted, we take the intersection
             const finalApplicableItems = coupon.applicable_brands
-                ? items.filter(item => JSON.parse(coupon.applicable_brands).includes(item.brand) && allowedProducts.includes(item.name || item.id))
+                ? items.filter(item => JSON.parse(coupon.applicable_brands).includes(item.brand) && matchesAllowedProduct(item, allowedProducts))
                 : applicableItems;
 
             if (finalApplicableItems.length === 0) {
