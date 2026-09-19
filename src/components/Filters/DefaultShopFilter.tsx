@@ -27,7 +27,13 @@ const nestForDisplay = (list: any[]): any[] => {
     }
 
     const out: any[] = [];
+    // A category whose ancestor is also its descendant would recurse until the stack gave
+    // out, taking the whole page down with a client-side exception. The data should never
+    // contain such a loop, but a filter sidebar is not the place to find out.
+    const seen = new Set<any>();
     const walk = (node: any, depth: number) => {
+        if (seen.has(node.id) || depth > 10) return;
+        seen.add(node.id);
         out.push({ ...node, _depth: depth });
         for (const child of childrenOf.get(node.id) || []) walk(child, depth + 1);
     };

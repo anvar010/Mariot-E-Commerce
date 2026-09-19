@@ -626,7 +626,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 body: JSON.stringify({
                     code,
                     cart_total: sub,
-                    items: items.map(i => ({ id: i.id, brand: i.brand, price: i.price, quantity: i.quantity }))
+                    // name is sent as well as id: a coupon restricted to particular products
+                    // stores their NAMES, chosen in the admin form, so a payload carrying
+                    // only ids could never match one and every such coupon was refused.
+                    items: items.map(i => ({ id: i.id, name: i.name, brand: i.brand, price: i.price, quantity: i.quantity }))
                 })
             });
 
@@ -725,7 +728,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     body: JSON.stringify({
                         code: appliedCoupon.code,
                         cart_total: current_subtotal,
-                        items: cartItems.map(i => ({ id: i.id, brand: i.brand, price: i.price, quantity: i.quantity }))
+                        items: cartItems.map(i => ({ id: i.id, name: i.name, brand: i.brand, price: i.price, quantity: i.quantity }))
                     })
                 });
                 const data = await res.json();
