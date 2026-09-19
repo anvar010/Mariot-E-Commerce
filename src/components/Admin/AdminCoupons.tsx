@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminCoupons.module.css';
-import { Tag, Plus, Search, Edit2, Trash2, X, Calendar, Percent, Package } from 'lucide-react';
+import { Tag, Plus, Search, Edit2, Trash2, X, Calendar, Percent, Package, UserPlus } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -20,6 +20,9 @@ const AdminCoupons = () => {
     const [brands, setBrands] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
     const [productSearch, setProductSearch] = useState('');
+    const [customers, setCustomers] = useState<any[]>([]);
+    const [userSearch, setUserSearch] = useState('');
+    const [newEmail, setNewEmail] = useState('');
     const { showNotification } = useNotification();
 
     // Confirmation Modal State
@@ -49,14 +52,30 @@ const AdminCoupons = () => {
         min_order_amount: '0',
         is_active: true,
         applicable_brands: [] as string[],
-        applicable_products: [] as string[]
+        applicable_products: [] as string[],
+        // Email addresses, not ids: a code can be reserved for someone who has not
+        // registered yet, and starts working when they sign up with that address.
+        applicable_users: [] as string[]
     });
 
     useEffect(() => {
         fetchCoupons();
         fetchBrands();
         fetchProducts();
+        fetchCustomers();
     }, []);
+
+    const fetchCustomers = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/coupons/customers`, { credentials: "include", headers: getAuthHeaders() });
+            const data = await res.json();
+            if (data.success) {
+                setCustomers(data.data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch customers', error);
+        }
+    };
 
     const fetchBrands = async () => {
         try {
@@ -119,7 +138,8 @@ const AdminCoupons = () => {
             min_order_amount: coupon.min_order_amount || '0',
             is_active: Boolean(coupon.is_active),
             applicable_brands: coupon.applicable_brands ? JSON.parse(coupon.applicable_brands) : [],
-            applicable_products: coupon.applicable_products ? JSON.parse(coupon.applicable_products) : []
+            applicable_products: coupon.applicable_products ? JSON.parse(coupon.applicable_products) : [],
+            applicable_users: coupon.applicable_users ? JSON.parse(coupon.applicable_users) : []
         });
         setIsModalOpen(true);
     };
@@ -136,9 +156,12 @@ const AdminCoupons = () => {
             min_order_amount: '0',
             is_active: true,
             applicable_brands: [],
-            applicable_products: []
+            applicable_products: [],
+            applicable_users: []
         });
         setProductSearch('');
+        setUserSearch('');
+        setNewEmail('');
     };
 
     const handleSaveCoupon = async (e: React.FormEvent) => {
@@ -169,6 +192,9 @@ const AdminCoupons = () => {
                         : null,
                     applicable_products: formData.applicable_products.length > 0
                         ? JSON.stringify(formData.applicable_products)
+                        : null,
+                    applicable_users: formData.applicable_users.length > 0
+                        ? JSON.stringify(formData.applicable_users)
                         : null
                 })
             });
@@ -242,6 +268,46 @@ const AdminCoupons = () => {
         }
         setFormData(prev => ({ ...prev, applicable_products: current }));
     };
+
+    // Emails are compared lower-cased throughout -- the server matches the signed-in
+    // address the same way, so "Sam@x.com" and "sam@x.com" must not become two entries.
+    const toggleUser = (email: string) => {
+        const key = email.trim().toLowerCase();
+        if (!key) return;
+        setFormData(prev => ({
+            ...prev,
+            applicable_users: prev.applicable_users.includes(key)
+                ? prev.applicable_users.filter(e => e !== key)
+                : [...prev.applicable_users, key]
+        }));
+    };
+
+    // An address that has no account yet. The coupon waits for them to register.
+    const addTypedEmail = () => {
+        const key = newEmail.trim().toLowerCase();
+        if (!key) return;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(key)) {
+            showNotification('Enter a valid email address', 'error');
+            return;
+        }
+        if (formData.applicable_users.includes(key)) {
+            showNotification('That email is already on this coupon', 'info');
+            setNewEmail('');
+            return;
+        }
+        setFormData(prev => ({ ...prev, applicable_users: [...prev.applicable_users, key] }));
+        setNewEmail('');
+    };
+
+    const filteredCustomers = customers.filter(u =>
+        u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+        u.email?.toLowerCase().includes(userSearch.toLowerCase())
+    ).slice(0, 50);
+
+    // Addresses typed in by hand have no matching account, so the checkbox list above
+    // cannot show them. They get their own row of chips.
+    const customerEmails = new Set(customers.map(u => String(u.email).trim().toLowerCase()));
+    const manualEmails = formData.applicable_users.filter(e => !customerEmails.has(e));
 
     const filteredProducts = products.filter(p =>
         p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
@@ -328,7 +394,17 @@ const AdminCoupons = () => {
                                                     </div>
                                                 </div>
                                             ) : null}
-                                            {!coupon.applicable_brands && !coupon.applicable_products && (
+                                            {coupon.applicable_users ? (
+                                                <div className={styles.restrictionRow}>
+                                                    <strong>Customers:</strong>
+                                                    <div className={styles.miniList}>
+                                                        {JSON.parse(coupon.applicable_users).map((e: string) => (
+                                                            <span key={e} className={styles.userTag}>{e}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : null}
+                                            {!coupon.applicable_brands && !coupon.applicable_products && !coupon.applicable_users && (
                                                 <span style={{ color: '#94a3b8', fontSize: '12px' }}>Site-wide</span>
                                             )}
                                         </div>
@@ -491,6 +567,88 @@ const AdminCoupons = () => {
                                         </div>
                                         <div className={styles.selectedCount}>
                                             {formData.applicable_products.length} products selected
+                                        </div>
+                                    </div>
+
+                                    {/* Customer Selection */}
+                                    <div className={styles.formGroup}>
+                                        <label>Applicable Customers (Optional)</label>
+                                        <p className={styles.fieldHint}>
+                                            Leave empty and anyone can use this code. Choose customers and only they
+                                            can, once each — signed in with that email address.
+                                        </p>
+
+                                        <div className={styles.searchWrapper}>
+                                            <Search size={14} className={styles.searchIcon} />
+                                            <input
+                                                type="text"
+                                                placeholder="Search customers by name or email..."
+                                                className={styles.pSearchInput}
+                                                value={userSearch}
+                                                onChange={(e) => setUserSearch(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className={styles.selectionBox}>
+                                            {filteredCustomers.length > 0 ? (
+                                                filteredCustomers.map(user => (
+                                                    <label key={user.id} className={styles.checkboxItem}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.applicable_users.includes(String(user.email).trim().toLowerCase())}
+                                                            onChange={() => toggleUser(user.email)}
+                                                        />
+                                                        <div className={styles.productInfo}>
+                                                            <span className={styles.pName}>{user.name || 'Unnamed'}</span>
+                                                            <span className={styles.pBrand}>{user.email}</span>
+                                                        </div>
+                                                    </label>
+                                                ))
+                                            ) : (
+                                                <div className={styles.emptySearch}>No customers found</div>
+                                            )}
+                                        </div>
+
+                                        {/* An address with no account yet -- the code activates when they sign up. */}
+                                        <div className={styles.addEmailRow}>
+                                            <input
+                                                type="email"
+                                                placeholder="Or add an email address that has no account yet"
+                                                className={styles.addEmailInput}
+                                                value={newEmail}
+                                                onChange={(e) => setNewEmail(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    // Enter must not submit the whole coupon form.
+                                                    if (e.key === 'Enter') { e.preventDefault(); addTypedEmail(); }
+                                                }}
+                                            />
+                                            <button type="button" className={styles.addEmailBtn} onClick={addTypedEmail}>
+                                                <UserPlus size={15} />
+                                                <span>Add</span>
+                                            </button>
+                                        </div>
+
+                                        {manualEmails.length > 0 && (
+                                            <div className={styles.emailChips}>
+                                                {manualEmails.map(email => (
+                                                    <span key={email} className={styles.emailChip}>
+                                                        {email}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleUser(email)}
+                                                            aria-label={`Remove ${email}`}
+                                                        >
+                                                            <X size={12} />
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <div className={styles.selectedCount}>
+                                            {formData.applicable_users.length === 0
+                                                ? 'Everyone can use this coupon'
+                                                : `${formData.applicable_users.length} customer${formData.applicable_users.length === 1 ? '' : 's'} selected — one use each`}
                                         </div>
                                     </div>
                                 </div>
