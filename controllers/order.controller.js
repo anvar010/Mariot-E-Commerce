@@ -165,7 +165,18 @@ exports.createOrder = async (req, res, next) => {
                 const isOverLimit = coupon.usage_limit > 0 && coupon.used_count >= coupon.usage_limit;
                 const isBelowMinimum = subtotal < Number(coupon.min_order_amount);
 
-                if (!isExpired && !isOverLimit && !isBelowMinimum) {
+                /**
+                 * A coupon reserved for named customers is checked here, not only at
+                 * /coupons/validate -- that endpoint is advisory and a crafted request can
+                 * skip it entirely. This is where the discount is actually granted, so this
+                 * is where it has to hold. Personal coupons are also good exactly once.
+                 */
+                const notTheirs = Coupon.userRestrictionError(coupon, req.user) !== null;
+                const alreadyUsed = !notTheirs && coupon.applicable_users
+                    ? (await Coupon.timesUsedBy(coupon.id, req.user.id)) > 0
+                    : false;
+
+                if (!isExpired && !isOverLimit && !isBelowMinimum && !notTheirs && !alreadyUsed) {
                     // Determine the applicable total (respecting brand/product restrictions)
                     let applicableTotal = subtotal;
 

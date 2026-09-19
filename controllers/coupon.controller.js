@@ -17,6 +17,8 @@ const matchesAllowedProduct = (item, allowed) => {
     return allowed.some(a => candidates.includes(String(a).trim().toLowerCase()));
 };
 
+const userRestrictionError = Coupon.userRestrictionError;
+
 exports.getCoupons = async (req, res, next) => {
     try {
         const coupons = await Coupon.getAll();
@@ -29,8 +31,26 @@ exports.getCoupons = async (req, res, next) => {
 // Get available coupons (User)
 exports.getAvailableCoupons = async (req, res, next) => {
     try {
-        const coupons = await Coupon.getAvailable();
+        const all = await Coupon.getAvailable();
+        // A coupon reserved for named customers is listed only to those customers; it would
+        // otherwise be advertised in every shopper's cart drawer and refused on use.
+        const coupons = all.filter(c => userRestrictionError(c, req.user) === null);
         res.json({ success: true, count: coupons.length, data: coupons });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Customers to choose from when reserving a coupon (Admin).
+ *
+ * Only what the picker shows -- name and email. Deliberately not the full admin user list:
+ * that carries roles, permissions and points, none of which this screen needs.
+ */
+exports.getCustomersForCoupon = async (req, res, next) => {
+    try {
+        const users = await Coupon.listCustomers();
+        res.json({ success: true, count: users.length, data: users });
     } catch (error) {
         next(error);
     }
@@ -98,6 +118,25 @@ exports.validateCoupon = async (req, res, next) => {
 
         if (cart_total < coupon.min_order_amount) {
             return res.status(400).json({ success: false, message: `Minimum order amount of AED ${coupon.min_order_amount} required` });
+        }
+
+        // Reserved for named customers. req.user is set by the optional auth resolver on
+        // this route -- the endpoint stays public so a guest can still try a general code.
+        const notYours = userRestrictionError(coupon, req.user);
+        if (notYours) {
+            return res.status(403).json({ success: false, message: notYours });
+        }
+
+        // A personal coupon is good once. The global usage_limit above counts every
+        // redemption by everyone, which is a different question.
+        if (coupon.applicable_users && req.user) {
+            const already = await Coupon.timesUsedBy(coupon.id, req.user.id);
+            if (already > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'You have already used this coupon.',
+                });
+            }
         }
 
         let applicableTotal = cart_total;

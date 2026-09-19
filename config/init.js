@@ -457,7 +457,10 @@ const initDb = async () => {
             const couponColumns = [
                 { name: 'max_discount', definition: "DECIMAL(10, 2) DEFAULT NULL" },
                 { name: 'applicable_brands', definition: "JSON" },
-                { name: 'applicable_products', definition: "JSON" }
+                { name: 'applicable_products', definition: "JSON" },
+                // Emails, not user ids: a coupon can be reserved for someone who has not
+                // registered yet, and starts working when they sign up with that address.
+                { name: 'applicable_users', definition: "TEXT DEFAULT NULL" }
             ];
 
             for (const col of couponColumns) {
