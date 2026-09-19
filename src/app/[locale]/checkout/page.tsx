@@ -47,6 +47,7 @@ import { statesFor, areasFor, countryLabel, SHIPPING_COUNTRIES } from '@/data/ci
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { formatCustomDims } from '@/utils/customDimensions';
 import { resolveUrl } from '@/utils/resolveUrl';
+import { isCouponExpired } from '@/utils/couponExpiry';
 import styles from './checkout.module.css';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -2222,7 +2223,11 @@ function CheckoutContent() {
                                     </div>
                                 ) : availableCoupons.length > 0 ? (
                                     availableCoupons.map((coupon) => {
-                                        const isExpired = coupon.expiry_date && new Date(coupon.expiry_date) < new Date();
+                                        // Date-to-date, not date-to-clock: a coupon is valid
+                                        // through its expiry date. Comparing against `new Date()`
+                                        // expired it at midnight on its final day, so the cart
+                                        // accepted codes checkout called expired.
+                                        const isExpired = isCouponExpired(coupon.expiry_date);
                                         const isInactive = !(coupon.status === 'active' || coupon.is_active === 1 || coupon.is_active === true);
                                         const isDisabled = isExpired || isInactive;
 
