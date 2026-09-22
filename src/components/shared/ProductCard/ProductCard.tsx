@@ -4,7 +4,11 @@ import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import React, { useState } from 'react';
 import styles from './ProductCard.module.css';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
-import Link from 'next/link';
+// The locale-aware Link, not next/link. localePrefix is 'always', so a bare "/product/x"
+// has no locale and the middleware answers with a redirect to "/en/product/x" -- an extra
+// round trip on every product tile before the page it wanted even starts loading. This
+// Link writes the prefix itself, so the first request is already the right one.
+import { Link } from '@/i18n/navigation';
 import Image from "next/legacy/image";
 import { useLocale, useTranslations } from 'next-intl';
 import { useCartActions } from '@/context/CartContext';

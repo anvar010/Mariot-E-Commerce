@@ -25,9 +25,12 @@ export default async function Loading() {
             aria-live="polite"
             aria-label={loadingLabel}
             style={{
-                // min-height keeps the footer from jumping up to meet the header while
-                // the page is still on its way.
-                minHeight: '60vh',
+                // Tall enough that the footer stays below the fold while the page is on
+                // its way. The storefront layout renders Header -> children -> Footer, so
+                // a short placeholder here pulls the footer up under the header and puts
+                // it on screen before the content it belongs beneath -- which reads as the
+                // page loading footer-first.
+                minHeight: '100vh',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

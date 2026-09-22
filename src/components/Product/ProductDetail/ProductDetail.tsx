@@ -1787,7 +1787,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                 {product.brand_image && (
                                     <div className={styles.brandBar}>
                                         <Link
-                                            href={`/shop?brand=${encodeURIComponent(product.brand_slug || product.brand_name?.toLowerCase().replace(/ /g, '-'))}`}
+                                            // Every other link in this file prefixes the locale by
+                                            // hand; this one did not, so clicking the brand logo
+                                            // asked for "/shop?brand=..." and got a middleware
+                                            // redirect to "/en/shop?brand=..." -- the extra page
+                                            // load before the brand page appeared.
+                                            href={`/${locale}/shop?brand=${encodeURIComponent(product.brand_slug || product.brand_name?.toLowerCase().replace(/ /g, '-'))}`}
                                             className={styles.brandChip}
                                         >
                                             <img src={resolveUrl(product.brand_image)} alt={getLocalizedField('brand_name', 'brand_name_ar')} className={styles.brandLogo} />
