@@ -1,6 +1,6 @@
 const express = require('express');
 const { getCoupons, getAvailableCoupons, createCoupon, updateCoupon, deleteCoupon, validateCoupon, getCustomersForCoupon } = require('../controllers/coupon.controller');
-const { protect, authorize, optionalProtect } = require('../middlewares/auth.middleware');
+const { protect, authorize, optionalProtect, authorizeAdminOrStaff } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
@@ -12,15 +12,18 @@ router.post('/validate', optionalProtect, validateCoupon);
 
 router.use(protect);
 
-// Admin routes
-router.get('/customers', authorize('admin'), getCustomersForCoupon);
+// Admins, and staff holding the `coupons` permission -- the same key that reveals the
+// sidebar entry, so the menu and the API agree about who may use this. Previously these
+// were admin-only, which meant granting a staff member the Coupons permission showed them
+// the tab and then answered every request with a 403.
+router.get('/customers', authorizeAdminOrStaff('coupons'), getCustomersForCoupon);
 
 router.route('/')
-    .get(authorize('admin'), getCoupons)
-    .post(authorize('admin'), createCoupon);
+    .get(authorizeAdminOrStaff('coupons'), getCoupons)
+    .post(authorizeAdminOrStaff('coupons'), createCoupon);
 
 router.route('/:id')
-    .put(authorize('admin'), updateCoupon)
-    .delete(authorize('admin'), deleteCoupon);
+    .put(authorizeAdminOrStaff('coupons'), updateCoupon)
+    .delete(authorizeAdminOrStaff('coupons'), deleteCoupon);
 
 module.exports = router;

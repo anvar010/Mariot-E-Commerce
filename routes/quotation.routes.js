@@ -1,6 +1,6 @@
 const express = require('express');
 const { createQuotation, getMyQuotations, deleteQuotation, getQuotations, sendEmailWithPdf, sendSoftwareQuotationEmail } = require('../controllers/quotation.controller');
-const { protect, authorize, optionalProtect } = require('../middlewares/auth.middleware');
+const { protect, authorize, optionalProtect, authorizeAdminOrStaff } = require('../middlewares/auth.middleware');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
 
@@ -24,7 +24,13 @@ const quotationLimiter = rateLimit({
 router.post('/', optionalProtect, quotationLimiter, createQuotation);
 router.post('/software-email', quotationLimiter, sendSoftwareQuotationEmail);
 router.post('/:id/send-email', sendEmailWithPdf);
-router.get('/', protect, authorize('admin'), getQuotations);
+// Admins, and staff holding the `quotations` permission -- the same key that reveals the
+// sidebar entry. It was authorize('admin') before, so granting that permission showed a
+// staff member the tab and then answered it with a 403: the menu and the API disagreed
+// about who may use this. These are customer-initiated quotations from the storefront, a
+// shared queue rather than anyone's own records, so a permitted staff member sees all of
+// them exactly as an admin does.
+router.get('/', protect, authorizeAdminOrStaff('quotations'), getQuotations);
 router.get('/my-quotations', protect, getMyQuotations);
 router.delete('/:id', protect, deleteQuotation);
 
