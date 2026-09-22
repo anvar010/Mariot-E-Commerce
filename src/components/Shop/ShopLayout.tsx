@@ -10,6 +10,7 @@ import { API_BASE_URL, BASE_URL } from '@/config';
 import Loader from '@/components/shared/Loader/Loader';
 import ProductCardSkeleton from '@/components/shared/ProductCardPromotion/ProductCardSkeleton';
 import { useTranslations, useLocale } from 'next-intl';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 
 import DefaultShopFilter from '../Filters/DefaultShopFilter';
 import FilterShopByBrand from '../Filters/FilterShopByBrand';
@@ -568,7 +569,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                                     const catName = isArabic && cat.name_ar ? cat.name_ar : cat.name;
                                     const slug = cat.slug || cat.name?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
                                     const catImg = isArabic && cat.image_url_ar ? cat.image_url_ar : cat.image_url;
-                                    const imgSrc = catImg ? resolveUrl(catImg) : '/assets/mariot-logo2.webp';
+                                    const imgSrc = catImg ? resolveUrl(catImg) : PRODUCT_IMAGE_FALLBACK;
                                     return (
                                         <Link
                                             key={cat.id ?? idx}
@@ -580,7 +581,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                                                     src={imgSrc}
                                                     alt={catName}
                                                     className={styles.brandCatImg}
-                                                    onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                                    onError={(e) => { (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }}
                                                 />
                                             </div>
                                             <span className={styles.brandCatName}>{catName}</span>

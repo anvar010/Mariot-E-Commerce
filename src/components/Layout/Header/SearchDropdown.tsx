@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { stripHtml } from '@/utils/formatters';
 import { useCartActions } from '@/context/CartContext';
 import { useNotification } from '@/context/NotificationContext';
@@ -289,7 +289,7 @@ const SearchDropdown: React.FC<Props> = ({ query, data, loading, onNavigate, onC
                                         >
                                             <div className={styles.trendingThumb}>
                                                 <Image
-                                                    src={resolveUrl(p.primary_image || undefined) || '/assets/mariot-logo2.webp'}
+                                                    src={resolveUrl(p.primary_image || undefined) || PRODUCT_IMAGE_FALLBACK}
                                                     alt={stripHtml(localized(p))}
                                                     width={72}
                                                     height={72}

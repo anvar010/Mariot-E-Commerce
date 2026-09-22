@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { ChevronRight, Headphones } from 'lucide-react';
 import styles from './CategoryLanding.module.css';
 import { MEDIA_BASE_URL } from '@/config';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { useLocale, useTranslations } from 'next-intl';
 import type { CategoryLandingData } from './categoryData';
 
@@ -94,7 +95,7 @@ const CategoryLanding = ({ categorySlug, data }: CategoryLandingProps) => {
   }
 
   const resolveImage = (url: string | null) => {
-    if (!url) return '/assets/mariot-logo.webp';
+    if (!url) return PRODUCT_IMAGE_FALLBACK;
     if (url.startsWith('http')) return url;
     return `${MEDIA_BASE_URL}${url}`;
   };
@@ -313,7 +314,7 @@ const CategoryLanding = ({ categorySlug, data }: CategoryLandingProps) => {
               <Link href={`/product/${promoProduct.slug}`} className={styles.promoCard} style={{ textDecoration: 'none' }}>
                 <div className={styles.promoHeader}>{isArabic ? 'حل مميز' : 'Featured Solution'}</div>
                 <div className={styles.promoContent}>
-                  <img src={resolveImage(promoProduct.primary_image)} alt={isArabic && promoProduct.name_ar ? promoProduct.name_ar : promoProduct.name} className={styles.promoImage} onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo.webp'; }} />
+                  <img src={resolveImage(promoProduct.primary_image)} alt={isArabic && promoProduct.name_ar ? promoProduct.name_ar : promoProduct.name} className={styles.promoImage} onError={(e) => { (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }} />
                   <div className={styles.promoText}>
                     <span className={styles.promoTitle}>{isArabic && promoProduct.name_ar ? promoProduct.name_ar : promoProduct.name}</span>
                     <span style={{ fontSize: '13px', color: '#64748b' }}>{isArabic ? 'دقة تقنية وموثوقية.' : 'Technical precision and reliability.'}</span>
@@ -330,7 +331,7 @@ const CategoryLanding = ({ categorySlug, data }: CategoryLandingProps) => {
                   {topProducts.map((prod) => (
                     <Link key={prod.id} href={`/product/${prod.slug}`} className={styles.productMini}>
                       <div className={styles.miniImgWrapper}>
-                        <img src={resolveImage(prod.primary_image)} alt={prod.name} className={styles.miniImg} onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo.webp'; }} />
+                        <img src={resolveImage(prod.primary_image)} alt={prod.name} className={styles.miniImg} onError={(e) => { (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }} />
                       </div>
                       <div className={styles.miniDetails}>
                         <span className={styles.miniName}>{isArabic && prod.name_ar ? prod.name_ar : prod.name}</span>

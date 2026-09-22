@@ -31,7 +31,7 @@ import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
 import { customDimParts } from '@/utils/customDimensions';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import styles from './CartDrawer.module.css';
 import qStyles from './CartDrawer.quotation.module.css';
 
@@ -373,9 +373,9 @@ const CartDrawer = () => {
                                             >
                                                 <div className={styles.itemImg} onClick={() => { setIsDrawerOpen(false); router.push(`/product/${item.slug}`); }}>
                                                     <img
-                                                        src={resolveUrl(item.image) || '/assets/mariot-logo2.webp'}
+                                                        src={resolveUrl(item.image) || PRODUCT_IMAGE_FALLBACK}
                                                         alt={item.name}
-                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }}
                                                     />
                                                     {!isGift && <span className={styles.itemCountBadge}>{item.quantity}</span>}
                                                 </div>
@@ -418,9 +418,9 @@ const CartDrawer = () => {
                                             <div key={groupKey} className={styles.cartItem}>
                                                 <div className={styles.itemImg} onClick={() => { setIsDrawerOpen(false); router.push(`/product/${item.slug}`); }}>
                                                     <img
-                                                        src={resolveUrl(item.image) || '/assets/mariot-logo2.webp'}
+                                                        src={resolveUrl(item.image) || PRODUCT_IMAGE_FALLBACK}
                                                         alt={item.name}
-                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }}
                                                     />
                                                     <span className={styles.itemCountBadge}>{item.quantity}</span>
                                                 </div>
@@ -788,7 +788,7 @@ const CartDrawer = () => {
                                                 });
                                             }}
                                         />
-                                        <img className={styles.giftTrimImg} src={resolveUrl(g.image) || '/assets/mariot-logo2.webp'} alt={g.name} />
+                                        <img className={styles.giftTrimImg} src={resolveUrl(g.image) || PRODUCT_IMAGE_FALLBACK} alt={g.name} />
                                         <span className={styles.giftTrimName}>{g.name}</span>
                                     </label>
                                 );

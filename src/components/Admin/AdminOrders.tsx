@@ -5,7 +5,7 @@ import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
 import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt, AlertTriangle, MessageCircle } from 'lucide-react';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { readSeen } from '@/utils/adminActivity';
 import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
@@ -616,7 +616,11 @@ const AdminOrders = () => {
                                             <div className={styles.itemThumb}>
                                                 {it.image ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={resolveUrl(it.image)} alt={it.name || 'Product'} />
+                                                    <img
+                                                        src={resolveUrl(it.image) || PRODUCT_IMAGE_FALLBACK}
+                                                        alt={it.name || 'Product'}
+                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }}
+                                                    />
                                                 ) : (
                                                     <Package size={18} />
                                                 )}

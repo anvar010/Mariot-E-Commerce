@@ -9,6 +9,7 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useCart } from '@/context/CartContext';
 import { useNotification } from '@/context/NotificationContext';
 import ShippingQuotes from '@/components/User/ShippingQuotes/ShippingQuotes';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import {
     Package,
     Heart,
@@ -694,7 +695,12 @@ const UserDashboard = () => {
                                 <div key={item.id} className={styles.wishlistItem}>
                                     <Link href={`/product/${item.id}`}>
                                         <div className={styles.itemImage}>
-                                            <img src={resolveUrl(item.image)} alt={item.name} style={{ cursor: 'pointer' }} />
+                                            <img
+                                                src={resolveUrl(item.image) || PRODUCT_IMAGE_FALLBACK}
+                                                alt={item.name}
+                                                style={{ cursor: 'pointer' }}
+                                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }}
+                                            />
                                         </div>
                                     </Link>
                                     <div className={styles.itemInfo}>
@@ -870,7 +876,7 @@ const UserDashboard = () => {
                                         return (
                                             <div key={`os-${item.id}`} style={{ display: 'flex', gap: '16px', border: '1.5px solid #d6dde5', borderRadius: '10px', padding: '14px' }}>
                                                 <Link href={item.slug ? `/product/${item.slug}` : '#'} style={{ width: '90px', height: '90px', flexShrink: 0, background: '#f8fafc', borderRadius: '8px', overflow: 'hidden', pointerEvents: item.slug ? 'auto' : 'none' }}>
-                                                    {item.image ? <img src={resolveUrl(item.image) || '/assets/mariot-logo2.webp'} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}><Package size={32} /></div>}
+                                                    {item.image ? <img src={resolveUrl(item.image) || PRODUCT_IMAGE_FALLBACK} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}><Package size={32} /></div>}
                                                 </Link>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     {brand && <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '2px' }}>{brand}</div>}
@@ -1030,7 +1036,7 @@ const UserDashboard = () => {
                                                         style={{ width: '90px', height: '90px', flexShrink: 0, background: '#f8fafc', borderRadius: '8px', overflow: 'hidden', cursor: item.slug ? 'pointer' : 'default', pointerEvents: item.slug ? 'auto' : 'none' }}
                                                     >
                                                         {item.image ? (
-                                                            <img src={resolveUrl(item.image) || '/assets/mariot-logo2.webp'} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }} />
+                                                            <img src={resolveUrl(item.image) || PRODUCT_IMAGE_FALLBACK} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }} />
                                                         ) : (
                                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}><Package size={32} /></div>
                                                         )}
@@ -1099,7 +1105,7 @@ const UserDashboard = () => {
                                         style={{ width: '80px', height: '80px', flexShrink: 0, background: '#f8fafc', borderRadius: '6px', overflow: 'hidden', cursor: item.slug ? 'pointer' : 'default', pointerEvents: item.slug ? 'auto' : 'none' }}
                                     >
                                         {item.image ? (
-                                            <img src={resolveUrl(item.image) || '/assets/mariot-logo2.webp'} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }} />
+                                            <img src={resolveUrl(item.image) || PRODUCT_IMAGE_FALLBACK} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }} />
                                         ) : (
                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}><Package size={32} /></div>
                                         )}

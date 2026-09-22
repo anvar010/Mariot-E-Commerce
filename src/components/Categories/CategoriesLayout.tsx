@@ -8,6 +8,7 @@ import Loader from '@/components/shared/Loader/Loader';
 import { sortByOrderIndex } from '@/utils/sortByOrderIndex';
 import { useTranslations, useLocale } from 'next-intl';
 import CategoryMenuSkeleton from '@/components/shared/CategoryMenuSkeleton/CategoryMenuSkeleton';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import {
     ChevronRight,
     Coffee,
@@ -340,7 +341,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                             const catName = (isArabic && item.name_ar) ? item.name_ar : item.name;
                             const imgSrc = item.image_url ?
                                 (item.image_url.startsWith('http') ? item.image_url : `${API_BASE_URL.replace('/api/v1', '')}${item.image_url}`)
-                                : '/assets/mariot-logo2.webp';
+                                : PRODUCT_IMAGE_FALLBACK;
                             const SideIcon = ICON_MAP[item.slug] || ICON_MAP['default'];
 
                             return (
@@ -363,7 +364,7 @@ const CategoriesLayout = ({ isPopup = false, onClose }: CategoriesLayoutProps) =
                                                 src={imgSrc}
                                                 alt={catName}
                                                 className={styles.mobileCardImg}
-                                                onError={(e) => { (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                                onError={(e) => { (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }}
                                             />
                                         </div>
                                     </div>

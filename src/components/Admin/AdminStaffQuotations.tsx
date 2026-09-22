@@ -12,7 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import DiscountLimitsModal from './DiscountLimitsModal';
@@ -834,7 +834,11 @@ const AdminStaffQuotations = () => {
                                                 >
                                                 <div className={styles.cardThumb}>
                                                     {p.primary_image
-                                                        ? <img src={resolveUrl(p.primary_image)} alt="" />
+                                                        ? <img
+                                                            src={resolveUrl(p.primary_image)}
+                                                            alt=""
+                                                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }}
+                                                        />
                                                         : <Package size={22} />}
                                                     {added && <span className={styles.addedTick}>Added</span>}
                                                     {hasOffer && off > 0 && (

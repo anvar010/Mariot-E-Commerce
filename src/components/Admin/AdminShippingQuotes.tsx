@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { Truck, Search, RefreshCw, Send, X, Package, MapPin, Phone, Mail, AlertTriangle } from 'lucide-react';
 import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
@@ -58,7 +59,7 @@ interface Quote {
 const money = (n: unknown) => `AED ${(Number(n) || 0).toFixed(2)}`;
 
 const resolveImage = (path: string | null): string => {
-    if (!path) return '/assets/placeholder.png';
+    if (!path) return PRODUCT_IMAGE_FALLBACK;
     if (path.startsWith('http')) return path;
     return `${MEDIA_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
 };

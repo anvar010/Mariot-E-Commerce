@@ -5,6 +5,7 @@ import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { CheckCircle, X, AlertCircle, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 
 interface Notification {
     id: string;
@@ -249,11 +250,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                         </div>
                                         <div className="cart-body">
                                             <img
-                                                src={n.image || '/assets/mariot-logo2.webp'}
+                                                src={n.image || PRODUCT_IMAGE_FALLBACK}
                                                 alt="product"
                                                 className="cart-img"
                                                 onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp';
+                                                    (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK;
                                                 }}
                                             />
                                             <div className="cart-info">

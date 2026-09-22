@@ -8,7 +8,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 // Removed next-intl import
@@ -317,10 +317,10 @@ const AdminQuotations = () => {
                                     {JSON.parse(selectedQuotation.items).map((item: any, idx: number) => (
                                         <div key={idx} className={styles.itemCard}>
                                             <img
-                                                src={resolveUrl(item.image_url) || '/assets/placeholder-image.webp'}
+                                                src={resolveUrl(item.image_url) || PRODUCT_IMAGE_FALLBACK}
                                                 alt={item.name}
                                                 className={styles.itemImage}
-                                                onError={(e) => { e.currentTarget.src = '/assets/placeholder-image.webp'; }}
+                                                onError={(e) => { e.currentTarget.src = PRODUCT_IMAGE_FALLBACK; }}
                                             />
                                             <div className={styles.itemDetails}>
                                                 <span className={styles.itemName}>{item.name}</span>

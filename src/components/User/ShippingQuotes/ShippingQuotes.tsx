@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Truck, Check, X, AlertTriangle, Clock, CreditCard } from 'lucide-react';
@@ -49,7 +50,7 @@ interface Quote {
 }
 
 const resolveImage = (path: string | null): string => {
-    if (!path) return '/assets/placeholder.png';
+    if (!path) return PRODUCT_IMAGE_FALLBACK;
     if (path.startsWith('http')) return path;
     return `${MEDIA_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
 };

@@ -88,3 +88,20 @@ export const resolveUrl = (url?: string): string => {
     // Ensure spaces are safely URL encoded so Next.js Image loader doesn't crash in production
     return finalUrl.replace(/ /g, '%20');
 };
+
+/**
+ * Shown wherever a product has no image, or its image fails to load.
+ *
+ * A "product image coming soon" placeholder rather than the company logo, which is what
+ * this used to be: a logo in a product slot reads as a broken or mis-scaled brand mark,
+ * while this reads as a deliberate state and tells the shopper the photograph is simply
+ * not ready yet.
+ *
+ * The file is 1414x1113 (roughly 5:4), but product slots are square. Always render it
+ * with `object-fit: contain` -- `cover` would crop the wording off the bottom, which is
+ * the whole point of the image.
+ *
+ * Note this is NOT the logo used in the quotation PDF header; that is a real brand mark
+ * and stays mariot-logo2.webp.
+ */
+export const PRODUCT_IMAGE_FALLBACK = '/fallback.webp';

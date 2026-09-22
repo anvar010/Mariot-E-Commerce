@@ -11,7 +11,7 @@ import { useCartActions } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { getBrandLogo } from '@/utils/brandLogos';
 
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { useCountdownTimer } from '@/hooks/useCountdownTimer';
 
 export interface Product {
@@ -107,7 +107,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     let displayImage = resolveUrl(product?.primary_image || product?.image_url || product?.image || image);
 
     if (!displayImage) {
-        displayImage = '/assets/mariot-logo2.webp';
+        displayImage = PRODUCT_IMAGE_FALLBACK;
     }
 
     const displayBrand = isArabic && product?.brand_name_ar ? product.brand_name_ar : (product?.brand_name || product?.brand || brand);
@@ -239,7 +239,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 <Link href={`/product/${product?.slug || displayId}`}>
                     <div className={styles.productImg} style={{ position: 'relative' }}>
                         <Image
-                            src={imageError ? '/assets/mariot-logo2.webp' : displayImage}
+                            src={imageError ? PRODUCT_IMAGE_FALLBACK : displayImage}
                             alt={displayModel}
                             layout="fill"
                             objectFit="contain"

@@ -9,7 +9,7 @@ import NextImage from 'next/image';
 import { useCartActions } from '@/context/CartContext';
 import { getBrandLogo } from '@/utils/brandLogos';
 import { useLocale, useTranslations } from 'next-intl';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { useCountdownTimer } from '@/hooks/useCountdownTimer';
 
 import useEmblaCarousel from 'embla-carousel-react';
@@ -183,7 +183,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
         resolveAll(selectedSwatchImages),
         resolveAll(variantGallery),
         productImages,
-    ].find(list => list.length > 0) || ['/assets/mariot-logo2.webp'];
+    ].find(list => list.length > 0) || [PRODUCT_IMAGE_FALLBACK];
 
     const [isHovered, setIsHovered] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -334,7 +334,7 @@ const ProductCardPromotion: React.FC<ProductCardPromotionProps> = ({ product, ti
                                 <div key={i} className={styles.imageSlide}>
                                     {failedImages.has(i) ? (
                                         <Image
-                                            src="/assets/mariot-logo2.webp"
+                                            src={PRODUCT_IMAGE_FALLBACK}
                                             alt={isArabic && product.name_ar ? product.name_ar : product.name}
                                             layout="fill"
                                             objectFit="contain"

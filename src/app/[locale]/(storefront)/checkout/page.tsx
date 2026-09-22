@@ -44,7 +44,7 @@ import { regionalDeliveryFor } from '@/config/regionalDelivery';
 import { statesFor, areasFor, countryLabel, SHIPPING_COUNTRIES } from '@/data/cities';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { formatCustomDims } from '@/utils/customDimensions';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { isCouponExpired } from '@/utils/couponExpiry';
 import styles from './checkout.module.css';
 import { loadStripe } from '@stripe/stripe-js';
@@ -1981,12 +1981,12 @@ function CheckoutContent() {
                                     {lineItems.map((item: any) => (
                                         <div key={`${item.id}-${item.variant_id ?? 'base'}-${item.custom_signature ?? ''}`} className={styles.itemRow}>
                                             <img
-                                                src={resolveUrl(item.image) || '/assets/mariot-logo2.webp'}
+                                                src={resolveUrl(item.image) || PRODUCT_IMAGE_FALLBACK}
                                                 alt={item.name}
                                                 className={styles.itemImg}
                                                 style={item.slug ? { cursor: 'pointer' } : undefined}
                                                 onClick={() => item.slug && router.push(`/product/${item.slug}`)}
-                                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/mariot-logo2.webp'; }}
+                                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }}
                                             />
                                             <div className={styles.itemDetails}>
                                                 <div

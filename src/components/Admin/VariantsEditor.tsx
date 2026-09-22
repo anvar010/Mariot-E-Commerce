@@ -5,7 +5,7 @@ import { Plus, Trash2, X, RefreshCw, Layers, Image as ImageIcon, Upload, Loader2
 import { API_BASE_URL } from '@/config';
 import styles from './AdminProducts.module.css';
 import { getAuthHeaders } from '@/utils/authHeaders';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 
 export interface OptionValue {
     value: string;
@@ -537,8 +537,8 @@ const VariantsEditor: React.FC<Props> = ({
                                                                 {(() => {
                                                                     const resolved = resolveUrl(primaryImage);
                                                                     return resolved
-                                                                        ? <img src={resolved} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = '/assets/placeholder-image.webp'; }} />
-                                                                        : <img src="/assets/placeholder-image.webp" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+                                                                        ? <img src={resolved} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }} />
+                                                                        : <img src={PRODUCT_IMAGE_FALLBACK} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
                                                                 })()}
                                                             </div>
                                                         ) : (
@@ -552,9 +552,9 @@ const VariantsEditor: React.FC<Props> = ({
                                                                             border: isMain ? '2px solid #3b82f6' : '1px solid #e2e8f0',
                                                                             overflow: 'hidden', background: '#f8fafc'
                                                                         }} title={isMain ? 'Main (shown in listings)' : 'Gallery image'}>
-                                                                            <img src={resolved || '/assets/placeholder-image.webp'} alt=""
+                                                                            <img src={resolved || PRODUCT_IMAGE_FALLBACK} alt=""
                                                                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                                                onError={(e) => { (e.target as HTMLImageElement).src = '/assets/placeholder-image.webp'; }} />
+                                                                                onError={(e) => { (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }} />
                                                                             <button type="button"
                                                                                 onClick={() => removeVariantImage(idx, imgIdx)}
                                                                                 title="Remove"

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import styles from './CategoryBrowse.module.css';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
@@ -131,7 +132,7 @@ const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
             if (category.image_url.startsWith('http')) return category.image_url;
             return `${MEDIA_BASE_URL}${category.image_url}`;
         }
-        return '/assets/placeholder-image.webp';
+        return PRODUCT_IMAGE_FALLBACK;
     };
 
     if (loading && apiCategories.length === 0) return null;
@@ -217,7 +218,7 @@ const CategoryBrowse = ({ initialCategories = [] }: CategoryBrowseProps) => {
                                                                     className={styles.categoryImg}
                                                                     onError={(e) => {
                                                                         const target = e.target as HTMLImageElement;
-                                                                        target.src = '/assets/placeholder-image.webp';
+                                                                        target.src = PRODUCT_IMAGE_FALLBACK;
                                                                     }}
                                                                 />
                                                             </div>

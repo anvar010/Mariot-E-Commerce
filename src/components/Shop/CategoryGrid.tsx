@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import styles from './ShopLayout.module.css';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 
 interface CategoryGridProps {
     subCategoriesToShow: any[];
@@ -87,11 +88,11 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ subCategoriesToShow, t, tc,
                     const image = (
                         <div className={styles.categoryImage}>
                             <img
-                                src={catImage || '/assets/mariot-logo2.webp'}
+                                src={catImage || PRODUCT_IMAGE_FALLBACK}
                                 alt={catName}
                                 className={styles.demoImg}
                                 onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/assets/mariot-logo2.webp';
+                                    (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK;
                                 }}
                             />
                         </div>

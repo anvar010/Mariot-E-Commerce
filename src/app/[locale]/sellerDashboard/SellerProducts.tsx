@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { formatDirham } from 'dirham';
 import styles from '@/components/Admin/AdminProducts.module.css';
@@ -636,7 +637,7 @@ const SellerProducts = () => {
                                 <tr key={product.id}>
                                     <td className={styles.productCell}>
                                         <div className={styles.productImgWrapper}>
-                                            <img src={product.primary_image || product.image_url || '/assets/placeholder-image.webp'} alt={product.name} />
+                                            <img src={product.primary_image || product.image_url || PRODUCT_IMAGE_FALLBACK} alt={product.name} />
                                         </div>
                                         <div className={styles.productInfo}>
                                             <span className={styles.productName}>

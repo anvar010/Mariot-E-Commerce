@@ -14,7 +14,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
 import { stripHtml } from '@/utils/formatters';
 import { getAuthHeaders } from '@/utils/authHeaders';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import VariantsEditor, { VariantOption, VariantRow } from './VariantsEditor';
@@ -23,7 +23,7 @@ import OfferSchedulePicker from './OfferSchedulePicker';
 // Broken/missing product images fall back to the site logo, matching the
 // storefront (ProductCard / ProductDetail). endsWith guards against an error
 // loop if the logo asset itself ever fails.
-const LOGO_FALLBACK = '/assets/mariot-logo2.webp';
+const LOGO_FALLBACK = PRODUCT_IMAGE_FALLBACK;
 const swapToLogoOnError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     if (!img.src.endsWith(LOGO_FALLBACK)) img.src = LOGO_FALLBACK;
@@ -1690,7 +1690,7 @@ const AdminProducts = () => {
             brand_id: brands.length > 0 ? String(brands[0].id) : '1',
             product_group: '',
             sub_category: '',
-            image_url: '/assets/placeholder-image.webp',
+            image_url: PRODUCT_IMAGE_FALLBACK,
             additional_images: ['', '', ''],
             is_weekly_deal: false,
             is_limited_offer: false,
@@ -3263,7 +3263,7 @@ const AdminProducts = () => {
                                                                                 }
                                                                             }}
                                                                         >
-                                                                            {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} onError={swapToLogoOnError} />}
+                                                                            {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 6, flexShrink: 0 }} onError={swapToLogoOnError} />}
                                                                             <span style={{ flex: 1, color: alreadyAdded ? '#16a34a' : 'inherit' }}>{p.name}</span>
                                                                             <div
                                                                                 style={{
@@ -3386,7 +3386,7 @@ const AdminProducts = () => {
                                                                                     }
                                                                                 }}
                                                                             >
-                                                                                {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} onError={swapToLogoOnError} />}
+                                                                                {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 6, flexShrink: 0 }} onError={swapToLogoOnError} />}
                                                                                 <span style={{ flex: 1, color: alreadyAdded ? '#16a34a' : 'inherit' }}>{p.name}</span>
                                                                                 <div
                                                                                     style={{
@@ -3507,7 +3507,7 @@ const AdminProducts = () => {
                                                                                     }
                                                                                 }}
                                                                             >
-                                                                                {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} onError={swapToLogoOnError} />}
+                                                                                {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 6, flexShrink: 0 }} onError={swapToLogoOnError} />}
                                                                                 <span style={{ flex: 1, color: alreadyAdded ? '#a16207' : 'inherit' }}>{p.name}</span>
                                                                                 <div
                                                                                     style={{
@@ -3631,7 +3631,7 @@ const AdminProducts = () => {
                                                                                     setPartsResults([]);
                                                                                 }}
                                                                             >
-                                                                                {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} onError={swapToLogoOnError} />}
+                                                                                {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 6, flexShrink: 0 }} onError={swapToLogoOnError} />}
                                                                                 <span style={{ flex: 1, color: alreadyAdded ? '#16a34a' : 'inherit' }}>
                                                                                     {p.name} {p.model ? <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '6px' }}>({p.model})</span> : null}
                                                                                 </span>
@@ -4136,7 +4136,7 @@ const AdminProducts = () => {
                                                                                             opacity: alreadyPicked ? 0.4 : 1, marginBottom: 6, textAlign: 'start'
                                                                                         }}
                                                                                     >
-                                                                                        {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4 }} onError={swapToLogoOnError} />}
+                                                                                        {p.primary_image && <img src={resolveUrl(p.primary_image)} alt="" style={{ width: 32, height: 32, objectFit: 'contain', borderRadius: 4 }} onError={swapToLogoOnError} />}
                                                                                         <span style={{ flex: 1, fontSize: 13 }}>{p.name}</span>
                                                                                     </button>
                                                                                 );

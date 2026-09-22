@@ -5,6 +5,7 @@ import { X, Plus, Loader2, AlertTriangle } from 'lucide-react';
 import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import styles from './StaffQuotationProductModal.module.css';
+import { PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 
 /**
  * The full picture of one product, before it goes on a quotation.
@@ -46,7 +47,7 @@ const money = (n: unknown) => `AED ${(Number(n) || 0).toLocaleString('en-US', { 
 
 const resolveImg = (p?: string | null): string => {
     const s = String(p ?? '').trim();
-    if (!s) return '/assets/mariot-logo2.webp';
+    if (!s) return PRODUCT_IMAGE_FALLBACK;
     if (s.startsWith('http')) return s;
     return `${MEDIA_BASE_URL}${s.startsWith('/') ? '' : '/'}${s}`;
 };
