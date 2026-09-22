@@ -496,6 +496,17 @@ exports.updateProduct = async (req, res, next) => {
             }
         })();
 
+        // Get the edit onto the live page now rather than when the cache expires.
+        // Fire-and-forget: the save has already succeeded, and a storefront that cannot
+        // be reached must not turn that into a failure for the admin.
+        try {
+            const { revalidateProduct } = require('../services/revalidate.service');
+            const saved = await Product.findById(req.params.id);
+            if (saved?.slug) revalidateProduct(saved.slug);
+        } catch (err) {
+            console.warn('[revalidate] skipped after update:', err.message);
+        }
+
         res.json({ success: true, message: 'Product updated' });
     } catch (error) {
         next(error);
@@ -532,7 +543,18 @@ exports.subscribeStockNotification = async (req, res, next) => {
 
 exports.deleteProduct = async (req, res, next) => {
     try {
+        // Read the slug BEFORE deleting: afterwards there is no row to learn it from,
+        // and without it the cached page would go on being served for a product that
+        // no longer exists.
+        let slug = null;
+        try { slug = (await Product.findById(req.params.id))?.slug || null; } catch { /* best effort */ }
+
         await Product.delete(req.params.id);
+
+        if (slug) {
+            const { revalidateProduct } = require('../services/revalidate.service');
+            revalidateProduct(slug);
+        }
         res.json({ success: true, message: 'Product deleted' });
     } catch (error) {
         next(error);
