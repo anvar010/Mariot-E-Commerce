@@ -144,6 +144,8 @@
     "deliveryTomorrow": "Get it <b>Tomorrow</b>",
     "deliveryByDate": "Get it by <b>{date}</b>",
     "deliveryOrderIn": "Order in {hours}h {minutes}m",
+    "deliveryOutOfStock": "This item is currently out of stock. Contact our support team to know the delivery date.",
+    "deliveryContactWhatsapp": "Ask on WhatsApp",
     "perfectFor": "Perfect For",
     "weAcceptPayment": "We Accept Payment",
     "description": "Description",

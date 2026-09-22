@@ -144,6 +144,8 @@
     "deliveryTomorrow": "استلمه <b>غداً</b>",
     "deliveryByDate": "استلمه بحلول <b>{date}</b>",
     "deliveryOrderIn": "اطلب خلال {hours}س {minutes}د",
+    "deliveryOutOfStock": "هذا المنتج غير متوفر حالياً. تواصل مع فريق الدعم لمعرفة موعد التوصيل.",
+    "deliveryContactWhatsapp": "اسأل عبر واتساب",
     "perfectFor": "مثالي لـ",
     "weAcceptPayment": "طرق الدفع المتاحة",
     "description": "الوصف",

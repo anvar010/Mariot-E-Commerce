@@ -2162,7 +2162,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </div>
                                 )}
 
-                                <DeliveryInformation days={product?.delivery_days} locale={locale} />
+                                <DeliveryInformation days={product?.delivery_days} locale={locale} outOfStock={outOfStock} />
 
                                 <div className={styles.purchaseActions}>
                                     <div className={styles.qtyWrapper} ref={qtyRef}>
