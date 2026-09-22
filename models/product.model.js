@@ -260,7 +260,22 @@ class Product {
                             'p.model LIKE ? OR p.model LIKE ? OR ' +
                             'p.tags LIKE ? OR p.tags LIKE ? OR ' +
                             'p.tags_ar LIKE ? OR p.tags_ar LIKE ? OR ' +
-                            'EXISTS (SELECT 1 FROM products p_part WHERE p.linked_parts LIKE CONCAT(\'%\', p_part.id, \'%\') AND (p_part.model LIKE ? OR p_part.name LIKE ?))' +
+                            // Products whose spare parts match the term.
+                            //
+                            // Two things matter here. The guard comes first: almost no product
+                            // has linked parts, and without it this correlated subquery ran for
+                            // every row of a 1,900-row catalogue against itself -- 3.5 SECONDS on
+                            // its own, which was the entire cost of a search.
+                            //
+                            // And the match is by list membership, not substring. The previous
+                            // `linked_parts LIKE CONCAT('%', p_part.id, '%')` matched id 8 inside
+                            // "4188", so a product could surface through a part it has no relation
+                            // to. FIND_IN_SET over the de-bracketed list compares whole ids, and
+                            // reads both the JSON form ("[4188]") and a bare comma list.
+                            '(p.linked_parts IS NOT NULL AND p.linked_parts NOT IN (\'\', \'[]\', \'null\') AND ' +
+                            'EXISTS (SELECT 1 FROM products p_part ' +
+                            'WHERE FIND_IN_SET(p_part.id, REPLACE(REPLACE(REPLACE(p.linked_parts, \'[\', \'\'), \']\', \'\'), \' \', \'\')) ' +
+                            'AND (p_part.model LIKE ? OR p_part.name LIKE ?)))' +
                             ')');
                     }
                     return '(' + subConditions.join(' OR ') + ')';
