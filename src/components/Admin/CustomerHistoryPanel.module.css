@@ -1,0 +1,266 @@
+/* Customer history shown in the quotation builder once an existing customer is matched.
+   Reads as an inset panel rather than a card of its own, so it feels like part of the
+   form it interrupts. */
+
+.panel {
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #0f172a;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.existingTag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0f766e;
+    background: rgba(13, 148, 136, 0.1);
+    border: 1px solid rgba(13, 148, 136, 0.2);
+    border-radius: 20px;
+    padding: 3px 10px;
+    margin-bottom: 8px;
+}
+
+.name {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.company {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.closeBtn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.closeBtn:hover {
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: #334155;
+}
+
+.details strong {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #94a3b8;
+    margin-bottom: 1px;
+}
+
+/* Auto-fit rather than a fixed count: the tiles stay readable from a narrow drawer up
+   to a full-width desktop form without a breakpoint for each size. */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.stat {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.statLabel {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #94a3b8;
+}
+
+.statValue {
+    margin-top: 4px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.section {
+    margin-top: 20px;
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.allBranchesNote {
+    font-size: 11px;
+    font-weight: 500;
+    color: #94a3b8;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.branchRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.branchChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.branchChip em {
+    font-style: normal;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 1px 7px;
+}
+
+/* The history can run long; it scrolls inside the panel rather than pushing the
+   quotation form itself off screen. */
+.tableWrap {
+    max-height: 260px;
+    overflow: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #64748b;
+    padding: 9px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.ref {
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+}
+
+.right {
+    text-align: right;
+}
+
+.muted {
+    color: #cbd5e1;
+}
+
+.status {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.statusApproved {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+}
+
+.statusRejected {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.statusPending {
+    background: rgba(234, 179, 8, 0.12);
+    color: #ca8a04;
+}
+
+.empty {
+    margin: 0;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+@media (max-width: 640px) {
+    .panel {
+        padding: 16px;
+    }
+
+    .details {
+        gap: 8px 14px;
+    }
+}

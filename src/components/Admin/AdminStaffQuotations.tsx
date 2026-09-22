@@ -16,6 +16,7 @@ import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import DiscountLimitsModal from './DiscountLimitsModal';
+import CustomerHistoryPanel, { CustomerProfile } from './CustomerHistoryPanel';
 
 type Line = {
     product_id: number | null;
@@ -110,6 +111,15 @@ const AdminStaffQuotations = () => {
     const [customerMatches, setCustomerMatches] = useState<any[]>([]);
     const [customerOpen, setCustomerOpen] = useState(false);
     const [pickedCustomerId, setPickedCustomerId] = useState<number | null>(null);
+    // The matched customer's full history. Loaded when staff pick someone from the
+    // search list, or when the phone/email they type identifies an existing record --
+    // so the history appears before the quotation is raised, not after.
+    const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
+    const [profileLoading, setProfileLoading] = useState(false);
+    // Branches, for the admin's "issued from" selector and the list filter. Staff never
+    // choose -- their own branch is applied server-side.
+    const [branches, setBranches] = useState<any[]>([]);
+    const [adminBranchId, setAdminBranchId] = useState('');
 
     const fetchQuotations = useCallback(async () => {
         try {
@@ -128,6 +138,17 @@ const AdminStaffQuotations = () => {
     }, [showNotification]);
 
     useEffect(() => { fetchQuotations(); }, [fetchQuotations]);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/staff-quotations/branches`,
+                    { credentials: 'include', headers: getAuthHeaders() });
+                const data = await res.json();
+                if (data.success) setBranches(data.data || []);
+            } catch { /* silent — the selector simply stays empty */ }
+        })();
+    }, []);
 
     useEffect(() => {
         (async () => {
@@ -417,6 +438,55 @@ const AdminStaffQuotations = () => {
         return () => { cancelled = true; clearTimeout(t); };
     }, [customer.customer_name, pickedCustomerId]);
 
+    // Phone and email are the strong identifiers, so typing either is enough to
+    // recognise a returning customer -- staff do not have to search by name first, and
+    // the history appears before anything is saved. Names are deliberately NOT used:
+    // two people called the same thing are not the same customer.
+    useEffect(() => {
+        // Already resolved by an explicit pick; nothing to detect.
+        if (pickedCustomerId !== null) return;
+
+        const phone = customer.customer_phone.trim();
+        const email = customer.customer_email.trim();
+        // Short fragments match far too much to be worth a round trip mid-typing.
+        const usablePhone = phone.replace(/\D/g, '').length >= 7 ? phone : '';
+        const usableEmail = /.+@.+\..+/.test(email) ? email : '';
+        if (!usablePhone && !usableEmail) { setCustomerProfile(null); return; }
+
+        let cancelled = false;
+        const t = setTimeout(async () => {
+            try {
+                const qs = new URLSearchParams();
+                if (usablePhone) qs.set('phone', usablePhone);
+                if (usableEmail) qs.set('email', usableEmail);
+                const res = await fetch(
+                    `${API_BASE_URL}/staff-quotations/customers/match?${qs.toString()}`,
+                    { credentials: 'include', headers: getAuthHeaders() }
+                );
+                const data = await res.json();
+                if (cancelled) return;
+                if (data.success && data.data) {
+                    setCustomerProfile(data.data);
+                    setPickedCustomerId(data.data.customer.id);
+                    // Fill only what is still blank, so a correction typed for this quote
+                    // is never overwritten by the stored record.
+                    setCustomer(prev => ({
+                        ...prev,
+                        customer_name: prev.customer_name || data.data.customer.name || '',
+                        customer_email: prev.customer_email || data.data.customer.email || '',
+                        customer_phone: prev.customer_phone || data.data.customer.phone || '',
+                        vat_number: prev.vat_number || data.data.customer.vat_number || '',
+                    }));
+                } else {
+                    setCustomerProfile(null);
+                }
+            } catch {
+                if (!cancelled) setCustomerProfile(null);
+            }
+        }, 450);
+        return () => { cancelled = true; clearTimeout(t); };
+    }, [customer.customer_phone, customer.customer_email, pickedCustomerId]);
+
     const pickCustomer = (c: any) => {
         setCustomer(prev => ({
             ...prev,
@@ -429,6 +499,30 @@ const AdminStaffQuotations = () => {
         setPickedCustomerId(c.id);
         setCustomerMatches([]);
         setCustomerOpen(false);
+        // A 'user' result is a storefront account that has never been quoted, so it has
+        // no customer record and therefore no history to show yet. Only a 'customer'
+        // result has a profile to load.
+        if (c.source === 'customer') {
+            loadCustomerProfile(c.id);
+        } else {
+            setCustomerProfile(null);
+        }
+    };
+
+    const loadCustomerProfile = async (customerId: number) => {
+        setProfileLoading(true);
+        try {
+            const res = await fetch(
+                `${API_BASE_URL}/staff-quotations/customers/${customerId}/profile`,
+                { credentials: 'include', headers: getAuthHeaders() }
+            );
+            const data = await res.json();
+            setCustomerProfile(data.success ? data.data : null);
+        } catch {
+            setCustomerProfile(null);
+        } finally {
+            setProfileLoading(false);
+        }
     };
 
     // Share of the subtotal, matching the server's rule exactly.
@@ -446,6 +540,8 @@ const AdminStaffQuotations = () => {
         setEditingId(null);
         setEditingRef('');
         setEditingStatus('');
+        setPickedCustomerId(null);
+        setCustomerProfile(null);
     };
 
     const saveQuotation = async () => {
@@ -460,7 +556,16 @@ const AdminStaffQuotations = () => {
                     method: editingId ? 'PUT' : 'POST',
                     credentials: 'include',
                     headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...customer, items: lines }),
+                    body: JSON.stringify({
+                        ...customer,
+                        items: lines,
+                        // Links the quote to the matched customer instead of creating a
+                        // second record for someone the system already knows.
+                        customer_id: pickedCustomerId,
+                        // Staff quote under their own branch and the server ignores this;
+                        // an admin has no branch of their own, so they must state one.
+                        branch_id: isStaff ? undefined : (adminBranchId || undefined),
+                    }),
                 }
             );
             const data = await res.json();
@@ -875,6 +980,38 @@ const AdminStaffQuotations = () => {
 
                     {/* Customer + totals */}
                     <aside className={styles.builderSide}>
+                        {/* Where the quotation number comes from. Staff cannot change it -- it is
+                            their account's branch and the server enforces that -- so it is shown
+                            as a fact rather than a control. Admins have no branch and must pick. */}
+                        <div className={styles.card}>
+                            <label className={styles.cardLabel}>Issued from</label>
+                            {isStaff ? (
+                                user?.branch_name ? (
+                                    <div className={styles.branchFixed}>
+                                        {user.branch_name} <span>({user.branch_code})</span>
+                                        <small>Quotation numbers are issued from this branch.</small>
+                                    </div>
+                                ) : (
+                                    <div className={styles.branchWarning}>
+                                        <AlertTriangle size={14} />
+                                        Your account has no branch. Ask an administrator to assign one
+                                        before raising a quotation.
+                                    </div>
+                                )
+                            ) : (
+                                <select
+                                    className={styles.input}
+                                    value={adminBranchId}
+                                    onChange={e => setAdminBranchId(e.target.value)}
+                                >
+                                    <option value="">Select branch…</option>
+                                    {branches.map(b => (
+                                        <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+
                         <div className={styles.card}>
                             <label className={styles.cardLabel}>Customer</label>
                             <div className={styles.customerField}>
@@ -897,15 +1034,24 @@ const AdminStaffQuotations = () => {
                                     <div className={styles.customerList}>
                                         {customerMatches.map(c => (
                                             <button
-                                                key={c.id}
+                                                // The list merges two sources, so an id alone is not unique --
+                                                // customer 5 and user 5 are different people.
+                                                key={`${c.source || 'customer'}-${c.id}`}
                                                 type="button"
                                                 className={styles.customerRow}
                                                 onMouseDown={e => e.preventDefault()}
                                                 onClick={() => pickCustomer(c)}
                                             >
-                                                <span className={styles.lineName}>{c.name}</span>
+                                                <span className={styles.lineName}>
+                                                    {c.name}
+                                                    {Number(c.quotation_count) > 0 && (
+                                                        <span className={styles.quoteCount}>
+                                                            {c.quotation_count} quotation{Number(c.quotation_count) === 1 ? '' : 's'}
+                                                        </span>
+                                                    )}
+                                                </span>
                                                 <span className={styles.lineMeta}>
-                                                    {c.email || '—'}{c.company_name ? ` · ${c.company_name}` : ''}
+                                                    {c.email || c.phone_number || '—'}{c.company_name ? ` · ${c.company_name}` : ''}
                                                 </span>
                                             </button>
                                         ))}
@@ -921,6 +1067,22 @@ const AdminStaffQuotations = () => {
                             <textarea className={styles.textarea} placeholder="Internal notes (not shown to the customer)" rows={3}
                                 value={customer.notes} onChange={e => setCustomer({ ...customer, notes: e.target.value })} />
                         </div>
+
+                        {/* Sits directly under the customer card so the history is read before the
+                            quote is priced, which is the whole point of showing it. */}
+                        {profileLoading && (
+                            <div className={styles.card}>
+                                <span className={styles.profileLoading}>
+                                    <Loader2 size={14} className={styles.spin} /> Loading customer history…
+                                </span>
+                            </div>
+                        )}
+                        {!profileLoading && customerProfile && (
+                            <CustomerHistoryPanel
+                                profile={customerProfile}
+                                onClose={() => { setCustomerProfile(null); setPickedCustomerId(null); }}
+                            />
+                        )}
 
                         <div className={styles.card}>
                             <label className={styles.cardLabel}>Totals</label>

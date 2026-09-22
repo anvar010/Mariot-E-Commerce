@@ -43,6 +43,10 @@ function getRoleBadgeClass(role: string, styles: any) {
 const AdminUsers = () => {
     const [users, setUsers] = useState<any[]>([]);
     const [roles, setRoles] = useState<any[]>([]);
+    // Branches a staff member can be assigned to. Their branch stamps every quotation
+    // they raise (DUB-000001, SHJ-000001, ...), so it is set here rather than chosen
+    // at quotation time.
+    const [branches, setBranches] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
@@ -135,12 +139,12 @@ const AdminUsers = () => {
     // --- Edit modal ---
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<any>(null);
-    const [formData, setFormData] = useState({ name: '', email: '', role_id: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', role_id: '', branch_id: '' });
     const [editPerms, setEditPerms] = useState<string[]>([]);
 
     // --- Create modal ---
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role_id: '' });
+    const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role_id: '', branch_id: '' });
     const [createPerms, setCreatePerms] = useState<string[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -157,7 +161,15 @@ const AdminUsers = () => {
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { }, type: 'danger' });
     const [isActionLoading, setIsActionLoading] = useState(false);
 
-    useEffect(() => { fetchUsers(); fetchRoles(); }, []);
+    useEffect(() => { fetchUsers(); fetchRoles(); fetchBranches(); }, []);
+
+    const fetchBranches = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/staff-quotations/branches`, { credentials: 'include', headers: getAuthHeaders() });
+            const data = await res.json();
+            if (data.success) setBranches(data.data);
+        } catch { /* silent — the branch select simply stays empty */ }
+    };
 
     const fetchRoles = async () => {
         try {
@@ -183,7 +195,7 @@ const AdminUsers = () => {
 
     // ---------- Create ----------
     const openCreateModal = () => {
-        setCreateForm({ name: '', email: '', password: '', role_id: roles.find(r => r.name === 'user')?.id?.toString() || '' });
+        setCreateForm({ name: '', email: '', password: '', role_id: roles.find(r => r.name === 'user')?.id?.toString() || '', branch_id: '' });
         setCreatePerms([]);
         setIsCreateOpen(true);
     };
@@ -194,6 +206,9 @@ const AdminUsers = () => {
             setIsCreating(true);
             const payload: any = { ...createForm };
             if (isStaffRole(createForm.role_id)) payload.staff_permissions = createPerms;
+            // Only staff belong to a branch. Sending null for everyone else keeps a
+            // demoted account from holding a stale branch that would still stamp quotes.
+            payload.branch_id = isStaffRole(createForm.role_id) ? (createForm.branch_id || null) : null;
             const res = await fetch(`${API_BASE_URL}/admin/users`, {
                 method: 'POST', credentials: 'include',
                 headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
@@ -218,7 +233,11 @@ const AdminUsers = () => {
     // ---------- Edit ----------
     const handleEditClick = (user: any) => {
         setEditingUser(user);
-        setFormData({ name: user.name, email: user.email, role_id: user.role_id ? user.role_id.toString() : '2' });
+        setFormData({
+            name: user.name, email: user.email,
+            role_id: user.role_id ? user.role_id.toString() : '2',
+            branch_id: user.branch_id ? user.branch_id.toString() : '',
+        });
         setEditPerms(parsePerms(user.staff_permissions));
         setPointsForm({ amount: '', action: 'add' });
         setIsModalOpen(true);
@@ -239,6 +258,7 @@ const AdminUsers = () => {
             } else {
                 payload.staff_permissions = null;
             }
+            payload.branch_id = isStaffRole(formData.role_id) ? (formData.branch_id || null) : null;
             const res = await fetch(`${API_BASE_URL}/admin/users/${editingUser.id}`, {
                 credentials: 'include', method: 'PUT',
                 headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
@@ -487,6 +507,14 @@ const AdminUsers = () => {
                                                 {role === 'staff' && <Wrench size={12} style={{ marginInlineEnd: '6px' }} />}
                                                 {t(`roles.${role}` as any, { defaultValue: role.toUpperCase() })}
                                             </span>
+                                            {/* Shown under the role rather than in its own column: it applies only to
+                                                staff, and an unassigned one cannot raise quotations at all -- so that
+                                                gap is called out rather than left blank. */}
+                                            {role === 'staff' && (
+                                                u.branch_name
+                                                    ? <div className={styles.branchTag}>{u.branch_name} ({u.branch_code})</div>
+                                                    : <div className={styles.branchTagMissing}>No branch</div>
+                                            )}
                                         </td>
                                         <td>
                                             <span style={{
@@ -571,7 +599,20 @@ const AdminUsers = () => {
                                 </select>
                             </div>
                             {isStaffRole(createForm.role_id) && (
-                                <PermissionsPanel perms={createPerms} onToggle={toggleCreatePerm} />
+                                <>
+                                    <div className={styles.formGroup}>
+                                        <label>Branch</label>
+                                        <select value={createForm.branch_id} required
+                                            onChange={e => setCreateForm({ ...createForm, branch_id: e.target.value })}>
+                                            <option value="" disabled>Select branch</option>
+                                            {branches.map(b => <option key={b.id} value={b.id}>{b.name} ({b.code})</option>)}
+                                        </select>
+                                        <small className={styles.fieldHint}>
+                                            Quotations this member raises are numbered under this branch.
+                                        </small>
+                                    </div>
+                                    <PermissionsPanel perms={createPerms} onToggle={toggleCreatePerm} />
+                                </>
                             )}
                             <div className={styles.modalFooter}>
                                 <button type="button" className={styles.cancelBtn} onClick={() => setIsCreateOpen(false)}>
@@ -615,7 +656,21 @@ const AdminUsers = () => {
                             </div>
 
                             {isStaffRole(formData.role_id) && (
-                                <PermissionsPanel perms={editPerms} onToggle={toggleEditPerm} />
+                                <>
+                                    <div className={styles.formGroup}>
+                                        <label>Branch</label>
+                                        <select value={formData.branch_id} required
+                                            onChange={e => setFormData({ ...formData, branch_id: e.target.value })}>
+                                            <option value="" disabled>Select branch</option>
+                                            {branches.map(b => <option key={b.id} value={b.id}>{b.name} ({b.code})</option>)}
+                                        </select>
+                                        <small className={styles.fieldHint}>
+                                            Quotations this member raises are numbered under this branch.
+                                            Changing it does not renumber existing quotations.
+                                        </small>
+                                    </div>
+                                    <PermissionsPanel perms={editPerms} onToggle={toggleEditPerm} />
+                                </>
                             )}
 
                             {editingUser && (() => {

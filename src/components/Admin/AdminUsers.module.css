@@ -543,6 +543,34 @@
     background: #fff;
 }
 
+/* The branch a staff member quotes under, shown beneath their role badge. */
+.branchTag,
+.branchTagMissing {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.branchTag {
+    color: #475569;
+}
+
+/* An unassigned staff member cannot raise a quotation, so this reads as a warning
+   rather than as ordinary absent data. */
+.branchTagMissing {
+    color: #b45309;
+}
+
+/* Explains what a field affects beyond the form itself -- e.g. that a staff member's
+   branch determines how their quotations are numbered. Sits under the control, so the
+   .formGroup gap already spaces it. */
+.fieldHint {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #64748b;
+    margin-top: -2px;
+}
+
 .modalFooter {
     padding: 24px 32px;
     border-top: 1px solid #f1f3f5;
@@ -580,5 +608,44 @@
     .submitBtn:hover {
         transform: translateY(-1px);
         box-shadow: 0 6px 20px rgba(15, 23, 42, 0.15);
+    }
+}
+/* ---------------------------------------------------------------------------
+   Small screens: let a wide table scroll sideways inside its own card.
+
+   The wrapper is `overflow: hidden` for the rounded corners, which on a narrow
+   screen CLIPS the far columns instead of scrolling to them -- they become
+   unreachable. Below the breakpoint the card scrolls instead, and a min-width
+   on the table stops the browser crushing columns into unreadable slivers.
+
+   Desktop is untouched: the table already fits, so nothing here applies.
+   --------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+    .tableWrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        min-width: 760px;
+    }
+}
+
+/* Small screens: the page header is a space-between row, so on a narrow screen the
+   title and its action button squeeze each other. Stack them instead, and let the
+   button span the width so it is an easy tap target.
+   Desktop keeps the row -- this only applies below the breakpoint. */
+@media (max-width: 640px) {
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .header > button,
+    .addBtn,
+    .createBtn {
+        justify-content: center;
+        width: 100%;
     }
 }

@@ -272,6 +272,65 @@
 .lineName {
     font-weight: 600;
     font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* How many quotations a matched customer already holds. Shown in the search list so
+   staff can tell a returning customer from a new one before picking either. */
+.quoteCount {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #0f766e;
+    background: rgba(13, 148, 136, 0.1);
+    border-radius: 10px;
+    padding: 1px 7px;
+    white-space: nowrap;
+}
+
+.profileLoading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* A staff member's branch is not editable here -- it comes from their account and the
+   server enforces it -- so it reads as a stated fact, not a disabled input. */
+.branchFixed {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.branchFixed span {
+    font-weight: 600;
+    color: #64748b;
+}
+
+.branchFixed small {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #94a3b8;
+}
+
+/* Without a branch the server refuses to number a quotation, so this has to read as a
+   blocker rather than a hint. */
+.branchWarning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #b45309;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 10px;
+    padding: 10px 12px;
 }
 
 .lineMeta {
@@ -1373,4 +1432,23 @@
 .cardEye:focus-visible {
     outline: 2px solid #16a1db;
     outline-offset: 2px;
+}
+
+/* Small screens: the page header is a space-between row, so on a narrow screen the
+   title and its action button squeeze each other. Stack them instead, and let the
+   button span the width so it is an easy tap target.
+   Desktop keeps the row -- this only applies below the breakpoint. */
+@media (max-width: 640px) {
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .header > button,
+    .addBtn,
+    .createBtn {
+        justify-content: center;
+        width: 100%;
+    }
 }
