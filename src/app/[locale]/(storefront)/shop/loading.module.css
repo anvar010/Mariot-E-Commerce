@@ -4,6 +4,9 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 20px 20px 60px;
+    /* Holds the page's height so the footer, which follows immediately in the layout,
+       stays below the fold until the real content arrives. */
+    min-height: 100vh;
 }
 
 .block {

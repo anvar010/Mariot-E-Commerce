@@ -984,7 +984,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
         thumbScrollRef.current.scrollLeft = scrollLeftThumbs - walk;
     };
 
-    if (loading) return <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>;
+    // 100vh, not 80: the footer follows this in the layout, and at 80vh it rose into view
+    // while the product was still loading -- the page appeared to render footer-first.
+    if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>;
     // Transient load failure (network/5xx/timeout) — offer a retry instead of
     // the permanent "Product not found" screen.
     if (loadError) {

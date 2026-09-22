@@ -57,7 +57,7 @@ export default async function Page() {
     return (
         <>
             <main>
-                <Suspense fallback={<div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading offers...</div>}>
+                <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading offers...</div>}>
                     <TodayOffersPage
                         initialBrands={initialData.brands}
                         initialCategories={initialData.categories}

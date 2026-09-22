@@ -5,6 +5,11 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 24px 20px 60px;
+    /* The footer sits directly after this in the layout, so the skeleton has to hold the
+       page's full height while the content loads. Without it the two columns below are
+       short enough on a wide screen that the footer rides up into view first, which reads
+       as the page loading footer-first. */
+    min-height: 100vh;
 }
 
 .grid {

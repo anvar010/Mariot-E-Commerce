@@ -37,7 +37,7 @@ export default async function ShopNowPage() {
 
     return (
         <main>
-            <Suspense fallback={<div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>}>
+            <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>}>
                 <ShopLayout
                     isFeatured={true}
                     categoryNameOverride="Featured Products"
