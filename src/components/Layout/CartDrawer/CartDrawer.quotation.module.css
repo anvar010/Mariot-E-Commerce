@@ -79,8 +79,13 @@
 
 /* Content / Form */
 .quotationContent {
-    padding: 4px 28px 28px;
+    /* Bottom padding clears the home indicator and any overlaying browser bar, so the
+       submit button at the end of the form is not hidden behind them. */
+    padding: 4px 28px calc(28px + env(safe-area-inset-bottom, 0px));
+    /* dvh so the panel is measured against what is actually on screen; the vh line is the
+       fallback for browsers without it. */
     max-height: 70vh;
+    max-height: 70dvh;
     overflow-y: auto;
 }
 
@@ -183,6 +188,6 @@
     }
 
     .quotationContent {
-        padding: 4px 20px 24px;
+        padding: 4px 20px calc(24px + env(safe-area-inset-bottom, 0px));
     }
 }

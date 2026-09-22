@@ -35,6 +35,12 @@ export function generateStaticParams() {
 export const viewport: Viewport = {
     width: 'device-width',
     initialScale: 1,
+    // Without this, env(safe-area-inset-*) always resolves to 0 and the padding meant to
+    // clear a phone's home indicator or an overlaying browser bar does nothing. Several
+    // components already rely on those insets -- the cart drawer's Checkout and Download
+    // Quotation buttons among them -- so the page has to opt in to being laid out
+    // underneath the insets in the first place.
+    viewportFit: 'cover',
 };
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {

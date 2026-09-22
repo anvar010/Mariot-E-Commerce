@@ -4,6 +4,7 @@
     inset-inline-start: 0;
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(2px);
     z-index: 30000;
@@ -24,7 +25,12 @@
     top: 0;
     inset-inline-end: -480px;
     width: 480px;
+    /* 100vh on a phone is the viewport WITHOUT the browser's address and tab bars, so a
+       drawer that tall runs underneath them and takes its footer -- Checkout and Download
+       Quotation -- out of sight. dvh is the height actually on screen and shrinks as the
+       bars appear. The vh line stays first as the fallback for browsers without dvh. */
     height: 100vh;
+    height: 100dvh;
     background: #f8fafc;
     z-index: 30001;
     transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), inset-inline-end 0.45s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.45s;
@@ -660,12 +666,19 @@
 }
 
 .footer {
-    padding: 20px;
+    /* The extra bottom padding clears the home indicator and any browser bar that
+       overlays the viewport rather than shrinking it -- without it the Checkout and
+       Download Quotation buttons sit underneath them. env() resolves to 0 where there is
+       no inset, so this costs nothing on a desktop. */
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
     background: white;
     box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
     gap: 12px;
+    /* The footer must never be what shrinks when the item list is long: the two buttons
+       are the point of the drawer. */
+    flex-shrink: 0;
 }
 
 .downloadQuotationBtn {
@@ -858,6 +871,7 @@
     inset-inline-end: -480px;
     width: 480px;
     height: 100vh;
+    height: 100dvh;
     background: #f8fafc;
     z-index: 30005;
     transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), inset-inline-end 0.45s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1213,6 +1227,7 @@
     inset-inline-start: 0;
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.5);
     z-index: 30010;
     opacity: 0;
