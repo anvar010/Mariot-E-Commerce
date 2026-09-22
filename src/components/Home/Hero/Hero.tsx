@@ -15,7 +15,7 @@
  */
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import { ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import styles from './Hero.module.css';
@@ -54,7 +54,6 @@ interface HeroProps {
 const Hero = ({ initialSlides = [] }: HeroProps) => {
     const t = useTranslations('common');
     const locale = useLocale();
-    const router = useRouter();
     const isRtl = locale === 'ar';
 
     const resolveUrl = (url?: string) => {
@@ -358,13 +357,17 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                                                 custom={3} variants={textItem} initial="hidden" animate="visible"
                                                 key={`btns-${activeIndex}`}
                                             >
-                                                <button
+                                                {/* A Link, not a button calling router.push. Next prefetches a Link
+                                                    while it is on screen, so the destination is already fetched by
+                                                    the time it is clicked; a router.push can only start that work
+                                                    after the click, which is the pause this used to have. */}
+                                                <Link
+                                                    href={slide?.link || '/shopnow'}
                                                     className={styles.buyBtn}
-                                                    onClick={() => router.push(slide?.link || '/shopnow')}
                                                 >
                                                     <ShoppingBag size={18} className={isRtl ? styles.iconRtl : styles.iconLtr} />
                                                     <span>{slide?.btnText || (isRtl ? 'تسوق الآن' : 'Shop Now')}</span>
-                                                </button>
+                                                </Link>
                                                 <button
                                                     className={styles.whatsappBtn}
                                                     onClick={() => window.open('https://wa.me/97142882777', '_blank')}

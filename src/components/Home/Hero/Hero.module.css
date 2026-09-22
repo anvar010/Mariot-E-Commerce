@@ -217,6 +217,10 @@
 
 .buyBtn,
 .whatsappBtn {
+    /* .buyBtn is a Link (an <a>) so the destination can be prefetched; the rest of these
+       rules already set every visual property explicitly, but an anchor brings its own
+       underline, so that is turned off here. */
+    text-decoration: none;
     min-height: 50px;
     display: inline-flex;
     align-items: center;
