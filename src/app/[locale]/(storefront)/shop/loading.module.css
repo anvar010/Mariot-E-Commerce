@@ -1,0 +1,138 @@
+/* Shop grid skeleton. Mirrors the filter-rail + card-grid layout. */
+
+.wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+}
+
+.block {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e8edf3 37%, #f1f5f9 63%);
+    background-size: 400% 100%;
+    border-radius: 8px;
+    animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .block {
+        animation: none;
+    }
+}
+
+.crumb {
+    width: 260px;
+    height: 13px;
+    margin-bottom: 22px;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 28px;
+}
+
+.filters {
+    min-width: 0;
+}
+
+.filterGroup {
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.filterTitle {
+    width: 55%;
+    height: 15px;
+    margin-bottom: 14px;
+}
+
+.filterRow {
+    width: 100%;
+    height: 11px;
+    margin-bottom: 9px;
+}
+
+.results {
+    min-width: 0;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.count {
+    width: 150px;
+    height: 13px;
+}
+
+.sort {
+    width: 170px;
+    height: 38px;
+    border-radius: 10px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 18px;
+}
+
+.card {
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.cardImage {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.cardLine {
+    width: 100%;
+    height: 12px;
+    margin-bottom: 7px;
+}
+
+.cardLineShort {
+    width: 65%;
+    height: 12px;
+    margin-bottom: 14px;
+}
+
+.cardPrice {
+    width: 45%;
+    height: 17px;
+}
+
+/* The filter rail is a drawer on small screens, so the skeleton drops it rather than
+   drawing a column that will not be there. */
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .filters {
+        display: none;
+    }
+
+    .wrap {
+        padding: 16px 16px 40px;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+    }
+}

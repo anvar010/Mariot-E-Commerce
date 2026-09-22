@@ -1,0 +1,132 @@
+/* Product page skeleton. Mirrors ProductDetail's two-column layout so the real content
+   lands into a frame that is already on screen. */
+
+.wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 40px;
+}
+
+.galleryCol,
+.detailCol {
+    min-width: 0;
+}
+
+/* One shared shimmer. `background-size` is what the animation moves, so every block
+   shimmers in step regardless of its width. */
+.block {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e8edf3 37%, #f1f5f9 63%);
+    background-size: 400% 100%;
+    border-radius: 10px;
+    animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
+/* Respect a reduced-motion preference: the layout still reserves its space, it simply
+   holds still instead of pulsing. */
+@media (prefers-reduced-motion: reduce) {
+    .block {
+        animation: none;
+    }
+}
+
+.mainImage {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
+}
+
+.thumbRow {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.thumb {
+    width: 74px;
+    height: 74px;
+    flex: none;
+    border-radius: 10px;
+}
+
+.brand {
+    width: 110px;
+    height: 14px;
+    margin-bottom: 14px;
+}
+
+.title {
+    width: 100%;
+    height: 26px;
+    margin-bottom: 8px;
+}
+
+.titleShort {
+    width: 62%;
+    height: 26px;
+    margin-bottom: 22px;
+}
+
+.price {
+    width: 180px;
+    height: 32px;
+    margin-bottom: 24px;
+}
+
+.delivery {
+    width: 100%;
+    height: 78px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.actionRow {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.qty {
+    width: 110px;
+    height: 48px;
+    flex: none;
+    border-radius: 999px;
+}
+
+.cta {
+    flex: 1;
+    height: 48px;
+    border-radius: 999px;
+}
+
+.line {
+    width: 100%;
+    height: 13px;
+    margin-bottom: 10px;
+}
+
+.lineShort {
+    width: 45%;
+    height: 13px;
+}
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 28px;
+    }
+
+    .wrap {
+        padding: 16px 16px 40px;
+    }
+}
