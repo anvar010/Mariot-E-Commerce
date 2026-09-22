@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
 /**
  * Scroll restoration for a storefront whose pages fill in after they mount.
@@ -65,6 +66,67 @@ const write = (key: string, y: number): void => {
 };
 
 export default function useScrollRestoration(): void {
+    const pathname = usePathname();
+    // Distinguishes the first mount from a later navigation: on first mount the page is
+    // already where it should be (or is being restored below), and forcing it to the top
+    // would undo a reload landing on a saved offset.
+    const mounted = useRef(false);
+    /**
+     * Set by onPopState, and read by the pathname effect to leave a back/forward alone.
+     *
+     * A ref rather than state because it must be readable without causing a render, and
+     * because popstate and the re-render it triggers happen in the same tick. It is
+     * cleared on a timer rather than on read: React may or may not re-render for a given
+     * popstate (the path can be unchanged), and a flag cleared only on read would then
+     * stay set and swallow the NEXT forward navigation's scroll-to-top.
+     */
+    const poppingRef = useRef(false);
+
+    /**
+     * Send a forward navigation to the top of the page.
+     *
+     * Setting history.scrollRestoration to 'manual' below turns OFF the browser's own
+     * scroll handling -- including the scroll-to-top it would normally do when pushing a
+     * new entry. Nothing was putting it back, so clicking a product from halfway down a
+     * long listing opened the product page still scrolled to the old offset: the viewport
+     * landed near the bottom of the not-yet-filled page, with the footer in view. That is
+     * the footer appearing "before" the product, and it is a scroll position, not a
+     * height -- which is why giving the loading states a full viewport never fixed it.
+     *
+     * Back/forward is excluded: those have a saved offset and are handled by onPopState.
+     */
+    useEffect(() => {
+        if (!mounted.current) {
+            mounted.current = true;
+            return;
+        }
+        // Back/forward: onPopState owns the scroll for these and is mid-restore.
+        if (poppingRef.current) return;
+        window.scrollTo(0, 0);
+    }, [pathname]);
+
+    /**
+     * Marks back/forward navigations, registered separately and in the capture phase so
+     * the flag is set before the listener that does the restoring -- and before React
+     * re-renders with the new path, which is what the effect above reacts to.
+     */
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        let clear: number | undefined;
+        const mark = () => {
+            poppingRef.current = true;
+            // Held just long enough to cover the re-render popstate triggers, then
+            // released so a later forward click still scrolls to the top.
+            window.clearTimeout(clear);
+            clear = window.setTimeout(() => { poppingRef.current = false; }, 400) as unknown as number;
+        };
+        window.addEventListener('popstate', mark, true);
+        return () => {
+            window.removeEventListener('popstate', mark, true);
+            window.clearTimeout(clear);
+        };
+    }, []);
+
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
