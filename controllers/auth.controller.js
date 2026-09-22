@@ -95,7 +95,11 @@ exports.login = async (req, res, next) => {
             company_name: user.company_name,
             vat_number: user.vat_number,
             reward_points: user.reward_points,
-            staff_permissions: user.staff_permissions ?? null
+            staff_permissions: user.staff_permissions ?? null,
+            // Staff quote under their own branch, and the quotation screen shows it.
+            branch_id: user.branch_id ?? null,
+            branch_name: user.branch_name ?? null,
+            branch_code: user.branch_code ?? null
         }, 200, res);
     } catch (error) {
         next(error);
@@ -164,6 +168,9 @@ exports.googleLogin = async (req, res, next) => {
             vat_number: user.vat_number,
             reward_points: user.reward_points,
             staff_permissions: user.staff_permissions ?? null,
+            branch_id: user.branch_id ?? null,
+            branch_name: user.branch_name ?? null,
+            branch_code: user.branch_code ?? null,
             bonus_awarded: bonusAwarded,
             bonus_points: bonusAwarded ? 3000 : 0
         }, 200, res);

@@ -8,6 +8,9 @@ const {
     sendStaffQuotationEmail,
     reviewStaffQuotation,
     lookupCustomers,
+    getCustomerProfile,
+    matchCustomer,
+    getBranches,
 } = require('../controllers/staffQuotation.controller');
 const { protect, authorize, authorizeAdminOrStaff } = require('../middlewares/auth.middleware');
 
@@ -26,6 +29,11 @@ router.route('/')
 // MUST stay above '/:id' — Express matches in order, so a later ':id' route would
 // otherwise swallow this path with id === 'customers'.
 router.get('/customers', lookupCustomers);
+// Likewise above '/:id'. '/customers/match' also has to precede '/customers/:id/profile',
+// or 'match' is read as a customer id.
+router.get('/customers/match', matchCustomer);
+router.get('/customers/:id/profile', getCustomerProfile);
+router.get('/branches', getBranches);
 
 router.route('/:id')
     .get(getStaffQuotation)

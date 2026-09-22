@@ -1,6 +1,8 @@
 const db = require('../config/db');
 const { sendQuotationEmail } = require('../utils/sendEmail');
 const { getSettingValue } = require('./settings.controller');
+const { reserveOnConnection, resolveBranchForUser } = require('../services/quotationNumber.service');
+const customerService = require('../services/customer.service');
 
 // Staff-built quotations live in their own table rather than sharing `quotations`
 // with the storefront: those are customer-initiated from the cart and carry no
@@ -44,9 +46,25 @@ const ensureStaffQuotationsTable = async () => {
         ['created_by_name', 'VARCHAR(255)'], ['created_by_role', 'VARCHAR(50)'],
         ['status', "VARCHAR(20) NOT NULL DEFAULT 'pending'"], ['review_note', 'TEXT'],
         ['reviewed_by', 'INT NULL'], ['reviewed_by_name', 'VARCHAR(255)'],
-        ['reviewed_at', 'DATETIME NULL']]) {
+        ['reviewed_at', 'DATETIME NULL'],
+        // Branch-scoped numbering and the customer the quote belongs to. branch_code and
+        // branch_seq are stored alongside branch_id so the unique index below can police
+        // the ref even if a branch is later renamed or its row removed.
+        ['branch_id', 'INT NULL'], ['customer_id', 'INT NULL'],
+        ['branch_code', 'VARCHAR(10) NULL'], ['branch_seq', 'INT NULL']]) {
         try { await db.query(`ALTER TABLE staff_quotations ADD COLUMN ${col} ${ddl}`); }
         catch (e) { /* column already exists — ignore */ }
+    }
+    for (const idx of [
+        'ADD KEY idx_sq_branch (branch_id)',
+        'ADD KEY idx_sq_customer (customer_id)',
+        'ADD KEY idx_sq_created_by (created_by)',
+        // Belt and braces alongside branch_quote_seq: even a bug in the number generator
+        // cannot land two quotations on the same ref within a branch.
+        'ADD UNIQUE KEY uniq_sq_branch_seq (branch_code, branch_seq)',
+    ]) {
+        try { await db.query(`ALTER TABLE staff_quotations ${idx}`); }
+        catch (e) { /* index already present — ignore */ }
     }
     tableEnsured = true;
 };
@@ -202,41 +220,75 @@ exports.createStaffQuotation = async (req, res, next) => {
             ? `Auto-approved: ${share.toFixed(1)}% discount is within the ${threshold}% threshold`
             : null;
 
-        // Placeholder satisfies the NOT NULL UNIQUE column; the real SQT-xxxxx ref is
-        // derived from the row id right after insert (same pattern as quotations).
-        const tempRef = `SQT-TMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        const [result] = await db.execute(
-            `INSERT INTO staff_quotations
-             (quotation_ref, created_by, created_by_name, created_by_role, customer_name, customer_email, customer_phone, vat_number, items, subtotal, discount_amount, tax_amount, total_amount, notes, status, reviewed_by, reviewed_by_name, reviewed_at, review_note)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [tempRef, (req.user && req.user.id) || null,
-                // Denormalised on purpose: the join below loses the author entirely if the
-                // account is later deleted, and a quotation must always say who raised it.
-                (req.user && req.user.name) || null, (req.user && req.user.role) || null,
-                customer_name, customer_email || null,
-                customer_phone || null, vat_number || null, JSON.stringify(priced.items),
-                priced.subtotal, priced.discount_amount, priced.tax_amount, priced.total_amount, notes || null,
-                needsApproval ? 'pending' : 'approved',
-                // Nobody reviewed an auto-approved quotation, so reviewed_by stays null;
-                // the note records why it did not need one.
-                (!needsApproval && isStaff) ? null : (isStaff ? null : ((req.user && req.user.id) || null)),
-                (!needsApproval && isStaff) ? 'Auto' : (isStaff ? null : ((req.user && req.user.name) || null)),
-                needsApproval ? null : new Date(),
-                autoNote]
-        );
+        // Which office this quotation is issued from. For staff this comes from their own
+        // account, never the request body -- see resolveBranchForUser.
+        const branchId = await resolveBranchForUser(req.user, req.body.branch_id);
 
-        const quotation_ref = `SQT-${String(result.insertId).padStart(5, '0')}`;
-        await db.execute('UPDATE staff_quotations SET quotation_ref = ? WHERE id = ?', [quotation_ref, result.insertId]);
+        // Attach the quotation to a customer record, reusing one when a strong identifier
+        // matches so a returning customer's history stays on a single profile.
+        const { customer } = await customerService.findOrCreate({
+            customer_id: req.body.customer_id,
+            name: customer_name,
+            company_name: req.body.company_name,
+            email: customer_email,
+            phone: customer_phone,
+            vat_number,
+            address: req.body.address,
+        }, (req.user && req.user.id) || null);
+
+        // The number and the row are written in one transaction: a failed insert releases
+        // the number rather than burning it, and a concurrent create for the same branch
+        // blocks on the counter row instead of taking the same ref.
+        const conn = await db.getConnection();
+        let insertId, quotation_ref, branchMeta;
+        try {
+            await conn.beginTransaction();
+            branchMeta = await reserveOnConnection(conn, branchId);
+            quotation_ref = branchMeta.ref;
+
+            const [result] = await conn.execute(
+                `INSERT INTO staff_quotations
+                 (quotation_ref, branch_id, branch_code, branch_seq, customer_id, created_by, created_by_name, created_by_role, customer_name, customer_email, customer_phone, vat_number, items, subtotal, discount_amount, tax_amount, total_amount, notes, status, reviewed_by, reviewed_by_name, reviewed_at, review_note)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [quotation_ref, branchId, branchMeta.code, branchMeta.seq, customer.id,
+                    (req.user && req.user.id) || null,
+                    // Denormalised on purpose: the join below loses the author entirely if the
+                    // account is later deleted, and a quotation must always say who raised it.
+                    (req.user && req.user.name) || null, (req.user && req.user.role) || null,
+                    customer_name, customer_email || null,
+                    customer_phone || null, vat_number || null, JSON.stringify(priced.items),
+                    priced.subtotal, priced.discount_amount, priced.tax_amount, priced.total_amount, notes || null,
+                    needsApproval ? 'pending' : 'approved',
+                    // Nobody reviewed an auto-approved quotation, so reviewed_by stays null;
+                    // the note records why it did not need one.
+                    (!needsApproval && isStaff) ? null : (isStaff ? null : ((req.user && req.user.id) || null)),
+                    (!needsApproval && isStaff) ? 'Auto' : (isStaff ? null : ((req.user && req.user.name) || null)),
+                    needsApproval ? null : new Date(),
+                    autoNote]
+            );
+            insertId = result.insertId;
+            await conn.commit();
+        } catch (e) {
+            await conn.rollback();
+            throw e;
+        } finally {
+            conn.release();
+        }
 
         res.status(201).json({
             success: true,
             data: {
-                id: result.insertId, quotation_ref, status: needsApproval ? 'pending' : 'approved', customer_name,
+                id: insertId, quotation_ref, status: needsApproval ? 'pending' : 'approved', customer_name,
+                branch_id: branchId, branch_code: branchMeta.code, customer_id: customer.id,
                 customer_email: customer_email || null, customer_phone: customer_phone || null,
                 vat_number: vat_number || null, notes: notes || null, ...priced
             }
         });
     } catch (error) {
+        // Branch/validation failures carry their own status; anything else is a 500.
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({ success: false, message: error.message });
+        }
         next(error);
     }
 };
@@ -246,19 +298,45 @@ exports.createStaffQuotation = async (req, res, next) => {
 exports.getStaffQuotations = async (req, res, next) => {
     try {
         await ensureStaffQuotationsTable();
-        // Staff see only what they raised; admins see the whole queue.
+        // Staff see only what they raised; admins see the whole queue across every branch.
         const scoped = isStaffUser(req);
+        const where = [];
+        const params = [];
+        if (scoped) {
+            where.push('sq.created_by = ?');
+            params.push(req.user.id);
+        }
+
+        // Admin filters. Each is optional and they combine, so "Dubai + rejected + this
+        // month" narrows as expected. Staff may pass them too; their own-rows-only
+        // restriction above still applies on top.
+        const { branch_id, created_by, customer_id, status, date_from, date_to, quotation_ref } = req.query;
+        if (branch_id) { where.push('sq.branch_id = ?'); params.push(Number(branch_id)); }
+        if (created_by) { where.push('sq.created_by = ?'); params.push(Number(created_by)); }
+        if (customer_id) { where.push('sq.customer_id = ?'); params.push(Number(customer_id)); }
+        if (status) { where.push('sq.status = ?'); params.push(String(status)); }
+        if (quotation_ref) { where.push('sq.quotation_ref LIKE ?'); params.push(`%${String(quotation_ref).trim()}%`); }
+        if (date_from) { where.push('sq.created_at >= ?'); params.push(`${date_from} 00:00:00`); }
+        // Inclusive of the whole end day: a range ending "today" must contain a quotation
+        // raised this afternoon, which `<= 'YYYY-MM-DD'` alone would exclude.
+        if (date_to) { where.push('sq.created_at <= ?'); params.push(`${date_to} 23:59:59`); }
+
         const [rows] = await db.query(`
             SELECT sq.*,
                    COALESCE(u.name, sq.created_by_name) AS created_by_name,
                    COALESCE(r.name, sq.created_by_role) AS created_by_role,
-                   u.email AS created_by_email
+                   u.email AS created_by_email,
+                   b.name AS branch_name,
+                   c.name AS customer_record_name,
+                   c.company_name AS customer_company
             FROM staff_quotations sq
             LEFT JOIN users u ON u.id = sq.created_by
             LEFT JOIN roles r ON u.role_id = r.id
-            ${scoped ? 'WHERE sq.created_by = ?' : ''}
+            LEFT JOIN branches b ON b.id = sq.branch_id
+            LEFT JOIN customers c ON c.id = sq.customer_id
+            ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
             ORDER BY sq.id DESC
-        `, scoped ? [req.user.id] : []);
+        `, params);
         res.json({ success: true, count: rows.length, data: rows });
     } catch (error) {
         next(error);
@@ -450,15 +528,84 @@ exports.lookupCustomers = async (req, res, next) => {
         if (term.length < 2) return res.json({ success: true, data: [] });
 
         const like = `%${term}%`;
-        const [rows] = await db.query(
-            `SELECT u.id, u.name, u.email, u.phone_number, u.company_name, u.vat_number
+        // Two sources, because a customer may exist as either: a `customers` record (the
+        // walk-in and phone-enquiry case, which is the majority of staff quoting) or a
+        // storefront account that has never been quoted. Results are tagged with `source`
+        // so the UI can show which is which, and a `customers` row that is linked to a
+        // user account suppresses the duplicate from the users side.
+        const [customerRows] = await db.query(
+            `SELECT c.id, c.user_id, c.name, c.email, c.phone AS phone_number,
+                    c.company_name, c.vat_number, c.address,
+                    'customer' AS source,
+                    (SELECT COUNT(*) FROM staff_quotations sq WHERE sq.customer_id = c.id) AS quotation_count
+               FROM customers c
+              WHERE c.name LIKE ? OR c.email LIKE ? OR c.phone LIKE ? OR c.company_name LIKE ?
+           ORDER BY quotation_count DESC, c.name ASC
+              LIMIT 8`,
+            [like, like, like, like]
+        );
+
+        const linkedUserIds = customerRows.map(r => r.user_id).filter(Boolean);
+        const [userRows] = await db.query(
+            `SELECT u.id, u.name, u.email, u.phone_number, u.company_name, u.vat_number,
+                    'user' AS source, 0 AS quotation_count
                FROM users u
                LEFT JOIN roles r ON r.id = u.role_id
               WHERE r.name = 'user'
-                AND (u.name LIKE ? OR u.email LIKE ? OR u.phone_number LIKE ?)
+                AND (u.name LIKE ? OR u.email LIKE ? OR u.phone_number LIKE ? OR u.company_name LIKE ?)
+                ${linkedUserIds.length ? 'AND u.id NOT IN (?)' : ''}
            ORDER BY u.name ASC
               LIMIT 8`,
-            [like, like, like]
+            linkedUserIds.length ? [like, like, like, like, linkedUserIds] : [like, like, like, like]
+        );
+
+        res.json({ success: true, data: [...customerRows, ...userRows] });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Full customer profile: details, quotation summary, branch history, all quotes
+// @route   GET /api/v1/staff-quotations/customers/:id/profile
+// Deliberately NOT branch-scoped. The whole point is that a Sharjah clerk can see this
+// customer already holds three Dubai quotations before raising a fourth.
+exports.getCustomerProfile = async (req, res, next) => {
+    try {
+        await ensureStaffQuotationsTable();
+        const profile = await customerService.getProfile(req.params.id);
+        if (!profile) return res.status(404).json({ success: false, message: 'Customer not found' });
+        res.json({ success: true, data: profile });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Resolve a customer by a strong identifier (phone/email) without creating one
+// @route   GET /api/v1/staff-quotations/customers/match?phone=&email=
+// Lets the quotation form say "this customer already exists" as soon as staff finish
+// typing a phone number, before anything is saved.
+exports.matchCustomer = async (req, res, next) => {
+    try {
+        await ensureStaffQuotationsTable();
+        const { phone, email } = req.query;
+        if (!phone && !email) {
+            return res.json({ success: true, data: null });
+        }
+        const found = await customerService.findExisting({ phone, email });
+        if (!found) return res.json({ success: true, data: null });
+        const profile = await customerService.getProfile(found.id);
+        res.json({ success: true, data: profile });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    List branches (for the admin branch filter and staff branch assignment)
+// @route   GET /api/v1/staff-quotations/branches
+exports.getBranches = async (req, res, next) => {
+    try {
+        const [rows] = await db.query(
+            'SELECT id, name, code FROM branches WHERE is_active = 1 ORDER BY name ASC'
         );
         res.json({ success: true, data: rows });
     } catch (error) {

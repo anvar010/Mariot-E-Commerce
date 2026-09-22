@@ -228,9 +228,12 @@ exports.getDashboardStats = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
     try {
         const [users] = await db.query(`
-            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, u.role_id, u.staff_permissions, COALESCE(u.status, 'active') as status, COALESCE(r.name, 'user') as role
+            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, u.role_id, u.staff_permissions,
+                   u.branch_id, b.name AS branch_name, b.code AS branch_code,
+                   COALESCE(u.status, 'active') as status, COALESCE(r.name, 'user') as role
             FROM users u
             LEFT JOIN roles r ON u.role_id = r.id
+            LEFT JOIN branches b ON b.id = u.branch_id
         `);
         res.json({ success: true, data: users });
     } catch (error) {
@@ -243,7 +246,7 @@ exports.getAllUsers = async (req, res, next) => {
 // @access  Private/Admin|Staff(users)
 exports.createUser = async (req, res, next) => {
     try {
-        const { name, email, password, role_id, staff_permissions } = req.body;
+        const { name, email, password, role_id, staff_permissions, branch_id } = req.body;
 
         if (!name || !email || !password || !role_id) {
             return res.status(400).json({ success: false, message: 'Name, email, password, and role are required' });
@@ -264,6 +267,12 @@ exports.createUser = async (req, res, next) => {
             ]);
         }
 
+        // A staff member's branch stamps every quotation they raise, so it is set here
+        // rather than left for a second edit. Empty string means "no branch".
+        if (branch_id !== undefined) {
+            await db.query('UPDATE users SET branch_id = ? WHERE id = ?', [branch_id || null, userId]);
+        }
+
         res.status(201).json({ success: true, message: 'User created successfully', data: { id: userId } });
     } catch (error) {
         next(error);
@@ -275,7 +284,7 @@ exports.createUser = async (req, res, next) => {
 // @access  Private/Admin|Staff(users)
 exports.updateUser = async (req, res, next) => {
     try {
-        const { name, email, role_id, staff_permissions } = req.body;
+        const { name, email, role_id, staff_permissions, branch_id } = req.body;
 
         const fields = [];
         const values = [];
@@ -283,6 +292,9 @@ exports.updateUser = async (req, res, next) => {
         if (name) { fields.push('name = ?'); values.push(name); }
         if (email) { fields.push('email = ?'); values.push(email); }
         if (role_id) { fields.push('role_id = ?'); values.push(role_id); }
+        // Checked against undefined, not truthiness: clearing a branch sends '' or null,
+        // which a `if (branch_id)` test would silently ignore.
+        if (branch_id !== undefined) { fields.push('branch_id = ?'); values.push(branch_id || null); }
         if (staff_permissions !== undefined) {
             fields.push('staff_permissions = ?');
             values.push(staff_permissions ? JSON.stringify(staff_permissions) : null);

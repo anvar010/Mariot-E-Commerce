@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 class User {
     static async findByEmail(email) {
         const [rows] = await db.execute(
-            'SELECT u.*, COALESCE(u.status, \'active\') as status, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.email = ?',
+            'SELECT u.*, COALESCE(u.status, \'active\') as status, r.name as role, b.name as branch_name, b.code as branch_code FROM users u LEFT JOIN roles r ON u.role_id = r.id LEFT JOIN branches b ON b.id = u.branch_id WHERE u.email = ?',
             [email]
         );
         return rows[0];
@@ -12,7 +12,7 @@ class User {
 
     static async findById(id) {
         const [rows] = await db.execute(
-            'SELECT u.id, u.name, u.email, u.email_verified, u.pending_email, u.phone_number, u.phone_verified, u.company_name, u.vat_number, u.reward_points, u.profile_bonus_awarded, u.staff_permissions, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
+            'SELECT u.id, u.name, u.email, u.email_verified, u.pending_email, u.phone_number, u.phone_verified, u.company_name, u.vat_number, u.reward_points, u.profile_bonus_awarded, u.staff_permissions, u.branch_id, b.name as branch_name, b.code as branch_code, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id LEFT JOIN branches b ON b.id = u.branch_id WHERE u.id = ?',
             [id]
         );
         return rows[0];

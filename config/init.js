@@ -742,6 +742,119 @@ const initDb = async () => {
             console.error('[DB] Error creating stock_notifications table:', err.message);
         }
 
+        // 6.11 Branches, customers and branch-scoped quotation numbering.
+        //
+        // Quotation refs are per-branch sequences (DUB-000001, SHJ-000001, ...). Three
+        // tables cooperate:
+        //   branches            -- the four UAE offices and their ref codes
+        //   customers           -- who a quotation is for, registered on the site or not
+        //   branch_quote_seq    -- one counter row per branch, bumped inside the same
+        //                          transaction that inserts the quotation
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS branches (
+                    id INT NOT NULL AUTO_INCREMENT,
+                    name VARCHAR(100) NOT NULL,
+                    code VARCHAR(10) NOT NULL,
+                    is_active TINYINT(1) NOT NULL DEFAULT 1,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uniq_branch_code (code),
+                    UNIQUE KEY uniq_branch_name (name)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            // The four branches are fixed business facts, not user-managed data, so they
+            // are seeded rather than left to an admin screen. INSERT IGNORE keeps this
+            // idempotent and never disturbs a code already in use by live quotations.
+            await db.query(`
+                INSERT IGNORE INTO branches (name, code) VALUES
+                    ('Dubai', 'DUB'), ('Sharjah', 'SHJ'),
+                    ('Abu Dhabi', 'AUH'), ('Al Ain', 'AIN')
+            `);
+            console.log('[DB] branches table verified');
+        } catch (err) {
+            console.error('[DB] Error creating branches table:', err.message);
+        }
+
+        // Staff are assigned to exactly one branch; that branch stamps every quotation
+        // they raise. NULL means unassigned -- admins have no branch, and a staff member
+        // without one cannot create a quotation (the controller rejects it) rather than
+        // silently landing in some default office.
+        // Separate try blocks on purpose: the column almost always exists by the second
+        // boot, and a shared block would let that expected failure skip the constraint on
+        // a database where the column landed but the foreign key did not.
+        try {
+            await db.query('ALTER TABLE users ADD COLUMN branch_id INT NULL');
+            console.log('[DB] users.branch_id added');
+        } catch (err) { /* column already exists */ }
+        try {
+            await db.query('ALTER TABLE users ADD CONSTRAINT fk_users_branch FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE SET NULL');
+            console.log('[DB] users.branch_id foreign key added');
+        } catch (err) { /* constraint already exists */ }
+
+        // Customers are NOT users. Staff quote walk-ins and phone enquiries who have no
+        // site login, so this table stands on its own; `user_id` links the record to a
+        // storefront account only when one actually exists, which keeps a registered
+        // customer's quotation history and their order history pointing at one person.
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS customers (
+                    id INT NOT NULL AUTO_INCREMENT,
+                    user_id INT NULL,
+                    name VARCHAR(255) NOT NULL,
+                    company_name VARCHAR(255) NULL,
+                    email VARCHAR(255) NULL,
+                    phone VARCHAR(50) NULL,
+                    vat_number VARCHAR(100) NULL,
+                    address TEXT NULL,
+                    notes TEXT NULL,
+                    created_by INT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    KEY idx_customer_user (user_id),
+                    KEY idx_customer_name (name),
+                    CONSTRAINT fk_customers_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            // Email and phone are the strong identifiers used to spot a returning
+            // customer, so each must point at exactly one record -- this constraint is
+            // what stops two staff creating two "same" customers. They stay nullable
+            // because a walk-in may give only one of the two, and MySQL permits many
+            // NULLs in a unique index, which is precisely the behaviour wanted here.
+            for (const [name, col] of [['uniq_customer_email', 'email'], ['uniq_customer_phone', 'phone']]) {
+                try { await db.query(`ALTER TABLE customers ADD UNIQUE KEY ${name} (${col})`); }
+                catch (e) { /* index already present */ }
+            }
+            console.log('[DB] customers table verified');
+        } catch (err) {
+            console.error('[DB] Error creating customers table:', err.message);
+        }
+
+        // One counter per branch. The quotation number is issued by bumping the row and
+        // reading it back inside a transaction, so two staff submitting at the same
+        // instant queue on the row lock and take different numbers -- a SELECT MAX(...)
+        // over staff_quotations would hand both the same one.
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS branch_quote_seq (
+                    branch_id INT NOT NULL,
+                    last_number INT NOT NULL DEFAULT 0,
+                    PRIMARY KEY (branch_id),
+                    CONSTRAINT fk_seq_branch FOREIGN KEY (branch_id) REFERENCES branches (id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            await db.query('INSERT IGNORE INTO branch_quote_seq (branch_id, last_number) SELECT id, 0 FROM branches');
+            console.log('[DB] branch_quote_seq table verified');
+        } catch (err) {
+            console.error('[DB] Error creating branch_quote_seq table:', err.message);
+        }
+
+        // NOTE: staff_quotations gains its branch_id/customer_id columns in
+        // ensureStaffQuotationsTable() (staffQuotation.controller.js), which owns that
+        // table's shape and creates it on first use. Adding them here would run the
+        // ALTERs before the table exists on a fresh database.
+
         // 7. Settings Table (Ensure it exists)
         await db.query(`
             CREATE TABLE IF NOT EXISTS settings (
