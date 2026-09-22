@@ -32,12 +32,14 @@ const KEY_PREFIX = 'mariot:scroll:';
  * shop page returned to after a filter -- and each deserves its own offset. history.state
  * carries a key across a reload; a URL would collide.
  */
+const newKey = (): string => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 const entryKey = (): string => {
     if (typeof window === 'undefined') return '';
     const state = window.history.state;
     let key = state?.__mariotKey;
     if (!key) {
-        key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        key = newKey();
         try {
             window.history.replaceState({ ...state, __mariotKey: key }, '');
         } catch {
@@ -46,6 +48,26 @@ const entryKey = (): string => {
         }
     }
     return KEY_PREFIX + key;
+};
+
+/**
+ * Give the current history entry a key of its own.
+ *
+ * Next's client router carries history.state forward when it pushes a new entry, so a
+ * page opened from a listing inherits the listing's __mariotKey -- and then saves its own
+ * scroll offset over the listing's. That is why going back landed at the top: the value
+ * being restored had been overwritten with 0 by the page that was opened.
+ *
+ * Called on every forward navigation, so each entry owns exactly one key.
+ */
+const adoptFreshKey = (): void => {
+    if (typeof window === 'undefined') return;
+    try {
+        const state = window.history.state;
+        window.history.replaceState({ ...state, __mariotKey: newKey() }, '');
+    } catch {
+        /* as above -- a missing key simply means this entry is not restored */
+    }
 };
 
 const read = (key: string): number | null => {
@@ -81,6 +103,15 @@ export default function useScrollRestoration(): void {
      * stay set and swallow the NEXT forward navigation's scroll-to-top.
      */
     const poppingRef = useRef(false);
+    /**
+     * Suspends saving while the hook is moving the page itself.
+     *
+     * Shared with the listener effect below, which also sets it during a restore. Without
+     * it the scrollTo(0, 0) done on a forward navigation fires a scroll event that gets
+     * written straight back to sessionStorage -- and before the fresh key is adopted that
+     * wrote a 0 over the offset of the page just left.
+     */
+    const suspendSaveRef = useRef(false);
 
     /**
      * Send a forward navigation to the top of the page.
@@ -102,7 +133,19 @@ export default function useScrollRestoration(): void {
         }
         // Back/forward: onPopState owns the scroll for these and is mid-restore.
         if (poppingRef.current) return;
+
+        // Order matters. Saving is suspended first so the scrollTo below cannot be
+        // written anywhere, then this entry takes a key of its own -- Next copies
+        // history.state forward, so until this runs the new page is still pointing at the
+        // key belonging to the page it was opened from.
+        suspendSaveRef.current = true;
+        adoptFreshKey();
         window.scrollTo(0, 0);
+        // Released after the scroll event from that scrollTo has been and gone; the
+        // handler is rAF-throttled, so two frames is enough.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            suspendSaveRef.current = false;
+        }));
     }, [pathname]);
 
     /**
@@ -154,11 +197,13 @@ export default function useScrollRestoration(): void {
         // on mobile Safari. rAF-throttled, so a scroll costs one write per frame at most.
         let ticking = false;
         const onScroll = () => {
-            if (restoring || ticking) return;
+            // suspendSaveRef covers the scroll the forward-navigation effect causes;
+            // `restoring` covers a back/forward restore in progress.
+            if (restoring || suspendSaveRef.current || ticking) return;
             ticking = true;
             requestAnimationFrame(() => {
                 ticking = false;
-                if (restoring) return;
+                if (restoring || suspendSaveRef.current) return;
                 write(entryKey(), window.scrollY);
             });
         };
@@ -240,10 +285,51 @@ export default function useScrollRestoration(): void {
             restore(initial);
         }
 
+        /**
+         * Save the offset at the moment a link is clicked.
+         *
+         * The continuous scroll handler is not enough on its own. Next's router scrolls
+         * the page to the top as part of navigating, and that happens while the old path
+         * is still current -- so the handler dutifully saves 0 over the offset of the very
+         * page being left, and coming back lands at the top. Measured: a single write of
+         * 0 against the listing's key, from the router chunk, before the route changed.
+         *
+         * Capture phase, so it runs before any handler that might stop propagation.
+         */
+        let releaseTimer: number | undefined;
+        const onCapturePointer = (e: Event) => {
+            const el = e.target as HTMLElement | null;
+            if (!el || typeof el.closest !== 'function') return;
+            const link = el.closest('a[href]');
+            if (!link) return;
+            const href = link.getAttribute('href') || '';
+            // Only in-app navigations. A new tab, a download or an external host leaves
+            // this page where it is, so its offset must not be touched.
+            if (!href.startsWith('/') || link.getAttribute('target') === '_blank') return;
+            write(entryKey(), window.scrollY);
+            // Then stop saving. Between here and the new route rendering, the only scrolls
+            // are the router's own reset to the top; letting those through would put a 0
+            // straight back over the value just written. The pathname effect adopts a
+            // fresh key and clears this once the new page is on screen.
+            suspendSaveRef.current = true;
+            // Safety net: not every click on a link navigates -- one may have its default
+            // prevented, or point at the page already open. Without this, such a click
+            // would leave saving suspended for the rest of the session.
+            window.clearTimeout(releaseTimer);
+            releaseTimer = window.setTimeout(() => {
+                suspendSaveRef.current = false;
+            }, 1500) as unknown as number;
+        };
+        // pointerdown rather than click: it fires before the navigation starts even when
+        // the click handler is what triggers it.
+        window.addEventListener('pointerdown', onCapturePointer, true);
+
         window.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('popstate', onPopState);
 
         return () => {
+            window.removeEventListener('pointerdown', onCapturePointer, true);
+            window.clearTimeout(releaseTimer);
             window.removeEventListener('scroll', onScroll);
             window.removeEventListener('popstate', onPopState);
             cancel();
