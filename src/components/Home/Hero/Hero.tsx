@@ -303,7 +303,19 @@ const Hero = ({ initialSlides = [] }: HeroProps) => {
                                             fill
                                             className={styles.bgImage}
                                             priority={i === 1}
-                                            unoptimized={image.startsWith('/assets/')}
+                                            /**
+                                             * Skip the optimiser for images it cannot improve on.
+                                             *
+                                             * /assets/ files are already sized and compressed. A
+                                             * remote URL is worse: optimising one means this server
+                                             * downloads the original before it can re-encode it, and
+                                             * a hero slide still pointing at an Unsplash placeholder
+                                             * measured 3.1s cold and 0.75s warm to fetch, against
+                                             * 3.7ms for a local file -- on the critical path of every
+                                             * arrival at the home page. Served directly, the browser
+                                             * fetches it from the source CDN in parallel instead.
+                                             */
+                                            unoptimized={image.startsWith('/assets/') || /^https?:\/\//i.test(image)}
                                             sizes="(max-width: 768px) 100vw, 82vw"
                                             draggable={false}
                                         />
