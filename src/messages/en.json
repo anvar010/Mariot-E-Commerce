@@ -146,6 +146,8 @@
     "deliveryOrderIn": "Order in {hours}h {minutes}m",
     "deliveryOutOfStock": "This item is currently out of stock. Contact our support team to know the delivery date.",
     "deliveryContactWhatsapp": "Ask on WhatsApp",
+    "deliveryWhatsappIntro": "Hello, this item is out of stock on your website. Could you tell me the expected delivery date?",
+    "deliveryWhatsappModel": "Model: {model}",
     "perfectFor": "Perfect For",
     "weAcceptPayment": "We Accept Payment",
     "description": "Description",

@@ -19,6 +19,10 @@ interface DeliveryInformationProps {
      * so any date shown here would be a promise the business cannot keep.
      */
     outOfStock?: boolean;
+    /** Names the item in the WhatsApp enquiry, so support knows what is being asked about. */
+    productName?: string | null;
+    /** Model or variant SKU, whichever identifies the exact thing the shopper is looking at. */
+    productModel?: string | null;
 }
 
 // The storefront support line, same number as the rest of the site.
@@ -51,7 +55,9 @@ const WhatsappIcon = () => (
  * which cannot be server-rendered because the server's clock and timezone are not the
  * shopper's.
  */
-export default function DeliveryInformation({ days, locale = 'en', outOfStock = false }: DeliveryInformationProps) {
+export default function DeliveryInformation({
+    days, locale = 'en', outOfStock = false, productName, productModel,
+}: DeliveryInformationProps) {
     const t = useTranslations('product');
     const baseDays = normalizeDeliveryDays(days);
 
@@ -108,6 +114,27 @@ export default function DeliveryInformation({ days, locale = 'en', outOfStock = 
     const totalDays = normalizeDeliveryDays(baseDays + (activeZone?.extra_days ?? 0));
     const express = isExpressDelivery(totalDays);
 
+    /**
+     * The enquiry, pre-written so support can see what it is about without asking.
+     *
+     * The link is read from the address bar rather than rebuilt from the slug, so it
+     * carries whatever the shopper is actually looking at -- including the variant query
+     * string, which is often the whole point, since one size can be out of stock while
+     * the rest are fine. That has to happen after mount: product pages are cached, and a
+     * URL baked into the HTML would be the first visitor's, served to everyone.
+     *
+     * Before mount, and if the page is opened somewhere without `window`, it falls back
+     * to the message without a link rather than to a wrong one.
+     */
+    const enquiryText = [
+        t('deliveryWhatsappIntro'),
+        productName ? `\n\n${productName}` : '',
+        productModel ? `\n${t('deliveryWhatsappModel', { model: productModel })}` : '',
+        mounted && typeof window !== 'undefined' ? `\n${window.location.href}` : '',
+    ].join('');
+
+    const whatsappHref = `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(enquiryText)}`;
+
     // The arrival itself is the bold part ("Get it **Tomorrow**"), so it needs rich text.
     const bold = (chunks: ReactNode) => <strong>{chunks}</strong>;
     const arrival = totalDays === 1
@@ -147,9 +174,12 @@ export default function DeliveryInformation({ days, locale = 'en', outOfStock = 
                         <p className={styles.outOfStockText}>{t('deliveryOutOfStock')}</p>
                         <a
                             className={styles.whatsappLink}
-                            href={`https://wa.me/${SUPPORT_WHATSAPP}`}
+                            href={whatsappHref}
                             target="_blank"
                             rel="noopener noreferrer"
+                            // The href gains the page URL only after mount, so the server's
+                            // markup and the client's first render differ by design.
+                            suppressHydrationWarning
                         >
                             <WhatsappIcon />
                             {t('deliveryContactWhatsapp')}

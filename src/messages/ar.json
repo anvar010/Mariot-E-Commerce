@@ -146,6 +146,8 @@
     "deliveryOrderIn": "اطلب خلال {hours}س {minutes}د",
     "deliveryOutOfStock": "هذا المنتج غير متوفر حالياً. تواصل مع فريق الدعم لمعرفة موعد التوصيل.",
     "deliveryContactWhatsapp": "اسأل عبر واتساب",
+    "deliveryWhatsappIntro": "مرحباً، هذا المنتج غير متوفر في موقعكم. هل يمكنكم إخباري بموعد التوصيل المتوقع؟",
+    "deliveryWhatsappModel": "الموديل: {model}",
     "perfectFor": "مثالي لـ",
     "weAcceptPayment": "طرق الدفع المتاحة",
     "description": "الوصف",

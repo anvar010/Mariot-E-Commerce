@@ -2162,7 +2162,18 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ id }) => {
                                     </div>
                                 )}
 
-                                <DeliveryInformation days={product?.delivery_days} locale={locale} outOfStock={outOfStock} />
+                                <DeliveryInformation
+                                    days={product?.delivery_days}
+                                    locale={locale}
+                                    outOfStock={outOfStock}
+                                    // Same name and model shown on the page, so the WhatsApp
+                                    // enquiry names what the shopper is actually looking at --
+                                    // a selected variant's SKU rather than the parent model.
+                                    productName={locale === 'ar' ? (product.name_ar || product.name) : (product.name || product.name_ar)}
+                                    productModel={(selectedVariant && selectedVariant.sku)
+                                        ? selectedVariant.sku
+                                        : (product.model || product.slug?.toUpperCase() || product.id)}
+                                />
 
                                 <div className={styles.purchaseActions}>
                                     <div className={styles.qtyWrapper} ref={qtyRef}>
