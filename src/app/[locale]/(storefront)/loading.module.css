@@ -1,0 +1,101 @@
+/* Home page skeleton. Mirrors the hero banner + brand/category strips + product rows
+   that page.tsx actually renders, so the real sections land into a frame already on
+   screen instead of replacing a blank panel. */
+
+.wrap {
+    /* Holds the page's height so the footer, which follows immediately in the storefront
+       layout, stays below the fold until the real content arrives. */
+    min-height: 100vh;
+    padding-bottom: 60px;
+}
+
+.block {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e8edf3 37%, #f1f5f9 63%);
+    background-size: 400% 100%;
+    border-radius: 8px;
+    animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .block {
+        animation: none;
+    }
+}
+
+/* Full-bleed hero, matching the real slider's footprint so nothing shifts when it
+   swaps in. */
+.hero {
+    width: 100%;
+    height: 420px;
+    border-radius: 0;
+}
+
+.section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 38px 20px 0;
+}
+
+.sectionTitle {
+    width: 240px;
+    height: 20px;
+    margin-bottom: 20px;
+}
+
+/* Brand and category strips are round chips in the real page. */
+.chipRow {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.chip {
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+}
+
+/* Product sliders: a single row of cards, clipped to the container width. */
+.cardRow {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cardImage {
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+}
+
+.cardLine {
+    height: 12px;
+    width: 100%;
+}
+
+.cardLineShort {
+    height: 12px;
+    width: 55%;
+}
+
+@media (max-width: 1024px) {
+    .hero { height: 300px; }
+    .chipRow { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .cardRow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+    .hero { height: 200px; }
+    .chipRow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cardRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .section { padding-top: 26px; }
+}

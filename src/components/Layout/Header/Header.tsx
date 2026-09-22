@@ -40,6 +40,9 @@ const Header = () => {
     const searchInputRef = React.useRef<HTMLInputElement>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSticky, setIsSticky] = useState(false);
+    // Set once the sticky header's slide-in animation has finished. Until then the header
+    // is moving under the pointer, so it does not take clicks -- see Header.module.css.
+    const [isSettled, setIsSettled] = useState(false);
     const [isCategoriesHovered, setIsCategoriesHovered] = useState(false);
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
     const [showRewardToast, setShowRewardToast] = useState(false);
@@ -236,6 +239,25 @@ const Header = () => {
         return () => ro.disconnect();
     }, [isSticky]);
 
+    // The slide-in only runs when the header becomes sticky, so the settled flag is
+    // cleared at that moment and set again by onAnimationEnd. Non-sticky headers never
+    // animate and are always interactive.
+    //
+    // The timer is a floor, not the mechanism: animationend does not fire if the
+    // animation is cancelled, if the tab is backgrounded mid-run, or if a reduced-motion
+    // setting drops it entirely. Without a fallback any of those would leave the header
+    // permanently unclickable, which is a far worse bug than the one being fixed. 400ms
+    // is the 300ms animation plus a margin.
+    useEffect(() => {
+        if (!isSticky) {
+            setIsSettled(true);
+            return;
+        }
+        setIsSettled(false);
+        const t = setTimeout(() => setIsSettled(true), 400);
+        return () => clearTimeout(t);
+    }, [isSticky]);
+
     useEffect(() => {
         let ticking = false;
         const handleScroll = () => {
@@ -243,7 +265,21 @@ const Header = () => {
                 window.requestAnimationFrame(() => {
                     const currentScroll = window.scrollY;
                     const threshold = headerHeight > 0 ? headerHeight : 200;
-                    setIsSticky(currentScroll > threshold);
+
+                    // Hysteresis. Going sticky hides the top banner and the support bar,
+                    // so the header gets shorter and everything in it -- the logo included
+                    // -- jumps upward. With a single threshold the state could flip back
+                    // and forth around that one scroll position, and a press landing on
+                    // the logo was followed by the logo moving out from under the pointer
+                    // before the release, so the browser never completed the click. That
+                    // is the "first click does nothing, second one works" report: the
+                    // first click only settled the header.
+                    //
+                    // Releasing 80px below where it engages means the position that
+                    // triggered the change is no longer a position that can undo it.
+                    setIsSticky(prev =>
+                        prev ? currentScroll > threshold - 80 : currentScroll > threshold
+                    );
                     ticking = false;
                 });
                 ticking = true;
@@ -260,7 +296,10 @@ const Header = () => {
         window.addEventListener('OPEN_MOBILE_MENU', handleOpenMenu);
 
         // Initial check
-        setIsSticky(window.scrollY > (headerHeight > 0 ? headerHeight : 200));
+        setIsSticky(prev => {
+            const threshold = headerHeight > 0 ? headerHeight : 200;
+            return prev ? window.scrollY > threshold - 80 : window.scrollY > threshold;
+        });
 
         return () => {
             window.removeEventListener('scroll', handleScroll);
@@ -370,7 +409,16 @@ const Header = () => {
             <div style={{ height: isSticky ? `${headerHeight}px` : 'auto' }}>
                 <header
                     ref={headerRef}
-                    className={`${styles.header} ${isSticky ? styles.sticky : ''}`}
+                    className={`${styles.header} ${isSticky ? styles.sticky : ''} ${isSettled ? styles.settled : ''}`}
+                    // The header contains its own animations -- the announcement marquee,
+                    // the rotating search placeholder, the reward toast -- and they all
+                    // bubble an animationend through here. Only the header's own
+                    // slide-in should mark it settled, so the target is checked; the
+                    // marquee in particular loops forever and would otherwise keep the
+                    // header non-interactive or settle it before it had arrived.
+                    onAnimationEnd={(e) => {
+                        if (e.target === headerRef.current) setIsSettled(true);
+                    }}
                 >
                     <div className={styles.topBanner}>
                         <div className={styles.container}>

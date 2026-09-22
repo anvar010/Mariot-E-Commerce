@@ -16,6 +16,27 @@
     animation: headerReveal 0.3s ease-out;
 }
 
+/* The slide-in above moves the whole header, logo included, through whatever the pointer
+   is resting on for the length of the animation. A press that lands on the logo while
+   that is running is released somewhere else, so the browser fires no click -- the press
+   is spent settling the header and the link never opens. Ignoring the pointer until the
+   header has arrived means a click either lands on a stationary logo or does not land at
+   all, instead of appearing to be swallowed.
+
+   Only for the duration of the animation, and only on the moving element: once it has
+   arrived the header is interactive as usual. */
+.header.sticky {
+    animation-fill-mode: both;
+}
+
+.header.sticky>* {
+    pointer-events: none;
+}
+
+.header.sticky.settled>* {
+    pointer-events: auto;
+}
+
 @media (max-width: 768px) {
     .header.sticky {
         backdrop-filter: none;
