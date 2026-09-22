@@ -4,7 +4,9 @@ import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { LayoutDashboard, Package, ShoppingCart, LogOut, Menu } from 'lucide-react';
-import Link from 'next/link';
+// Locale-aware Link, so "/" goes straight to the localised home page rather than
+// through a middleware redirect.
+import { Link } from '@/i18n/navigation';
 import SellerProducts from './SellerProducts';
 import SellerOrders from './SellerOrders';
 import SellerOverview from './SellerOverview';

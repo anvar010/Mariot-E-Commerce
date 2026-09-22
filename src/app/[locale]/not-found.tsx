@@ -1,8 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+// The locale-aware Link, so the shortcuts out of a 404 go straight to their page rather
+// than via a middleware redirect (localePrefix is 'always').
+import { Link } from '@/i18n/navigation';
+// The locale-aware router, for the same reason as Link below: a bare "/shop?search=..."
+// would be redirected by the middleware before the results could load.
+import { useRouter } from '@/i18n/navigation';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
 import FloatingActions from '@/components/shared/FloatingActions/FloatingActions';

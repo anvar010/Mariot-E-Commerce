@@ -19,7 +19,10 @@ import {
     Mail,
     ChevronRight
 } from 'lucide-react';
-import Link from 'next/link';
+// The locale-aware Link. localePrefix is 'always', so a bare "/signup" here is answered
+// by the middleware with a redirect to "/en/signup" -- an extra round trip before the
+// page even starts loading. This one writes the prefix itself.
+import { Link } from '@/i18n/navigation';
 
 import type { Metadata } from 'next';
 import { pageMetadata } from '@/lib/seo';

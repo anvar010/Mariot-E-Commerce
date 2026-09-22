@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
+// Locale-aware Link: a bare "/admin/..." is answered by the middleware with a
+// redirect, so the page loads twice. This writes the /en or /ar prefix itself.
+import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';

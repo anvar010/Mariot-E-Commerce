@@ -5,7 +5,9 @@ import styles from './AdminAnalytics.module.css'; // Reusing styles for consiste
 import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/context/AuthContext';
 import { Save, RefreshCw, Layout, Megaphone, Plus, Trash2, ChevronLeft, ChevronRight, ShoppingBag, MessageSquare, Tag, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
+// Locale-aware Link: a bare "/admin/..." is answered by the middleware with a
+// redirect, so the page loads twice. This writes the /en or /ar prefix itself.
+import { Link } from '@/i18n/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNotification } from '@/context/NotificationContext';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
