@@ -22,8 +22,16 @@ const PATH_PERM_MAP: Record<string, string> = {
     '/admin/cms': 'cms',
     '/admin/settings': 'settings',
     '/admin/quotations': 'quotations',
+    // Both of these were missing, and the omission was not harmless: with no entry of
+    // their own they fell through to the '/admin' prefix below and were judged against
+    // `dashboard`, so a staff member holding staff_quotations -- and seeing the sidebar
+    // entry for it -- was redirected away the moment they opened the page.
+    '/admin/staff-quotations': 'staff_quotations',
+    '/admin/invoices': 'invoices',
     '/admin/shipping-quotes': 'shipping_quotes',
     '/admin/reviews': 'reviews',
+    // Keep this last: it is the catch-all prefix, and the lookup below sorts by length
+    // so a longer, more specific path always wins over it.
     '/admin': 'dashboard',
 };
 
