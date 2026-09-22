@@ -54,7 +54,7 @@ import DeliveryInformation from './DeliveryInformation';
 import Model3DViewer from '@/components/Product/Model3DViewer/Model3DViewer';
 import ProductTags from './ProductTags';
 import { API_BASE_URL, BASE_URL, TABBY_ENABLED } from '@/config';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { useCartActions } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
@@ -70,7 +70,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MessageSquare, Phone } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import Script from 'next/script';
 
 // Swiper imports
@@ -87,7 +86,7 @@ interface ProductDetailProps {
 // Shown whenever a product has no usable image (empty slot, missing/broken
 // primary image). Matches the fallback used by ProductCard so the site logo
 // appears consistently instead of a blank/placeholder tile.
-const LOGO_FALLBACK = '/assets/mariot-logo2.webp';
+const LOGO_FALLBACK = PRODUCT_IMAGE_FALLBACK;
 
 // Swap a broken <img> to the site logo, once — the endsWith guard stops an
 // error loop in case the logo asset itself ever fails to load.
@@ -124,33 +123,36 @@ const getIconForLabel = (label: string) => {
     return <ListChecks size={20} />;
 };
 
+/**
+ * A spec section that opens and closes.
+ *
+ * The chevron and the expand are CSS transitions rather than framer-motion. The library
+ * was pulled into every product page -- it is the single largest dependency here -- to
+ * rotate an arrow and slide one panel, both of which CSS does natively and without
+ * shipping any JavaScript to do it.
+ *
+ * `grid-template-rows: 0fr -> 1fr` is what makes the height animate without knowing the
+ * content's height in advance, which is the one thing the old `height: auto` animation
+ * actually needed a library for.
+ */
 const AccordionItem = ({ title, isOpen, onToggle, children }: any) => (
     <div className={`${styles.accordionItem} ${isOpen ? styles.accordionOpen : ''}`}>
-        <button className={styles.accordionHeader} onClick={onToggle}>
+        <button className={styles.accordionHeader} onClick={onToggle} aria-expanded={!!isOpen}>
             <div className={styles.accordionHeaderLeft}>
                 <span className={styles.accordionHeaderText}>{title}</span>
             </div>
             <div className={styles.accordionHeaderRight}>
-                <motion.div
-                    animate={{ rotate: isOpen ? 180 : 0 }}
-                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                >
-                    <ChevronDown size={20} />
-                </motion.div>
+                <ChevronDown size={20} className={styles.accordionChevron} />
             </div>
         </button>
-        <AnimatePresence initial={false}>
-            {isOpen && (
-                <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                >
-                    <div className={styles.accordionContent}>{children}</div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+        {/* Stays mounted rather than unmounting when closed, so it can animate shut as
+            well as open, and so the specs are present for search engines and in-page find.
+            The collapsed state is driven by .accordionOpen on the parent. */}
+        <div className={styles.accordionPanel}>
+            <div className={styles.accordionPanelInner}>
+                <div className={styles.accordionContent}>{children}</div>
+            </div>
+        </div>
     </div>
 );
 

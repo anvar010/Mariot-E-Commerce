@@ -2440,6 +2440,45 @@
     align-items: center;
 }
 
+/* The chevron and the panel below were animated with framer-motion, which meant loading
+   the whole library on every product page to rotate an arrow and slide one panel. Both
+   are plain CSS transitions now; the timing matches what framer-motion was given
+   (0.3s, cubic-bezier(0.4, 0, 0.2, 1)) so the movement is unchanged. */
+.accordionChevron {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordionOpen .accordionChevron {
+    transform: rotate(180deg);
+}
+
+/* Animating to a height the browser has not measured is the one part of this that used
+   to need JavaScript. A 0fr -> 1fr grid row does it natively: the row resolves to the
+   content's real height without it ever being stated. */
+.accordionPanel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordionOpen .accordionPanel {
+    grid-template-rows: 1fr;
+}
+
+/* The grid row can only collapse if its child does too, hence min-height: 0 -- without
+   it the content keeps its natural height and nothing moves. */
+.accordionPanelInner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .accordionChevron,
+    .accordionPanel {
+        transition: none;
+    }
+}
+
 .accordionContent {
     padding: 0 0 24px 0;
     font-size: 16px;
