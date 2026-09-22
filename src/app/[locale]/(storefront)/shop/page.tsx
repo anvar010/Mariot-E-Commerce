@@ -89,11 +89,17 @@ async function getShopData(locale: string, searchParams: { [key: string]: string
             products: productsData.success ? productsData.data : [],
             brands: brandsData.success ? brandsData.data.filter((b: any) => b.is_active === 1 || b.is_active === true || String(b.is_active) === '1') : [],
             total: productsData.success ? productsData.total : 0,
-            allCategories: allFetchedCategories
+            allCategories: allFetchedCategories,
+            // readJson returns {} for a gateway timeout, a 502 or an HTML error page, so
+            // `success` being falsy here means the request failed -- not that the search
+            // matched nothing. Without this the two are indistinguishable downstream and
+            // an outage is reported to the shopper as "no products found", which sends
+            // them away believing we do not stock what they asked for.
+            failed: !productsData.success,
         };
     } catch (e) {
         console.error("Shop server fetch failed", e);
-        return { products: [], brands: [], total: 0, allCategories: [] };
+        return { products: [], brands: [], total: 0, allCategories: [], failed: true };
     }
 }
 
@@ -141,6 +147,7 @@ export default async function ShopPage(
                     initialProducts={data.products}
                     initialBrands={data.brands}
                     initialTotal={data.total}
+                    initialLoadFailed={data.failed}
                     initialCategories={data.allCategories}
                 />
             </Suspense>

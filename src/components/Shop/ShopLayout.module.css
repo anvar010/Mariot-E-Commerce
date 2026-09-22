@@ -1473,3 +1473,22 @@
         display: none;
     }
 }
+/* Offered when the products request failed, rather than when a search genuinely
+   matched nothing -- the shopper can retry without reloading the page. */
+.retryBtn {
+    margin-top: 16px;
+    padding: 10px 22px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: #fff;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.retryBtn:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}

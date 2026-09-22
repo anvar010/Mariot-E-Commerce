@@ -633,7 +633,9 @@
     "filter-by-brand": "Filter by Brand",
     "filter-by-category": "Filter by Category",
     "updating": "Updating...",
-    "no-products-found": "No products found for this selection."
+    "no-products-found": "No products found for this selection.",
+    "products-unavailable": "We couldn't load products just now. Please try again.",
+    "try-again": "Try again"
   },
   "aboutSection": {
     "title": "About Mariot Group",

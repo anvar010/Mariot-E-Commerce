@@ -66,6 +66,8 @@ interface ShopLayoutProps {
     initialBrands?: any[];
     initialTotal?: number;
     initialCategories?: any[];
+    /** The server's products fetch failed, so an empty list here means "unknown", not "none". */
+    initialLoadFailed?: boolean;
 }
 
 const ShopLayout: React.FC<ShopLayoutProps> = ({
@@ -79,7 +81,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     initialProducts = [],
     initialBrands = [],
     initialTotal = 0,
-    initialCategories = []
+    initialCategories = [],
+    initialLoadFailed = false
 }) => {
     const t = useTranslations('categories');
     const tc = useTranslations('categoryContent');
@@ -97,6 +100,10 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const [products, setProducts] = useState<any[]>(initialProducts);
     const [brands, setBrands] = useState<any[]>(initialBrands);
     const [didYouMean, setDidYouMean] = useState<string | null>(null);
+    // True when the products request itself failed, as opposed to succeeding with no
+    // matches. Seeded from the server render so a failure there is not reported as an
+    // empty catalogue before the client has had a chance to retry.
+    const [loadFailed, setLoadFailed] = useState(initialLoadFailed);
     const [loading, setLoading] = useState(initialProducts.length === 0);
     const [fetchingProducts, setFetchingProducts] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
@@ -347,9 +354,16 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                 setProducts(data.data);
                 setTotalProducts(data.total);
                 setDidYouMean(data.didYouMean || null);
+                setLoadFailed(false);
+            } else {
+                // A failed request is not an empty catalogue. Saying "no products found"
+                // when the API never answered tells the shopper we do not stock what they
+                // searched for, which is the one thing it must not do.
+                setLoadFailed(true);
             }
         } catch (err) {
             console.error('Error fetching products:', err);
+            setLoadFailed(true);
         } finally {
             setLoading(false);
             setFetchingProducts(false);
@@ -650,6 +664,16 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                                     product={{ ...p, price: Number(p.offer_price) > 0 ? Number(p.offer_price) : Number(p.price), old_price: Number(p.offer_price) > 0 ? Number(p.price) : (Number(p.old_price) || Number(p.originalPrice) || 0) }}
                                 />
                             ))
+                        ) : loadFailed ? (
+                            // Distinct from "no matches": the catalogue was never reached, so
+                            // offer a retry instead of telling the shopper the product does not
+                            // exist.
+                            <div className={styles.noResults}>
+                                <h3>{tc("products-unavailable")}</h3>
+                                <button type="button" className={styles.retryBtn} onClick={() => fetchProducts()}>
+                                    {tc("try-again")}
+                                </button>
+                            </div>
                         ) : (
                             <div className={styles.noResults}><h3>{tc("no-products-found")}</h3></div>
                         )}
