@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from '@/components/Layout/Header/Header';
 import Footer from '@/components/Layout/Footer/Footer';
+import styles from './layout.module.css';
 
 /**
  * Shared chrome for the public storefront.
@@ -18,13 +19,21 @@ import Footer from '@/components/Layout/Footer/Footer';
  * any URL, so /shop, /product/... and the rest are untouched. Routes that must NOT have
  * this chrome -- admin, sellerDashboard, cart, download-invoice -- deliberately sit
  * outside the group rather than opting out from within it.
+ *
+ * The footer is held down by the layout rather than by whatever happens to be rendering
+ * above it. Every loading state -- the route skeleton, a Suspense fallback, a client
+ * component's own spinner, or the brief empty moment between them during a client-side
+ * navigation -- would otherwise each need its own full-height rule, and missing any one
+ * of them puts the footer on screen before the page it belongs under. A flex column with
+ * a growing content area makes that structural: the footer cannot rise, whatever is or
+ * is not rendered above it.
  */
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
     return (
-        <>
+        <div className={styles.shell}>
             <Header />
-            {children}
+            <div className={styles.content}>{children}</div>
             <Footer />
-        </>
+        </div>
     );
 }

@@ -1,0 +1,26 @@
+/* Keeps the footer below the fold no matter what is rendering above it.
+
+   The storefront layout is Header -> children -> Footer. When `children` is a loading
+   state -- or briefly nothing at all, during a client-side navigation between routes --
+   the footer would rise to meet the header and appear before the page it belongs under.
+
+   Making the shell a full-height flex column and letting the content area grow fixes
+   that structurally, so no individual loading state has to remember to reserve height. */
+
+.shell {
+    display: flex;
+    flex-direction: column;
+    /* min-height, not height: the page must still be able to grow past the viewport. */
+    min-height: 100vh;
+}
+
+/* Takes every pixel the header and footer do not, which is what pushes the footer to the
+   bottom on a short page.
+
+   Deliberately no `min-height: 0` here. This is not a scroll container, and zeroing the
+   minimum changes how a sticky descendant resolves its containing block -- the product
+   page pins its gallery and info columns that way, so the safe thing is to leave the
+   default `auto` alone. */
+.content {
+    flex: 1 0 auto;
+}
