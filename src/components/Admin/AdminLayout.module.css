@@ -9,8 +9,31 @@
     margin-inline-start: 260px;
     display: flex;
     flex-direction: column;
+    /* A flex child's default min-width is auto, so one wide table inside the page could
+       stretch this column past the viewport and scroll the whole layout sideways -- taking
+       the sidebar and header with it. Capping it here keeps overflow inside the element
+       that actually overflows. No effect on desktop, where nothing exceeds the width. */
+    min-width: 0;
 }
 
 .pageBody {
     padding: 24px;
+}
+
+/* Tablet: the sidebar becomes a drawer, so the content reclaims its width. 1024px is the
+   point at which a 260px sidebar plus a table stops fitting comfortably. */
+@media (max-width: 1024px) {
+    .mainContent {
+        margin-inline-start: 0;
+    }
+
+    .pageBody {
+        padding: 18px;
+    }
+}
+
+@media (max-width: 640px) {
+    .pageBody {
+        padding: 14px 12px;
+    }
 }

@@ -3054,3 +3054,36 @@
     height: 1px;
     background: #e2e8f0;
 }
+
+/* Small screens: the page header is a space-between row, so on a narrow screen the
+   title and its action button squeeze each other. Stack them instead, and let the
+   button span the width so it is an easy tap target.
+   Desktop keeps the row -- this only applies below the breakpoint. */
+@media (max-width: 640px) {
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .header > button,
+    .addBtn,
+    .createBtn {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+/* A four-field row collapses in two stages rather than straight to one column,
+   so tablets keep a sensible density. */
+@media (max-width: 900px) {
+    .formGridFour {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 520px) {
+    .formGridFour {
+        grid-template-columns: 1fr;
+    }
+}

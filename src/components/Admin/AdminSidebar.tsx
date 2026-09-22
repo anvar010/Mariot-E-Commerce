@@ -20,9 +20,11 @@ import {
     Receipt,
     Layout,
     FilePlus,
-    Truck
+    Truck,
+    X
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useAdminNav } from './AdminNavContext';
 
 interface MenuItem {
     name: string;
@@ -40,6 +42,7 @@ function getStaffPerms(user: any): string[] {
 const AdminSidebar = () => {
     const pathname = usePathname();
     const { user, logout } = useAuth();
+    const { isOpen, close } = useAdminNav();
 
     
     // Badge counts, refreshed on a slow poll. 60s is deliberately unhurried: this is a
@@ -101,86 +104,99 @@ const menuItems: MenuItem[] = [
     const roleLabel = user?.role === 'admin' ? 'Site Manager' : 'Staff';
 
     return (
-        <aside className={styles.sidebar}>
+        <>
+            {/* Dimmed backdrop behind the drawer. Only ever visible under the mobile media
+                query; on desktop the sidebar is permanent and this never renders. */}
+            {isOpen && <div className={styles.backdrop} onClick={close} aria-hidden="true" />}
 
-
-            <div className={styles.userProfile}>
-                <div className={styles.avatar}>
-                    {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'AU'}
-                </div>
-                <div className={styles.userInfo}>
-                    <span className={styles.userName}>{user?.name || 'Admin User'}</span>
-                    <span className={styles.userRole}>{roleLabel}</span>
-                </div>
-            </div>
-
-            <nav className={styles.nav}>
-                {visibleMenuItems.length > 0 && (
-                    <>
-                        <div className={styles.navLabel}>Menu</div>
-                        <ul className={styles.menuList}>
-                            {visibleMenuItems.map((item) => {
-                                const isActive = cleanPath === item.path || (item.path !== '/admin' && cleanPath.startsWith(item.path));
-                                return (
-                                    <li key={item.path}>
-                                        <Link
-                                            href={item.path}
-                                            className={`${styles.menuItem} ${isActive ? styles.active : ''}`}
-                                            onClick={() => handleSectionOpen(item.key)}
-                                        >
-                                            <span className={styles.icon}>{item.icon}</span>
-                                            <span className={styles.name}>{item.name}</span>
-                                            {activityCounts[item.key] > 0 && (
-                                                <span className={styles.badge} aria-label={`${activityCounts[item.key]} new`}>
-                                                    {activityCounts[item.key] > 99 ? '99+' : activityCounts[item.key]}
-                                                </span>
-                                            )}
-                                            {isActive && <div className={styles.activeIndicator} />}
-                                        </Link>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </>
-                )}
-
-                {visibleActivityItems.length > 0 && (
-                    <>
-                        <div className={styles.navLabel}>Activity</div>
-                        <ul className={styles.activityList}>
-                            {visibleActivityItems.map((item) => {
-                                const isActive = cleanPath.startsWith(item.path);
-                                return (
-                                    <li key={item.path}>
-                                        <Link
-                                            href={item.path}
-                                            className={`${styles.menuItem} ${isActive ? styles.active : ''}`}
-                                            onClick={() => handleSectionOpen(item.key)}
-                                        >
-                                            <span className={styles.icon}>{item.icon}</span>
-                                            <span className={styles.name}>{item.name}</span>
-                                            {activityCounts[item.key] > 0 && (
-                                                <span className={styles.badge} aria-label={`${activityCounts[item.key]} new`}>
-                                                    {activityCounts[item.key] > 99 ? '99+' : activityCounts[item.key]}
-                                                </span>
-                                            )}
-                                            {isActive && <div className={styles.activeIndicator} />}
-                                        </Link>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </>
-                )}
-            </nav>
-
-            <div className={styles.sidebarFooter}>
-                <button onClick={logout} className={styles.logoutBtn}>
-                    <LogOut size={18} />
-                    <span>Logout</span>
+            <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
+                <button
+                    type="button"
+                    className={styles.drawerClose}
+                    onClick={close}
+                    aria-label="Close menu"
+                >
+                    <X size={20} />
                 </button>
-            </div>
-        </aside>
+
+                <div className={styles.userProfile}>
+                    <div className={styles.avatar}>
+                        {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'AU'}
+                    </div>
+                    <div className={styles.userInfo}>
+                        <span className={styles.userName}>{user?.name || 'Admin User'}</span>
+                        <span className={styles.userRole}>{roleLabel}</span>
+                    </div>
+                </div>
+
+                <nav className={styles.nav}>
+                    {visibleMenuItems.length > 0 && (
+                        <>
+                            <div className={styles.navLabel}>Menu</div>
+                            <ul className={styles.menuList}>
+                                {visibleMenuItems.map((item) => {
+                                    const isActive = cleanPath === item.path || (item.path !== '/admin' && cleanPath.startsWith(item.path));
+                                    return (
+                                        <li key={item.path}>
+                                            <Link
+                                                href={item.path}
+                                                className={`${styles.menuItem} ${isActive ? styles.active : ''}`}
+                                                onClick={() => handleSectionOpen(item.key)}
+                                            >
+                                                <span className={styles.icon}>{item.icon}</span>
+                                                <span className={styles.name}>{item.name}</span>
+                                                {activityCounts[item.key] > 0 && (
+                                                    <span className={styles.badge} aria-label={`${activityCounts[item.key]} new`}>
+                                                        {activityCounts[item.key] > 99 ? '99+' : activityCounts[item.key]}
+                                                    </span>
+                                                )}
+                                                {isActive && <div className={styles.activeIndicator} />}
+                                            </Link>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </>
+                    )}
+
+                    {visibleActivityItems.length > 0 && (
+                        <>
+                            <div className={styles.navLabel}>Activity</div>
+                            <ul className={styles.activityList}>
+                                {visibleActivityItems.map((item) => {
+                                    const isActive = cleanPath.startsWith(item.path);
+                                    return (
+                                        <li key={item.path}>
+                                            <Link
+                                                href={item.path}
+                                                className={`${styles.menuItem} ${isActive ? styles.active : ''}`}
+                                                onClick={() => handleSectionOpen(item.key)}
+                                            >
+                                                <span className={styles.icon}>{item.icon}</span>
+                                                <span className={styles.name}>{item.name}</span>
+                                                {activityCounts[item.key] > 0 && (
+                                                    <span className={styles.badge} aria-label={`${activityCounts[item.key]} new`}>
+                                                        {activityCounts[item.key] > 99 ? '99+' : activityCounts[item.key]}
+                                                    </span>
+                                                )}
+                                                {isActive && <div className={styles.activeIndicator} />}
+                                            </Link>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </>
+                    )}
+                </nav>
+
+                <div className={styles.sidebarFooter}>
+                    <button onClick={logout} className={styles.logoutBtn}>
+                        <LogOut size={18} />
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </aside>
+        </>
     );
 };
 

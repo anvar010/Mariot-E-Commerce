@@ -226,3 +226,104 @@
     border-radius: 50%;
     cursor: pointer;
 }
+/* ---------------------------------------------------------------------------
+   Small screens.
+
+   The hamburger is the only route to the navigation once the sidebar goes
+   off-canvas, so it is the one thing that must never be crowded out. The
+   revenue/orders stats are the first to go: they duplicate figures the
+   dashboard shows in full.
+
+   Desktop is untouched -- .menuBtn is display:none outside these queries.
+   --------------------------------------------------------------------------- */
+
+.menuBtn {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    .left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .menuBtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 38px;
+        height: 38px;
+        margin-inline-start: -8px;
+        color: #334155;
+        background: transparent;
+        border: none;
+        border-radius: 9px;
+        cursor: pointer;
+    }
+
+    .menuBtn:active {
+        background: #f1f5f9;
+    }
+
+    .menuBtn:focus-visible {
+        outline: 2px solid #16a1db;
+        outline-offset: 2px;
+    }
+
+    .header {
+        padding: 0 14px;
+    }
+
+    .right {
+        gap: 16px;
+    }
+
+    .userSection {
+        gap: 10px;
+        padding-inline-start: 16px;
+    }
+
+    /* The page title is already in the body of every admin page. */
+    .currentView {
+        display: none;
+    }
+}
+
+@media (max-width: 720px) {
+    /* Revenue and order totals are on the dashboard; the hamburger is not. */
+    .stats {
+        display: none;
+    }
+
+    .actions {
+        gap: 14px;
+    }
+
+    /* 320px is wider than a small phone, and the dropdown is anchored to the
+       inline end of an element near the edge -- so pin it to the viewport
+       instead of letting it run off the side. */
+    .dropdown {
+        position: fixed;
+        top: 56px;
+        inset-inline: 10px;
+        width: auto;
+        max-width: none;
+    }
+
+    .dropdownList {
+        max-height: 60vh;
+    }
+}
+
+@media (max-width: 420px) {
+    .userSection {
+        padding-inline-start: 10px;
+    }
+
+    .actions {
+        gap: 12px;
+    }
+}

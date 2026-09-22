@@ -1460,3 +1460,25 @@
 .inventoryHeader h3 {
     color: #fa5252 !important;
 }
+/* The existing rules stop at two columns, which is still tight on a phone. */
+@media (max-width: 560px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .bannerButtons {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .bannerButtons > * {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+}

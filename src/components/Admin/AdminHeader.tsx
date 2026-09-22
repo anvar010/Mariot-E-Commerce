@@ -10,12 +10,15 @@ import {
     ChevronDown,
     Grid,
     Calendar,
-    Wallet
+    Wallet,
+    Menu
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
+import { useAdminNav } from './AdminNavContext';
 
 const AdminHeader = () => {
+    const { isOpen, toggle } = useAdminNav();
     const [counts, setCounts] = useState({ notifications: 0, messages: 0 });
     const [stats, setStats] = useState({ totalSales: 0, totalOrders: 0, activeProducts: 0 });
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -97,6 +100,18 @@ const AdminHeader = () => {
     return (
         <header className={styles.header}>
             <div className={styles.left}>
+                {/* The only way to reach the navigation once the sidebar goes off-canvas.
+                    Hidden on desktop, where the sidebar is always on screen. */}
+                <button
+                    type="button"
+                    className={styles.menuBtn}
+                    onClick={toggle}
+                    aria-label="Open menu"
+                    aria-expanded={isOpen}
+                >
+                    <Menu size={20} />
+                </button>
+
                 <div className={styles.stats}>
                     <div className={styles.statItem} title="Total Revenue">
                         <Wallet size={16} color="#20c997" />

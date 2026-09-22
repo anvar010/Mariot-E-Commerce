@@ -543,3 +543,22 @@
     color: #94a3b8;
     line-height: 1.5;
 }
+
+/* Small screens: the page header is a space-between row, so on a narrow screen the
+   title and its action button squeeze each other. Stack them instead, and let the
+   button span the width so it is an easy tap target.
+   Desktop keeps the row -- this only applies below the breakpoint. */
+@media (max-width: 640px) {
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .header > button,
+    .addBtn,
+    .createBtn {
+        justify-content: center;
+        width: 100%;
+    }
+}

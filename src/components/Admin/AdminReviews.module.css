@@ -238,3 +238,35 @@
     outline: 2px solid #16a1db;
     outline-offset: 2px;
 }
+
+/* Small screens: the page header is a space-between row, so on a narrow screen the
+   title and its action button squeeze each other. Stack them instead, and let the
+   button span the width so it is an easy tap target.
+   Desktop keeps the row -- this only applies below the breakpoint. */
+@media (max-width: 640px) {
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .header > button,
+    .addBtn,
+    .createBtn {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+/* Small screens: `overflow: hidden` on the container clips the far columns
+   instead of letting them be reached. Scroll the card below the breakpoint. */
+@media (max-width: 1024px) {
+    .tableContainer {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        min-width: 720px;
+    }
+}

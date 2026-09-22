@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
+import { AdminNavProvider } from './AdminNavContext';
 import styles from './AdminLayout.module.css';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 
@@ -84,15 +85,17 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (!user || (user.role !== 'admin' && user.role !== 'staff')) return null;
 
     return (
-        <div className={styles.adminContainer} translate="no">
-            <AdminSidebar />
-            <div className={styles.mainContent}>
-                <AdminHeader />
-                <div className={styles.pageBody}>
-                    {children}
+        <AdminNavProvider>
+            <div className={styles.adminContainer} translate="no">
+                <AdminSidebar />
+                <div className={styles.mainContent}>
+                    <AdminHeader />
+                    <div className={styles.pageBody}>
+                        {children}
+                    </div>
                 </div>
             </div>
-        </div>
+        </AdminNavProvider>
     );
 };
 
