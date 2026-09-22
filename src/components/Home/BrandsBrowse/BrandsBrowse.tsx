@@ -199,6 +199,14 @@ const BrandsBrowse = ({ initialBrands = [] }: BrandsBrowseProps) => {
                                                                 src={logoUrl}
                                                                 alt={displayName}
                                                                 className={styles.logoImg}
+                                                                /* This is a carousel: only the first slides are on
+                                                                   screen, but every logo was being fetched at once --
+                                                                   98 of them on the home page, which saturates the
+                                                                   connection and delays everything behind it, the
+                                                                   navigation into this page included. The first few
+                                                                   stay eager so the visible ones are not blank. */
+                                                                loading={pairIndex < 3 ? 'eager' : 'lazy'}
+                                                                decoding="async"
                                                             />
                                                         ) : (
                                                             <span className={styles.brandNameFallback}>
