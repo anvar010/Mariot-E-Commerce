@@ -103,18 +103,19 @@ const findExisting = async ({ customer_id, email, phone }) => {
             );
             if (rows.length) return rows[0];
 
-            // Stored without any country code. Only the subscriber part can be compared,
-            // and only against numbers short enough to have no country code of their own
-            // -- otherwise a Saudi number would match a UAE record on its tail again.
-            const [loose] = await db.execute(
-                `SELECT * FROM customers
-                  WHERE phone IS NOT NULL
-                    AND LENGTH(${digitsOnly}) <= 10
-                    AND TRIM(LEADING '0' FROM ${digitsOnly}) = ?
-                  LIMIT 1`,
-                [cleanPhone.local]
-            );
-            if (loose.length) return loose[0];
+            // Deliberately no fallback to the subscriber number alone.
+            //
+            // There used to be one, matching stored numbers short enough to look like they
+            // carried no country code. It reintroduced the exact bug this function exists
+            // to prevent: 9061242623 saved under +91 is 10 digits, so a +971 lookup for
+            // the same digits matched it and called an Indian customer an existing UAE
+            // one. Two country codes mean two people, and no length test can tell a bare
+            // national number apart from a foreign one.
+            //
+            // The cost is that a record saved before country codes were captured will not
+            // be found by a lookup that supplies one, and is reported as a new customer.
+            // Creating a second record an admin can merge is the safe failure; showing one
+            // customer another's quotation history is not.
             return null;
         }
 
