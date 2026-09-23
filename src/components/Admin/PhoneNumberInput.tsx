@@ -23,15 +23,40 @@ import { flagEmoji, flagImageSrc } from '@/utils/deliveryZones';
 import { DIAL_COUNTRIES, DEFAULT_DIAL_COUNTRY, DialCountry, matchDialCountry } from '@/data/dialCountries';
 import styles from './PhoneNumberInput.module.css';
 
+/**
+ * A country's flag.
+ *
+ * Three sources, in order. We ship images for the six GCC countries, so those are served
+ * locally. Everything else comes from flagcdn, the same source the contact page's country
+ * picker already uses. Only if both fail does it fall back to the emoji.
+ *
+ * The emoji cannot be the main path: regional-indicator pairs are not rendered as flags
+ * on Windows, which draws nothing for them, so a list of countries appeared to have no
+ * flags at all -- which is exactly what was reported. An image works on every platform.
+ */
 const CountryFlag: React.FC<{ code: string }> = ({ code }) => {
-    const src = flagImageSrc(code);
-    const [failed, setFailed] = useState(false);
-    // Emoji where we ship no image, and also when one fails to load, so the slot is never
-    // empty. Windows draws no flag glyphs, which is why the images exist at all.
-    if (!src || failed) return <span className={styles.flagEmoji} aria-hidden="true">{flagEmoji(code)}</span>;
+    const local = flagImageSrc(code);
+    const [remoteFailed, setRemoteFailed] = useState(false);
+    const [localFailed, setLocalFailed] = useState(false);
+
+    const src = (local && !localFailed)
+        ? local
+        : (remoteFailed ? null : `https://flagcdn.com/40x30/${code.toLowerCase()}.png`);
+
+    if (!src) return <span className={styles.flagEmoji} aria-hidden="true">{flagEmoji(code)}</span>;
+
     return (
-        <img src={src} alt="" aria-hidden="true" className={styles.flagImg} width={20} height={14}
-            loading="lazy" decoding="async" onError={() => setFailed(true)} />
+        <img
+            src={src}
+            alt=""
+            aria-hidden="true"
+            className={styles.flagImg}
+            width={20}
+            height={14}
+            loading="lazy"
+            decoding="async"
+            onError={() => { if (local && !localFailed) setLocalFailed(true); else setRemoteFailed(true); }}
+        />
     );
 };
 
