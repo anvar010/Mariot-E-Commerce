@@ -817,13 +817,28 @@ const initDb = async () => {
                     CONSTRAINT fk_customers_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             `);
-            // Email and phone are the strong identifiers used to spot a returning
-            // customer, so each must point at exactly one record -- this constraint is
-            // what stops two staff creating two "same" customers. They stay nullable
-            // because a walk-in may give only one of the two, and MySQL permits many
-            // NULLs in a unique index, which is precisely the behaviour wanted here.
-            for (const [name, col] of [['uniq_customer_email', 'email'], ['uniq_customer_phone', 'phone']]) {
-                try { await db.query(`ALTER TABLE customers ADD UNIQUE KEY ${name} (${col})`); }
+            // Email and phone are INDEXED but deliberately NOT unique.
+            //
+            // They were unique, on the reasoning that one identifier should point at one
+            // record. In this business it does not: a company has a single office address
+            // that every buyer in it uses, and the same person is legitimately quoted
+            // several times under different contact details. The constraint turned those
+            // ordinary cases into a failed save with a duplicate-entry error and no way
+            // through it.
+            //
+            // Matching a returning customer is the job of findExisting, which decides on
+            // the phone with its country code. That is a judgement about identity and
+            // belongs in code that can weigh it, not in an index that can only refuse.
+            //
+            // Dropping the constraint cannot lose data; adding it back later would fail
+            // against any duplicates by then recorded, so this is a one-way door and is
+            // taken deliberately.
+            for (const name of ['uniq_customer_email', 'uniq_customer_phone']) {
+                try { await db.query(`ALTER TABLE customers DROP INDEX ${name}`); }
+                catch (e) { /* already dropped, or never created */ }
+            }
+            for (const [name, col] of [['idx_customer_email', 'email'], ['idx_customer_phone', 'phone']]) {
+                try { await db.query(`ALTER TABLE customers ADD KEY ${name} (${col})`); }
                 catch (e) { /* index already present */ }
             }
             console.log('[DB] customers table verified');

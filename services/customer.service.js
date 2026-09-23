@@ -139,9 +139,18 @@ const findExisting = async ({ customer_id, email, phone }) => {
     }
 
     // No phone to go on, so the email is the only identifier left.
+    //
+    // An address is no longer unique to one record -- several buyers at one company share
+    // an office address, and that is now allowed -- so this can match more than one. The
+    // most recent is taken, which is the one a staff member raising a quotation today is
+    // most likely to mean, and LIMIT keeps an address shared by many from loading all of
+    // them to use the first.
     const cleanEmail = normaliseEmail(email);
     if (cleanEmail) {
-        const [rows] = await db.execute('SELECT * FROM customers WHERE LOWER(email) = ?', [cleanEmail]);
+        const [rows] = await db.execute(
+            'SELECT * FROM customers WHERE LOWER(email) = ? ORDER BY id DESC LIMIT 1',
+            [cleanEmail]
+        );
         if (rows.length) return rows[0];
     }
 
@@ -178,14 +187,41 @@ const findOrCreate = async (details, createdBy) => {
         return { customer: { ...existing }, created: false };
     }
 
-    const [result] = await db.execute(
-        `INSERT INTO customers (user_id, name, company_name, email, phone, vat_number, address, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [details.user_id || null, String(details.name || '').trim(),
-            details.company_name || null, normaliseEmail(details.email),
-            details.phone ? String(details.phone).trim() : null,
-            details.vat_number || null, details.address || null, createdBy || null]
-    );
+    const insertValues = [details.user_id || null, String(details.name || '').trim(),
+        details.company_name || null, normaliseEmail(details.email),
+        details.phone ? String(details.phone).trim() : null,
+        details.vat_number || null, details.address || null, createdBy || null];
+
+    let result;
+    try {
+        [result] = await db.execute(
+            `INSERT INTO customers (user_id, name, company_name, email, phone, vat_number, address, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            insertValues
+        );
+    } catch (err) {
+        // A deployment still carrying the old unique index on email/phone refuses this
+        // insert, and the quotation cannot be saved at all -- the staff member sees a
+        // duplicate-entry error with nothing they can do about it.
+        //
+        // The index is dropped at startup (see config/init.js), but a running instance
+        // keeps it until then, so the same record is written a second time with the
+        // constraint out of the way. Ordinary failures are re-thrown untouched.
+        if (err && err.code === 'ER_DUP_ENTRY') {
+            console.warn('[customers] unique index still present, dropping and retrying:', err.sqlMessage);
+            for (const name of ['uniq_customer_email', 'uniq_customer_phone']) {
+                try { await db.query(`ALTER TABLE customers DROP INDEX ${name}`); } catch (e) { /* already gone */ }
+            }
+            [result] = await db.execute(
+                `INSERT INTO customers (user_id, name, company_name, email, phone, vat_number, address, created_by)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                insertValues
+            );
+        } else {
+            throw err;
+        }
+    }
+
     const [rows] = await db.execute('SELECT * FROM customers WHERE id = ?', [result.insertId]);
     return { customer: rows[0], created: true };
 };
