@@ -1493,3 +1493,31 @@
     cursor: default;
     opacity: .6;
 }
+
+/* ── branch filter ────────────────────────────────────────────────────────── */
+
+/* Sized and coloured like .mineToggle beside it, so the filter bar reads as one row of
+   controls rather than a native select dropped next to a styled button. */
+.branchFilter {
+    align-self: stretch;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    padding: 0 12px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    min-width: 170px;
+}
+
+.branchFilter:hover {
+    border-color: #cbd5e1;
+}
+
+.branchFilter:focus-visible {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+}

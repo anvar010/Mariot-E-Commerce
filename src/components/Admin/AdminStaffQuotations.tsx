@@ -80,6 +80,10 @@ const AdminStaffQuotations = () => {
     // Admins see every quotation by default; this narrows the view to their own.
     // Staff are already scoped server-side, so the control is pointless for them.
     const [mineOnly, setMineOnly] = useState(false);
+    // Narrows the list to one branch. '' is every branch; 'none' is the quotations raised
+    // before branch numbering existed, which belong to no branch and would otherwise be
+    // unreachable once any branch is chosen.
+    const [branchFilter, setBranchFilter] = useState('');
     const [reviewModal, setReviewModal] = useState<{ q: any; decision: 'approved' | 'rejected' } | null>(null);
     const [reviewNote, setReviewNote] = useState('');
     const [reviewSaving, setReviewSaving] = useState(false);
@@ -783,8 +787,18 @@ const AdminStaffQuotations = () => {
         }
     };
 
+    // One predicate for "is this row in view", used by the tiles and the table alike. The
+    // counts above the list have to describe the list below it; computing them from a
+    // different subset is how a tile ends up reading 12 over a table showing 3.
+    const inScope = (q: any) => {
+        if (mineOnly && Number(q.created_by) !== Number(user?.id)) return false;
+        if (branchFilter === 'none') return !q.branch_id;
+        if (branchFilter && Number(q.branch_id) !== Number(branchFilter)) return false;
+        return true;
+    };
+
     const statusCounts = quotations
-        .filter(q => !mineOnly || Number(q.created_by) === Number(user?.id))
+        .filter(inScope)
         .reduce((acc: Record<string, number>, q) => {
         const st = q.status || 'pending';
         acc[st] = (acc[st] || 0) + 1;
@@ -793,7 +807,7 @@ const AdminStaffQuotations = () => {
 
     const mineCount = quotations.filter(q => Number(q.created_by) === Number(user?.id)).length;
 
-    const scope = quotations.filter(q => !mineOnly || Number(q.created_by) === Number(user?.id));
+    const scope = quotations.filter(inScope);
     const approvedValue = scope
         .filter(q => (q.status || 'pending') === 'approved')
         .reduce((sum, q) => sum + (Number(q.total_amount) || 0), 0);
@@ -802,7 +816,7 @@ const AdminStaffQuotations = () => {
         .reduce((sum, q) => sum + (Number(q.total_amount) || 0), 0);
 
     const filtered = quotations.filter(q => {
-        if (mineOnly && Number(q.created_by) !== Number(user?.id)) return false;
+        if (!inScope(q)) return false;
         if (statusFilter !== 'all' && (q.status || 'pending') !== statusFilter) return false;
         const s = searchTerm.toLowerCase();
         return !s
@@ -1361,6 +1375,29 @@ const AdminStaffQuotations = () => {
                 <input type="text" placeholder="Search by reference, customer or email…"
                     value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                 </div>
+                {/* Offered whenever there is more than one branch to choose between. Staff
+                    see it too: their own quotations can span branches if they have moved,
+                    and the server already limits them to their own rows. */}
+                {branches.length > 1 && (
+                    <select
+                        className={styles.branchFilter}
+                        value={branchFilter}
+                        onChange={e => setBranchFilter(e.target.value)}
+                        aria-label="Filter by branch"
+                    >
+                        <option value="">All branches</option>
+                        {branches.map(b => (
+                            <option key={b.id} value={b.id}>
+                                {b.name}{b.code ? ` (${b.code})` : ''}
+                            </option>
+                        ))}
+                        {/* Only offered when such rows exist, so the option does not
+                            advertise an empty result. */}
+                        {quotations.some(q => !q.branch_id) && (
+                            <option value="none">No branch</option>
+                        )}
+                    </select>
+                )}
                 {!isStaff && (
                     <button
                         className={`${styles.mineToggle} ${mineOnly ? styles.mineToggleActive : ''}`}
