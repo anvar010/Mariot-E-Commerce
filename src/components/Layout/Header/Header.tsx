@@ -68,6 +68,23 @@ const Header = () => {
         setIsSearching(false);
     }, [pathname, searchParams]);
 
+    // Empty the search box once the shopper has arrived somewhere.
+    //
+    // Picking a suggestion from the dropdown already cleared it, but every other route
+    // out of a search did not: submitting the query, then opening a product or a brand
+    // from the results, all left the old term sitting in the bar. It reads as though the
+    // page is still filtered by it, and the next search has to be typed over it.
+    //
+    // The shop page is the exception. There the term is the page -- it is in the URL, it
+    // is what the results are -- so the box keeps showing it and stays editable, which is
+    // what makes refining a search possible. Leaving the results for anywhere else clears
+    // it.
+    useEffect(() => {
+        if (pathname.startsWith('/shop')) return;
+        setSearchQuery('');
+        setShowSuggestions(false);
+    }, [pathname]);
+
     useEffect(() => {
         let cancelled = false;
         (async () => {
