@@ -23,6 +23,7 @@ import { useNotification } from '@/context/NotificationContext';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import CustomerHistoryPanel, { CustomerProfile } from './CustomerHistoryPanel';
+import QuotationLineProduct from './QuotationLineProduct';
 import styles from './StaffQuotationCustomer.module.css';
 
 const DASH = '—';
@@ -113,6 +114,7 @@ const StaffQuotationCustomer: React.FC<Props> = ({ customerId }) => {
                 profile={profile}
                 onView={viewQuotation}
                 viewingId={viewingId}
+                variant="page"
             />
 
             {selected && (
@@ -155,12 +157,7 @@ const StaffQuotationCustomer: React.FC<Props> = ({ customerId }) => {
                                     {items.map((i: any, idx: number) => (
                                         <tr key={idx}>
                                             <td>
-                                                <div className={styles.itemName}>{i.name}</div>
-                                                {(i.model || i.brand || i.variant_label) && (
-                                                    <div className={styles.itemMeta}>
-                                                        {[i.brand, i.model, i.variant_label].filter(Boolean).join(' · ')}
-                                                    </div>
-                                                )}
+                                                <QuotationLineProduct item={i} />
                                             </td>
                                             <td><CurrencyPrice amount={Number(i.unit_price ?? i.price)} /></td>
                                             <td>{i.quantity}</td>

@@ -1,0 +1,92 @@
+/* A quotation line's product cell: thumbnail beside the name and its model/brand. */
+
+.row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+}
+
+.thumbLink {
+    flex: none;
+    display: block;
+    border-radius: 6px;
+}
+
+.thumbLink:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+    overflow: hidden;
+}
+
+/* contain, not cover: product shots are photographed on white with the whole item in
+   frame, and cropping one to fill a square cuts the ends off the long ones. */
+.img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.placeholder {
+    color: #cbd5e1;
+}
+
+.text {
+    min-width: 0;
+}
+
+.name,
+.nameLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.35;
+}
+
+.nameLink {
+    text-decoration: none;
+}
+
+.nameLink:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+.nameLink:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+/* Sits at the end of the name so it is obvious the row leaves this page. Dimmed until
+   the name is hovered, so a table of these does not read as a wall of icons. */
+.linkIcon {
+    flex: none;
+    color: #94a3b8;
+}
+
+.nameLink:hover .linkIcon {
+    color: #2563eb;
+}
+
+.meta {
+    margin-top: 2px;
+    font-size: 11.5px;
+    color: #94a3b8;
+    line-height: 1.35;
+}

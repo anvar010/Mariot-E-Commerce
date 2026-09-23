@@ -18,6 +18,7 @@ import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import DiscountLimitsModal from './DiscountLimitsModal';
 import CustomerHistoryPanel, { CustomerProfile } from './CustomerHistoryPanel';
 import PhoneNumberInput from './PhoneNumberInput';
+import QuotationLineProduct from './QuotationLineProduct';
 import { useRouter } from '@/i18n/navigation';
 
 type Line = {
@@ -805,6 +806,76 @@ const AdminStaffQuotations = () => {
     if (loading) return <AdminLoader />;
 
     // ── Builder ────────────────────────────────────────────────────────
+    /**
+     * A saved quotation, opened in full.
+     *
+     * Held in a variable and rendered by BOTH views rather than written once inside the
+     * list. The builder returns early, so a modal living only in the list markup could
+     * never appear while the builder was open -- which is exactly what happened to the eye
+     * button on the customer history panel: it set the state and nothing was there to
+     * render it.
+     */
+    const quotationModal = selected ? (
+        <div className={styles.modalOverlay} onClick={() => setSelected(null)}>
+            <div className={styles.modal} onClick={e => e.stopPropagation()}>
+                <div className={styles.modalHeader}>
+                    <h2>{selected.quotation_ref}</h2>
+                    <button onClick={() => setSelected(null)}><X size={18} /></button>
+                </div>
+                <div className={styles.modalBody}>
+                    <div className={styles.metaGrid}>
+                        <div><span>Customer</span><strong>{selected.customer_name}</strong></div>
+                        <div><span>Email</span><strong>{selected.customer_email || '—'}</strong></div>
+                        <div><span>Phone</span><strong>{selected.customer_phone || '—'}</strong></div>
+                        <div><span>VAT / TRN</span><strong>{selected.vat_number || '—'}</strong></div>
+                        <div>
+                            <span>Created by</span>
+                            <strong>
+                                {selected.created_by_name || 'Unknown'}
+                                {selected.created_by_role ? ` (${selected.created_by_role})` : ''}
+                            </strong>
+                        </div>
+                        <div>
+                            <span>Created on</span>
+                            <strong>{selected.created_at ? new Date(selected.created_at).toLocaleString() : '—'}</strong>
+                        </div>
+                    </div>
+                    {selected.review_note && (
+                        <p className={`${styles.notes} ${(selected.status === 'rejected') ? styles.notesReject : ''}`}>
+                            <span>{selected.status === 'rejected' ? 'Not approved:' : 'Approval note:'}</span> {selected.review_note}
+                            {selected.reviewed_by_name ? ` — ${selected.reviewed_by_name}` : ''}
+                        </p>
+                    )}
+                    {selected.notes && <p className={styles.notes}><span>Notes:</span> {selected.notes}</p>}
+                    <table className={styles.table}>
+                        <thead>
+                            <tr><th>PRODUCT</th><th>UNIT</th><th>QTY</th><th>DISC %</th><th>TOTAL</th></tr>
+                        </thead>
+                        <tbody>
+                            {(typeof selected.items === 'string' ? JSON.parse(selected.items) : (selected.items || [])).map((i: any, idx: number) => (
+                                <tr key={idx}>
+                                    <td>
+                                        <QuotationLineProduct item={i} />
+                                    </td>
+                                    <td><CurrencyPrice amount={Number(i.unit_price ?? i.price)} /></td>
+                                    <td>{i.quantity}</td>
+                                    <td>{Number(i.discount_pct) > 0 ? `${i.discount_pct}%` : '—'}</td>
+                                    <td className={styles.lineTotal}><CurrencyPrice amount={Number(i.line_total)} /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <div className={styles.modalTotals}>
+                        <div className={styles.totalRow}><span>Subtotal</span><CurrencyPrice amount={Number(selected.subtotal)} /></div>
+                        <div className={styles.totalRow}><span>Discount</span><span className={styles.negative}>− <CurrencyPrice amount={Number(selected.discount_amount)} /></span></div>
+                        <div className={styles.totalRow}><span>VAT (5%)</span><CurrencyPrice amount={Number(selected.tax_amount)} /></div>
+                        <div className={`${styles.totalRow} ${styles.grandTotal}`}><span>Total</span><CurrencyPrice amount={Number(selected.total_amount)} /></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    ) : null;
+
     if (view === 'builder') {
         return (
             <div className={styles.wrapper}>
@@ -1206,6 +1277,9 @@ const AdminStaffQuotations = () => {
                         </div>
                     </aside>
                 </div>
+                {/* The eye button on the customer history panel lives in this view, so the
+                    modal it opens has to be rendered here too. */}
+                {quotationModal}
             </div>
         );
     }
@@ -1401,64 +1475,8 @@ const AdminStaffQuotations = () => {
                 </table>
             </div>
 
-            {selected && (
-                <div className={styles.modalOverlay} onClick={() => setSelected(null)}>
-                    <div className={styles.modal} onClick={e => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h2>{selected.quotation_ref}</h2>
-                            <button onClick={() => setSelected(null)}><X size={18} /></button>
-                        </div>
-                        <div className={styles.modalBody}>
-                            <div className={styles.metaGrid}>
-                                <div><span>Customer</span><strong>{selected.customer_name}</strong></div>
-                                <div><span>Email</span><strong>{selected.customer_email || '—'}</strong></div>
-                                <div><span>Phone</span><strong>{selected.customer_phone || '—'}</strong></div>
-                                <div><span>VAT / TRN</span><strong>{selected.vat_number || '—'}</strong></div>
-                                <div>
-                                    <span>Created by</span>
-                                    <strong>
-                                        {selected.created_by_name || 'Unknown'}
-                                        {selected.created_by_role ? ` (${selected.created_by_role})` : ''}
-                                    </strong>
-                                </div>
-                                <div>
-                                    <span>Created on</span>
-                                    <strong>{selected.created_at ? new Date(selected.created_at).toLocaleString() : '—'}</strong>
-                                </div>
-                            </div>
-                            {selected.review_note && (
-                                <p className={`${styles.notes} ${(selected.status === 'rejected') ? styles.notesReject : ''}`}>
-                                    <span>{selected.status === 'rejected' ? 'Not approved:' : 'Approval note:'}</span> {selected.review_note}
-                                    {selected.reviewed_by_name ? ` — ${selected.reviewed_by_name}` : ''}
-                                </p>
-                            )}
-                            {selected.notes && <p className={styles.notes}><span>Notes:</span> {selected.notes}</p>}
-                            <table className={styles.table}>
-                                <thead>
-                                    <tr><th>PRODUCT</th><th>UNIT</th><th>QTY</th><th>DISC %</th><th>TOTAL</th></tr>
-                                </thead>
-                                <tbody>
-                                    {(typeof selected.items === 'string' ? JSON.parse(selected.items) : (selected.items || [])).map((i: any, idx: number) => (
-                                        <tr key={idx}>
-                                            <td>{i.name}</td>
-                                            <td><CurrencyPrice amount={Number(i.unit_price ?? i.price)} /></td>
-                                            <td>{i.quantity}</td>
-                                            <td>{Number(i.discount_pct) > 0 ? `${i.discount_pct}%` : '—'}</td>
-                                            <td className={styles.lineTotal}><CurrencyPrice amount={Number(i.line_total)} /></td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            <div className={styles.modalTotals}>
-                                <div className={styles.totalRow}><span>Subtotal</span><CurrencyPrice amount={Number(selected.subtotal)} /></div>
-                                <div className={styles.totalRow}><span>Discount</span><span className={styles.negative}>− <CurrencyPrice amount={Number(selected.discount_amount)} /></span></div>
-                                <div className={styles.totalRow}><span>VAT (5%)</span><CurrencyPrice amount={Number(selected.tax_amount)} /></div>
-                                <div className={`${styles.totalRow} ${styles.grandTotal}`}><span>Total</span><CurrencyPrice amount={Number(selected.total_amount)} /></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+
+            {quotationModal}
 
             {reviewModal && (
                 <div className={styles.modalOverlay} onClick={() => setReviewModal(null)}>
