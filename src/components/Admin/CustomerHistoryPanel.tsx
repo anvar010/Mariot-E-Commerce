@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Building2, FileText, Clock, TrendingUp, X } from 'lucide-react';
+import { Building2, FileText, Clock, TrendingUp, X, Eye, Loader2 } from 'lucide-react';
 import styles from './CustomerHistoryPanel.module.css';
 
 /**
@@ -64,9 +64,17 @@ const statusClass = (s: string) => {
 interface Props {
     profile: CustomerProfile;
     onClose?: () => void;
+    /**
+     * Opens one of the listed quotations in full. The rows here carry only summary
+     * columns -- no line items -- so the caller fetches the whole record before showing
+     * it, which is why this is a callback rather than local state.
+     */
+    onView?: (quotationId: number) => void;
+    /** The row currently being fetched, so only that one shows a spinner. */
+    viewingId?: number | null;
 }
 
-const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose }) => {
+const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewingId }) => {
     const { customer, summary, branch_history, quotations } = profile;
 
     return (
@@ -143,6 +151,7 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose }) => {
                                     <th>Date</th>
                                     <th className={styles.right}>Amount</th>
                                     <th>Status</th>
+                                    {onView && <th className={styles.actionsHead}><span className={styles.srOnly}>View</span></th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -155,6 +164,22 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose }) => {
                                         <td>{shortDate(q.created_at)}</td>
                                         <td className={styles.right}>{money(q.total_amount)}</td>
                                         <td><span className={`${styles.status} ${statusClass(q.status)}`}>{q.status}</span></td>
+                                        {onView && (
+                                            <td className={styles.actionsCell}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.viewBtn}
+                                                    onClick={() => onView(q.id)}
+                                                    disabled={viewingId === q.id}
+                                                    title={`View ${q.quotation_ref}`}
+                                                    aria-label={`View quotation ${q.quotation_ref}`}
+                                                >
+                                                    {viewingId === q.id
+                                                        ? <Loader2 size={14} className={styles.spin} />
+                                                        : <Eye size={14} />}
+                                                </button>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
