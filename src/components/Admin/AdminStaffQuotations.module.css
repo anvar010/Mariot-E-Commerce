@@ -1452,3 +1452,44 @@
         width: 100%;
     }
 }
+
+/* ── customer cell ────────────────────────────────────────────────────────── */
+
+/* A button that has to read as table text until it is pointed at: the row is dense, and
+   styling every customer as a link would make the list look like a page of links. The
+   underline on hover is what says it can be opened. */
+.customerBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    padding: 2px 4px;
+    margin-inline-start: -4px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.customerBtn:hover:not(:disabled) {
+    background: #f1f5f9;
+}
+
+.customerBtn:hover:not(:disabled) .lineName {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+.customerBtn:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: -2px;
+}
+
+.customerBtn:disabled {
+    cursor: default;
+    opacity: .6;
+}

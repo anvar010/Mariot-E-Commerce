@@ -17,6 +17,8 @@ import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import DiscountLimitsModal from './DiscountLimitsModal';
 import CustomerHistoryPanel, { CustomerProfile } from './CustomerHistoryPanel';
+import PhoneNumberInput from './PhoneNumberInput';
+import { useRouter } from '@/i18n/navigation';
 
 type Line = {
     product_id: number | null;
@@ -116,6 +118,12 @@ const AdminStaffQuotations = () => {
     // so the history appears before the quotation is raised, not after.
     const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
     const [profileLoading, setProfileLoading] = useState(false);
+    // The history row whose quotation is being fetched for the detail modal.
+    const [viewingHistoryId, setViewingHistoryId] = useState<number | null>(null);
+    // Set while resolving which customer a row belongs to, for rows that predate
+    // customer_id and have to be matched on phone or email first.
+    const [openingCustomerFor, setOpeningCustomerFor] = useState<number | null>(null);
+    const router = useRouter();
     // Branches, for the admin's "issued from" selector and the list filter. Staff never
     // choose -- their own branch is applied server-side.
     const [branches, setBranches] = useState<any[]>([]);
@@ -679,6 +687,74 @@ const AdminStaffQuotations = () => {
         }
     };
 
+    /**
+     * Opens a quotation from the customer's history in the same detail modal the list
+     * uses.
+     *
+     * The history rows come from the customer profile endpoint, which returns summary
+     * columns only -- no line items -- so the full record is fetched first. Reusing
+     * `selected` means the products, totals and approval note are presented exactly as
+     * they are everywhere else, rather than in a second, diverging modal.
+     *
+     * Staff may only open their own quotations; the server enforces that and answers 404
+     * for anyone else's, which is surfaced here rather than failing silently.
+     */
+    const viewHistoryQuotation = async (id: number) => {
+        setViewingHistoryId(id);
+        try {
+            const res = await fetch(`${API_BASE_URL}/staff-quotations/${id}`, {
+                credentials: 'include',
+                headers: getAuthHeaders(),
+            });
+            const data = await res.json();
+            if (data.success && data.data) setSelected(data.data);
+            else showNotification(data.message || 'Could not open that quotation', 'error');
+        } catch {
+            showNotification('Could not open that quotation', 'error');
+        } finally {
+            setViewingHistoryId(null);
+        }
+    };
+
+    /**
+     * Opens the customer profile page for a quotation's customer.
+     *
+     * Quotations raised before customer records existed carry no customer_id, so those
+     * fall back to the same phone/email match the builder uses to recognise a returning
+     * customer. If that finds nobody there is no profile to show -- the quotation holds a
+     * typed-in name and nothing else -- and saying so beats navigating to an empty page.
+     */
+    const openCustomer = async (q: any) => {
+        if (q.customer_id) {
+            router.push(`/admin/staff-quotations/customer/${q.customer_id}`);
+            return;
+        }
+        const phone = String(q.customer_phone || '').trim();
+        const email = String(q.customer_email || '').trim();
+        if (!phone && !email) {
+            showNotification('This quotation is not linked to a customer record', 'error');
+            return;
+        }
+        setOpeningCustomerFor(q.id);
+        try {
+            const qs = new URLSearchParams();
+            if (phone) qs.set('phone', phone);
+            if (email) qs.set('email', email);
+            const res = await fetch(`${API_BASE_URL}/staff-quotations/customers/match?${qs.toString()}`, {
+                credentials: 'include',
+                headers: getAuthHeaders(),
+            });
+            const data = await res.json();
+            const id = data?.data?.customer?.id;
+            if (id) router.push(`/admin/staff-quotations/customer/${id}`);
+            else showNotification('No customer record found for this quotation', 'error');
+        } catch {
+            showNotification('Could not open that customer', 'error');
+        } finally {
+            setOpeningCustomerFor(null);
+        }
+    };
+
     const deleteQuotation = async (id: number) => {
         try {
             const res = await fetch(`${API_BASE_URL}/staff-quotations/${id}`, {
@@ -1064,8 +1140,11 @@ const AdminStaffQuotations = () => {
                             </div>
                             <input className={styles.input} placeholder="Email" type="email" value={customer.customer_email}
                                 onChange={e => setCustomer({ ...customer, customer_email: e.target.value })} />
-                            <input className={styles.input} placeholder="Phone" value={customer.customer_phone}
-                                onChange={e => setCustomer({ ...customer, customer_phone: e.target.value })} />
+                            <PhoneNumberInput
+                                placeholder="Phone"
+                                value={customer.customer_phone}
+                                onChange={v => setCustomer({ ...customer, customer_phone: v })}
+                            />
                             <input className={styles.input} placeholder="VAT / TRN" value={customer.vat_number}
                                 onChange={e => setCustomer({ ...customer, vat_number: e.target.value })} />
                             <textarea className={styles.textarea} placeholder="Internal notes (not shown to the customer)" rows={3}
@@ -1085,6 +1164,8 @@ const AdminStaffQuotations = () => {
                             <CustomerHistoryPanel
                                 profile={customerProfile}
                                 onClose={() => { setCustomerProfile(null); setPickedCustomerId(null); }}
+                                onView={viewHistoryQuotation}
+                                viewingId={viewingHistoryId}
                             />
                         )}
 
@@ -1231,8 +1312,19 @@ const AdminStaffQuotations = () => {
                             <tr key={q.id}>
                                 <td className={styles.ref}>{q.quotation_ref}</td>
                                 <td>
-                                    <div className={styles.lineName}>{q.customer_name}</div>
-                                    <div className={styles.lineMeta}>{q.customer_email || '—'}</div>
+                                    {/* The whole name/email block opens the customer, not just the
+                                        name: it is one target, and a two-line cell where only the
+                                        first line responds is a guessing game. */}
+                                    <button
+                                        type="button"
+                                        className={styles.customerBtn}
+                                        onClick={() => openCustomer(q)}
+                                        disabled={openingCustomerFor === q.id}
+                                        title={`View ${q.customer_name}`}
+                                    >
+                                        <span className={styles.lineName}>{q.customer_name}</span>
+                                        <span className={styles.lineMeta}>{q.customer_email || '—'}</span>
+                                    </button>
                                 </td>
                                 <td>
                                     <div className={styles.lineName}>{q.created_by_name || 'Unknown'}</div>

@@ -1,0 +1,151 @@
+/* Phone field with a dialling-code selector.
+
+   Matches .input in AdminStaffQuotations.module.css -- same border, radius, height and
+   bottom margin -- so the row sits level with the fields above and below it. The border
+   lives on the wrapper rather than the input, so the code button and the number read as
+   one control. */
+
+.root {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 9px;
+    background: #ffffff;
+}
+
+/* Focus shown on the wrapper, since the focus is really on the pair. */
+.root:focus-within {
+    border-color: #2563eb;
+}
+
+.codeBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex: none;
+    padding: 0 9px;
+    border: none;
+    border-inline-end: 1px solid #e2e8f0;
+    border-start-start-radius: 8px;
+    border-end-start-radius: 8px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.codeBtn:hover {
+    background: #f1f5f9;
+}
+
+.codeBtn:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: -2px;
+}
+
+.dial {
+    /* Fixed width so the number field does not shift as the code changes length
+       between +1 and +971. */
+    min-width: 34px;
+    text-align: start;
+}
+
+.chevron {
+    color: #64748b;
+    transition: transform .18s ease;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+.flagImg {
+    width: 20px;
+    height: 14px;
+    object-fit: cover;
+    border-radius: 2px;
+    flex: none;
+}
+
+.flagEmoji {
+    font-size: 14px;
+    line-height: 1;
+    flex: none;
+}
+
+.input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    padding: 9px 11px;
+    font-size: 13.5px;
+    color: #0f172a;
+    font-family: inherit;
+    outline: none;
+    background: transparent;
+}
+
+/* ── menu ─────────────────────────────────────────────────────────────────── */
+
+.menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    inset-inline-start: 0;
+    z-index: 40;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    min-width: 240px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .14);
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 8px 9px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 13px;
+    text-align: start;
+    cursor: pointer;
+}
+
+.option:hover {
+    background: #f1f5f9;
+}
+
+.optionActive {
+    background: #eff6ff;
+    font-weight: 600;
+}
+
+.optionName {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.optionDial {
+    flex: none;
+    color: #64748b;
+    font-variant-numeric: tabular-nums;
+}
