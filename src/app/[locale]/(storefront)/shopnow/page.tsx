@@ -6,7 +6,7 @@ const API_BASE_URL_SERVER = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://loca
 
 async function getShopNowData() {
     try {
-        const productUrl = `${API_BASE_URL_SERVER}/products?page=1&limit=24&is_featured=1`;
+        const productUrl = `${API_BASE_URL_SERVER}/products?page=1&limit=24`;
         const brandsUrl = `${API_BASE_URL_SERVER}/brands?all=1`;
         const categoriesUrl = `${API_BASE_URL_SERVER}/categories`;
 
@@ -39,8 +39,7 @@ export default async function ShopNowPage() {
         <main>
             <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></div>}>
                 <ShopLayout
-                    isFeatured={true}
-                    categoryNameOverride="Featured Products"
+                    categoryNameOverride="All Products"
                     hideCategoryGrid={true}
                     initialProducts={data.products}
                     initialBrands={data.brands}

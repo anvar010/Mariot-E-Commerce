@@ -641,10 +641,22 @@
     font-size: 16px;
 }
 
+/* The "Showing 1-100 of 1,250" line, under the results count. Quieter than the count
+   itself: it is orientation, not the headline figure. */
+.showingRange {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #888;
+}
+
 .sortContainer {
     display: flex;
     align-items: center;
     gap: 12px;
+    /* Two dropdowns live here now -- sort and page size -- so the row is allowed to wrap
+       rather than squeezing them both onto one line on a narrow viewport. */
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .sortLabel {

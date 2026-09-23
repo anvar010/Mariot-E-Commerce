@@ -635,7 +635,10 @@
     "updating": "Updating...",
     "no-products-found": "No products found for this selection.",
     "products-unavailable": "We couldn't load products just now. Please try again.",
-    "try-again": "Try again"
+    "try-again": "Try again",
+    "show": "Show",
+    "showing": "Showing",
+    "of": "of"
   },
   "aboutSection": {
     "title": "About Mariot Group",

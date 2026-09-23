@@ -28,6 +28,10 @@ import ShopBreadcrumbs from './ShopBreadcrumbs';
 const hasShelf = (text: string) => /\bshel(f|ves|ve)\b/.test(text);
 const hasOverShelf = (text: string) => /over[\s-]*shel(f|ves|ve)/.test(text);
 type TitleFilter = { key: string; label: string; label_ar: string; test: (text: string) => boolean };
+/** Page sizes offered in the "Show" selector, and the default when none is chosen. */
+const PER_PAGE_OPTIONS = [24, 48, 100, 200, 500];
+const DEFAULT_PER_PAGE = 24;
+
 const CATEGORY_TITLE_FILTERS: Record<string, TitleFilter[]> = {
     'work-tables': [
         { key: 'shelves', label: 'Shelves', label_ar: 'أرفف', test: (t) => hasShelf(t) || hasOverShelf(t) },
@@ -108,6 +112,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     const [fetchingProducts, setFetchingProducts] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
     const sortRef = useRef<HTMLDivElement>(null);
+    const [isPerPageOpen, setIsPerPageOpen] = useState(false);
+    const perPageRef = useRef<HTMLDivElement>(null);
     const [isMobileSortOpen, setIsMobileSortOpen] = useState(false);
     const mobileSortRef = useRef<HTMLDivElement>(null);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -132,7 +138,18 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             : 'relevance'
     );
     const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
-    const productsPerPage = 24;
+
+    // How many products a page holds. Read from the URL so a link to page 3 of a
+    // 100-per-page listing reopens as that same listing -- the page number alone is
+    // meaningless without the size it was counted in.
+    //
+    // Anything outside the offered sizes falls back to the default rather than being
+    // honoured: `?show=100000` would otherwise be a request to render the whole
+    // catalogue in one response.
+    const [productsPerPage, setProductsPerPage] = useState<number>(() => {
+        const n = Number(searchParams.get('show'));
+        return PER_PAGE_OPTIONS.includes(n) ? n : DEFAULT_PER_PAGE;
+    });
 
     const locale = useLocale();
     const isArabic = locale === 'ar';
@@ -169,6 +186,22 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             window.removeEventListener('scroll', handleScroll);
         };
     }, [isSortOpen]);
+
+    // Same dismissal rules as the sort dropdown above: click away or scroll closes it.
+    useEffect(() => {
+        if (!isPerPageOpen) return;
+        const handleClick = (e: MouseEvent) => {
+            if (perPageRef.current && !perPageRef.current.contains(e.target as Node))
+                setIsPerPageOpen(false);
+        };
+        const handleScroll = () => setIsPerPageOpen(false);
+        document.addEventListener('mousedown', handleClick);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [isPerPageOpen]);
 
     useEffect(() => {
         if (!isMobileSortOpen) return;
@@ -368,7 +401,7 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             setLoading(false);
             setFetchingProducts(false);
         }
-    }, [activeCategory, selectedCategories, selectedBrands, minPrice, maxPrice, inStockOnly, sortBy, currentPage, searchQuery, isFeatured, isLimited, isWeekly, sellerParam, subCategoriesToShow.length]);
+    }, [activeCategory, selectedCategories, selectedBrands, minPrice, maxPrice, inStockOnly, sortBy, currentPage, productsPerPage, searchQuery, isFeatured, isLimited, isWeekly, sellerParam, subCategoriesToShow.length]);
 
     useEffect(() => {
         if (isInitialMount.current && initialProducts.length > 0) {
@@ -394,6 +427,19 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         if (isWeekly) newParams.set('weekly', 'true');
         if (searchQueryRaw) newParams.set('search', searchQueryRaw);
         if (activeCategory) newParams.set('category', activeCategory);
+        router.push(`${pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`, { scroll: false });
+    };
+
+    // Changing the page size always returns to page 1. Staying on the current number
+    // would land the shopper somewhere unrelated -- page 8 of 24-per-page is page 2 of
+    // 100-per-page -- and can point past the end of the list entirely.
+    const handlePerPageChange = (size: number) => {
+        setProductsPerPage(size);
+        setCurrentPage(1);
+        const newParams = new URLSearchParams(searchParams.toString());
+        if (size === DEFAULT_PER_PAGE) newParams.delete('show');
+        else newParams.set('show', String(size));
+        newParams.delete('page');
         router.push(`${pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`, { scroll: false });
     };
 
@@ -518,6 +564,10 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
         })
         : products;
     const effectiveTotal = hasClientFilter ? filteredProducts.length : totalProducts;
+    // The slice currently on screen, for the "Showing 1-100 of 1,250" line. Clamped to
+    // the total so the last page reads "1,201-1,250", not "1,201-1,300".
+    const rangeStart = effectiveTotal === 0 ? 0 : (currentPage - 1) * productsPerPage + 1;
+    const rangeEnd = Math.min(currentPage * productsPerPage, effectiveTotal);
     const displayedProducts = hasClientFilter
         ? filteredProducts.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
         : filteredProducts;
@@ -622,6 +672,14 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                         <span className={styles.resultsCount}>
                             <div>{formattedCategoryName}: {effectiveTotal} {tc("results-found")}
                                 {fetchingProducts && <span style={{ marginInlineStart: '10px', fontSize: '12px', color: '#666' }}> ({tc('updating')})</span>}</div>
+                            {/* Which slice of the results is on screen. Only meaningful once
+                                there is more than one page -- on a single page the range is
+                                just the total repeated back. */}
+                            {effectiveTotal > productsPerPage && (
+                                <div className={styles.showingRange}>
+                                    {tc("showing")} {rangeStart.toLocaleString()}–{rangeEnd.toLocaleString()} {tc("of")} {effectiveTotal.toLocaleString()}
+                                </div>
+                            )}
                             {didYouMean && totalProducts === 0 && (
                                 <div style={{ marginTop: '10px', color: '#2563eb', cursor: 'pointer', fontSize: '16px' }} onClick={() => {
                                     const params = new URLSearchParams(searchParams.toString());
@@ -648,6 +706,26 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                                         <div onClick={() => { setSortBy('best_offer'); setIsSortOpen(false); }}>{tc("best-offer")}</div>
                                         <div onClick={() => { setSortBy('price_asc'); setIsSortOpen(false); }}>{tc("price-low-to-high")}</div>
                                         <div onClick={() => { setSortBy('price_desc'); setIsSortOpen(false); }}>{tc("price-high-to-low")}</div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className={styles.sortLabel}>
+                                <span className={styles.desktopOnly}>{tc("show")}</span>
+                            </div>
+                            <div ref={perPageRef} className={styles.sortDropdown} onClick={() => setIsPerPageOpen(!isPerPageOpen)}>
+                                <span>{productsPerPage}</span>
+                                <ChevronDown size={16} className={isPerPageOpen ? styles.rotateIcon : ''} />
+                                {isPerPageOpen && (
+                                    <div className={styles.dropdownContent}>
+                                        {PER_PAGE_OPTIONS.map(size => (
+                                            <div
+                                                key={size}
+                                                onClick={() => { handlePerPageChange(size); setIsPerPageOpen(false); }}
+                                            >
+                                                {size}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
