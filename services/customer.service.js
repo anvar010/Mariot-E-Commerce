@@ -124,10 +124,15 @@ const getProfile = async (customerId) => {
         `SELECT sq.id, sq.quotation_ref, sq.status, sq.total_amount, sq.created_at,
                 sq.branch_id, sq.branch_code, sq.email_sent,
                 b.name AS branch_name,
-                COALESCE(u.name, sq.created_by_name) AS created_by_name
+                COALESCE(u.name, sq.created_by_name) AS created_by_name,
+                -- Whether the author was staff or an admin. The stored column is the
+                -- fallback so a quotation keeps the role its author held at the time,
+                -- even if that person has since been promoted or removed.
+                COALESCE(r.name, sq.created_by_role) AS created_by_role
            FROM staff_quotations sq
            LEFT JOIN branches b ON b.id = sq.branch_id
            LEFT JOIN users u ON u.id = sq.created_by
+           LEFT JOIN roles r ON u.role_id = r.id
           WHERE sq.customer_id = ?
           ORDER BY sq.id DESC`,
         [customerId]
