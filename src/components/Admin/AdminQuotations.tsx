@@ -9,6 +9,7 @@ import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
 import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
+import QuotationItemImage from './QuotationItemImage';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 // Removed next-intl import
@@ -316,12 +317,7 @@ const AdminQuotations = () => {
                                 <div className={styles.itemList}>
                                     {JSON.parse(selectedQuotation.items).map((item: any, idx: number) => (
                                         <div key={idx} className={styles.itemCard}>
-                                            <img
-                                                src={resolveUrl(item.image_url) || PRODUCT_IMAGE_FALLBACK}
-                                                alt={item.name}
-                                                className={styles.itemImage}
-                                                onError={(e) => { e.currentTarget.src = PRODUCT_IMAGE_FALLBACK; }}
-                                            />
+                                            <QuotationItemImage item={item} className={styles.itemImage} />
                                             <div className={styles.itemDetails}>
                                                 <span className={styles.itemName}>{item.name}</span>
                                                 <span className={styles.itemMeta}>Qty: {item.quantity} x <CurrencyPrice amount={Number(item.price)} /></span>
