@@ -710,11 +710,14 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
                                 )}
                             </div>
 
-                            <div className={styles.sortLabel}>
-                                <span className={styles.desktopOnly}>{tc("show")}</span>
+                            {/* Not desktopOnly, unlike the sort label. Sort keeps its funnel
+                                icon on mobile, so it still reads as a control; a bare "500"
+                                with its word hidden would mean nothing. */}
+                            <div className={`${styles.sortLabel} ${styles.perPageLabel}`}>
+                                <span>{tc("show")}</span>
                             </div>
-                            <div ref={perPageRef} className={styles.sortDropdown} onClick={() => setIsPerPageOpen(!isPerPageOpen)}>
-                                <span>{productsPerPage}</span>
+                            <div ref={perPageRef} className={`${styles.sortDropdown} ${styles.perPageDropdown}`} onClick={() => setIsPerPageOpen(!isPerPageOpen)}>
+                                <span className={styles.perPageValue}>{productsPerPage}</span>
                                 <ChevronDown size={16} className={isPerPageOpen ? styles.rotateIcon : ''} />
                                 {isPerPageOpen && (
                                     <div className={styles.dropdownContent}>

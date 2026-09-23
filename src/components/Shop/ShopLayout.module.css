@@ -684,6 +684,31 @@
     white-space: nowrap;
 }
 
+/* The "Show" control, which holds a number rather than a sort phrase.
+   Shares the look of .sortDropdown but not its 200px minimum: that width exists to
+   stop "Price: High to Low" from jumping as the label changes, and applied to a
+   two- or three-digit number it leaves the box mostly empty. Sized to its content
+   instead, with a floor that keeps 24 and 500 the same width. */
+.perPageDropdown {
+    min-width: 0;
+    width: auto;
+    justify-content: space-between;
+    gap: 8px;
+    padding-inline: 16px;
+}
+
+.perPageValue {
+    min-width: 3ch;
+    text-align: start;
+}
+
+/* Anchored to the trigger, which is now only as wide as its contents -- the shared
+   rule stretches the panel edge to edge, which would make it too narrow to read. */
+.perPageDropdown .dropdownContent {
+    inset-inline-end: auto;
+    min-width: 100%;
+}
+
 .activeCategoryCard {
     border: 2px solid #63d6f1;
     background-color: #f8fafc;
@@ -1356,6 +1381,16 @@
 
     .desktopOnly {
         display: none !important;
+    }
+
+    /* Stays visible where .desktopOnly hides the sort wording, so it is sized down
+       here to sit alongside the controls rather than shout over them. */
+    .perPageLabel {
+        font-size: 14px;
+    }
+
+    .perPageDropdown {
+        padding-inline: 12px;
     }
 }
 
