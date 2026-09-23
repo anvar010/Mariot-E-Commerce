@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Building2, FileText, Clock, TrendingUp, X, Eye, Loader2 } from 'lucide-react';
 import styles from './CustomerHistoryPanel.module.css';
 
@@ -84,6 +84,25 @@ interface Props {
 const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewingId, variant = 'inset' }) => {
     const { customer, summary, branch_history, quotations } = profile;
 
+    /**
+     * Branch narrowing, driven by the chips that were already here.
+     *
+     * The chips listed each branch and its count but did nothing, and a separate dropdown
+     * beside them would have stated the same set twice. Clicking one filters the history
+     * below; clicking it again clears it.
+     *
+     * Keyed by name rather than id because the profile endpoint returns branch_name on
+     * both the chips and the rows, and not the id -- name is what the two have in common.
+     */
+    const [branchFilter, setBranchFilter] = useState<string | null>(null);
+
+    const visibleQuotations = useMemo(
+        () => (branchFilter
+            ? quotations.filter(q => (q.branch_name || null) === branchFilter)
+            : quotations),
+        [quotations, branchFilter]
+    );
+
     return (
         <div className={`${styles.panel} ${variant === 'page' ? styles.panelPage : ''}`}>
             <div className={styles.header}>
@@ -139,13 +158,23 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewi
                 <div className={styles.section}>
                     <h4 className={styles.sectionTitle}>Branch history</h4>
                     <div className={styles.branchRow}>
-                        {branch_history.map(b => (
-                            <span key={`${b.branch_name}-${b.branch_code}`} className={styles.branchChip}>
-                                {b.branch_name}
-                                {b.branch_code ? ` (${b.branch_code})` : ''}
-                                <em>{b.count}</em>
-                            </span>
-                        ))}
+                        {branch_history.map(b => {
+                            const isActive = branchFilter === b.branch_name;
+                            return (
+                                <button
+                                    key={`${b.branch_name}-${b.branch_code}`}
+                                    type="button"
+                                    className={`${styles.branchChip} ${isActive ? styles.branchChipActive : ''}`}
+                                    onClick={() => setBranchFilter(isActive ? null : b.branch_name)}
+                                    aria-pressed={isActive}
+                                    title={isActive ? 'Show all branches' : `Show only ${b.branch_name}`}
+                                >
+                                    {b.branch_name}
+                                    {b.branch_code ? ` (${b.branch_code})` : ''}
+                                    <em>{b.count}</em>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -153,10 +182,24 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewi
             <div className={styles.section}>
                 <h4 className={styles.sectionTitle}>
                     <Clock size={13} /> Previous quotations
-                    <span className={styles.allBranchesNote}>across all branches</span>
+                    {branchFilter
+                        ? (
+                            <button
+                                type="button"
+                                className={styles.clearFilter}
+                                onClick={() => setBranchFilter(null)}
+                            >
+                                {branchFilter} <X size={11} />
+                            </button>
+                        )
+                        : <span className={styles.allBranchesNote}>across all branches</span>}
                 </h4>
-                {quotations.length === 0 ? (
-                    <p className={styles.empty}>No quotations raised for this customer yet.</p>
+                {visibleQuotations.length === 0 ? (
+                    <p className={styles.empty}>
+                        {branchFilter
+                            ? `No quotations from ${branchFilter}.`
+                            : 'No quotations raised for this customer yet.'}
+                    </p>
                 ) : (
                     <div className={styles.tableWrap}>
                         <table className={styles.table}>
@@ -172,7 +215,7 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewi
                                 </tr>
                             </thead>
                             <tbody>
-                                {quotations.map(q => (
+                                {visibleQuotations.map(q => (
                                     <tr key={q.id}>
                                         <td className={styles.ref}>{q.quotation_ref}</td>
                                         {/* Older quotations pre-date branch numbering and carry no branch. */}

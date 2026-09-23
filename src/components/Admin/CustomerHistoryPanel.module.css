@@ -181,6 +181,8 @@
     gap: 8px;
 }
 
+/* A button, not a label: each chip narrows the history below it. Styled as a chip
+   rather than a control so the row still reads as a summary at rest. */
 .branchChip {
     display: inline-flex;
     align-items: center;
@@ -189,9 +191,41 @@
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 20px;
+    font-family: inherit;
     font-size: 12px;
     font-weight: 600;
     color: #334155;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+
+.branchChip:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.branchChip:focus-visible {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+}
+
+/* The selected branch fills in, so which one is active is legible without reading the
+   heading below. */
+.branchChipActive {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: #ffffff;
+}
+
+.branchChipActive:hover {
+    background: #1e293b;
+    border-color: #1e293b;
+}
+
+.branchChipActive em {
+    background: rgba(255, 255, 255, .18);
+    color: #ffffff;
 }
 
 .branchChip em {
@@ -438,4 +472,33 @@
    be there to scroll through. */
 .panelPage .tableWrap {
     max-height: none;
+}
+
+
+/* Sits where "across all branches" normally does, naming the active filter and clearing
+   it. Same slot, so the heading does not change width when a branch is picked. */
+.clearFilter {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+}
+
+.clearFilter:hover {
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.clearFilter:focus-visible {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
 }
