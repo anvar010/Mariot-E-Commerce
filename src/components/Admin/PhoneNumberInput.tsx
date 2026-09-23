@@ -3,79 +3,31 @@
 /**
  * Phone field with a country dialling code in front of it.
  *
- * The field stores one string -- "+971 50 123 4567" -- rather than a code and a number
- * kept apart. Everything downstream (the quotation record, the PDF, the customer match
- * that looks a shopper up by phone) already treats the phone as a single value, and
- * splitting it here would mean every one of those had to be taught to join it back
- * together.
+ * The stored value is one string -- "+971 501234567" -- because everything downstream
+ * treats the phone as a single field: the quotation record, the PDF, and the customer
+ * match that decides whether this is a returning customer.
  *
- * So the selector is a writing aid: picking a country swaps the leading code and leaves
- * the digits alone. Typing a full international number by hand still works, and the
- * selector follows along, because the code is read back out of the value.
+ * What the person types, though, is only the subscriber number. The code is shown once,
+ * on the button, and the input holds the rest. Previously the input showed the whole
+ * value, so choosing +966 and then typing produced a field reading "+966 509955446" next
+ * to a button also reading "+966" -- the code stated twice, and easy to end up typed
+ * twice.
+ *
+ * The country is still derived from the stored value rather than kept beside it, so a
+ * number pasted in complete lands on the right country and the two cannot disagree.
  */
 
-import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Search } from 'lucide-react';
 import { flagEmoji, flagImageSrc } from '@/utils/deliveryZones';
+import { DIAL_COUNTRIES, DEFAULT_DIAL_COUNTRY, DialCountry, matchDialCountry } from '@/data/dialCountries';
 import styles from './PhoneNumberInput.module.css';
-
-export interface DialCountry {
-    code: string;
-    dial: string;
-    name: string;
-}
-
-/**
- * The GCC first, since that is where the customers are, then the rest of the common
- * destinations. Ordered deliberately rather than alphabetically: a Dubai clerk should
- * find the UAE without scrolling.
- */
-export const DIAL_COUNTRIES: DialCountry[] = [
-    { code: 'AE', dial: '+971', name: 'United Arab Emirates' },
-    { code: 'SA', dial: '+966', name: 'Saudi Arabia' },
-    { code: 'KW', dial: '+965', name: 'Kuwait' },
-    { code: 'QA', dial: '+974', name: 'Qatar' },
-    { code: 'BH', dial: '+973', name: 'Bahrain' },
-    { code: 'OM', dial: '+968', name: 'Oman' },
-    { code: 'IN', dial: '+91', name: 'India' },
-    { code: 'PK', dial: '+92', name: 'Pakistan' },
-    { code: 'GB', dial: '+44', name: 'United Kingdom' },
-    { code: 'US', dial: '+1', name: 'United States' },
-    { code: 'EG', dial: '+20', name: 'Egypt' },
-    { code: 'JO', dial: '+962', name: 'Jordan' },
-    { code: 'LB', dial: '+961', name: 'Lebanon' },
-    { code: 'TR', dial: '+90', name: 'Türkiye' },
-];
-
-const DEFAULT_COUNTRY = DIAL_COUNTRIES[0];
-
-/**
- * Longest dialling code that prefixes the value.
- *
- * Longest-first matters: +97 is not a country but +971 and +974 both start with it, and
- * +1 would otherwise claim every code beginning with a one.
- */
-const matchCountry = (value: string): DialCountry | null => {
-    const v = (value || '').replace(/[\s-]/g, '');
-    let best: DialCountry | null = null;
-    for (const c of DIAL_COUNTRIES) {
-        if (v.startsWith(c.dial) && (!best || c.dial.length > best.dial.length)) best = c;
-    }
-    return best;
-};
-
-/** The number without its dialling code, so the code can be swapped without losing it. */
-const stripDial = (value: string, country: DialCountry | null): string => {
-    if (!country) return value || '';
-    const trimmed = (value || '').trimStart();
-    return trimmed.startsWith(country.dial) ? trimmed.slice(country.dial.length).trimStart() : trimmed;
-};
 
 const CountryFlag: React.FC<{ code: string }> = ({ code }) => {
     const src = flagImageSrc(code);
     const [failed, setFailed] = useState(false);
-    // Emoji where we ship no file, and also when one fails to load, so the slot is
-    // never empty. Windows draws no flag glyphs, which is why files exist at all.
+    // Emoji where we ship no image, and also when one fails to load, so the slot is never
+    // empty. Windows draws no flag glyphs, which is why the images exist at all.
     if (!src || failed) return <span className={styles.flagEmoji} aria-hidden="true">{flagEmoji(code)}</span>;
     return (
         <img src={src} alt="" aria-hidden="true" className={styles.flagImg} width={20} height={14}
@@ -91,14 +43,32 @@ interface Props {
     id?: string;
 }
 
-const PhoneNumberInput: React.FC<Props> = ({ value, onChange, placeholder = 'Phone', className, id }) => {
+const PhoneNumberInput: React.FC<Props> = ({ value, onChange, placeholder = 'Phone number', className, id }) => {
     const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState('');
     const rootRef = useRef<HTMLDivElement>(null);
+    const searchRef = useRef<HTMLInputElement>(null);
 
-    // Derived from the value, never held separately: typing "+966..." by hand has to move
-    // the selector too, and a second source of truth would let the two disagree.
-    const matched = matchCountry(value);
-    const active = matched || DEFAULT_COUNTRY;
+    const matched = matchDialCountry(value);
+    const active = matched || DEFAULT_DIAL_COUNTRY;
+
+    // What the input shows: the value with its dialling code removed. A value that does
+    // not start with a known code is shown whole, so a half-typed or unusual number is
+    // never hidden from the person entering it.
+    const subscriber = useMemo(() => {
+        if (!matched) return value || '';
+        return (value || '').trimStart().slice(matched.dial.length).trimStart();
+    }, [value, matched]);
+
+    const results = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if (!q) return DIAL_COUNTRIES;
+        // Matched on name and on code, with or without the +, so both "saudi" and "966"
+        // find the same row.
+        const bare = q.replace(/^\+/, '');
+        return DIAL_COUNTRIES.filter(c =>
+            c.name.toLowerCase().includes(q) || c.dial.replace('+', '').startsWith(bare));
+    }, [query]);
 
     useEffect(() => {
         if (!open) return;
@@ -109,11 +79,16 @@ const PhoneNumberInput: React.FC<Props> = ({ value, onChange, placeholder = 'Pho
         return () => document.removeEventListener('mousedown', onDown);
     }, [open]);
 
-    const pick = (c: DialCountry) => {
-        const rest = stripDial(value, matched);
-        // Leaves a trailing space so the caret lands where the digits go.
-        onChange(rest ? `${c.dial} ${rest}` : `${c.dial} `);
-        setOpen(false);
+    // The list is long enough that it is unusable without typing, so the search field
+    // takes focus as soon as it opens.
+    useEffect(() => {
+        if (open) searchRef.current?.focus();
+        else setQuery('');
+    }, [open]);
+
+    const emit = (country: DialCountry, rest: string) => {
+        const digits = rest.trim();
+        onChange(digits ? `${country.dial} ${digits}` : country.dial);
     };
 
     return (
@@ -136,31 +111,46 @@ const PhoneNumberInput: React.FC<Props> = ({ value, onChange, placeholder = 'Pho
                 type="tel"
                 className={styles.input}
                 placeholder={placeholder}
-                value={value}
-                onChange={e => onChange(e.target.value)}
-                // Numbers stay left-to-right even in an Arabic interface, or the code and
-                // the digits render in the wrong order.
+                value={subscriber}
+                onChange={e => emit(active, e.target.value)}
+                // Numbers stay left-to-right even in an Arabic interface, or the digits
+                // render in the wrong order.
                 dir="ltr"
             />
 
             {open && (
-                <ul className={styles.menu} role="listbox" aria-label="Country dialling code">
-                    {DIAL_COUNTRIES.map(c => (
-                        <li key={c.code}>
-                            <button
-                                type="button"
-                                role="option"
-                                aria-selected={c.code === active.code}
-                                className={`${styles.option} ${c.code === active.code ? styles.optionActive : ''}`}
-                                onClick={() => pick(c)}
-                            >
-                                <CountryFlag code={c.code} />
-                                <span className={styles.optionName}>{c.name}</span>
-                                <span className={styles.optionDial}>{c.dial}</span>
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                <div className={styles.menu}>
+                    <div className={styles.searchRow}>
+                        <Search size={14} className={styles.searchIcon} aria-hidden="true" />
+                        <input
+                            ref={searchRef}
+                            type="text"
+                            className={styles.search}
+                            placeholder="Search country or code"
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            aria-label="Search country or dialling code"
+                        />
+                    </div>
+                    <ul className={styles.list} role="listbox" aria-label="Country dialling code">
+                        {results.length === 0 && <li className={styles.noResult}>No match</li>}
+                        {results.map(c => (
+                            <li key={`${c.code}-${c.dial}`}>
+                                <button
+                                    type="button"
+                                    role="option"
+                                    aria-selected={c.code === active.code}
+                                    className={`${styles.option} ${c.code === active.code ? styles.optionActive : ''}`}
+                                    onClick={() => { emit(c, subscriber); setOpen(false); }}
+                                >
+                                    <CountryFlag code={c.code} />
+                                    <span className={styles.optionName}>{c.name}</span>
+                                    <span className={styles.optionDial}>{c.dial}</span>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
         </div>
     );

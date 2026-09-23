@@ -19,6 +19,7 @@ import DiscountLimitsModal from './DiscountLimitsModal';
 import CustomerHistoryPanel, { CustomerProfile } from './CustomerHistoryPanel';
 import PhoneNumberInput from './PhoneNumberInput';
 import QuotationLineProduct from './QuotationLineProduct';
+import { matchDialCountry } from '@/data/dialCountries';
 import { useRouter } from '@/i18n/navigation';
 
 type Line = {
@@ -458,7 +459,14 @@ const AdminStaffQuotations = () => {
         const phone = customer.customer_phone.trim();
         const email = customer.customer_email.trim();
         // Short fragments match far too much to be worth a round trip mid-typing.
-        const usablePhone = phone.replace(/\D/g, '').length >= 7 ? phone : '';
+        // Counted without the dialling code. The field now always carries one, so a bare
+        // "+971" is already 3 digits and would otherwise look like a number worth looking
+        // up before anything has been typed.
+        const dialCountry = matchDialCountry(phone);
+        const subscriberDigits = (dialCountry
+            ? phone.slice(dialCountry.dial.length)
+            : phone).replace(/\D/g, '');
+        const usablePhone = subscriberDigits.length >= 7 ? phone : '';
         const usableEmail = /.+@.+\..+/.test(email) ? email : '';
         if (!usablePhone && !usableEmail) { setCustomerProfile(null); return; }
 
