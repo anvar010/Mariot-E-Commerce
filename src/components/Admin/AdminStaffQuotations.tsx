@@ -461,7 +461,6 @@ const AdminStaffQuotations = () => {
         if (pickedCustomerId !== null) return;
 
         const phone = customer.customer_phone.trim();
-        const email = customer.customer_email.trim();
         // Short fragments match far too much to be worth a round trip mid-typing.
         // Counted without the dialling code. The field now always carries one, so a bare
         // "+971" is already 3 digits and would otherwise look like a number worth looking
@@ -471,15 +470,17 @@ const AdminStaffQuotations = () => {
             ? phone.slice(dialCountry.dial.length)
             : phone).replace(/\D/g, '');
         const usablePhone = subscriberDigits.length >= 7 ? phone : '';
-        const usableEmail = /.+@.+\..+/.test(email) ? email : '';
-        if (!usablePhone && !usableEmail) { setCustomerProfile(null); return; }
+        // The phone alone decides. Sent on its own, without the email, so the lookup
+        // cannot fall back to an address: one company address is shared by every buyer in
+        // it, and clearing the phone used to leave the email announcing "existing
+        // customer" for a colleague.
+        if (!usablePhone) { setCustomerProfile(null); return; }
 
         let cancelled = false;
         const t = setTimeout(async () => {
             try {
                 const qs = new URLSearchParams();
-                if (usablePhone) qs.set('phone', usablePhone);
-                if (usableEmail) qs.set('email', usableEmail);
+                qs.set('phone', usablePhone);
                 const res = await fetch(
                     `${API_BASE_URL}/staff-quotations/customers/match?${qs.toString()}`,
                     { credentials: 'include', headers: getAuthHeaders() }
@@ -506,7 +507,9 @@ const AdminStaffQuotations = () => {
             }
         }, 450);
         return () => { cancelled = true; clearTimeout(t); };
-    }, [customer.customer_phone, customer.customer_email, pickedCustomerId]);
+        // The email is no longer an input to this, so editing it must not re-run the
+        // lookup.
+    }, [customer.customer_phone, pickedCustomerId]);
 
     const pickCustomer = (c: any) => {
         setCustomer(prev => ({
