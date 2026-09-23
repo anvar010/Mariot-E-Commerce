@@ -38,6 +38,8 @@ export interface CustomerProfile {
         branch_name: string | null;
         branch_code: string | null;
         created_by_name: string | null;
+        /** 'admin' or 'staff' at the time the quotation was raised. */
+        created_by_role?: string | null;
     }>;
 }
 
@@ -72,13 +74,18 @@ interface Props {
     onView?: (quotationId: number) => void;
     /** The row currently being fetched, so only that one shows a spinner. */
     viewingId?: number | null;
+    /**
+     * Renders as a standalone card rather than an inset block. Set on the customer page,
+     * where this is the whole content instead of an interruption inside a form.
+     */
+    variant?: 'inset' | 'page';
 }
 
-const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewingId }) => {
+const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewingId, variant = 'inset' }) => {
     const { customer, summary, branch_history, quotations } = profile;
 
     return (
-        <div className={styles.panel}>
+        <div className={`${styles.panel} ${variant === 'page' ? styles.panelPage : ''}`}>
             <div className={styles.header}>
                 <div>
                     <div className={styles.existingTag}>Existing customer</div>
@@ -102,20 +109,30 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewi
             </div>
 
             <div className={styles.stats}>
-                <div className={styles.stat}>
+                <div className={`${styles.stat} ${styles.statLead}`}>
                     <div className={styles.statLabel}><FileText size={13} /> Quotations</div>
                     <div className={styles.statValue}>{summary.total_count}</div>
                 </div>
-                <div className={styles.stat}>
+                <div className={`${styles.stat} ${styles.statLead}`}>
                     <div className={styles.statLabel}><TrendingUp size={13} /> Total value</div>
                     <div className={styles.statValue}>{money(summary.total_value)}</div>
                 </div>
-                {STATUSES.map(s => (
-                    <div key={s} className={styles.stat}>
-                        <div className={styles.statLabel}>{s.charAt(0).toUpperCase() + s.slice(1)}</div>
-                        <div className={styles.statValue}>{summary.by_status[s]?.count ?? 0}</div>
-                    </div>
-                ))}
+                {STATUSES.map(s => {
+                    const count = summary.by_status[s]?.count ?? 0;
+                    // Colour is reserved for counts that mean something. A zero of any
+                    // status is unremarkable and stays neutral; a non-zero pending or
+                    // rejected is what someone opening this page needs to spot.
+                    const tone = count === 0 ? ''
+                        : s === 'rejected' ? styles.statAlert
+                        : s === 'pending' ? styles.statWarn
+                        : styles.statGood;
+                    return (
+                        <div key={s} className={`${styles.stat} ${tone}`}>
+                            <div className={styles.statLabel}>{s.charAt(0).toUpperCase() + s.slice(1)}</div>
+                            <div className={styles.statValue}>{count}</div>
+                        </div>
+                    );
+                })}
             </div>
 
             {branch_history.length > 0 && (
@@ -160,7 +177,24 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewi
                                         <td className={styles.ref}>{q.quotation_ref}</td>
                                         {/* Older quotations pre-date branch numbering and carry no branch. */}
                                         <td>{q.branch_name || <span className={styles.muted}>—</span>}</td>
-                                        <td>{q.created_by_name || <span className={styles.muted}>—</span>}</td>
+                                        <td>
+                                            {q.created_by_name
+                                                ? (
+                                                    <div className={styles.author}>
+                                                        <span className={styles.authorName}>{q.created_by_name}</span>
+                                                        {q.created_by_role && (
+                                                            <span className={`${styles.roleBadge} ${
+                                                                String(q.created_by_role).toLowerCase() === 'admin'
+                                                                    ? styles.roleAdmin
+                                                                    : styles.roleStaff
+                                                            }`}>
+                                                                {q.created_by_role}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )
+                                                : <span className={styles.muted}>—</span>}
+                                        </td>
                                         <td>{shortDate(q.created_at)}</td>
                                         <td className={styles.right}>{money(q.total_amount)}</td>
                                         <td><span className={`${styles.status} ${statusClass(q.status)}`}>{q.status}</span></td>

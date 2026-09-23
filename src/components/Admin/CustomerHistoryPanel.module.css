@@ -97,10 +97,38 @@
 }
 
 .stat {
+    position: relative;
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
-    padding: 10px 12px;
+    padding: 11px 13px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+/* The two figures that answer "is this a big customer?" -- count and total value --
+   carry a tinted face so the eye lands on them before the status breakdown. Every tile
+   looking identical is what made this block hard to read at a glance. */
+.statLead {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border-color: #dbeafe;
+}
+
+.statLead .statValue {
+    color: #1d4ed8;
+}
+
+/* A status count only earns colour when it is not zero: a rejected count of 0 is good
+   news and should stay quiet, while a 3 should not have to be read to be noticed. */
+.statAlert .statValue {
+    color: #b91c1c;
+}
+
+.statWarn .statValue {
+    color: #b45309;
+}
+
+.statGood .statValue {
+    color: #15803d;
 }
 
 .statLabel {
@@ -115,10 +143,14 @@
 }
 
 .statValue {
-    margin-top: 4px;
-    font-size: 16px;
-    font-weight: 700;
+    margin-top: 5px;
+    font-size: 17px;
+    font-weight: 800;
     color: #0f172a;
+    line-height: 1.2;
+    /* Tabular figures: these sit in a grid, and proportional digits make a column of
+       numbers look ragged. */
+    font-variant-numeric: tabular-nums;
 }
 
 .section {
@@ -202,19 +234,32 @@
 }
 
 .table tbody td {
-    padding: 9px 12px;
+    padding: 10px 12px;
     border-bottom: 1px solid #f1f5f9;
     color: #334155;
+    vertical-align: middle;
 }
 
 .table tbody tr:last-child td {
     border-bottom: none;
 }
 
+/* The row lights up as a whole, so the eye tracks across a wide table without losing
+   the line it is on. */
+.table tbody tr:hover td {
+    background: #f8fafc;
+}
+
+/* Money aligns on the decimal, which only works with tabular figures. */
+.right {
+    font-variant-numeric: tabular-nums;
+}
+
 .ref {
     font-weight: 700;
     color: #0f172a;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
 .right {
@@ -338,4 +383,59 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+/* ── author ───────────────────────────────────────────────────────────────── */
+
+.author {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+}
+
+.authorName {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* Same palette as the role badge in the Staff Quotations list -- violet for admin,
+   blue for staff -- so the same person reads the same way in both places. */
+.roleBadge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: capitalize;
+}
+
+.roleAdmin {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.roleStaff {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+
+/* ── page variant ─────────────────────────────────────────────────────────── */
+
+/* The panel is an inset block when it interrupts the quotation form, but on the customer
+   page it IS the page. There it drops the tinted face and the accent rule, which exist to
+   mark it as an interruption, and becomes a plain card. */
+.panelPage {
+    background: #ffffff;
+    border-left: 1px solid #e2e8f0;
+    padding: 22px 24px;
+}
+
+/* No inner scroll on the page: the form needed the history capped so it could not push
+   the quotation itself off screen, but on a page of its own the whole list should simply
+   be there to scroll through. */
+.panelPage .tableWrap {
+    max-height: none;
 }
