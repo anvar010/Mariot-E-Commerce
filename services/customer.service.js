@@ -138,22 +138,16 @@ const findExisting = async ({ customer_id, email, phone }) => {
         return null;
     }
 
-    // No phone to go on, so the email is the only identifier left.
+    // No email fallback, deliberately.
     //
-    // An address is no longer unique to one record -- several buyers at one company share
-    // an office address, and that is now allowed -- so this can match more than one. The
-    // most recent is taken, which is the one a staff member raising a quotation today is
-    // most likely to mean, and LIMIT keeps an address shared by many from loading all of
-    // them to use the first.
-    const cleanEmail = normaliseEmail(email);
-    if (cleanEmail) {
-        const [rows] = await db.execute(
-            'SELECT * FROM customers WHERE LOWER(email) = ? ORDER BY id DESC LIMIT 1',
-            [cleanEmail]
-        );
-        if (rows.length) return rows[0];
-    }
-
+    // The phone number is the identity. An address is not: one company address is shared
+    // by every buyer in it, so matching on email pulled up a colleague's history and,
+    // with the phone field cleared, announced "existing customer" from the email alone --
+    // which is what was reported.
+    //
+    // So a quotation with no phone number identifies nobody, and the customer is treated
+    // as new. An explicit customer_id still works, which is how picking someone from the
+    // search list continues to attach to their existing record.
     return null;
 };
 

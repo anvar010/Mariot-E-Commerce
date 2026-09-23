@@ -587,11 +587,14 @@ exports.getCustomerProfile = async (req, res, next) => {
 exports.matchCustomer = async (req, res, next) => {
     try {
         await ensureStaffQuotationsTable();
-        const { phone, email } = req.query;
-        if (!phone && !email) {
+        // Phone only. The email is no longer an identifier -- one company address is
+        // shared by every buyer in it -- so a request carrying just an email has nothing
+        // to match on and is answered as "nobody" without touching the database.
+        const { phone } = req.query;
+        if (!phone) {
             return res.json({ success: true, data: null });
         }
-        const found = await customerService.findExisting({ phone, email });
+        const found = await customerService.findExisting({ phone });
         if (!found) return res.json({ success: true, data: null });
         const profile = await customerService.getProfile(found.id);
         res.json({ success: true, data: profile });
