@@ -12,7 +12,7 @@
  */
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
-import { DeliveryZone, flagEmoji, flagImageSrc, zoneLabel } from '@/utils/deliveryZones';
+import { DeliveryZone, flagEmoji, flagImageSrc, zoneLabel, zoneShortLabel } from '@/utils/deliveryZones';
 import styles from './DeliveryCountrySelect.module.css';
 
 /**
@@ -160,8 +160,12 @@ const DeliveryCountrySelect: React.FC<Props> = ({ zones, value, onChange, locale
                 {selected
                     ? <ZoneFlag code={selected.country_code} className={styles.flag} />
                     : <span className={styles.flag} aria-hidden="true">🌍</span>}
+                {/* The short form here only. This button sits in a crowded row beside the
+                    arrival date, and the full name was being clipped mid-word -- in Arabic
+                    especially, where الإمارات العربية المتحدة is four words. The list below,
+                    the aria-label above and type-ahead all still use the full name. */}
                 <span className={styles.triggerName}>
-                    {selected ? zoneLabel(selected, locale) : ''}
+                    {selected ? zoneShortLabel(selected, locale) : ''}
                 </span>
                 <ChevronDown size={15} className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`} aria-hidden="true" />
             </button>

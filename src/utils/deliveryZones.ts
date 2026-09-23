@@ -103,6 +103,40 @@ export const storeCountry = (code: string): void => {
 export const zoneLabel = (zone: DeliveryZone, locale: string): string =>
     (locale === 'ar' && zone.country_name_ar) ? zone.country_name_ar : zone.country_name;
 
+/**
+ * Short forms for countries whose full name does not fit the collapsed selector.
+ *
+ * Keyed by country code rather than by name, so a zone renamed in the admin keeps its
+ * abbreviation, and the match cannot be defeated by a stray space or a different
+ * spelling ("UAE" vs "U.A.E.").
+ *
+ * Arabic gets الإمارات -- the everyday short form, and the one that actually fits. The
+ * full الإمارات العربية المتحدة is four words and was being cut mid-word, which reads as
+ * broken text rather than as an abbreviation.
+ *
+ * Deliberately a display concern and not an edit to the zone data: the full name is
+ * still what the dropdown list, the accessible label and type-ahead use, and it is what
+ * the admin sees and manages. Only the collapsed trigger abbreviates.
+ */
+const SHORT_LABELS: Record<string, { en: string; ar: string }> = {
+    AE: { en: 'UAE', ar: 'الإمارات' },
+    SA: { en: 'KSA', ar: 'السعودية' },
+    GB: { en: 'UK', ar: 'بريطانيا' },
+    US: { en: 'USA', ar: 'أمريكا' },
+};
+
+/**
+ * The name for the collapsed selector, abbreviated where one is defined.
+ *
+ * Falls through to the full label for every other country, so a zone the admin adds
+ * needs no entry here -- it just shows its own name, truncating as it always did.
+ */
+export const zoneShortLabel = (zone: DeliveryZone, locale: string): string => {
+    const short = SHORT_LABELS[zone.country_code?.toUpperCase()];
+    if (short) return locale === 'ar' ? short.ar : short.en;
+    return zoneLabel(zone, locale);
+};
+
 export const findZone = (zones: DeliveryZone[], code: string | null): DeliveryZone | undefined =>
     zones.find(z => z.country_code === code);
 
