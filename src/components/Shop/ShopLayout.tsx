@@ -548,6 +548,11 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
     // Apply the scoped title/description filter and the child-category narrowing
     // (both client-side) and paginate the result locally. For every other listing
     // the server already filtered + paged.
+    // Mirrors the `fetchAll` branch in fetchProducts: these listings are filtered
+    // client-side, so the request is unpaged and the whole category comes back in one
+    // response. Kept as its own value because the render path has to know it too --
+    // whatever arrived unpaged has to be paginated here instead.
+    const fetchedUnpaged = !!(activeCategory && (CATEGORY_TITLE_FILTERS[activeCategory] || subCategoriesToShow.length > 0));
     const activeSelectedFilters = activeTitleFilters ? activeTitleFilters.filter(f => titleFilterKeys.includes(f.key)) : [];
     const hasSubCategoryFilter = selectedSubCategories.length > 0;
     const hasClientFilter = (hasTitleFilter && activeSelectedFilters.length > 0) || hasSubCategoryFilter;
@@ -563,12 +568,20 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({
             return matchesTitle && matchesSubCategory;
         })
         : products;
-    const effectiveTotal = hasClientFilter ? filteredProducts.length : totalProducts;
+    // When the whole category was fetched in one go, the rows we hold are the truth --
+    // totalProducts is the server's count for an unpaged request and agrees, but after a
+    // client filter only the filtered length is right.
+    const effectiveTotal = (hasClientFilter || fetchedUnpaged) ? filteredProducts.length : totalProducts;
     // The slice currently on screen, for the "Showing 1-100 of 1,250" line. Clamped to
     // the total so the last page reads "1,201-1,250", not "1,201-1,300".
     const rangeStart = effectiveTotal === 0 ? 0 : (currentPage - 1) * productsPerPage + 1;
     const rangeEnd = Math.min(currentPage * productsPerPage, effectiveTotal);
-    const displayedProducts = hasClientFilter
+    // Paginate locally whenever the server did not, which is a wider set of cases than
+    // "a client filter is active". A category with sub-categories to offer is fetched
+    // unpaged even before any of them is picked, so gating the slice on hasClientFilter
+    // rendered every row that came back -- up to 1000 -- and the page size was ignored.
+    // That is why dropping from 500 back to 24 still showed far more than 24.
+    const displayedProducts = (hasClientFilter || fetchedUnpaged)
         ? filteredProducts.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
         : filteredProducts;
 
