@@ -632,6 +632,38 @@ ${dsButton(orderSummaryUrl, L.cta, ar)}
   </td>
 </tr></table>`;
 
+    /**
+     * Where the order is going, for the back-office alert.
+     *
+     * The admin copy listed the customer, their contact details, the payment and the
+     * total, but nothing about the destination -- so deciding whether an order could be
+     * delivered, or which branch should handle it, meant opening the dashboard.
+     *
+     * Assembled from whichever parts are present rather than a fixed template: a walk-in
+     * order may carry a city and nothing else, and printing "undefined" or a row of
+     * stray commas for the missing parts is worse than a shorter address.
+     */
+    const adminAddressParts = [
+        shipping.streetAddress || shipping.address_line1,
+        shipping.additionalAddress || shipping.address_line2,
+        shipping.city,
+        shipping.state,
+        shipping.postcode || shipping.zip_code,
+        shipping.country,
+    ].map(v => String(v || '').trim()).filter(Boolean);
+    // Repeats are common: shoppers type the emirate into both the city and state boxes,
+    // and it reads as a mistake in the email rather than as thoroughness. Compared
+    // case-insensitively, since "Dubai" and "dubai" are the same place.
+    const seenAddressParts = new Set();
+    const adminAddressLine = adminAddressParts
+        .filter(v => {
+            const key = v.toLowerCase();
+            if (seenAddressParts.has(key)) return false;
+            seenAddressParts.add(key);
+            return true;
+        })
+        .join(', ');
+
     const adminContent = `
 <p style="margin:0 0 14px;font-family:${DS_SANS};font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e62127;">New order received</p>
 <h1 style="margin:0 0 14px;font-family:${DS_SERIF};font-size:32px;line-height:1.14;font-weight:600;letter-spacing:-.01em;color:#17181c;">Order #${orderId}</h1>
@@ -640,6 +672,7 @@ ${dsButton(orderSummaryUrl, L.cta, ar)}
   <span style="color:#17181c;">Customer</span> <strong style="color:#17181c;">${userName}</strong><br>
   ${billing.email ? `<span style="color:#17181c;">Email</span> <strong style="color:#17181c;">${billing.email}</strong><br>` : ''}
   ${(shipping.phone || billing.phone) ? `<span style="color:#17181c;">Phone</span> <strong style="color:#17181c;">${shipping.phone || billing.phone}</strong><br>` : ''}
+  ${adminAddressLine ? `<span style="color:#17181c;">Deliver to</span> <strong style="color:#17181c;">${adminAddressLine}</strong><br>` : ''}
   <span style="color:#17181c;">Payment method</span> <strong style="color:#17181c;">${paymentDisplay}</strong><br>
   <span style="color:#17181c;">Payment status</span> <strong style="color:${paymentStatusColor};">${paymentStatusLabel}</strong><br>
   <span style="color:#17181c;">Total</span> <strong style="color:#17181c;">AED ${total}</strong>
