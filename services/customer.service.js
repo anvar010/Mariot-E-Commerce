@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { matchCountryCode } = require('../utils/dialCodes');
 
 /**
  * Customer identity for staff quotations.
@@ -15,12 +16,43 @@ const db = require('../config/db');
  */
 
 /** Digits only, so +971 50 123 4567 and 0501234567 compare as the same line. */
+/**
+ * A phone number reduced to what identifies it, country code included.
+ *
+ * The country code is part of the identity, not noise: +966 509955446 and
+ * +971 509955446 are two different people in two different countries, and an earlier
+ * version of this compared only the last 9 digits, so it treated them as the same
+ * customer and pulled up a stranger's quotation history.
+ *
+ * What still has to be tolerated is the same number written differently. A UAE mobile is
+ * given as 0501234567 locally and +971501234567 internationally, and those are one
+ * person. The national trunk prefix -- the leading 0 that is dropped when a country code
+ * is used -- is the only difference, so it is removed when a country code is present.
+ *
+ * Returns { full, local }: `full` is the number with its country code, `local` is the
+ * subscriber part alone. A number typed without any country code can only be compared on
+ * `local`, since we do not know which country it belongs to.
+ */
 const normalisePhone = (raw) => {
-    const digits = String(raw || '').replace(/\D/g, '');
+    const trimmed = String(raw || '').trim();
+    const digits = trimmed.replace(/\D/g, '');
     if (!digits) return null;
-    // UAE numbers arrive as 0501234567, 971501234567 or +971501234567. Compare on the
-    // last 9 digits, which is the subscriber number in every one of those forms.
-    return digits.length > 9 ? digits.slice(-9) : digits;
+
+    // An explicit country code is either written with a + or implied by a length that
+    // cannot be a bare subscriber number.
+    const hadPlus = trimmed.startsWith('+');
+    const cc = matchCountryCode(digits);
+
+    if (hadPlus && cc) {
+        // Drop the trunk prefix so +971 0501234567 and +971 501234567 agree.
+        const subscriber = digits.slice(cc.length).replace(/^0+/, '');
+        return { cc, full: cc + subscriber, local: subscriber };
+    }
+
+    // No country code given. Strip a leading trunk 0 and keep the subscriber part; the
+    // caller decides what that can safely be matched against.
+    const local = digits.replace(/^0+/, '');
+    return { cc: null, full: null, local };
 };
 
 const normaliseEmail = (raw) => {
@@ -40,28 +72,75 @@ const findExisting = async ({ customer_id, email, phone }) => {
         if (rows.length) return rows[0];
     }
 
-    const cleanEmail = normaliseEmail(email);
-    if (cleanEmail) {
-        const [rows] = await db.execute('SELECT * FROM customers WHERE LOWER(email) = ?', [cleanEmail]);
-        if (rows.length) return rows[0];
-    }
-
+    // Phone is tried BEFORE email, and when a phone is given its answer is final.
+    //
+    // The two disagree more often than they agree in this business: a company has one
+    // office address that every buyer in it uses, so matching on email alone merged
+    // colleagues into one "customer" and showed a Saudi buyer the quotation history of a
+    // UAE one. The number is the person; the address is the company.
     const cleanPhone = normalisePhone(phone);
     if (cleanPhone) {
-        // Compare on the normalised tail so a record saved as +971501234567 still matches
-        // an enquiry giving 0501234567.
-        //
-        // The stripping is done with nested REPLACE rather than REGEXP_REPLACE because the
-        // latter is MySQL 8.0+ only and this has to run on 5.7 too. Separators seen in
-        // practice are spaces, dashes, brackets, dots and a leading plus.
-        const stripped = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone,' ',''),'-',''),'(',''),')',''),'.',''),'+','')";
+        // Strip separators in SQL so a stored "+971 50 123-4567" compares against bare
+        // digits. Nested REPLACE rather than REGEXP_REPLACE because the latter is MySQL
+        // 8.0+ only and this has to run on 5.7 too.
+        const stripped = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone,' ',''),'-',''),'(',''),')',''),'.','')";
+        // With the leading + removed as well, for comparing against digits-only forms.
+        const digitsOnly = `REPLACE(${stripped},'+','')`;
+
+        if (cleanPhone.full) {
+            // A country code was given, so it is part of the identity. Matched against
+            // stored numbers that carry a country code in any of the forms they are
+            // written in -- with a +, without one, or with the trunk 0 still present.
+            const [rows] = await db.execute(
+                `SELECT * FROM customers
+                  WHERE phone IS NOT NULL
+                    AND ${digitsOnly} IN (?, ?)
+                  LIMIT 1`,
+                // Second form covers a record stored with the trunk 0 kept after the
+                // country code, e.g. "+9710501234567". Built from the code we matched
+                // rather than by regex, so the split is never guessed.
+                [cleanPhone.full, `${cleanPhone.cc}0${cleanPhone.local}`]
+            );
+            if (rows.length) return rows[0];
+
+            // Stored without any country code. Only the subscriber part can be compared,
+            // and only against numbers short enough to have no country code of their own
+            // -- otherwise a Saudi number would match a UAE record on its tail again.
+            const [loose] = await db.execute(
+                `SELECT * FROM customers
+                  WHERE phone IS NOT NULL
+                    AND LENGTH(${digitsOnly}) <= 10
+                    AND TRIM(LEADING '0' FROM ${digitsOnly}) = ?
+                  LIMIT 1`,
+                [cleanPhone.local]
+            );
+            if (loose.length) return loose[0];
+            return null;
+        }
+
+        // No country code was typed. There is nothing to compare a country against, so
+        // this can only match on the subscriber number, and only where the stored value
+        // has no country code either.
         const [rows] = await db.execute(
             `SELECT * FROM customers
               WHERE phone IS NOT NULL
-                AND RIGHT(${stripped}, 9) = ?
+                AND LENGTH(${digitsOnly}) <= 10
+                AND TRIM(LEADING '0' FROM ${digitsOnly}) = ?
               LIMIT 1`,
-            [cleanPhone]
+            [cleanPhone.local]
         );
+        if (rows.length) return rows[0];
+
+        // A usable phone was given and matched nobody. That is a genuine "new customer"
+        // answer, so it is not second-guessed with the email -- doing so is exactly how a
+        // different person on the same company address gets mistaken for this one.
+        return null;
+    }
+
+    // No phone to go on, so the email is the only identifier left.
+    const cleanEmail = normaliseEmail(email);
+    if (cleanEmail) {
+        const [rows] = await db.execute('SELECT * FROM customers WHERE LOWER(email) = ?', [cleanEmail]);
         if (rows.length) return rows[0];
     }
 
