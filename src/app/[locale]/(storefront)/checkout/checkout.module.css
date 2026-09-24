@@ -2701,3 +2701,32 @@
     color: #94a3b8;
     line-height: 1.4;
 }
+
+/* ── phone field ──────────────────────────────────────────────────────────── */
+
+/* The shared PhoneNumberInput carries the admin form's spacing and radius. These pull it
+   into line with the fields around it here -- checkout uses a 6px radius, its own brand
+   focus colour and no bottom margin, since .formGroup already spaces the rows.
+
+   Targeting the component's own class names from outside is deliberate: the alternative
+   is a variant prop for every host that ever embeds it, and the visual difference is
+   entirely this page's, not the component's. */
+.phoneField {
+    margin-bottom: 0;
+}
+
+.phoneField > div:first-child {
+    border-radius: 6px;
+    border-color: #e2e8f0;
+}
+
+.phoneField > div:first-child:focus-within {
+    border-color: #16a1db;
+    box-shadow: 0 0 0 3px rgba(22, 161, 219, 0.08);
+}
+
+.phoneField input {
+    font-size: 13px;
+    color: #334155;
+    padding-block: 11px;
+}

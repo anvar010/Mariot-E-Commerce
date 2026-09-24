@@ -1,9 +1,11 @@
 /* Phone field with a dialling-code selector.
 
-   Matches .input in AdminStaffQuotations.module.css -- same border, radius, height and
-   bottom margin -- so the row sits level with the fields above and below it. The border
-   lives on the wrapper rather than the input, so the code button and the number read as
-   one control. */
+   Shared between the quotation builder and checkout. The border lives on the wrapper
+   rather than the input, so the code button and the number read as one control.
+
+   The bottom margin suits the admin form it was written for; callers with their own
+   spacing pass a className and override it, which is why it is on .root rather than
+   baked into the control. */
 
 /* The root now only positions the dropdown; the bordered control is .control, so an
    error message can sit beneath it without being wrapped in the border. */

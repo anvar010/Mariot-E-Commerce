@@ -18,7 +18,7 @@ import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import DiscountLimitsModal from './DiscountLimitsModal';
 import CustomerHistoryPanel, { CustomerProfile } from './CustomerHistoryPanel';
-import PhoneNumberInput from './PhoneNumberInput';
+import PhoneNumberInput from '@/components/shared/PhoneNumberInput/PhoneNumberInput';
 import QuotationLineProduct from './QuotationLineProduct';
 import QuotationEmailModal from './QuotationEmailModal';
 import { matchDialCountry } from '@/data/dialCountries';

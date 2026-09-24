@@ -55,6 +55,7 @@ import WalletExpressCheckout from '@/components/Payment/WalletExpressCheckout';
 import { SavedCard, listCards } from '@/utils/paymentMethodsApi';
 import OtpVerifyModal from '@/components/shared/OtpVerifyModal/OtpVerifyModal';
 import AddressBookSheet from '@/components/Checkout/AddressBookSheet';
+import PhoneNumberInput from '@/components/shared/PhoneNumberInput/PhoneNumberInput';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || '');
 
@@ -125,6 +126,11 @@ function CheckoutContent() {
         addressType: 'home',
         addressLabel: ''
     });
+
+    // Whether the typed phone is a real number for the chosen country, judged by
+    // libphonenumber inside the field. Empty counts as valid; the required attribute
+    // handled emptiness before and still needs to.
+    const [phoneValid, setPhoneValid] = useState(true);
 
     // Empty until the shopper picks one: Complete Purchase stays disabled until both a
     // payment method and a delivery method have been chosen deliberately.
@@ -912,6 +918,19 @@ function CheckoutContent() {
             return;
         }
 
+        // The phone field is a component now, so the browser's own `required` no longer
+        // covers it -- these two checks replace what the native input did, and add the
+        // shape check it never had. A wrong number means an undeliverable order.
+        const usingSavedAddress = Boolean(user && userAddresses.length > 0 && selectedAddressId);
+        if (!usingSavedAddress && !form.phone.replace(/\D/g, '')) {
+            showNotification(t('phoneRequired'), 'error');
+            return;
+        }
+        if (!phoneValid) {
+            showNotification(t('phoneInvalid'), 'error');
+            return;
+        }
+
         // The button is disabled without these, but a form can still be submitted by keyboard.
         if (SHIPPING_QUOTES_ENABLED && !selectedShipping) {
             showNotification(t('selectShippingFirst'), 'error');
@@ -1470,10 +1489,16 @@ function CheckoutContent() {
 
                                 <div className={styles.formGroup}>
                                     <label>{t('phone')} <span>*</span></label>
-                                    <div className={styles.inputWrapper}>
-                                        <input className={styles.formInput} type="tel" name="phone" value={form.phone} onChange={handleInputChange} required placeholder="+971 -- --- ----" dir="ltr" style={locale === 'ar' ? { paddingInlineStart: '12px', paddingInlineEnd: '42px' } : undefined} />
-                                        <Phone className={styles.inputIcon} size={15} />
-                                    </div>
+                                    {/* The country picker replaces the icon and the hint placeholder:
+                                        both existed to tell the shopper what shape the number should
+                                        take, which the selector now states outright and the library
+                                        actually enforces. */}
+                                    <PhoneNumberInput
+                                        className={styles.phoneField}
+                                        value={form.phone}
+                                        onChange={(v) => setForm(prev => ({ ...prev, phone: v }))}
+                                        onValidityChange={setPhoneValid}
+                                    />
                                 </div>
 
                                 <div className={styles.formGroup}>

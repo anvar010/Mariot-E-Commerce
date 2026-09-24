@@ -1265,7 +1265,9 @@
     "quoteSentKeepShopping": "Continue shopping",
     "quoteNotPayable": "This quote is not ready for payment.",
     "quoteAddressLocked": "This order ships to the address the delivery price was quoted for, so it cannot be changed here. Need a different address? Request a new quote.",
-    "deliveryIncludes": "Includes taxes and customs"
+    "deliveryIncludes": "Includes taxes and customs",
+    "phoneRequired": "Enter a phone number for the delivery",
+    "phoneInvalid": "Enter a valid phone number for the selected country"
   },
   "success": {
     "thankYou": "Thank you!",
