@@ -5,20 +5,45 @@
    lives on the wrapper rather than the input, so the code button and the number read as
    one control. */
 
+/* The root now only positions the dropdown; the bordered control is .control, so an
+   error message can sit beneath it without being wrapped in the border. */
 .root {
     position: relative;
+    width: 100%;
+    margin-bottom: 9px;
+}
+
+.control {
     display: flex;
     align-items: stretch;
     width: 100%;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 9px;
     background: #ffffff;
 }
 
 /* Focus shown on the wrapper, since the focus is really on the pair. */
-.root:focus-within {
+.control:focus-within {
     border-color: #2563eb;
+}
+
+/* Only after the field has been left: every number is invalid halfway through typing,
+   and colouring it red mid-entry reads as a mistake the person has not made yet. */
+.controlError {
+    border-color: #dc2626;
+}
+
+.controlError:focus-within {
+    border-color: #dc2626;
+}
+
+.error {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 5px 0 0;
+    font-size: 11.5px;
+    color: #dc2626;
 }
 
 .codeBtn {
@@ -94,9 +119,12 @@
 
 /* ── menu ─────────────────────────────────────────────────────────────────── */
 
+/* Anchored below the control rather than the root: the root also contains the error
+   line, so measuring from its bottom would push the list away from the field whenever a
+   message is showing. */
 .menu {
     position: absolute;
-    top: calc(100% + 4px);
+    top: 46px;
     inset-inline-start: 0;
     z-index: 40;
     width: 300px;

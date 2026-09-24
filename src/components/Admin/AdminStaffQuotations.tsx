@@ -139,6 +139,10 @@ const AdminStaffQuotations = () => {
     const [customerOpen, setCustomerOpen] = useState(false);
     // The quotation whose send dialog is open, if any.
     const [emailModal, setEmailModal] = useState<any>(null);
+    // Whether the typed phone number is a real number for its country, judged by
+    // libphonenumber inside the field. An empty field counts as valid: the number is
+    // optional, a wrong one is not.
+    const [phoneValid, setPhoneValid] = useState(true);
     const customerFieldRef = React.useRef<HTMLDivElement>(null);
     /**
      * The customer this quotation will be attached to.
@@ -663,6 +667,9 @@ const AdminStaffQuotations = () => {
 
     const saveQuotation = async () => {
         if (!customer.customer_name.trim()) { showNotification('Customer name is required', 'error'); return; }
+        // A wrong number is worse than none: it is what identifies the customer on every
+        // future quotation, and it is what a WhatsApp send dials.
+        if (!phoneValid) { showNotification('Enter a valid phone number for the selected country', 'error'); return; }
         if (lines.length === 0) { showNotification('Add at least one product', 'error'); return; }
 
         setSaving(true);
@@ -1384,6 +1391,7 @@ const AdminStaffQuotations = () => {
                             <input className={styles.input} placeholder="Email" type="email" value={customer.customer_email}
                                 onChange={e => setCustomer({ ...customer, customer_email: e.target.value })} />
                             <PhoneNumberInput
+                                onValidityChange={setPhoneValid}
                                 placeholder="Phone"
                                 value={customer.customer_phone}
                                 onChange={v => setCustomer({ ...customer, customer_phone: v })}

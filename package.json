@@ -25,6 +25,7 @@
     "html2canvas": "^1.4.1",
     "json2csv": "^6.0.0-alpha.2",
     "jspdf": "^4.1.0",
+    "libphonenumber-js": "^1.13.14",
     "lucide-react": "^0.447.0",
     "mysql2": "^3.22.6",
     "next": "15.5.18",
