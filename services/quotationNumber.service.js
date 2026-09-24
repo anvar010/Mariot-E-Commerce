@@ -31,16 +31,48 @@ const currentYear = () => new Date().getFullYear();
  * quotation insert itself. If the insert fails, the number is released rather than
  * leaving a gap in the branch's sequence.
  */
-const reserveOnConnection = async (conn, branchId) => {
-    const [branchRows] = await conn.execute(
-        'SELECT id, code FROM branches WHERE id = ? AND is_active = 1', [branchId]
+/**
+ * The branch head-office quotations are counted under.
+ *
+ * branch_quote_seq is keyed on branch_id and carries a foreign key into branches, so a
+ * sentinel id would be rejected and NULL cannot sit in a primary key. A real, inactive
+ * branch row is therefore used: inactive keeps it out of the branch picker, while the
+ * counter and the foreign key both see an ordinary branch.
+ *
+ * Resolved by code rather than hard-coded id, because the row is created on first use and
+ * its id is whatever the database assigns.
+ */
+const HOUSE_CODE = 'SQT';
+
+/** The house branch's id, creating the row the first time it is needed. */
+const houseBranchId = async (conn) => {
+    const [rows] = await conn.execute('SELECT id FROM branches WHERE code = ? LIMIT 1', [HOUSE_CODE]);
+    if (rows.length) return rows[0].id;
+    const [res] = await conn.execute(
+        'INSERT INTO branches (name, code, is_active) VALUES (?, ?, 0)',
+        ['Head Office', HOUSE_CODE]
     );
-    if (branchRows.length === 0) {
-        const err = new Error('Unknown or inactive branch');
-        err.statusCode = 400;
-        throw err;
+    return res.insertId;
+};
+
+const reserveOnConnection = async (conn, branchId) => {
+    // No branch: an admin raising a head-office quotation. Numbered under SQT, with its
+    // own yearly sequence, so it cannot collide with any branch's.
+    const isHouse = branchId === null || branchId === undefined;
+
+    let code = HOUSE_CODE;
+    if (!isHouse) {
+        const [branchRows] = await conn.execute(
+            'SELECT id, code FROM branches WHERE id = ? AND is_active = 1', [branchId]
+        );
+        if (branchRows.length === 0) {
+            const err = new Error('Unknown or inactive branch');
+            err.statusCode = 400;
+            throw err;
+        }
+        code = branchRows[0].code;
     }
-    const code = branchRows[0].code;
+    const seqBranchId = isHouse ? await houseBranchId(conn) : branchId;
     const year = currentYear();
 
     // The UPDATE takes an exclusive lock on this branch-and-year row and holds it until
@@ -56,7 +88,7 @@ const reserveOnConnection = async (conn, branchId) => {
     // row is handled below, outside the contended path.
     const [upd] = await conn.execute(
         'UPDATE branch_quote_seq SET last_number = last_number + 1 WHERE branch_id = ? AND seq_year = ?',
-        [branchId, year]
+        [seqBranchId, year]
     );
 
     if (upd.affectedRows === 0) {
@@ -67,14 +99,14 @@ const reserveOnConnection = async (conn, branchId) => {
         // duplicate.
         await conn.execute(
             'INSERT INTO branch_quote_seq (branch_id, seq_year, last_number) VALUES (?, ?, 1)',
-            [branchId, year]
+            [seqBranchId, year]
         );
         return { ref: formatRef(code, 1, year), seq: 1, code, year };
     }
 
     const [seqRows] = await conn.execute(
         'SELECT last_number FROM branch_quote_seq WHERE branch_id = ? AND seq_year = ?',
-        [branchId, year]
+        [seqBranchId, year]
     );
     const seq = Number(seqRows[0].last_number);
 
@@ -109,13 +141,14 @@ const resolveBranchForUser = async (user, requestedBranchId) => {
         return Number(branchId);
     }
 
-    // Admin (or any non-staff role with access): the branch must be stated explicitly.
+    // Admin (or any non-staff role with access). A branch is offered but not required:
+    // an admin does not belong to one, and a head-office quotation genuinely has no
+    // branch to claim. Those are numbered SQT-2026-1 instead, under a house sequence.
+    //
+    // Staff above are still refused without one, because a staff quotation stamped with
+    // the wrong office is worse than one that was never created.
     const branchId = Number(requestedBranchId);
-    if (!Number.isFinite(branchId) || branchId <= 0) {
-        const err = new Error('Select the branch this quotation is issued from');
-        err.statusCode = 400;
-        throw err;
-    }
+    if (!Number.isFinite(branchId) || branchId <= 0) return null;
     return branchId;
 };
 
