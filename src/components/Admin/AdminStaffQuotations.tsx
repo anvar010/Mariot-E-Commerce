@@ -7,7 +7,8 @@ import StaffQuotationProductModal from './StaffQuotationProductModal';
 import {
     FilePlus, Search, Trash2, Eye, X, Plus, Minus, Printer,
     Mail, Loader2, ArrowLeft, Percent, Check, Ban, Clock, FileText, Pencil, AlertTriangle, Download,
-    MessageCircle} from 'lucide-react';
+    } from 'lucide-react';
+import WhatsappIcon from '@/components/shared/icons/WhatsappIcon';
 import { useNotification } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
 import { API_BASE_URL } from '@/config';
@@ -1698,7 +1699,7 @@ const AdminStaffQuotations = () => {
                                                 ? 'Only approved quotations can be sent'
                                                 : (whatsappLink(q.customer_phone) ? 'Send on WhatsApp' : 'No customer phone number')}
                                         >
-                                            <MessageCircle size={15} />
+                                            <WhatsappIcon size={15} />
                                         </button>
                                         <button className={styles.iconDanger} onClick={() => setConfirm({ open: true, id: q.id })} title="Delete">
                                             <Trash2 size={15} />

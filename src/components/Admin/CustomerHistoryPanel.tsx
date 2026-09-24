@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Building2, FileText, Clock, TrendingUp, X, Eye, Loader2, Mail, MessageCircle } from 'lucide-react';
+import { Building2, FileText, Clock, TrendingUp, X, Eye, Loader2, Mail } from 'lucide-react';
+import WhatsappIcon from '@/components/shared/icons/WhatsappIcon';
 import styles from './CustomerHistoryPanel.module.css';
 
 /**
@@ -299,7 +300,7 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewi
                                                                 : `Send ${q.quotation_ref} on WhatsApp`}
                                                             aria-label={`Send quotation ${q.quotation_ref} on WhatsApp`}
                                                         >
-                                                            <MessageCircle size={14} />
+                                                            <WhatsappIcon size={14} />
                                                         </button>
                                                     )}
                                                 </div>

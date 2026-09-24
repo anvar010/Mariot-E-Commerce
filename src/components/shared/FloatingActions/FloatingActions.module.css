@@ -222,6 +222,9 @@
 }
 
 .whatsappIconLarge {
+    /* The mark inherits its colour now that the icon is a shared component, so it is set
+       here rather than hard-coded white inside the svg. */
+    color: #ffffff;
     width: 52px;
     height: 52px;
     background: rgba(255, 255, 255, 0.2);

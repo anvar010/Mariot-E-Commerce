@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
-import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt, AlertTriangle } from 'lucide-react';
+import WhatsappIcon from '@/components/shared/icons/WhatsappIcon';
 import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { readSeen } from '@/utils/adminActivity';
 import { useNotification } from '@/context/NotificationContext';
@@ -721,7 +722,7 @@ const AdminOrders = () => {
                                                     title="Message on WhatsApp"
                                                     aria-label="Message on WhatsApp"
                                                 >
-                                                    <MessageCircle size={13} /> WhatsApp
+                                                    <WhatsappIcon size={13} /> WhatsApp
                                                 </a>
                                             )}
                                             </div>
@@ -753,7 +754,7 @@ const AdminOrders = () => {
                                                     title="Message on WhatsApp"
                                                     aria-label="Message on WhatsApp"
                                                 >
-                                                    <MessageCircle size={13} /> WhatsApp
+                                                    <WhatsappIcon size={13} /> WhatsApp
                                                 </a>
                                             )}
                                         </div>
