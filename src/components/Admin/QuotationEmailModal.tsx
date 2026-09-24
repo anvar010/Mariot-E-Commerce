@@ -13,7 +13,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { X, Mail, Plus, Loader2, Clock, Send } from 'lucide-react';
+import { X, Mail, Plus, Loader2, Clock, Send, Pencil, Check } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import styles from './QuotationEmailModal.module.css';
@@ -51,6 +51,11 @@ const QuotationEmailModal: React.FC<Props> = ({ quotation, onClose, onSend }) =>
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const draftRef = useRef<HTMLInputElement>(null);
+    // The address currently being edited, held by its original value so the row can be
+    // found again when the edit commits. null means nothing is being edited.
+    const [editing, setEditing] = useState<string | null>(null);
+    const [editDraft, setEditDraft] = useState('');
+    const editRef = useRef<HTMLInputElement>(null);
 
     const load = useCallback(async () => {
         try {
@@ -95,15 +100,80 @@ const QuotationEmailModal: React.FC<Props> = ({ quotation, onClose, onSend }) =>
         draftRef.current?.focus();
     };
 
+    const beginEdit = (email: string) => {
+        setEditing(email);
+        setEditDraft(email);
+        setError(null);
+        // Focus after the input has rendered, or there is nothing to focus yet.
+        setTimeout(() => editRef.current?.select(), 0);
+    };
+
+    /**
+     * Applies the open edit and returns the resulting CC list.
+     *
+     * The list is returned as well as set, because React applies state after the current
+     * call finishes: a caller that needs the corrected addresses in this same tick -- send
+     * does -- would otherwise read the values from before the edit.
+     *
+     * Returns null when the edit is not usable and the row stays open.
+     */
+    const commitEdit = (): string[] | null => {
+        if (editing === null) return cc;
+        const v = editDraft.trim();
+        // An emptied address is a removal: clearing the box and pressing Enter clearly
+        // means "drop this one", and refusing it would leave the person stuck in an edit
+        // they cannot finish.
+        if (!v) {
+            const next = cc.filter(x => x !== editing);
+            setCc(next);
+            setEditing(null);
+            setError(null);
+            return next;
+        }
+        if (!isEmail(v)) { setError(`${v} is not a valid email address`); return null; }
+        if (v.toLowerCase() === String(quotation.customer_email || '').toLowerCase()) {
+            setError('That is already the main recipient');
+            return null;
+        }
+        // Editing one address onto another already in the list collapses the two rather
+        // than leaving a duplicate.
+        if (cc.some(x => x.toLowerCase() === v.toLowerCase() && x !== editing)) {
+            const next = cc.filter(x => x !== editing);
+            setCc(next);
+            setEditing(null);
+            setError(null);
+            return next;
+        }
+        const next = cc.map(x => (x === editing ? v : x));
+        setCc(next);
+        setEditing(null);
+        setError(null);
+        return next;
+    };
+
+    const cancelEdit = () => {
+        setEditing(null);
+        setEditDraft('');
+        setError(null);
+    };
+
     const send = async () => {
+        // An edit still open is committed first, or the send would go with the old
+        // address while the corrected one sits on screen looking applied.
+        // An edit still open is committed first, or the send would go with the old
+        // address while the corrected one sits on screen looking applied. A null result
+        // means the value is not usable and the row is still open, so nothing is sent.
+        const committed = commitEdit();
+        if (committed === null) return;
+
         // A half-typed address in the box is almost certainly meant to be included;
         // silently dropping it would send the mail without someone who was supposed to
         // get it.
-        let list = cc;
+        let list = committed;
         const pending = draft.trim();
         if (pending) {
             if (!isEmail(pending)) { setError(`${pending} is not a valid email address`); return; }
-            list = [...cc, pending];
+            list = [...list, pending];
             setCc(list);
             setDraft('');
         }
@@ -141,16 +211,51 @@ const QuotationEmailModal: React.FC<Props> = ({ quotation, onClose, onSend }) =>
                         {cc.length > 0 && (
                             <div className={styles.chips}>
                                 {cc.map(e => (
-                                    <span key={e} className={styles.chip}>
-                                        {e}
-                                        <button
-                                            type="button"
-                                            onClick={() => setCc(prev => prev.filter(x => x !== e))}
-                                            aria-label={`Remove ${e}`}
-                                        >
-                                            <X size={12} />
-                                        </button>
-                                    </span>
+                                    editing === e ? (
+                                        // The chip becomes an input in place, so the address stays
+                                        // where it was rather than jumping to the box below.
+                                        <span key={e} className={`${styles.chip} ${styles.chipEditing}`}>
+                                            <input
+                                                ref={editRef}
+                                                type="email"
+                                                className={styles.chipInput}
+                                                value={editDraft}
+                                                onChange={ev => { setEditDraft(ev.target.value); setError(null); }}
+                                                onKeyDown={ev => {
+                                                    if (ev.key === 'Enter') { ev.preventDefault(); commitEdit(); }
+                                                    if (ev.key === 'Escape') { ev.preventDefault(); cancelEdit(); }
+                                                }}
+                                                // Clicking away keeps the edit rather than discarding it:
+                                                // losing a correction because focus moved is worse than
+                                                // keeping one the person can change again.
+                                                onBlur={() => { commitEdit(); }}
+                                                aria-label={`Edit ${e}`}
+                                            />
+                                            <button type="button" onClick={() => { commitEdit(); }} aria-label="Save address">
+                                                <Check size={12} />
+                                            </button>
+                                        </span>
+                                    ) : (
+                                        <span key={e} className={styles.chip}>
+                                            {e}
+                                            <button
+                                                type="button"
+                                                onClick={() => beginEdit(e)}
+                                                aria-label={`Edit ${e}`}
+                                                title="Edit"
+                                            >
+                                                <Pencil size={11} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setCc(prev => prev.filter(x => x !== e))}
+                                                aria-label={`Remove ${e}`}
+                                                title="Remove"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </span>
+                                    )
                                 ))}
                             </div>
                         )}
