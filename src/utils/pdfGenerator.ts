@@ -114,7 +114,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
     const alignEnd = isArabic ? 'left' : 'right';
     const L = isArabic ? {
         quotation: 'تسعيرة', ref: 'مرجع التسعيرة', issueDate: 'تاريخ إصدار التسعيرة',
-        issuedFrom: 'صادر من', issuedTo: 'صادر إلى', issuedBy: 'أصدرها',
+        issuedFrom: 'صادر من', issuedTo: 'صادر إلى', contactPerson: 'مسؤول التواصل',
         companyName: 'متجر ماريوت', companyLegal: 'ماريوت لتجارة معدات المطابخ ذ.م.م', vat: 'الرقم الضريبي',
         note: 'لن يتم حجز المنتجات في هذه التسعيرة إلا بعد إتمام الطلب',
         thRef: 'رقم المرجع', thName: 'اسم المنتج', thImage: 'صورة المنتج', thQty: 'الكمية', thUnit: 'سعر الوحدة', thTotal: 'مجموع السعر',
@@ -127,7 +127,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
         thankyou: 'شكراً لاختياركم متجر ماريوت', continued: 'يتبع في الصفحة التالية...', continuedRef: 'مرجع التسعيرة',
     } : {
         quotation: 'Quotation', ref: 'Quotation Ref.', issueDate: 'Quotation Issue Date',
-        issuedFrom: 'Issued from', issuedTo: 'Issued to', issuedBy: 'Issued by',
+        issuedFrom: 'Issued from', issuedTo: 'Issued to', contactPerson: 'Your Contact Person',
         companyName: 'Mariot Store', companyLegal: 'Mariot Kitchen Equipment Trading LLC', vat: 'VAT#',
         note: "This quotation won't reserve the available stock for you until you place an order",
         thRef: 'Ref no.', thName: 'Product Name', thImage: 'Product Image', thQty: 'QTY', thUnit: 'Unit Price', thTotal: 'Total Price',
@@ -401,13 +401,6 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
                             <div style="font-size: 13px; color: #334155; text-align:${alignStart};" dir="ltr">${quotation.customer_email || ''}</div>
                         </div>
                     </div>
-                    ${quotation.created_by_name ? `
-                    <div style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px 15px; margin-bottom: 20px; text-align: ${alignStart};">
-                        <div style="font-size: 11px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em;">${L.issuedBy}</div>
-                        <div style="font-size: 13px; color: #0f172a; font-weight: bold;">${quotation.created_by_name}</div>
-                        ${quotation.created_by_phone ? `<div style="font-size: 12px; color: #334155; margin-top: 2px;" dir="ltr">${quotation.created_by_phone}</div>` : ''}
-                        ${quotation.created_by_email ? `<div style="font-size: 12px; color: #334155; margin-top: 2px;" dir="ltr">${quotation.created_by_email}</div>` : ''}
-                    </div>` : ''}
                     <div style="display: flex; align-items: center; gap: 15px; padding: 12px 20px; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 30px;">
                         <div style="width: 24px; height: 24px; min-width: 24px; border: 2px solid #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">i</div>
                         <div style="flex: 1; font-size: 12px; color: #334155; text-align: ${alignStart};">${L.note}</div>
@@ -470,6 +463,17 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
                             </div>
                         </div>
                     </div>
+                    <!-- Who to call about this quotation. Placed at the end, beside the
+                         terms, because it is what the reader wants once they have read the
+                         prices and have a question -- not something to step over on the
+                         way in. -->
+                    ${quotation.created_by_name ? `
+                    <div style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px 15px; margin-bottom: 20px; text-align: ${alignStart};">
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em;">${L.contactPerson}</div>
+                        <div style="font-size: 13px; color: #0f172a; font-weight: bold;">${quotation.created_by_name}</div>
+                        ${quotation.created_by_phone ? `<div style="font-size: 12px; color: #334155; margin-top: 2px;" dir="ltr">${quotation.created_by_phone}</div>` : ''}
+                        ${quotation.created_by_email ? `<div style="font-size: 12px; color: #334155; margin-top: 2px;" dir="ltr">${quotation.created_by_email}</div>` : ''}
+                    </div>` : ''}
                     <!-- Terms -->
                     <div style="display: flex; flex-direction: column; gap: 20px;">
                         <div style="font-size: 10px; color: #64748b; text-align: ${alignStart};">
