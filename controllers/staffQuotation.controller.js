@@ -54,7 +54,12 @@ const ensureStaffQuotationsTable = async () => {
         ['branch_code', 'VARCHAR(10) NULL'], ['branch_seq', 'INT NULL'],
         // The year the sequence belongs to. The count restarts each January, so the
         // number alone no longer identifies a quotation within its branch.
-        ['branch_year', 'SMALLINT NULL']]) {
+        ['branch_year', 'SMALLINT NULL'],
+        // The company the quotation is addressed to. Stored on the quotation as well as
+        // the customer record, because a quotation is a record of what was sent: the
+        // company printed on it must not change later because the customer's details
+        // were updated.
+        ['company_name', 'VARCHAR(255) NULL']]) {
         try { await db.query(`ALTER TABLE staff_quotations ADD COLUMN ${col} ${ddl}`); }
         catch (e) { /* column already exists — ignore */ }
     }
@@ -285,14 +290,14 @@ exports.createStaffQuotation = async (req, res, next) => {
 
             const [result] = await conn.execute(
                 `INSERT INTO staff_quotations
-                 (quotation_ref, branch_id, branch_code, branch_seq, branch_year, customer_id, created_by, created_by_name, created_by_role, customer_name, customer_email, customer_phone, vat_number, items, subtotal, discount_amount, tax_amount, total_amount, notes, status, reviewed_by, reviewed_by_name, reviewed_at, review_note)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 (quotation_ref, branch_id, branch_code, branch_seq, branch_year, customer_id, created_by, created_by_name, created_by_role, customer_name, company_name, customer_email, customer_phone, vat_number, items, subtotal, discount_amount, tax_amount, total_amount, notes, status, reviewed_by, reviewed_by_name, reviewed_at, review_note)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [quotation_ref, branchId, branchMeta.code, branchMeta.seq, branchMeta.year, customer.id,
                     (req.user && req.user.id) || null,
                     // Denormalised on purpose: the join below loses the author entirely if the
                     // account is later deleted, and a quotation must always say who raised it.
                     (req.user && req.user.name) || null, (req.user && req.user.role) || null,
-                    customer_name, customer_email || null,
+                    customer_name, req.body.company_name || null, customer_email || null,
                     customer_phone || null, vat_number || null, JSON.stringify(priced.items),
                     priced.subtotal, priced.discount_amount, priced.tax_amount, priced.total_amount, notes || null,
                     needsApproval ? 'pending' : 'approved',
@@ -436,10 +441,10 @@ exports.updateStaffQuotation = async (req, res, next) => {
         }
         const [r] = await db.execute(
             `UPDATE staff_quotations
-             SET customer_name = ?, customer_email = ?, customer_phone = ?, vat_number = ?,
+             SET customer_name = ?, company_name = ?, customer_email = ?, customer_phone = ?, vat_number = ?,
                  items = ?, subtotal = ?, discount_amount = ?, tax_amount = ?, total_amount = ?, notes = ?${resetReview}
              WHERE id = ?`,
-            [customer_name, customer_email || null, customer_phone || null, vat_number || null,
+            [customer_name, req.body.company_name || null, customer_email || null, customer_phone || null, vat_number || null,
                 JSON.stringify(priced.items), priced.subtotal, priced.discount_amount,
                 priced.tax_amount, priced.total_amount, notes || null, req.params.id]
         );
