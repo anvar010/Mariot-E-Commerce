@@ -4,6 +4,8 @@ export interface InvoicePDFData {
     invoice_number: string;
     order_id: number;
     customer_name: string;
+    /** Printed under the name when present; a walk-in may have no company. */
+    company_name?: string;
     given_by_name?: string;
     final_amount: number;
     delivery_charge?: number;
@@ -390,6 +392,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
                         <div style="padding: 15px; text-align: ${alignStart};">
                             <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">${L.issuedTo}</div>
                             <div style="font-weight: bold; font-size: 15px; margin-bottom: 4px;">${quotation.customer_name || 'Valued Customer'}</div>
+                            ${quotation.company_name ? `<div style="font-size: 13px; color: #334155; margin-bottom: 4px; text-align:${alignStart};">${quotation.company_name}</div>` : ''}
                             <div style="font-size: 13px; color: #334155; text-align:${alignStart};" dir="ltr">${quotation.customer_phone || ''}</div>
                             <div style="font-size: 13px; color: #334155; text-align:${alignStart};" dir="ltr">${quotation.customer_email || ''}</div>
                         </div>

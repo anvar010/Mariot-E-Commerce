@@ -108,7 +108,7 @@ const AdminStaffQuotations = () => {
     const [reviewSaving, setReviewSaving] = useState(false);
 
     // ── Builder state ──────────────────────────────────────────────────
-    const [customer, setCustomer] = useState({ customer_name: '', customer_email: '', customer_phone: '', vat_number: '', notes: '' });
+    const [customer, setCustomer] = useState({ customer_name: '', company_name: '', customer_email: '', customer_phone: '', vat_number: '', notes: '' });
     const [lines, setLines] = useState<Line[]>([]);
     const [productQuery, setProductQuery] = useState('');
     const [categories, setCategories] = useState<any[]>([]);
@@ -443,6 +443,7 @@ const AdminStaffQuotations = () => {
         const items = typeof q.items === 'string' ? JSON.parse(q.items) : (q.items || []);
         setCustomer({
             customer_name: q.customer_name || '',
+            company_name: q.company_name || '',
             customer_email: q.customer_email || '',
             customer_phone: q.customer_phone || '',
             vat_number: q.vat_number || '',
@@ -572,6 +573,7 @@ const AdminStaffQuotations = () => {
                     setCustomer(prev => ({
                         ...prev,
                         customer_name: prev.customer_name || data.data.customer.name || '',
+                        company_name: prev.company_name || data.data.customer.company_name || '',
                         customer_email: prev.customer_email || data.data.customer.email || '',
                         vat_number: prev.vat_number || data.data.customer.vat_number || '',
                     }));
@@ -600,6 +602,7 @@ const AdminStaffQuotations = () => {
             ...prev,
             customer_name: c.name || '',
             // Only fill blanks — never overwrite something already typed for this quote.
+            company_name: prev.company_name || c.company_name || '',
             customer_email: prev.customer_email || c.email || '',
             customer_phone: prev.customer_phone || c.phone_number || '',
             vat_number: prev.vat_number || c.vat_number || '',
@@ -642,7 +645,7 @@ const AdminStaffQuotations = () => {
     const needsApproval = isStaff && discountShare > thresholdPct;
 
     const resetBuilder = () => {
-        setCustomer({ customer_name: '', customer_email: '', customer_phone: '', vat_number: '', notes: '' });
+        setCustomer({ customer_name: '', company_name: '', customer_email: '', customer_phone: '', vat_number: '', notes: '' });
         setLines([]);
         setProductQuery('');
         // Deliberately NOT clearing productResults. The fetch that fills it is keyed on the
@@ -1340,6 +1343,16 @@ const AdminStaffQuotations = () => {
                                 {pickedCustomerId !== null && (
                                     <span className={styles.existingTag}>Existing customer</span>
                                 )}
+                                {/* Placed directly under the name: a company is part of who the
+                                    quotation is addressed to, and separating it from the name
+                                    would leave the two reading as unrelated fields. */}
+                                <input
+                                    className={styles.input}
+                                    placeholder="Company name"
+                                    value={customer.company_name}
+                                    autoComplete="off"
+                                    onChange={e => setCustomer({ ...customer, company_name: e.target.value })}
+                                />
                                 {customerOpen && customerMatches.length > 0 && (
                                     <div className={styles.customerList}>
                                         {customerMatches.map(c => (
