@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const crypto = require('crypto');
 const { sendQuotationEmail } = require('../utils/sendEmail');
 const { getSettingValue } = require('./settings.controller');
 const { reserveOnConnection, resolveBranchForUser } = require('../services/quotationNumber.service');
@@ -59,7 +60,12 @@ const ensureStaffQuotationsTable = async () => {
         // the customer record, because a quotation is a record of what was sent: the
         // company printed on it must not change later because the customer's details
         // were updated.
-        ['company_name', 'VARCHAR(255) NULL']]) {
+        ['company_name', 'VARCHAR(255) NULL'],
+        // An unguessable token that lets the customer fetch this one quotation without an
+        // account. It is what makes a WhatsApp link work: the recipient has no login, so
+        // the token IS the authorisation, which is why it is 32 random bytes rather than
+        // anything derived from the id.
+        ['share_token', 'VARCHAR(64) NULL']]) {
         try { await db.query(`ALTER TABLE staff_quotations ADD COLUMN ${col} ${ddl}`); }
         catch (e) { /* column already exists — ignore */ }
     }
@@ -70,6 +76,9 @@ const ensureStaffQuotationsTable = async () => {
         // Belt and braces alongside branch_quote_seq: even a bug in the number generator
         // cannot land two quotations on the same ref within a branch and year.
         'ADD UNIQUE KEY uniq_sq_branch_year_seq (branch_code, branch_year, branch_seq)',
+        // Unique as well as indexed: two quotations sharing a token would each be
+        // reachable by the other's link.
+        'ADD UNIQUE KEY uniq_sq_share_token (share_token)',
     ]) {
         try { await db.query(`ALTER TABLE staff_quotations ${idx}`); }
         catch (e) { /* index already present — ignore */ }
@@ -368,6 +377,7 @@ exports.getStaffQuotations = async (req, res, next) => {
                    COALESCE(u.name, sq.created_by_name) AS created_by_name,
                    COALESCE(r.name, sq.created_by_role) AS created_by_role,
                    u.email AS created_by_email,
+                   u.phone_number AS created_by_phone,
                    b.name AS branch_name,
                    c.name AS customer_record_name,
                    c.company_name AS customer_company
@@ -394,7 +404,8 @@ exports.getStaffQuotation = async (req, res, next) => {
             `SELECT sq.*,
                     COALESCE(u.name, sq.created_by_name) AS created_by_name,
                     COALESCE(r.name, sq.created_by_role) AS created_by_role,
-                    u.email AS created_by_email
+                    u.email AS created_by_email,
+                    u.phone_number AS created_by_phone
              FROM staff_quotations sq
              LEFT JOIN users u ON u.id = sq.created_by
              LEFT JOIN roles r ON u.role_id = r.id
@@ -594,6 +605,83 @@ exports.reviewStaffQuotation = async (req, res, next) => {
             success: true,
             message: status === 'approved' ? 'Quotation approved' : 'Quotation marked as not approved',
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Issue (or reuse) the share link for a quotation
+// @route   POST /api/v1/staff-quotations/:id/share
+// Back-office only. The link it returns is what gets sent to a customer.
+exports.createShareLink = async (req, res, next) => {
+    try {
+        await ensureStaffQuotationsTable();
+        const owned = await ownedByRequester(req, req.params.id);
+        if (!owned.row || !owned.allowed) {
+            return res.status(404).json({ success: false, message: 'Quotation not found' });
+        }
+        // Only an approved quotation may be shared, matching every other send path: the
+        // approval gate is worthless if a link can hand out a draft.
+        if (owned.row.status !== 'approved') {
+            return res.status(400).json({ success: false, message: 'Only approved quotations can be shared' });
+        }
+
+        // Reused rather than regenerated, so a link already sent to a customer keeps
+        // working. Rotating it on every send would break the one in yesterday's message.
+        let token = owned.row.share_token;
+        if (!token) {
+            token = crypto.randomBytes(24).toString('base64url');
+            await db.execute('UPDATE staff_quotations SET share_token = ? WHERE id = ?', [token, req.params.id]);
+        }
+
+        res.json({ success: true, data: { token } });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Fetch one quotation by its share token, for the customer-facing download page
+// @route   GET /api/v1/staff-quotations/shared/:token
+// @access  PUBLIC — the token is the authorisation
+exports.getSharedQuotation = async (req, res, next) => {
+    try {
+        await ensureStaffQuotationsTable();
+        const token = String(req.params.token || '');
+        // Length-checked before touching the database: a short or empty token cannot be
+        // one we issued, and answering immediately keeps a guessing attempt cheap for us.
+        if (token.length < 20) {
+            return res.status(404).json({ success: false, message: 'Quotation not found' });
+        }
+
+        const [rows] = await db.execute(
+            `SELECT sq.*, COALESCE(u.name, sq.created_by_name) AS created_by_name,
+                    u.email AS created_by_email, u.phone_number AS created_by_phone
+               FROM staff_quotations sq
+               LEFT JOIN users u ON u.id = sq.created_by
+              WHERE sq.share_token = ? LIMIT 1`,
+            [token]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Quotation not found' });
+        }
+
+        const q = rows[0];
+        // A quotation withdrawn after the link was sent stops being downloadable. The
+        // link outlives the message it was sent in, so the status is checked on every
+        // fetch rather than only when the link was made.
+        if (q.status !== 'approved') {
+            return res.status(404).json({ success: false, message: 'Quotation not found' });
+        }
+
+        // Internal fields are stripped: the recipient is a customer, not a colleague, and
+        // has no business seeing approval notes or who reviewed what.
+        const {
+            review_note, reviewed_by, reviewed_by_name, reviewed_at, notes,
+            created_by, customer_id, branch_id, share_token, last_cc_emails, email_sent,
+            ...safe
+        } = q;
+
+        res.json({ success: true, data: safe });
     } catch (error) {
         next(error);
     }

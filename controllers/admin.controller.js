@@ -228,7 +228,7 @@ exports.getDashboardStats = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
     try {
         const [users] = await db.query(`
-            SELECT u.id, u.name, u.email, u.reward_points, u.created_at, u.role_id, u.staff_permissions,
+            SELECT u.id, u.name, u.email, u.phone_number, u.reward_points, u.created_at, u.role_id, u.staff_permissions,
                    u.branch_id, b.name AS branch_name, b.code AS branch_code,
                    COALESCE(u.status, 'active') as status, COALESCE(r.name, 'user') as role
             FROM users u
@@ -246,7 +246,7 @@ exports.getAllUsers = async (req, res, next) => {
 // @access  Private/Admin|Staff(users)
 exports.createUser = async (req, res, next) => {
     try {
-        const { name, email, password, role_id, staff_permissions, branch_id } = req.body;
+        const { name, email, password, role_id, staff_permissions, branch_id, phone_number } = req.body;
 
         if (!name || !email || !password || !role_id) {
             return res.status(400).json({ success: false, message: 'Name, email, password, and role are required' });
@@ -273,6 +273,12 @@ exports.createUser = async (req, res, next) => {
             await db.query('UPDATE users SET branch_id = ? WHERE id = ?', [branch_id || null, userId]);
         }
 
+        // The number printed on quotations this person raises, so a customer can reach
+        // whoever quoted them rather than the main switchboard.
+        if (phone_number !== undefined) {
+            await db.query('UPDATE users SET phone_number = ? WHERE id = ?', [phone_number || null, userId]);
+        }
+
         res.status(201).json({ success: true, message: 'User created successfully', data: { id: userId } });
     } catch (error) {
         next(error);
@@ -284,7 +290,7 @@ exports.createUser = async (req, res, next) => {
 // @access  Private/Admin|Staff(users)
 exports.updateUser = async (req, res, next) => {
     try {
-        const { name, email, role_id, staff_permissions, branch_id } = req.body;
+        const { name, email, role_id, staff_permissions, branch_id, phone_number } = req.body;
 
         const fields = [];
         const values = [];
@@ -295,6 +301,8 @@ exports.updateUser = async (req, res, next) => {
         // Checked against undefined, not truthiness: clearing a branch sends '' or null,
         // which a `if (branch_id)` test would silently ignore.
         if (branch_id !== undefined) { fields.push('branch_id = ?'); values.push(branch_id || null); }
+        // Same undefined test: clearing a number must not be read as "leave it alone".
+        if (phone_number !== undefined) { fields.push('phone_number = ?'); values.push(phone_number || null); }
         if (staff_permissions !== undefined) {
             fields.push('staff_permissions = ?');
             values.push(staff_permissions ? JSON.stringify(staff_permissions) : null);

@@ -7,6 +7,8 @@ const {
     deleteStaffQuotation,
     sendStaffQuotationEmail,
     getStaffQuotationEmails,
+    createShareLink,
+    getSharedQuotation,
     reviewStaffQuotation,
     lookupCustomers,
     getCustomerProfile,
@@ -16,6 +18,11 @@ const {
 const { protect, authorize, authorizeAdminOrStaff } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+// PUBLIC, and deliberately above the guard below. A customer opening a WhatsApp link has
+// no account, so the unguessable token in the URL is the authorisation. Declared first
+// because router.use() applies to everything after it.
+router.get('/shared/:token', getSharedQuotation);
 
 // Every route is back-office only. authorizeAdminOrStaff lets admins through
 // unconditionally and staff through only when they hold the `staff_quotations`
@@ -42,6 +49,8 @@ router.route('/:id')
     .delete(deleteStaffQuotation);
 
 router.post('/:id/send-email', sendStaffQuotationEmail);
+// Issues the link that /shared/:token then serves.
+router.post('/:id/share', createShareLink);
 // The send history, and the CC list last used, for the send dialog.
 router.get('/:id/emails', getStaffQuotationEmails);
 
