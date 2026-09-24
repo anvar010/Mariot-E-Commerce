@@ -1,0 +1,102 @@
+/* Customer-facing quotation download page.
+
+   Deliberately plain: it is opened from a WhatsApp message, usually on a phone, and its
+   whole job is to hand over a PDF. Anything else on the page is a distraction from that. */
+
+.wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: #f8fafc;
+}
+
+.card {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+    padding: 36px 28px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+}
+
+.icon {
+    color: #16a1db;
+}
+
+.errorIcon {
+    color: #dc2626;
+}
+
+.title {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.muted {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #64748b;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 9px;
+    background: #16a1db;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s ease;
+}
+
+.button:hover:not(:disabled) {
+    background: #1289bb;
+}
+
+.button:disabled {
+    opacity: .7;
+    cursor: default;
+}
+
+.footerNote {
+    margin: 6px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid #f1f5f9;
+    width: 100%;
+    font-size: 12.5px;
+    color: #94a3b8;
+}
+
+.spin {
+    animation: shared-spin .9s linear infinite;
+}
+
+@keyframes shared-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spin {
+        animation: none;
+    }
+}

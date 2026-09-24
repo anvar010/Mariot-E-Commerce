@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminUsers.module.css';
+import PhoneNumberInput from '@/components/shared/PhoneNumberInput/PhoneNumberInput';
 import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar, Ban, CheckCircle, Coins, UserPlus, Wrench, Filter, ChevronDown } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
@@ -139,12 +140,12 @@ const AdminUsers = () => {
     // --- Edit modal ---
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<any>(null);
-    const [formData, setFormData] = useState({ name: '', email: '', role_id: '', branch_id: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', role_id: '', branch_id: '', phone_number: '' });
     const [editPerms, setEditPerms] = useState<string[]>([]);
 
     // --- Create modal ---
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role_id: '', branch_id: '' });
+    const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role_id: '', branch_id: '', phone_number: '' });
     const [createPerms, setCreatePerms] = useState<string[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -195,7 +196,7 @@ const AdminUsers = () => {
 
     // ---------- Create ----------
     const openCreateModal = () => {
-        setCreateForm({ name: '', email: '', password: '', role_id: roles.find(r => r.name === 'user')?.id?.toString() || '', branch_id: '' });
+        setCreateForm({ name: '', email: '', password: '', role_id: roles.find(r => r.name === 'user')?.id?.toString() || '', branch_id: '', phone_number: '' });
         setCreatePerms([]);
         setIsCreateOpen(true);
     };
@@ -237,6 +238,7 @@ const AdminUsers = () => {
             name: user.name, email: user.email,
             role_id: user.role_id ? user.role_id.toString() : '2',
             branch_id: user.branch_id ? user.branch_id.toString() : '',
+            phone_number: user.phone_number || '',
         });
         setEditPerms(parsePerms(user.staff_permissions));
         setPointsForm({ amount: '', action: 'add' });
@@ -598,6 +600,18 @@ const AdminUsers = () => {
                                     {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                                 </select>
                             </div>
+                            {/* Not inside the staff-only block: admins raise quotations too,
+                                and the number is printed on whatever they raise. */}
+                            <div className={styles.formGroup}>
+                                <label>Mobile number</label>
+                                <PhoneNumberInput
+                                    value={createForm.phone_number}
+                                    onChange={(v) => setCreateForm({ ...createForm, phone_number: v })}
+                                />
+                                <small className={styles.fieldHint}>
+                                    Printed on quotations they raise, so a customer can reach them directly.
+                                </small>
+                            </div>
                             {isStaffRole(createForm.role_id) && (
                                 <>
                                     <div className={styles.formGroup}>
@@ -655,6 +669,16 @@ const AdminUsers = () => {
                                 </select>
                             </div>
 
+                            <div className={styles.formGroup}>
+                                <label>Mobile number</label>
+                                <PhoneNumberInput
+                                    value={formData.phone_number}
+                                    onChange={(v) => setFormData({ ...formData, phone_number: v })}
+                                />
+                                <small className={styles.fieldHint}>
+                                    Printed on quotations they raise, so a customer can reach them directly.
+                                </small>
+                            </div>
                             {isStaffRole(formData.role_id) && (
                                 <>
                                     <div className={styles.formGroup}>

@@ -175,15 +175,24 @@ const StaffQuotationCustomer: React.FC<Props> = ({ customerId }) => {
                 return;
             }
 
-            const items = typeof full.items === 'string' ? JSON.parse(full.items) : (full.items || []);
-            await generateQuotationPDF({
-                ...full,
-                items: items.map((i: any) => ({ ...i, image: resolveUrl(i.image) })),
-            }, 'download', false);
+            // A download link rather than the file: wa.me carries a phone number and a
+            // message and nothing else, so the PDF cannot be attached. The customer opens
+            // the link and the download starts on its own.
+            const res = await fetch(`${API_BASE_URL}/staff-quotations/${id}/share`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            });
+            const data = await res.json();
+            if (!data.success || !data.data?.token) {
+                showNotification(data.message || 'Could not create the download link', 'error');
+                return;
+            }
+            const url = `${window.location.origin}/en/quotation/${data.data.token}`;
+            const text = `Quotation ${full.quotation_ref} for ${full.customer_name} — total AED ${Number(full.total_amount || 0).toFixed(2)}
 
-            const text = `Quotation ${full.quotation_ref} for ${full.customer_name} — total AED ${Number(full.total_amount || 0).toFixed(2)}`;
+Download: ${url}`;
             window.open(`${link}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-            showNotification('PDF downloaded — attach it in the WhatsApp chat', 'success');
         } catch (e: any) {
             showNotification(e?.message || 'Could not prepare that quotation', 'error');
         }

@@ -6,6 +6,10 @@ export interface InvoicePDFData {
     customer_name: string;
     /** Printed under the name when present; a walk-in may have no company. */
     company_name?: string;
+    /** Who raised the quotation, printed so the customer can reach them directly. */
+    created_by_name?: string;
+    created_by_phone?: string;
+    created_by_email?: string;
     given_by_name?: string;
     final_amount: number;
     delivery_charge?: number;
@@ -110,7 +114,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
     const alignEnd = isArabic ? 'left' : 'right';
     const L = isArabic ? {
         quotation: 'تسعيرة', ref: 'مرجع التسعيرة', issueDate: 'تاريخ إصدار التسعيرة',
-        issuedFrom: 'صادر من', issuedTo: 'صادر إلى',
+        issuedFrom: 'صادر من', issuedTo: 'صادر إلى', issuedBy: 'أصدرها',
         companyName: 'متجر ماريوت', companyLegal: 'ماريوت لتجارة معدات المطابخ ذ.م.م', vat: 'الرقم الضريبي',
         note: 'لن يتم حجز المنتجات في هذه التسعيرة إلا بعد إتمام الطلب',
         thRef: 'رقم المرجع', thName: 'اسم المنتج', thImage: 'صورة المنتج', thQty: 'الكمية', thUnit: 'سعر الوحدة', thTotal: 'مجموع السعر',
@@ -123,7 +127,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
         thankyou: 'شكراً لاختياركم متجر ماريوت', continued: 'يتبع في الصفحة التالية...', continuedRef: 'مرجع التسعيرة',
     } : {
         quotation: 'Quotation', ref: 'Quotation Ref.', issueDate: 'Quotation Issue Date',
-        issuedFrom: 'Issued from', issuedTo: 'Issued to',
+        issuedFrom: 'Issued from', issuedTo: 'Issued to', issuedBy: 'Issued by',
         companyName: 'Mariot Store', companyLegal: 'Mariot Kitchen Equipment Trading LLC', vat: 'VAT#',
         note: "This quotation won't reserve the available stock for you until you place an order",
         thRef: 'Ref no.', thName: 'Product Name', thImage: 'Product Image', thQty: 'QTY', thUnit: 'Unit Price', thTotal: 'Total Price',
@@ -397,6 +401,13 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
                             <div style="font-size: 13px; color: #334155; text-align:${alignStart};" dir="ltr">${quotation.customer_email || ''}</div>
                         </div>
                     </div>
+                    ${quotation.created_by_name ? `
+                    <div style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px 15px; margin-bottom: 20px; text-align: ${alignStart};">
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em;">${L.issuedBy}</div>
+                        <div style="font-size: 13px; color: #0f172a; font-weight: bold;">${quotation.created_by_name}</div>
+                        ${quotation.created_by_phone ? `<div style="font-size: 12px; color: #334155; margin-top: 2px;" dir="ltr">${quotation.created_by_phone}</div>` : ''}
+                        ${quotation.created_by_email ? `<div style="font-size: 12px; color: #334155; margin-top: 2px;" dir="ltr">${quotation.created_by_email}</div>` : ''}
+                    </div>` : ''}
                     <div style="display: flex; align-items: center; gap: 15px; padding: 12px 20px; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 30px;">
                         <div style="width: 24px; height: 24px; min-width: 24px; border: 2px solid #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">i</div>
                         <div style="flex: 1; font-size: 12px; color: #334155; text-align: ${alignStart};">${L.note}</div>
