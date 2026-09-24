@@ -776,6 +776,30 @@ const AdminStaffQuotations = () => {
         }
     };
 
+    /**
+     * Opens WhatsApp for the customer with the quotation PDF downloaded ready to attach.
+     *
+     * A wa.me link cannot carry a file: WhatsApp's web API takes a phone number and a
+     * message, and nothing more. So the PDF is saved first and the chat opens second,
+     * leaving the file in the downloads tray for WhatsApp's own attach button -- one drag
+     * instead of downloading, finding the number and starting the chat by hand.
+     */
+    const whatsappQuotation = async (q: any) => {
+        const link = whatsappLink(q.customer_phone);
+        if (!link) { showNotification('This quotation has no usable phone number', 'error'); return; }
+        setBusyId(q.id);
+        try {
+            await buildPdf(q, 'download');
+            const text = `Quotation ${q.quotation_ref} for ${q.customer_name} — total AED ${Number(q.total_amount || 0).toFixed(2)}`;
+            window.open(`${link}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+            showNotification('PDF downloaded — attach it in the WhatsApp chat', 'success');
+        } catch {
+            showNotification('Could not generate the PDF', 'error');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
     const submitReview = async () => {
         if (!reviewModal) return;
         if (reviewModal.decision === 'rejected' && !reviewNote.trim()) {
@@ -1633,12 +1657,7 @@ const AdminStaffQuotations = () => {
                                             follows up -- which is what they do by hand today anyway. */}
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                const link = whatsappLink(q.customer_phone);
-                                                if (!link) { showNotification('This quotation has no usable phone number', 'error'); return; }
-                                                const text = `Quotation ${q.quotation_ref} for ${q.customer_name} — total AED ${Number(q.total_amount || 0).toFixed(2)}`;
-                                                window.open(`${link}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-                                            }}
+                                            onClick={() => whatsappQuotation(q)}
                                             disabled={(q.status || 'pending') !== 'approved' || !whatsappLink(q.customer_phone)}
                                             title={(q.status || 'pending') !== 'approved'
                                                 ? 'Only approved quotations can be sent'

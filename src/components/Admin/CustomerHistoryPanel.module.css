@@ -350,7 +350,14 @@
    and a column heading over a single button adds width without adding meaning.
    Screen readers still get the label through .srOnly. */
 .actionsHead {
-    width: 40px;
+    /* Three icon buttons plus their gaps. */
+    width: 108px;
+}
+
+.actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .actionsCell {

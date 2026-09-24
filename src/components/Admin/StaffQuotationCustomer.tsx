@@ -23,8 +23,28 @@ import { useNotification } from '@/context/NotificationContext';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import CustomerHistoryPanel, { CustomerProfile } from './CustomerHistoryPanel';
+import QuotationEmailModal from './QuotationEmailModal';
+import { generateQuotationPDF } from '@/utils/pdfGenerator';
+import { resolveUrl } from '@/utils/resolveUrl';
 import QuotationLineProduct from './QuotationLineProduct';
 import styles from './StaffQuotationCustomer.module.css';
+
+/**
+ * wa.me link for a customer's phone number.
+ *
+ * Same rule as the Staff Quotations list and AdminOrders: wa.me wants the country code
+ * with no leading zero. A number that already carries one is passed through rather than
+ * guessed at; only a bare local number gets the UAE code, because that is the single case
+ * where the country is not in doubt.
+ */
+const whatsappLink = (phone?: string): string | null => {
+    const digits = String(phone || '').replace(/\D/g, '');
+    if (digits.length < 7) return null;
+    const intl = digits.startsWith('971') ? digits
+        : digits.startsWith('0') ? `971${digits.slice(1)}`
+            : digits;
+    return `https://wa.me/${intl}`;
+};
 
 const DASH = '—';
 
@@ -44,6 +64,8 @@ const StaffQuotationCustomer: React.FC<Props> = ({ customerId }) => {
     // so the full record is fetched before it can be shown.
     const [selected, setSelected] = useState<any>(null);
     const [viewingId, setViewingId] = useState<number | null>(null);
+    // The quotation whose send dialog is open, if any.
+    const [emailModal, setEmailModal] = useState<any>(null);
 
     const load = useCallback(async () => {
         if (!Number.isFinite(customerId)) { setNotFound(true); setLoading(false); return; }
@@ -83,6 +105,90 @@ const StaffQuotationCustomer: React.FC<Props> = ({ customerId }) => {
         }
     };
 
+    /**
+     * Fetches the full quotation, since the history rows carry summary columns only and
+     * both sending and the PDF need the line items.
+     */
+    const fetchFull = async (id: number) => {
+        const res = await fetch(`${API_BASE_URL}/staff-quotations/${id}`, {
+            credentials: 'include',
+            headers: getAuthHeaders(),
+        });
+        const data = await res.json();
+        if (data.success && data.data) return data.data;
+        throw new Error(data.message || 'Could not open that quotation');
+    };
+
+    const openEmail = async (id: number) => {
+        try {
+            const full = await fetchFull(id);
+            if (!full.customer_email) {
+                showNotification('This quotation has no customer email', 'error');
+                return;
+            }
+            setEmailModal(full);
+        } catch (e: any) {
+            showNotification(e?.message || 'Could not open that quotation', 'error');
+        }
+    };
+
+    const sendEmail = async (q: any, ccEmails: string[]): Promise<boolean> => {
+        try {
+            const items = typeof q.items === 'string' ? JSON.parse(q.items) : (q.items || []);
+            // 'silent': the email wants the data URI only -- nothing saved, nothing opened.
+            const pdfDataUri = await generateQuotationPDF({
+                ...q,
+                items: items.map((i: any) => ({ ...i, image: resolveUrl(i.image) })),
+            }, 'silent', false);
+            const res = await fetch(`${API_BASE_URL}/staff-quotations/${q.id}/send-email`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pdf_base64: pdfDataUri, locale: 'en', cc_emails: ccEmails }),
+            });
+            const data = await res.json();
+            showNotification(data.message || (data.success ? 'Email sent' : 'Failed to send'), data.success ? 'success' : 'error');
+            // Reload so the history reflects the send that just happened.
+            if (data.success) { load(); return true; }
+            return false;
+        } catch {
+            showNotification('Failed to send the email', 'error');
+            return false;
+        }
+    };
+
+    /**
+     * Opens WhatsApp for this customer with the quotation PDF downloaded ready to attach.
+     *
+     * A wa.me link cannot carry a file -- WhatsApp accepts only a phone number and a text
+     * message, and nothing in the web API allows an attachment. So the PDF is saved first
+     * and the chat opens second, leaving the file in the downloads tray where WhatsApp's
+     * own attach button picks it up. That is one drag instead of the whole manual
+     * download-then-find-the-number routine.
+     */
+    const openWhatsapp = async (id: number) => {
+        try {
+            const full = await fetchFull(id);
+            const link = whatsappLink(full.customer_phone);
+            if (!link) {
+                showNotification('This quotation has no usable phone number', 'error');
+                return;
+            }
+
+            const items = typeof full.items === 'string' ? JSON.parse(full.items) : (full.items || []);
+            await generateQuotationPDF({
+                ...full,
+                items: items.map((i: any) => ({ ...i, image: resolveUrl(i.image) })),
+            }, 'download', false);
+
+            const text = `Quotation ${full.quotation_ref} for ${full.customer_name} — total AED ${Number(full.total_amount || 0).toFixed(2)}`;
+            window.open(`${link}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+            showNotification('PDF downloaded — attach it in the WhatsApp chat', 'success');
+        } catch (e: any) {
+            showNotification(e?.message || 'Could not prepare that quotation', 'error');
+        }
+    };
+
     if (loading) return <AdminLoader />;
 
     if (notFound || !profile) {
@@ -114,8 +220,18 @@ const StaffQuotationCustomer: React.FC<Props> = ({ customerId }) => {
                 profile={profile}
                 onView={viewQuotation}
                 viewingId={viewingId}
+                onEmail={openEmail}
+                onWhatsapp={openWhatsapp}
                 variant="page"
             />
+
+            {emailModal && (
+                <QuotationEmailModal
+                    quotation={emailModal}
+                    onClose={() => setEmailModal(null)}
+                    onSend={(cc) => sendEmail(emailModal, cc)}
+                />
+            )}
 
             {selected && (
                 <div className={styles.modalOverlay} onClick={() => setSelected(null)}>

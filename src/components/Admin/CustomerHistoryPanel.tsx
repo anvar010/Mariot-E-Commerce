@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Building2, FileText, Clock, TrendingUp, X, Eye, Loader2 } from 'lucide-react';
+import { Building2, FileText, Clock, TrendingUp, X, Eye, Loader2, Mail, MessageCircle } from 'lucide-react';
 import styles from './CustomerHistoryPanel.module.css';
 
 /**
@@ -40,6 +40,8 @@ export interface CustomerProfile {
         created_by_name: string | null;
         /** 'admin' or 'staff' at the time the quotation was raised. */
         created_by_role?: string | null;
+        /** 1 once the quotation has been emailed, so the action can read "resend". */
+        email_sent?: number | null;
     }>;
 }
 
@@ -75,13 +77,20 @@ interface Props {
     /** The row currently being fetched, so only that one shows a spinner. */
     viewingId?: number | null;
     /**
+     * Opens the send dialog for a quotation. Owned by the parent because sending needs
+     * the PDF builder and the notification system, neither of which this panel has.
+     */
+    onEmail?: (quotationId: number) => void;
+    /** Opens WhatsApp for this customer, with the quotation named in the message. */
+    onWhatsapp?: (quotationId: number) => void;
+    /**
      * Renders as a standalone card rather than an inset block. Set on the customer page,
      * where this is the whole content instead of an interruption inside a form.
      */
     variant?: 'inset' | 'page';
 }
 
-const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewingId, variant = 'inset' }) => {
+const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewingId, onEmail, onWhatsapp, variant = 'inset' }) => {
     const { customer, summary, branch_history, quotations } = profile;
 
     /**
@@ -211,7 +220,9 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewi
                                     <th>Date</th>
                                     <th className={styles.right}>Amount</th>
                                     <th>Status</th>
-                                    {onView && <th className={styles.actionsHead}><span className={styles.srOnly}>View</span></th>}
+                                    {(onView || onEmail || onWhatsapp) && (
+                                        <th className={styles.actionsHead}><span className={styles.srOnly}>Actions</span></th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody>
@@ -241,20 +252,57 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewi
                                         <td>{shortDate(q.created_at)}</td>
                                         <td className={styles.right}>{money(q.total_amount)}</td>
                                         <td><span className={`${styles.status} ${statusClass(q.status)}`}>{q.status}</span></td>
-                                        {onView && (
+                                        {(onView || onEmail || onWhatsapp) && (
                                             <td className={styles.actionsCell}>
-                                                <button
-                                                    type="button"
-                                                    className={styles.viewBtn}
-                                                    onClick={() => onView(q.id)}
-                                                    disabled={viewingId === q.id}
-                                                    title={`View ${q.quotation_ref}`}
-                                                    aria-label={`View quotation ${q.quotation_ref}`}
-                                                >
-                                                    {viewingId === q.id
-                                                        ? <Loader2 size={14} className={styles.spin} />
-                                                        : <Eye size={14} />}
-                                                </button>
+                                                <div className={styles.actions}>
+                                                    {onView && (
+                                                        <button
+                                                            type="button"
+                                                            className={styles.viewBtn}
+                                                            onClick={() => onView(q.id)}
+                                                            disabled={viewingId === q.id}
+                                                            title={`View ${q.quotation_ref}`}
+                                                            aria-label={`View quotation ${q.quotation_ref}`}
+                                                        >
+                                                            {viewingId === q.id
+                                                                ? <Loader2 size={14} className={styles.spin} />
+                                                                : <Eye size={14} />}
+                                                        </button>
+                                                    )}
+                                                    {/* Only an approved quotation may be sent, which is the
+                                                        same rule the main list applies -- the approval gate
+                                                        means nothing if it can be bypassed from here. */}
+                                                    {onEmail && (
+                                                        <button
+                                                            type="button"
+                                                            className={styles.viewBtn}
+                                                            onClick={() => onEmail(q.id)}
+                                                            disabled={q.status !== 'approved'}
+                                                            title={q.status !== 'approved'
+                                                                ? 'Only approved quotations can be emailed'
+                                                                : (Number(q.email_sent) === 1
+                                                                    ? `Resend ${q.quotation_ref}`
+                                                                    : `Email ${q.quotation_ref}`)}
+                                                            aria-label={`Email quotation ${q.quotation_ref}`}
+                                                        >
+                                                            <Mail size={14} />
+                                                        </button>
+                                                    )}
+                                                    {onWhatsapp && (
+                                                        <button
+                                                            type="button"
+                                                            className={styles.viewBtn}
+                                                            onClick={() => onWhatsapp(q.id)}
+                                                            disabled={q.status !== 'approved'}
+                                                            title={q.status !== 'approved'
+                                                                ? 'Only approved quotations can be sent'
+                                                                : `Send ${q.quotation_ref} on WhatsApp`}
+                                                            aria-label={`Send quotation ${q.quotation_ref} on WhatsApp`}
+                                                        >
+                                                            <MessageCircle size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         )}
                                     </tr>
