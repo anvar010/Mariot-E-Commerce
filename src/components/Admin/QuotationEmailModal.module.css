@@ -1,0 +1,318 @@
+/* Send-quotation dialog: recipient, CC list, and the record of previous sends.
+   Matches the other admin modals -- same overlay, radius, header and button weights. */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, .45);
+}
+
+.modal {
+    width: 100%;
+    max-width: 520px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, .22);
+    overflow: hidden;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.header h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.header button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.header button:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.body {
+    padding: 16px 18px;
+    overflow-y: auto;
+}
+
+.field {
+    margin-bottom: 16px;
+}
+
+.label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+/* The recipient is the quotation's own customer and is not editable here -- changing
+   who a quotation belongs to is an edit to the quotation, not to one send of it. */
+.readonly {
+    padding: 9px 11px;
+    border: 1px solid #eef2f6;
+    border-radius: 8px;
+    background: #f8fafc;
+    font-size: 13.5px;
+    color: #334155;
+    overflow-wrap: anywhere;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px 4px 10px;
+    border: 1px solid #dbeafe;
+    border-radius: 20px;
+    background: #eff6ff;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1d4ed8;
+    overflow-wrap: anywhere;
+}
+
+.chip button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex: none;
+    border: none;
+    border-radius: 50%;
+    background: rgba(29, 78, 216, .12);
+    color: #1d4ed8;
+    cursor: pointer;
+}
+
+.chip button:hover {
+    background: rgba(29, 78, 216, .22);
+}
+
+.addRow {
+    display: flex;
+    gap: 8px;
+}
+
+.input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 9px 11px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13.5px;
+    color: #0f172a;
+    outline: none;
+}
+
+.input:focus {
+    border-color: #2563eb;
+}
+
+.addBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex: none;
+    padding: 0 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+}
+
+.addBtn:hover {
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.error {
+    margin: 7px 0 0;
+    font-size: 12px;
+    color: #dc2626;
+}
+
+/* ── history ──────────────────────────────────────────────────────────────── */
+
+.historyBlock {
+    padding-top: 14px;
+    border-top: 1px solid #eef2f6;
+}
+
+.historyTitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.muted {
+    margin: 0;
+    font-size: 12.5px;
+    color: #94a3b8;
+}
+
+.historyList {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 190px;
+    overflow-y: auto;
+}
+
+.historyRow {
+    padding: 9px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 12.5px;
+}
+
+.historyRow:last-child {
+    border-bottom: none;
+}
+
+.when {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.who {
+    margin-inline-start: 8px;
+    color: #64748b;
+}
+
+.historyTo,
+.historyCc {
+    margin-top: 2px;
+    color: #94a3b8;
+    overflow-wrap: anywhere;
+}
+
+/* ── footer ───────────────────────────────────────────────────────────────── */
+
+.footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+    padding: 13px 18px;
+    border-top: 1px solid #eef2f6;
+    background: #f8fafc;
+}
+
+.cancelBtn,
+.sendBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cancelBtn {
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+}
+
+.cancelBtn:hover:not(:disabled) {
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.sendBtn {
+    border: 1px solid #2563eb;
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.sendBtn:hover:not(:disabled) {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.cancelBtn:disabled,
+.sendBtn:disabled {
+    opacity: .6;
+    cursor: default;
+}
+
+.spin {
+    animation: qem-spin .8s linear infinite;
+}
+
+@keyframes qem-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spin {
+        animation: none;
+    }
+}
+
+@media (max-width: 560px) {
+    .footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .cancelBtn,
+    .sendBtn {
+        justify-content: center;
+    }
+}

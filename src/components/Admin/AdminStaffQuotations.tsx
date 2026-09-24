@@ -6,7 +6,8 @@ import styles from './AdminStaffQuotations.module.css';
 import StaffQuotationProductModal from './StaffQuotationProductModal';
 import {
     FilePlus, Search, Trash2, Eye, X, Plus, Minus, Printer,
-    Mail, Loader2, ArrowLeft, Package, Percent, Check, Ban, Clock, FileText, Pencil, AlertTriangle, Download} from 'lucide-react';
+    Mail, Loader2, ArrowLeft, Package, Percent, Check, Ban, Clock, FileText, Pencil, AlertTriangle, Download,
+    MessageCircle} from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
 import { API_BASE_URL } from '@/config';
@@ -19,6 +20,7 @@ import DiscountLimitsModal from './DiscountLimitsModal';
 import CustomerHistoryPanel, { CustomerProfile } from './CustomerHistoryPanel';
 import PhoneNumberInput from './PhoneNumberInput';
 import QuotationLineProduct from './QuotationLineProduct';
+import QuotationEmailModal from './QuotationEmailModal';
 import { matchDialCountry } from '@/data/dialCountries';
 import { useRouter } from '@/i18n/navigation';
 
@@ -44,6 +46,23 @@ type Line = {
     variant_id?: number | null;
     variant_label?: string | null;
     custom_dimensions?: Record<string, string> | null;
+};
+
+/**
+ * wa.me link for a customer's phone number.
+ *
+ * Mirrors the helper in AdminOrders: wa.me wants the country code and no leading zero,
+ * and a quotation's number may be stored either way. A number that already carries a
+ * country code is passed through rather than guessed at; only a bare local number gets
+ * the UAE code, because that is the one case where the country is not in doubt.
+ */
+const whatsappLink = (phone?: string): string | null => {
+    const digits = String(phone || '').replace(/\D/g, '');
+    if (digits.length < 7) return null;
+    const intl = digits.startsWith('971') ? digits
+        : digits.startsWith('0') ? `971${digits.slice(1)}`
+            : digits;
+    return `https://wa.me/${intl}`;
 };
 
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
@@ -118,6 +137,8 @@ const AdminStaffQuotations = () => {
     const [thresholdPct, setThresholdPct] = useState<number>(20);
     const [customerMatches, setCustomerMatches] = useState<any[]>([]);
     const [customerOpen, setCustomerOpen] = useState(false);
+    // The quotation whose send dialog is open, if any.
+    const [emailModal, setEmailModal] = useState<any>(null);
     const customerFieldRef = React.useRef<HTMLDivElement>(null);
     /**
      * The customer this quotation will be attached to.
@@ -720,23 +741,36 @@ const AdminStaffQuotations = () => {
         }
     };
 
-    const emailQuotation = async (q: any) => {
+    /**
+     * Opens the send dialog rather than sending immediately.
+     *
+     * Sending on the first click left no way to copy anyone, no sight of whether the
+     * customer already had it, and a second click quietly sent a duplicate.
+     */
+    const emailQuotation = (q: any) => {
         if (!q.customer_email) { showNotification('This quotation has no customer email', 'error'); return; }
+        setEmailModal(q);
+    };
+
+    /** Performs the send for the open dialog. Returns true when the mail went. */
+    const sendQuotationEmail = async (q: any, ccEmails: string[]): Promise<boolean> => {
         setBusyId(q.id);
         try {
-            // false: email wants the data URI only — nothing saved, nothing opened.
+            // 'silent': the email wants the data URI only — nothing saved, nothing opened.
             const pdfDataUri = await buildPdf(q, 'silent');
             const res = await fetch(`${API_BASE_URL}/staff-quotations/${q.id}/send-email`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pdf_base64: pdfDataUri, locale: 'en' }),
+                body: JSON.stringify({ pdf_base64: pdfDataUri, locale: 'en', cc_emails: ccEmails }),
             });
             const data = await res.json();
             showNotification(data.message || (data.success ? 'Email sent' : 'Failed to send'), data.success ? 'success' : 'error');
-            if (data.success) fetchQuotations();
+            if (data.success) { fetchQuotations(); return true; }
+            return false;
         } catch {
             showNotification('Failed to send the email', 'error');
+            return false;
         } finally {
             setBusyId(null);
         }
@@ -1585,8 +1619,32 @@ const AdminStaffQuotations = () => {
                                             disabled={busyId === q.id || !q.customer_email || (q.status || 'pending') !== 'approved'}
                                             title={(q.status || 'pending') !== 'approved'
                                                 ? 'Only approved quotations can be emailed'
-                                                : (q.customer_email ? 'Email to customer' : 'No customer email')}>
+                                                : !q.customer_email
+                                                    ? 'No customer email'
+                                                    // Says which it will be before the dialog opens, so a
+                                                    // quotation already with the customer is obvious from
+                                                    // the row.
+                                                    : (Number(q.email_sent) === 1 ? 'Resend to customer' : 'Email to customer')}>
                                             <Mail size={15} />
+                                        </button>
+                                        {/* Opens WhatsApp with the reference and total already written.
+                                            The PDF cannot be attached from a web link, so the message
+                                            names the quotation and the staff member attaches it or
+                                            follows up -- which is what they do by hand today anyway. */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const link = whatsappLink(q.customer_phone);
+                                                if (!link) { showNotification('This quotation has no usable phone number', 'error'); return; }
+                                                const text = `Quotation ${q.quotation_ref} for ${q.customer_name} — total AED ${Number(q.total_amount || 0).toFixed(2)}`;
+                                                window.open(`${link}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+                                            }}
+                                            disabled={(q.status || 'pending') !== 'approved' || !whatsappLink(q.customer_phone)}
+                                            title={(q.status || 'pending') !== 'approved'
+                                                ? 'Only approved quotations can be sent'
+                                                : (whatsappLink(q.customer_phone) ? 'Send on WhatsApp' : 'No customer phone number')}
+                                        >
+                                            <MessageCircle size={15} />
                                         </button>
                                         <button className={styles.iconDanger} onClick={() => setConfirm({ open: true, id: q.id })} title="Delete">
                                             <Trash2 size={15} />
@@ -1601,6 +1659,14 @@ const AdminStaffQuotations = () => {
 
 
             {quotationModal}
+
+            {emailModal && (
+                <QuotationEmailModal
+                    quotation={emailModal}
+                    onClose={() => setEmailModal(null)}
+                    onSend={(cc) => sendQuotationEmail(emailModal, cc)}
+                />
+            )}
 
             {reviewModal && (
                 <div className={styles.modalOverlay} onClick={() => setReviewModal(null)}>
