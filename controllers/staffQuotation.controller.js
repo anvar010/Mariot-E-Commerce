@@ -78,18 +78,25 @@ const ensureStaffQuotationsTable = async () => {
     // One row per send, so "has this been emailed?" becomes "when, by whom, and to
     // whom?". The single email_sent flag it supplements could only ever answer yes or no,
     // and said nothing about a resend.
-    await db.query(`
-        CREATE TABLE IF NOT EXISTS staff_quotation_emails (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            quotation_id INT NOT NULL,
-            sent_to VARCHAR(255) NOT NULL,
-            cc_emails TEXT NULL,
-            sent_by INT NULL,
-            sent_by_name VARCHAR(255) NULL,
-            sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            KEY idx_sqe_quotation (quotation_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `);
+    //
+    // Guarded on its own: an unguarded failure here would abort the rest of this
+    // function, and the CC column below would silently never be added.
+    try {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS staff_quotation_emails (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                quotation_id INT NOT NULL,
+                sent_to VARCHAR(255) NOT NULL,
+                cc_emails TEXT NULL,
+                sent_by INT NULL,
+                sent_by_name VARCHAR(255) NULL,
+                sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_sqe_quotation (quotation_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        `);
+    } catch (e) {
+        console.error('[StaffQuotation] could not create staff_quotation_emails:', e.message);
+    }
 
     // The CC list last used for a quotation, so reopening the send dialog offers it again
     // rather than making someone retype the same accounts address on every resend.
@@ -514,16 +521,32 @@ exports.sendStaffQuotationEmail = async (req, res, next) => {
 
         // Recorded only after the send succeeds: a failed attempt is not history, and a
         // log claiming a mail went out when it did not is worse than no log.
-        await db.execute(
-            `INSERT INTO staff_quotation_emails (quotation_id, sent_to, cc_emails, sent_by, sent_by_name)
-             VALUES (?, ?, ?, ?, ?)`,
-            [req.params.id, q.customer_email, ccList.length ? JSON.stringify(ccList) : null,
-                (req.user && req.user.id) || null, (req.user && req.user.name) || null]
-        );
-        await db.execute(
-            'UPDATE staff_quotations SET email_sent = 1, last_cc_emails = ? WHERE id = ?',
-            [ccList.length ? JSON.stringify(ccList) : null, req.params.id]
-        );
+        // The mail has already gone by this point. Bookkeeping failures are logged and
+        // swallowed: reporting a failure now would tell the sender to try again and the
+        // customer would receive the quotation twice.
+        try {
+            await db.execute(
+                `INSERT INTO staff_quotation_emails (quotation_id, sent_to, cc_emails, sent_by, sent_by_name)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [req.params.id, q.customer_email, ccList.length ? JSON.stringify(ccList) : null,
+                    (req.user && req.user.id) || null, (req.user && req.user.name) || null]
+            );
+        } catch (e) {
+            console.error('[StaffQuotation] could not record the send:', e.message);
+        }
+
+        try {
+            await db.execute(
+                'UPDATE staff_quotations SET email_sent = 1, last_cc_emails = ? WHERE id = ?',
+                [ccList.length ? JSON.stringify(ccList) : null, req.params.id]
+            );
+        } catch (e) {
+            // The CC column may be missing on a database that has not restarted yet.
+            // The sent flag still matters, so it is set on its own.
+            console.error('[StaffQuotation] could not save the cc list:', e.message);
+            try { await db.execute('UPDATE staff_quotations SET email_sent = 1 WHERE id = ?', [req.params.id]); }
+            catch (e2) { console.error('[StaffQuotation] could not mark as sent:', e2.message); }
+        }
 
         res.json({
             success: true,
@@ -583,15 +606,22 @@ exports.getStaffQuotationEmails = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Quotation not found' });
         }
 
-        const [rows] = await db.query(
-            `SELECT e.id, e.sent_to, e.cc_emails, e.sent_at,
-                    COALESCE(u.name, e.sent_by_name) AS sent_by_name
-               FROM staff_quotation_emails e
-               LEFT JOIN users u ON u.id = e.sent_by
-              WHERE e.quotation_id = ?
-           ORDER BY e.id DESC`,
-            [req.params.id]
-        );
+        // An empty history is a normal answer, so a missing table is reported as "nothing
+        // sent yet" rather than an error that would stop the send dialog opening at all.
+        let rows = [];
+        try {
+            [rows] = await db.query(
+                `SELECT e.id, e.sent_to, e.cc_emails, e.sent_at,
+                        COALESCE(u.name, e.sent_by_name) AS sent_by_name
+                   FROM staff_quotation_emails e
+                   LEFT JOIN users u ON u.id = e.sent_by
+                  WHERE e.quotation_id = ?
+               ORDER BY e.id DESC`,
+                [req.params.id]
+            );
+        } catch (e) {
+            console.error('[StaffQuotation] email history unavailable:', e.message);
+        }
 
         const parse = (v) => {
             if (!v) return [];
@@ -602,6 +632,7 @@ exports.getStaffQuotationEmails = async (req, res, next) => {
             success: true,
             data: {
                 customer_email: owned.row.customer_email || null,
+                // Undefined where the column has not been added yet; parse() answers [].
                 last_cc: parse(owned.row.last_cc_emails),
                 sends: rows.map(r => ({ ...r, cc_emails: parse(r.cc_emails) })),
             },
