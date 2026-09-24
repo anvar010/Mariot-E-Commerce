@@ -462,6 +462,18 @@
     cursor: not-allowed;
 }
 
+/* WhatsApp green, matching .iconDanger's pattern: the brand colour is what makes the
+   action recognisable at icon size, where the mark alone is easy to miss in a row of
+   grey buttons. */
+.iconWhatsapp {
+    color: #25d366 !important;
+}
+
+.iconWhatsapp:hover:not(:disabled) {
+    background: #dcfce7 !important;
+    color: #1da851 !important;
+}
+
 .iconDanger {
     color: #dc2626 !important;
 }

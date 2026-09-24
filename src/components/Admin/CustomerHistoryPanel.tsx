@@ -292,7 +292,7 @@ const CustomerHistoryPanel: React.FC<Props> = ({ profile, onClose, onView, viewi
                                                     {onWhatsapp && (
                                                         <button
                                                             type="button"
-                                                            className={styles.viewBtn}
+                                                            className={`${styles.viewBtn} ${styles.whatsappBtn}`}
                                                             onClick={() => onWhatsapp(q.id)}
                                                             disabled={q.status !== 'approved'}
                                                             title={q.status !== 'approved'

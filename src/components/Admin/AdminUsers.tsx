@@ -51,6 +51,15 @@ const AdminUsers = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
+    /**
+     * Which group of people the table is showing.
+     *
+     * Customers and the team are two different jobs on one screen: looking up a shopper's
+     * reward points has nothing to do with granting a staff member branch access, and 35
+     * rows of the first buried the handful of the second. The role dropdown still narrows
+     * within a tab, so "staff in this tab" and "admins only" are both reachable.
+     */
+    const [audience, setAudience] = useState<'all' | 'customers' | 'team'>('all');
     const { showNotification } = useNotification();
     const currentUser = useAuth().user;
 
@@ -353,7 +362,15 @@ const AdminUsers = () => {
 
         const matchesRole = roleFilter === 'all' || (u.role || '').toLowerCase() === roleFilter.toLowerCase();
 
-        return matchesSearch && matchesRole;
+        // A role that is neither admin nor staff is a customer. Tested that way round so
+        // a role added later lands with the customers rather than vanishing from both
+        // tabs.
+        const role = (u.role || 'user').toLowerCase();
+        const isTeam = role === 'admin' || role === 'staff';
+        const matchesAudience = audience === 'all'
+            || (audience === 'team' ? isTeam : !isTeam);
+
+        return matchesSearch && matchesRole && matchesAudience;
     });
 
     // Shared staff-permissions checkbox UI
@@ -441,6 +458,27 @@ const AdminUsers = () => {
                         <span className={styles.statSubLabel}>{t('dashboard.acrossUsers')}</span>
                     </div>
                 </div>
+            </div>
+
+            {/* Counts come from the unfiltered list, so a tab always says how many it
+                holds rather than how many survive the current search. */}
+            <div className={styles.audienceTabs}>
+                {([
+                    ['all', 'All', users.length],
+                    ['customers', 'Customers', users.filter(u => !['admin', 'staff'].includes((u.role || 'user').toLowerCase())).length],
+                    ['team', 'Admin & Staff', users.filter(u => ['admin', 'staff'].includes((u.role || 'user').toLowerCase())).length],
+                ] as const).map(([key, label, count]) => (
+                    <button
+                        key={key}
+                        type="button"
+                        className={`${styles.audienceTab} ${audience === key ? styles.audienceTabActive : ''}`}
+                        onClick={() => setAudience(key)}
+                        aria-pressed={audience === key}
+                    >
+                        {label}
+                        <span className={styles.audienceCount}>{count}</span>
+                    </button>
+                ))}
             </div>
 
             <div className={styles.filtersWrapper}>

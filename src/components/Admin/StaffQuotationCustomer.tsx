@@ -28,23 +28,7 @@ import { generateQuotationPDF } from '@/utils/pdfGenerator';
 import { resolveUrl } from '@/utils/resolveUrl';
 import QuotationLineProduct from './QuotationLineProduct';
 import styles from './StaffQuotationCustomer.module.css';
-
-/**
- * wa.me link for a customer's phone number.
- *
- * Same rule as the Staff Quotations list and AdminOrders: wa.me wants the country code
- * with no leading zero. A number that already carries one is passed through rather than
- * guessed at; only a bare local number gets the UAE code, because that is the single case
- * where the country is not in doubt.
- */
-const whatsappLink = (phone?: string): string | null => {
-    const digits = String(phone || '').replace(/\D/g, '');
-    if (digits.length < 7) return null;
-    const intl = digits.startsWith('971') ? digits
-        : digits.startsWith('0') ? `971${digits.slice(1)}`
-            : digits;
-    return `https://wa.me/${intl}`;
-};
+import { whatsappLink } from '@/utils/whatsappLink';
 
 const DASH = '—';
 

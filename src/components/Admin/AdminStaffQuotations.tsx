@@ -24,6 +24,7 @@ import QuotationLineProduct from './QuotationLineProduct';
 import QuotationEmailModal from './QuotationEmailModal';
 import { matchDialCountry } from '@/data/dialCountries';
 import { useRouter } from '@/i18n/navigation';
+import { whatsappLink } from '@/utils/whatsappLink';
 
 type Line = {
     product_id: number | null;
@@ -47,23 +48,6 @@ type Line = {
     variant_id?: number | null;
     variant_label?: string | null;
     custom_dimensions?: Record<string, string> | null;
-};
-
-/**
- * wa.me link for a customer's phone number.
- *
- * Mirrors the helper in AdminOrders: wa.me wants the country code and no leading zero,
- * and a quotation's number may be stored either way. A number that already carries a
- * country code is passed through rather than guessed at; only a bare local number gets
- * the UAE code, because that is the one case where the country is not in doubt.
- */
-const whatsappLink = (phone?: string): string | null => {
-    const digits = String(phone || '').replace(/\D/g, '');
-    if (digits.length < 7) return null;
-    const intl = digits.startsWith('971') ? digits
-        : digits.startsWith('0') ? `971${digits.slice(1)}`
-            : digits;
-    return `https://wa.me/${intl}`;
 };
 
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
@@ -144,6 +128,10 @@ const AdminStaffQuotations = () => {
     // libphonenumber inside the field. An empty field counts as valid: the number is
     // optional, a wrong one is not.
     const [phoneValid, setPhoneValid] = useState(true);
+    // Set while the "no branch selected" confirmation is on screen, and once accepted so
+    // the same save is not questioned twice.
+    const [branchWarning, setBranchWarning] = useState(false);
+    const [branchWarningAccepted, setBranchWarningAccepted] = useState(false);
     const customerFieldRef = React.useRef<HTMLDivElement>(null);
     /**
      * The customer this quotation will be attached to.
@@ -664,6 +652,10 @@ const AdminStaffQuotations = () => {
         setHandPicked(false);
         setMatchedFromPhone(null);
         setCustomerProfile(null);
+        // Cleared with the rest: the next quotation is a fresh decision, and carrying the
+        // acceptance over would silently skip the warning for it.
+        setBranchWarningAccepted(false);
+        setBranchWarning(false);
     };
 
     const saveQuotation = async () => {
@@ -671,6 +663,15 @@ const AdminStaffQuotations = () => {
         // A wrong number is worse than none: it is what identifies the customer on every
         // future quotation, and it is what a WhatsApp send dials.
         if (!phoneValid) { showNotification('Enter a valid phone number for the selected country', 'error'); return; }
+        // An admin may raise a quotation with no branch -- head office has none to claim --
+        // but it is far more often an oversight than a decision, so it is confirmed rather
+        // than accepted silently. Staff never reach this: the server takes their branch
+        // from their own account. Only asked when creating, since an existing quotation
+        // keeps the number it already has.
+        if (!isStaff && !editingId && !adminBranchId && !branchWarningAccepted) {
+            setBranchWarning(true);
+            return;
+        }
         if (lines.length === 0) { showNotification('Add at least one product', 'error'); return; }
 
         setSaving(true);
@@ -1346,7 +1347,9 @@ Download: ${url}`;
                                     value={adminBranchId}
                                     onChange={e => setAdminBranchId(e.target.value)}
                                 >
-                                    <option value="">Select branch…</option>
+                                    {/* Named rather than left as a blank prompt: choosing it is
+                                        a real option for an admin, not an unfinished form. */}
+                                    <option value="">No branch — head office (SQT)</option>
                                     {branches.map(b => (
                                         <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
                                     ))}
@@ -1489,6 +1492,20 @@ Download: ${url}`;
                 {/* The eye button on the customer history panel lives in this view, so the
                     modal it opens has to be rendered here too. */}
                 {quotationModal}
+                <ConfirmModal
+                    isOpen={branchWarning}
+                    title="No branch selected"
+                    message="This quotation will be numbered under head office (SQT) rather than a branch. Continue?"
+                    confirmLabel="Continue"
+                    onConfirm={() => {
+                        // Recorded so the save that follows is not questioned again, then
+                        // re-run for the caller, since the first attempt returned here.
+                        setBranchWarningAccepted(true);
+                        setBranchWarning(false);
+                        setTimeout(() => saveQuotation(), 0);
+                    }}
+                    onCancel={() => setBranchWarning(false)}
+                />
             </div>
         );
     }
@@ -1712,6 +1729,7 @@ Download: ${url}`;
                                             title={(q.status || 'pending') !== 'approved'
                                                 ? 'Only approved quotations can be sent'
                                                 : (whatsappLink(q.customer_phone) ? 'Send on WhatsApp' : 'No customer phone number')}
+                                            className={styles.iconWhatsapp}
                                         >
                                             <WhatsappIcon size={15} />
                                         </button>

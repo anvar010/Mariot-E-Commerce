@@ -6,8 +6,10 @@
 .wrap {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 16px;
     padding: 24px;
     background: #f8fafc;
 }
@@ -49,40 +51,131 @@
     color: #64748b;
 }
 
-.button {
+/* Two actions side by side, stacking on a narrow phone rather than squeezing. */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 6px;
+    width: 100%;
+}
+
+.button,
+.secondaryBtn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-top: 4px;
-    padding: 12px 22px;
-    border: none;
+    flex: 1 1 140px;
+    padding: 12px 20px;
     border-radius: 9px;
-    background: #16a1db;
-    color: #ffffff;
     font-family: inherit;
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    transition: background .15s ease;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.button {
+    border: 1px solid #16a1db;
+    background: #16a1db;
+    color: #ffffff;
 }
 
 .button:hover:not(:disabled) {
     background: #1289bb;
+    border-color: #1289bb;
 }
 
-.button:disabled {
+/* Preview is the lighter of the two: it opens the document without committing a file to
+   the recipient's device, so it leads but does not shout. */
+.secondaryBtn {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+}
+
+.secondaryBtn:hover:not(:disabled) {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+
+.button:disabled,
+.secondaryBtn:disabled {
     opacity: .7;
     cursor: default;
 }
 
-.footerNote {
-    margin: 6px 0 0;
-    padding-top: 14px;
-    border-top: 1px solid #f1f5f9;
+/* ── contact ──────────────────────────────────────────────────────────────── */
+
+.contact {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
     width: 100%;
+    margin-top: 6px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.contactLabel {
     font-size: 12.5px;
     color: #94a3b8;
+}
+
+/* WhatsApp green, because that is where it goes. */
+.contactLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border: 1px solid #bbf7d0;
+    border-radius: 20px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.contactLink:hover {
+    background: #dcfce7;
+    border-color: #86efac;
+}
+
+.contactPhone {
+    font-weight: 600;
+    opacity: .75;
+}
+
+.contactPlain {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+/* ── footer ───────────────────────────────────────────────────────────────── */
+
+.secured {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.secured a {
+    color: #64748b;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.secured a:hover {
+    text-decoration: underline;
 }
 
 .spin {

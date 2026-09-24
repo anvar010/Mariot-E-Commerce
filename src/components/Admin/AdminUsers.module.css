@@ -649,3 +649,67 @@
         width: 100%;
     }
 }
+
+/* ── audience tabs ────────────────────────────────────────────────────────── */
+
+/* Customers and the team are two different jobs on one screen. The tabs separate them;
+   the role dropdown beneath still narrows within whichever is showing. */
+.audienceTabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.audienceTab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.audienceTab:hover {
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.audienceTab:focus-visible {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .14);
+}
+
+.audienceTabActive {
+    border-color: #4f46e5;
+    background: #4f46e5;
+    color: #ffffff;
+}
+
+.audienceTabActive:hover {
+    border-color: #4338ca;
+    background: #4338ca;
+    color: #ffffff;
+}
+
+.audienceCount {
+    padding: 1px 8px;
+    border-radius: 20px;
+    background: #f1f5f9;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+}
+
+.audienceTabActive .audienceCount {
+    background: rgba(255, 255, 255, .22);
+    color: #ffffff;
+}

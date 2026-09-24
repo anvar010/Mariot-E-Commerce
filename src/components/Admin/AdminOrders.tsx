@@ -14,6 +14,7 @@ import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 import { useAuth } from '@/context/AuthContext';
+import { whatsappLink } from '@/utils/whatsappLink';
 
 type StatusFilter = 'all' | 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
@@ -38,22 +39,6 @@ const formatPaymentMethod = (method?: string) => {
     };
     if (!method) return '—';
     return labels[method.toLowerCase()] || method.toUpperCase();
-};
-
-/**
- * wa.me link for a stored phone number.
- *
- * Numbers are entered locally -- "0509995446" -- and wa.me needs the country code with no
- * leading zero. Anything already carrying 971, or a number from another country, is passed
- * through untouched rather than guessed at.
- */
-const whatsappLink = (phone?: string): string | null => {
-    const digits = String(phone || '').replace(/\D/g, '');
-    if (digits.length < 7) return null;
-    const intl = digits.startsWith('971') ? digits
-        : digits.startsWith('0') ? `971${digits.slice(1)}`
-            : digits;
-    return `https://wa.me/${intl}`;
 };
 
 const AdminOrders = () => {
