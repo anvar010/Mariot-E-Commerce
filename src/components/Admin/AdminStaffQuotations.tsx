@@ -464,34 +464,45 @@ const AdminStaffQuotations = () => {
     useEffect(() => {
         const phone = customer.customer_phone.trim();
 
-        // A customer chosen by hand stands until the name is edited; detection must not
-        // second-guess it.
+        // A customer chosen by hand from the search list stands until the name is edited.
+        // matchedFromPhone is null for those, which is what tells them apart from a match
+        // this effect made.
         if (pickedCustomerId !== null && matchedFromPhone === null) return;
 
-        // A detected match belongs to the number it was detected from. While that number
-        // is unchanged there is nothing to redo, but the moment it changes -- including
-        // by swapping only the country code -- the match has to be dropped and asked
-        // again, or +91 and +965 keep showing the customer found under the first one.
-        if (pickedCustomerId !== null && matchedFromPhone === phone) return;
-        if (pickedCustomerId !== null) {
-            setPickedCustomerId(null);
-            setMatchedFromPhone(null);
-            setCustomerProfile(null);
-        }
-        // Short fragments match far too much to be worth a round trip mid-typing.
-        // Counted without the dialling code. The field now always carries one, so a bare
-        // "+971" is already 3 digits and would otherwise look like a number worth looking
-        // up before anything has been typed.
+        // Everything below is derived from the phone alone. The number decides who this
+        // is, so the panel must never outlive the number that produced it.
         const dialCountry = matchDialCountry(phone);
         const subscriberDigits = (dialCountry
             ? phone.slice(dialCountry.dial.length)
             : phone).replace(/\D/g, '');
+        // Counted without the dialling code: the field always carries one, so a bare
+        // "+971" is already 3 digits and must not look like a number worth looking up.
         const usablePhone = subscriberDigits.length >= 7 ? phone : '';
-        // The phone alone decides. Sent on its own, without the email, so the lookup
-        // cannot fall back to an address: one company address is shared by every buyer in
-        // it, and clearing the phone used to leave the email announcing "existing
-        // customer" for a colleague.
-        if (!usablePhone) { setCustomerProfile(null); return; }
+
+        // Nothing identifiable in the field. Anything shown from a previous number is
+        // now wrong, so it goes -- including a half-typed number mid-edit.
+        if (!usablePhone) {
+            if (pickedCustomerId !== null || customerProfile !== null) {
+                setPickedCustomerId(null);
+                setMatchedFromPhone(null);
+                setCustomerProfile(null);
+            }
+            return;
+        }
+
+        // The number that produced the current match is unchanged, so the match still
+        // stands and there is nothing to redo.
+        if (matchedFromPhone === usablePhone) return;
+
+        // The number has changed -- including by swapping only the dialling code, which
+        // makes it a different person. Clear FIRST, so nothing stale is on screen while
+        // the new lookup runs, then ask again. Clearing and fetching used to be split
+        // across two passes of this effect, and the intermediate render left the previous
+        // customer showing beside the new number.
+        if (pickedCustomerId !== null || customerProfile !== null) {
+            setPickedCustomerId(null);
+            setCustomerProfile(null);
+        }
 
         let cancelled = false;
         const t = setTimeout(async () => {
@@ -510,23 +521,36 @@ const AdminStaffQuotations = () => {
                     setMatchedFromPhone(usablePhone);
                     // Fill only what is still blank, so a correction typed for this quote
                     // is never overwritten by the stored record.
+                    //
+                    // customer_phone is deliberately NOT filled. It is the input this
+                    // effect keys on, and writing to it here re-entered the effect with a
+                    // value the effect itself had produced -- which is how a stale panel
+                    // survived a country-code change.
                     setCustomer(prev => ({
                         ...prev,
                         customer_name: prev.customer_name || data.data.customer.name || '',
                         customer_email: prev.customer_email || data.data.customer.email || '',
-                        customer_phone: prev.customer_phone || data.data.customer.phone || '',
                         vat_number: prev.vat_number || data.data.customer.vat_number || '',
                     }));
                 } else {
+                    // No match: this is a new customer, and the panel must say so rather
+                    // than keep showing whoever was found last.
                     setCustomerProfile(null);
+                    setPickedCustomerId(null);
+                    setMatchedFromPhone(null);
                 }
             } catch {
-                if (!cancelled) setCustomerProfile(null);
+                if (!cancelled) {
+                    setCustomerProfile(null);
+                    setPickedCustomerId(null);
+                    setMatchedFromPhone(null);
+                }
             }
         }, 450);
         return () => { cancelled = true; clearTimeout(t); };
-        // The email is no longer an input to this, so editing it must not re-run the
-        // lookup.
+        // customerProfile is read only to avoid redundant clears; it is set by this
+        // effect, so listing it as a dependency would re-enter on its own writes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [customer.customer_phone, pickedCustomerId, matchedFromPhone]);
 
     const pickCustomer = (c: any) => {
