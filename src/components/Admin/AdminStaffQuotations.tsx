@@ -118,6 +118,7 @@ const AdminStaffQuotations = () => {
     const [thresholdPct, setThresholdPct] = useState<number>(20);
     const [customerMatches, setCustomerMatches] = useState<any[]>([]);
     const [customerOpen, setCustomerOpen] = useState(false);
+    const customerFieldRef = React.useRef<HTMLDivElement>(null);
     /**
      * The customer this quotation will be attached to.
      *
@@ -478,11 +479,24 @@ const AdminStaffQuotations = () => {
     // recognise a returning customer -- staff do not have to search by name first, and
     // the history appears before anything is saved. Names are deliberately NOT used:
     // two people called the same thing are not the same customer.
+    // Closes the name suggestions on a click anywhere outside the field.
+    //
+    // onBlur alone was not enough: it fires before the click it is racing, so choosing a
+    // suggestion needed a timeout to survive, and a click on any other part of the form
+    // left the list open behind it.
+    useEffect(() => {
+        if (!customerOpen) return;
+        const onDown = (e: MouseEvent) => {
+            if (customerFieldRef.current && !customerFieldRef.current.contains(e.target as Node)) {
+                setCustomerOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', onDown);
+        return () => document.removeEventListener('mousedown', onDown);
+    }, [customerOpen]);
+
     useEffect(() => {
         const phone = customer.customer_phone.trim();
-
-        // A customer chosen by hand from the name list stands until the name is edited.
-        if (handPicked) return;
 
         // Who this is depends on the phone number and nothing else. The name and email
         // are never consulted, so editing either cannot make someone an existing
@@ -495,12 +509,21 @@ const AdminStaffQuotations = () => {
         // "+971" is already 3 digits and must not look like a number worth looking up.
         const usable = subscriberDigits.length >= 7 ? phone : '';
 
+        // A customer chosen from the name suggestions holds only while there is no usable
+        // number to judge by. As soon as one is typed the number decides, because the
+        // number is the identity: picking a name and then correcting the phone must not
+        // leave the first customer attached, which is how the wrong one was being kept.
+        if (handPicked && !usable) return;
+
         // Already answered for exactly this number. Nothing to redo -- and crucially
         // nothing is cleared either, so typing a name does not disturb the result.
         if (matchedFromPhone === usable) return;
 
-        // The number changed, so whatever was on screen belongs to the old one.
+        // The number changed, so whatever was on screen belongs to the old one. The
+        // hand-pick is released too: the number has taken over deciding, and leaving the
+        // flag set would keep the name suggestions suppressed for the rest of the form.
         setMatchedFromPhone(usable);
+        setHandPicked(false);
         setPickedCustomerId(null);
         setCustomerProfile(null);
 
@@ -1236,7 +1259,7 @@ const AdminStaffQuotations = () => {
 
                         <div className={styles.card}>
                             <label className={styles.cardLabel}>Customer</label>
-                            <div className={styles.customerField}>
+                            <div className={styles.customerField} ref={customerFieldRef}>
                                 <input
                                     className={styles.input}
                                     placeholder="Full name *"
@@ -1255,7 +1278,6 @@ const AdminStaffQuotations = () => {
                                         setCustomer({ ...customer, customer_name: e.target.value });
                                     }}
                                     onFocus={() => customerMatches.length > 0 && setCustomerOpen(true)}
-                                    onBlur={() => setTimeout(() => setCustomerOpen(false), 150)}
                                 />
                                 {pickedCustomerId !== null && (
                                     <span className={styles.existingTag}>Existing customer</span>
