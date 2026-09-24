@@ -75,6 +75,27 @@ const ensureStaffQuotationsTable = async () => {
     // would be refused -- so it is dropped once the year-aware one above is in place.
     try { await db.query('ALTER TABLE staff_quotations DROP INDEX uniq_sq_branch_seq'); }
     catch (e) { /* already dropped, or never created */ }
+    // One row per send, so "has this been emailed?" becomes "when, by whom, and to
+    // whom?". The single email_sent flag it supplements could only ever answer yes or no,
+    // and said nothing about a resend.
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS staff_quotation_emails (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            quotation_id INT NOT NULL,
+            sent_to VARCHAR(255) NOT NULL,
+            cc_emails TEXT NULL,
+            sent_by INT NULL,
+            sent_by_name VARCHAR(255) NULL,
+            sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_sqe_quotation (quotation_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+
+    // The CC list last used for a quotation, so reopening the send dialog offers it again
+    // rather than making someone retype the same accounts address on every resend.
+    try { await db.query('ALTER TABLE staff_quotations ADD COLUMN last_cc_emails TEXT NULL'); }
+    catch (e) { /* column already exists */ }
+
     tableEnsured = true;
 };
 
@@ -446,7 +467,15 @@ exports.deleteStaffQuotation = async (req, res, next) => {
 exports.sendStaffQuotationEmail = async (req, res, next) => {
     try {
         await ensureStaffQuotationsTable();
-        const { pdf_base64, locale } = req.body;
+        const { pdf_base64, locale, cc_emails } = req.body;
+
+        // Anything that is not a plausible address is dropped rather than refused: a
+        // stray comma or a half-typed entry should not block a send that is otherwise
+        // ready. Capped so a paste accident cannot turn one quotation into a mailshot.
+        const ccList = (Array.isArray(cc_emails) ? cc_emails : [])
+            .map(e => String(e || '').trim())
+            .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+            .slice(0, 10);
         const owned = await ownedByRequester(req, req.params.id);
         if (!owned.row || !owned.allowed) {
             return res.status(404).json({ success: false, message: 'Quotation not found' });
@@ -480,11 +509,28 @@ exports.sendStaffQuotationEmail = async (req, res, next) => {
         await sendQuotationEmail(
             q.customer_email, q.customer_name, q.quotation_ref, q.total_amount, items, qLocale,
             { subtotal: q.subtotal, discount_amount: q.discount_amount, tax_amount: q.tax_amount },
-            pdfBuffer
+            pdfBuffer, ccList
         );
-        await db.execute('UPDATE staff_quotations SET email_sent = 1 WHERE id = ?', [req.params.id]);
 
-        res.json({ success: true, message: 'Quotation emailed to the customer' });
+        // Recorded only after the send succeeds: a failed attempt is not history, and a
+        // log claiming a mail went out when it did not is worse than no log.
+        await db.execute(
+            `INSERT INTO staff_quotation_emails (quotation_id, sent_to, cc_emails, sent_by, sent_by_name)
+             VALUES (?, ?, ?, ?, ?)`,
+            [req.params.id, q.customer_email, ccList.length ? JSON.stringify(ccList) : null,
+                (req.user && req.user.id) || null, (req.user && req.user.name) || null]
+        );
+        await db.execute(
+            'UPDATE staff_quotations SET email_sent = 1, last_cc_emails = ? WHERE id = ?',
+            [ccList.length ? JSON.stringify(ccList) : null, req.params.id]
+        );
+
+        res.json({
+            success: true,
+            message: ccList.length
+                ? `Quotation emailed to the customer, copied to ${ccList.length} more`
+                : 'Quotation emailed to the customer',
+        });
     } catch (error) {
         next(error);
     }
@@ -519,6 +565,46 @@ exports.reviewStaffQuotation = async (req, res, next) => {
         res.json({
             success: true,
             message: status === 'approved' ? 'Quotation approved' : 'Quotation marked as not approved',
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Every time this quotation was emailed, newest first
+// @route   GET /api/v1/staff-quotations/:id/emails
+// Also returns the CC list last used, so the send dialog can offer it again.
+exports.getStaffQuotationEmails = async (req, res, next) => {
+    try {
+        await ensureStaffQuotationsTable();
+        // Same visibility rule as the quotation itself: staff see only their own.
+        const owned = await ownedByRequester(req, req.params.id);
+        if (!owned.row || !owned.allowed) {
+            return res.status(404).json({ success: false, message: 'Quotation not found' });
+        }
+
+        const [rows] = await db.query(
+            `SELECT e.id, e.sent_to, e.cc_emails, e.sent_at,
+                    COALESCE(u.name, e.sent_by_name) AS sent_by_name
+               FROM staff_quotation_emails e
+               LEFT JOIN users u ON u.id = e.sent_by
+              WHERE e.quotation_id = ?
+           ORDER BY e.id DESC`,
+            [req.params.id]
+        );
+
+        const parse = (v) => {
+            if (!v) return [];
+            try { return JSON.parse(v); } catch { return []; }
+        };
+
+        res.json({
+            success: true,
+            data: {
+                customer_email: owned.row.customer_email || null,
+                last_cc: parse(owned.row.last_cc_emails),
+                sends: rows.map(r => ({ ...r, cc_emails: parse(r.cc_emails) })),
+            },
         });
     } catch (error) {
         next(error);

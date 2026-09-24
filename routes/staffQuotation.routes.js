@@ -6,6 +6,7 @@ const {
     updateStaffQuotation,
     deleteStaffQuotation,
     sendStaffQuotationEmail,
+    getStaffQuotationEmails,
     reviewStaffQuotation,
     lookupCustomers,
     getCustomerProfile,
@@ -41,6 +42,8 @@ router.route('/:id')
     .delete(deleteStaffQuotation);
 
 router.post('/:id/send-email', sendStaffQuotationEmail);
+// The send history, and the CC list last used, for the send dialog.
+router.get('/:id/emails', getStaffQuotationEmails);
 
 // Approving is an admin act. authorize('admin') runs after the router-level guard
 // above, so staff reaching this route are refused even though they may use the rest.

@@ -783,7 +783,11 @@ ${dsButton(SITE, L.cta, ar)}
 /**
  * Send a quotation email to the customer
  */
-const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, items = [], locale = 'en', totals = {}, pdfBuffer = null) => {
+/**
+ * @param {string[]} ccEmails Addresses copied on the mail, e.g. the customer's accounts
+ *   department. Appended last so every existing call site keeps working unchanged.
+ */
+const sendQuotationEmail = async (toEmail, userName, quotationRef, finalAmount, items = [], locale = 'en', totals = {}, pdfBuffer = null, ccEmails = []) => {
     const transporter = createTransporter();
     const ar = isAr(locale);
     const SITE = siteUrl();
@@ -866,9 +870,17 @@ ${dsButton(`${SITE}/${ar ? 'ar' : 'en'}/profile?tab=quotations`, L.cta, ar)}
         }] : [])
     ];
 
+    // Deduplicated against the recipient: copying someone who is already the addressee
+    // sends them the same mail twice.
+    const cc = (Array.isArray(ccEmails) ? ccEmails : [])
+        .map(e => String(e || '').trim())
+        .filter(Boolean)
+        .filter(e => e.toLowerCase() !== String(toEmail || '').toLowerCase());
+
     const mailOptions = {
         from: `"Mariot Store" <${process.env.SMTP_EMAIL}>`,
         to: toEmail,
+        ...(cc.length ? { cc } : {}),
         subject: L.subject,
         html: dsShell({ ar, preheader: `${ar ? 'عرض السعر' : 'Quotation'} ${quotationRef} — ${ar ? 'صالح حتى' : 'valid until'} ${validUntil}`, content }),
         attachments
@@ -876,7 +888,7 @@ ${dsButton(`${SITE}/${ar ? 'ar' : 'en'}/profile?tab=quotations`, L.cta, ar)}
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL] ✅ Quotation email sent to ${toEmail}${pdfBuffer ? ' (with PDF)' : ''}`);
+        console.log(`[EMAIL] ✅ Quotation email sent to ${toEmail}${cc.length ? ` (cc ${cc.join(', ')})` : ''}${pdfBuffer ? ' (with PDF)' : ''}`);
     } catch (error) {
         console.error(`[EMAIL] ❌ Failed to send quotation email to ${toEmail}:`, error.message);
         throw error;
