@@ -44,7 +44,7 @@ const AdminUsers = () => {
     const [users, setUsers] = useState<any[]>([]);
     const [roles, setRoles] = useState<any[]>([]);
     // Branches a staff member can be assigned to. Their branch stamps every quotation
-    // they raise (DUB-000001, SHJ-000001, ...), so it is set here rather than chosen
+    // they raise (DXB-2026-1, SHJ1-2026-1, ...), so it is set here rather than chosen
     // at quotation time.
     const [branches, setBranches] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
