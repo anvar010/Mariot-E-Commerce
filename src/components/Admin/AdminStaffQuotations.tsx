@@ -119,6 +119,11 @@ const AdminStaffQuotations = () => {
     const [customerMatches, setCustomerMatches] = useState<any[]>([]);
     const [customerOpen, setCustomerOpen] = useState(false);
     const [pickedCustomerId, setPickedCustomerId] = useState<number | null>(null);
+    // The phone value that produced the current match. A match made by detection is only
+    // valid for the number it was found from -- changing the country code makes it a
+    // different person -- so this is what tells the two apart. Null when the customer was
+    // chosen by hand from the search list, which no phone edit should undo.
+    const [matchedFromPhone, setMatchedFromPhone] = useState<string | null>(null);
     // The matched customer's full history. Loaded when staff pick someone from the
     // search list, or when the phone/email they type identifies an existing record --
     // so the history appears before the quotation is raised, not after.
@@ -457,10 +462,22 @@ const AdminStaffQuotations = () => {
     // the history appears before anything is saved. Names are deliberately NOT used:
     // two people called the same thing are not the same customer.
     useEffect(() => {
-        // Already resolved by an explicit pick; nothing to detect.
-        if (pickedCustomerId !== null) return;
-
         const phone = customer.customer_phone.trim();
+
+        // A customer chosen by hand stands until the name is edited; detection must not
+        // second-guess it.
+        if (pickedCustomerId !== null && matchedFromPhone === null) return;
+
+        // A detected match belongs to the number it was detected from. While that number
+        // is unchanged there is nothing to redo, but the moment it changes -- including
+        // by swapping only the country code -- the match has to be dropped and asked
+        // again, or +91 and +965 keep showing the customer found under the first one.
+        if (pickedCustomerId !== null && matchedFromPhone === phone) return;
+        if (pickedCustomerId !== null) {
+            setPickedCustomerId(null);
+            setMatchedFromPhone(null);
+            setCustomerProfile(null);
+        }
         // Short fragments match far too much to be worth a round trip mid-typing.
         // Counted without the dialling code. The field now always carries one, so a bare
         // "+971" is already 3 digits and would otherwise look like a number worth looking
@@ -490,6 +507,7 @@ const AdminStaffQuotations = () => {
                 if (data.success && data.data) {
                     setCustomerProfile(data.data);
                     setPickedCustomerId(data.data.customer.id);
+                    setMatchedFromPhone(usablePhone);
                     // Fill only what is still blank, so a correction typed for this quote
                     // is never overwritten by the stored record.
                     setCustomer(prev => ({
@@ -509,7 +527,7 @@ const AdminStaffQuotations = () => {
         return () => { cancelled = true; clearTimeout(t); };
         // The email is no longer an input to this, so editing it must not re-run the
         // lookup.
-    }, [customer.customer_phone, pickedCustomerId]);
+    }, [customer.customer_phone, pickedCustomerId, matchedFromPhone]);
 
     const pickCustomer = (c: any) => {
         setCustomer(prev => ({
@@ -521,6 +539,9 @@ const AdminStaffQuotations = () => {
             vat_number: prev.vat_number || c.vat_number || '',
         }));
         setPickedCustomerId(c.id);
+        // Null, not the phone: this was a deliberate choice, so editing the number must
+        // not silently swap the customer underneath it.
+        setMatchedFromPhone(null);
         setCustomerMatches([]);
         setCustomerOpen(false);
         // A 'user' result is a storefront account that has never been quoted, so it has
@@ -565,6 +586,7 @@ const AdminStaffQuotations = () => {
         setEditingRef('');
         setEditingStatus('');
         setPickedCustomerId(null);
+        setMatchedFromPhone(null);
         setCustomerProfile(null);
     };
 
@@ -1198,6 +1220,7 @@ const AdminStaffQuotations = () => {
                                     autoComplete="off"
                                     onChange={e => {
                                         setPickedCustomerId(null);
+                                        setMatchedFromPhone(null);
                                         setCustomer({ ...customer, customer_name: e.target.value });
                                     }}
                                     onFocus={() => customerMatches.length > 0 && setCustomerOpen(true)}
@@ -1259,7 +1282,7 @@ const AdminStaffQuotations = () => {
                         {!profileLoading && customerProfile && (
                             <CustomerHistoryPanel
                                 profile={customerProfile}
-                                onClose={() => { setCustomerProfile(null); setPickedCustomerId(null); }}
+                                onClose={() => { setCustomerProfile(null); setPickedCustomerId(null); setMatchedFromPhone(null); }}
                                 onView={viewHistoryQuotation}
                                 viewingId={viewingHistoryId}
                             />
