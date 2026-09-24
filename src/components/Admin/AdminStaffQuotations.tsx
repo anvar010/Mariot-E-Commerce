@@ -118,7 +118,22 @@ const AdminStaffQuotations = () => {
     const [thresholdPct, setThresholdPct] = useState<number>(20);
     const [customerMatches, setCustomerMatches] = useState<any[]>([]);
     const [customerOpen, setCustomerOpen] = useState(false);
+    /**
+     * The customer this quotation will be attached to.
+     *
+     * Set either by detection from the phone number, or by choosing someone from the name
+     * search. It is ONLY an identity link -- it does not decide what the form shows.
+     */
     const [pickedCustomerId, setPickedCustomerId] = useState<number | null>(null);
+    /**
+     * Whether the customer was chosen by hand from the name list.
+     *
+     * Kept apart from the detection bookkeeping because the two behave differently: a
+     * hand-picked customer survives edits to the phone, a detected one does not. These
+     * used to share one variable, so clearing it for one purpose silently changed the
+     * other.
+     */
+    const [handPicked, setHandPicked] = useState(false);
     // The phone value that produced the current match. A match made by detection is only
     // valid for the number it was found from -- changing the country code makes it a
     // different person -- so this is what tells the two apart. Null when the customer was
@@ -437,7 +452,9 @@ const AdminStaffQuotations = () => {
     useEffect(() => {
         const term = customer.customer_name.trim();
         // A name chosen from the list should not immediately re-open it.
-        if (term.length < 2 || pickedCustomerId !== null) { setCustomerMatches([]); return; }
+        // Suppressed only after an explicit pick -- a phone match must not stop someone
+        // searching by name.
+        if (term.length < 2 || handPicked) { setCustomerMatches([]); return; }
         let cancelled = false;
         const t = setTimeout(async () => {
             try {
@@ -455,7 +472,7 @@ const AdminStaffQuotations = () => {
             }
         }, 300);
         return () => { cancelled = true; clearTimeout(t); };
-    }, [customer.customer_name, pickedCustomerId]);
+    }, [customer.customer_name, handPicked]);
 
     // Phone and email are the strong identifiers, so typing either is enough to
     // recognise a returning customer -- staff do not have to search by name first, and
@@ -464,51 +481,37 @@ const AdminStaffQuotations = () => {
     useEffect(() => {
         const phone = customer.customer_phone.trim();
 
-        // A customer chosen by hand from the search list stands until the name is edited.
-        // matchedFromPhone is null for those, which is what tells them apart from a match
-        // this effect made.
-        if (pickedCustomerId !== null && matchedFromPhone === null) return;
+        // A customer chosen by hand from the name list stands until the name is edited.
+        if (handPicked) return;
 
-        // Everything below is derived from the phone alone. The number decides who this
-        // is, so the panel must never outlive the number that produced it.
+        // Who this is depends on the phone number and nothing else. The name and email
+        // are never consulted, so editing either cannot make someone an existing
+        // customer, and cannot stop them being one.
         const dialCountry = matchDialCountry(phone);
         const subscriberDigits = (dialCountry
             ? phone.slice(dialCountry.dial.length)
             : phone).replace(/\D/g, '');
         // Counted without the dialling code: the field always carries one, so a bare
         // "+971" is already 3 digits and must not look like a number worth looking up.
-        const usablePhone = subscriberDigits.length >= 7 ? phone : '';
+        const usable = subscriberDigits.length >= 7 ? phone : '';
 
-        // Nothing identifiable in the field. Anything shown from a previous number is
-        // now wrong, so it goes -- including a half-typed number mid-edit.
-        if (!usablePhone) {
-            if (pickedCustomerId !== null || customerProfile !== null) {
-                setPickedCustomerId(null);
-                setMatchedFromPhone(null);
-                setCustomerProfile(null);
-            }
-            return;
-        }
+        // Already answered for exactly this number. Nothing to redo -- and crucially
+        // nothing is cleared either, so typing a name does not disturb the result.
+        if (matchedFromPhone === usable) return;
 
-        // The number that produced the current match is unchanged, so the match still
-        // stands and there is nothing to redo.
-        if (matchedFromPhone === usablePhone) return;
+        // The number changed, so whatever was on screen belongs to the old one.
+        setMatchedFromPhone(usable);
+        setPickedCustomerId(null);
+        setCustomerProfile(null);
 
-        // The number has changed -- including by swapping only the dialling code, which
-        // makes it a different person. Clear FIRST, so nothing stale is on screen while
-        // the new lookup runs, then ask again. Clearing and fetching used to be split
-        // across two passes of this effect, and the intermediate render left the previous
-        // customer showing beside the new number.
-        if (pickedCustomerId !== null || customerProfile !== null) {
-            setPickedCustomerId(null);
-            setCustomerProfile(null);
-        }
+        // Too short to identify anyone, or empty. Cleared above; nothing to look up.
+        if (!usable) return;
 
         let cancelled = false;
         const t = setTimeout(async () => {
             try {
                 const qs = new URLSearchParams();
-                qs.set('phone', usablePhone);
+                qs.set('phone', usable);
                 const res = await fetch(
                     `${API_BASE_URL}/staff-quotations/customers/match?${qs.toString()}`,
                     { credentials: 'include', headers: getAuthHeaders() }
@@ -518,14 +521,10 @@ const AdminStaffQuotations = () => {
                 if (data.success && data.data) {
                     setCustomerProfile(data.data);
                     setPickedCustomerId(data.data.customer.id);
-                    setMatchedFromPhone(usablePhone);
-                    // Fill only what is still blank, so a correction typed for this quote
-                    // is never overwritten by the stored record.
-                    //
-                    // customer_phone is deliberately NOT filled. It is the input this
-                    // effect keys on, and writing to it here re-entered the effect with a
-                    // value the effect itself had produced -- which is how a stale panel
-                    // survived a country-code change.
+                    // Only blanks are filled, so a correction typed for this quote is
+                    // never overwritten. customer_phone is deliberately excluded: it is
+                    // the input this effect keys on, and writing to it here re-enters the
+                    // effect on a value the effect itself produced.
                     setCustomer(prev => ({
                         ...prev,
                         customer_name: prev.customer_name || data.data.customer.name || '',
@@ -533,25 +532,24 @@ const AdminStaffQuotations = () => {
                         vat_number: prev.vat_number || data.data.customer.vat_number || '',
                     }));
                 } else {
-                    // No match: this is a new customer, and the panel must say so rather
-                    // than keep showing whoever was found last.
+                    // Nobody has this number. A new customer, stated plainly.
                     setCustomerProfile(null);
                     setPickedCustomerId(null);
-                    setMatchedFromPhone(null);
                 }
             } catch {
                 if (!cancelled) {
                     setCustomerProfile(null);
                     setPickedCustomerId(null);
-                    setMatchedFromPhone(null);
                 }
             }
         }, 450);
         return () => { cancelled = true; clearTimeout(t); };
-        // customerProfile is read only to avoid redundant clears; it is set by this
-        // effect, so listing it as a dependency would re-enter on its own writes.
+        // Deliberately keyed on the phone and the hand-pick flag only. pickedCustomerId
+        // is written by this effect, so depending on it made the effect re-enter on its
+        // own result -- which is how editing a name re-ran the lookup and brought the
+        // badge straight back.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [customer.customer_phone, pickedCustomerId, matchedFromPhone]);
+    }, [customer.customer_phone, handPicked]);
 
     const pickCustomer = (c: any) => {
         setCustomer(prev => ({
@@ -563,8 +561,9 @@ const AdminStaffQuotations = () => {
             vat_number: prev.vat_number || c.vat_number || '',
         }));
         setPickedCustomerId(c.id);
-        // Null, not the phone: this was a deliberate choice, so editing the number must
-        // not silently swap the customer underneath it.
+        // An explicit choice, so it survives edits to the phone until the name is
+        // changed.
+        setHandPicked(true);
         setMatchedFromPhone(null);
         setCustomerMatches([]);
         setCustomerOpen(false);
@@ -610,6 +609,7 @@ const AdminStaffQuotations = () => {
         setEditingRef('');
         setEditingStatus('');
         setPickedCustomerId(null);
+        setHandPicked(false);
         setMatchedFromPhone(null);
         setCustomerProfile(null);
     };
@@ -1243,8 +1243,15 @@ const AdminStaffQuotations = () => {
                                     value={customer.customer_name}
                                     autoComplete="off"
                                     onChange={e => {
-                                        setPickedCustomerId(null);
-                                        setMatchedFromPhone(null);
+                                        // Releases a hand-picked customer so the search
+                                        // list can open again. A match found from the
+                                        // phone is deliberately left alone: the number
+                                        // decides who this is, and the name does not.
+                                        if (handPicked) {
+                                            setHandPicked(false);
+                                            setPickedCustomerId(null);
+                                            setCustomerProfile(null);
+                                        }
                                         setCustomer({ ...customer, customer_name: e.target.value });
                                     }}
                                     onFocus={() => customerMatches.length > 0 && setCustomerOpen(true)}
@@ -1306,7 +1313,7 @@ const AdminStaffQuotations = () => {
                         {!profileLoading && customerProfile && (
                             <CustomerHistoryPanel
                                 profile={customerProfile}
-                                onClose={() => { setCustomerProfile(null); setPickedCustomerId(null); setMatchedFromPhone(null); }}
+                                onClose={() => { setCustomerProfile(null); setPickedCustomerId(null); setHandPicked(false); setMatchedFromPhone(null); }}
                                 onView={viewHistoryQuotation}
                                 viewingId={viewingHistoryId}
                             />
