@@ -838,14 +838,22 @@
     object-fit: contain;
 }
 
-.addedTick {
+/* Both badges live in one stack in the top-left corner. They used to be positioned
+   independently, with the second nudged down by a fixed offset to clear the first --
+   which left it hanging in mid-air whenever the first was not shown. The eye icon holds
+   the right corner, hence left; logical, so it follows the text direction. */
+.cardBadges {
     position: absolute;
-    /* Left, because the eye icon now occupies the right corner and the two were
-       drawn on top of each other. Logical, so it follows the text direction.
-       Sits below the offer badge, which shares this corner and can show at the
-       same time -- an added product may also be on offer. */
     inset-inline-start: 6px;
-    top: 30px;
+    top: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    z-index: 2;
+}
+
+.addedTick {
     background: #059669;
     color: #fff;
     font-size: 9.5px;
@@ -957,9 +965,6 @@
 }
 
 .offerTick {
-    position: absolute;
-    top: 6px;
-    left: 6px;
     background: #dc2626;
     color: #fff;
     font-size: 9.5px;

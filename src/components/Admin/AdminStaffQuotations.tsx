@@ -6,7 +6,7 @@ import styles from './AdminStaffQuotations.module.css';
 import StaffQuotationProductModal from './StaffQuotationProductModal';
 import {
     FilePlus, Search, Trash2, Eye, X, Plus, Minus, Printer,
-    Mail, Loader2, ArrowLeft, Package, Percent, Check, Ban, Clock, FileText, Pencil, AlertTriangle, Download,
+    Mail, Loader2, ArrowLeft, Percent, Check, Ban, Clock, FileText, Pencil, AlertTriangle, Download,
     MessageCircle} from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
@@ -1142,16 +1142,30 @@ const AdminStaffQuotations = () => {
                                                         : added ? 'Already on the quotation — adds another unit' : 'Add to quotation'}
                                                 >
                                                 <div className={styles.cardThumb}>
-                                                    {p.primary_image
-                                                        ? <img
-                                                            src={resolveUrl(p.primary_image)}
-                                                            alt=""
-                                                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }}
-                                                        />
-                                                        : <Package size={22} />}
-                                                    {added && <span className={styles.addedTick}>Added</span>}
-                                                    {hasOffer && off > 0 && (
-                                                        <span className={styles.offerTick}>-{off}%</span>
+                                                    {/* The placeholder image, not a box icon: it reads as
+                                                        "photo coming soon" rather than as a broken card,
+                                                        and matches what the storefront shows for the same
+                                                        product. A product with no image and one whose
+                                                        image fails to load then look the same, which they
+                                                        are from the shopper's point of view. */}
+                                                    <img
+                                                        src={resolveUrl(p.primary_image) || PRODUCT_IMAGE_FALLBACK}
+                                                        alt=""
+                                                        loading="lazy"
+                                                        decoding="async"
+                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK; }}
+                                                    />
+                                                    {/* Stacked in one corner rather than each positioned
+                                                        absolutely: a product can be both added and on
+                                                        offer, and a fixed offset for the second badge
+                                                        left it floating when the first was absent. */}
+                                                    {(added || (hasOffer && off > 0)) && (
+                                                        <div className={styles.cardBadges}>
+                                                            {hasOffer && off > 0 && (
+                                                                <span className={styles.offerTick}>-{off}%</span>
+                                                            )}
+                                                            {added && <span className={styles.addedTick}>Added</span>}
+                                                        </div>
                                                     )}
                                                 </div>
                                                 <div className={styles.cardBody}>
