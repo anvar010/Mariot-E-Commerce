@@ -51,7 +51,10 @@ const ensureStaffQuotationsTable = async () => {
         // branch_seq are stored alongside branch_id so the unique index below can police
         // the ref even if a branch is later renamed or its row removed.
         ['branch_id', 'INT NULL'], ['customer_id', 'INT NULL'],
-        ['branch_code', 'VARCHAR(10) NULL'], ['branch_seq', 'INT NULL']]) {
+        ['branch_code', 'VARCHAR(10) NULL'], ['branch_seq', 'INT NULL'],
+        // The year the sequence belongs to. The count restarts each January, so the
+        // number alone no longer identifies a quotation within its branch.
+        ['branch_year', 'SMALLINT NULL']]) {
         try { await db.query(`ALTER TABLE staff_quotations ADD COLUMN ${col} ${ddl}`); }
         catch (e) { /* column already exists — ignore */ }
     }
@@ -60,12 +63,18 @@ const ensureStaffQuotationsTable = async () => {
         'ADD KEY idx_sq_customer (customer_id)',
         'ADD KEY idx_sq_created_by (created_by)',
         // Belt and braces alongside branch_quote_seq: even a bug in the number generator
-        // cannot land two quotations on the same ref within a branch.
-        'ADD UNIQUE KEY uniq_sq_branch_seq (branch_code, branch_seq)',
+        // cannot land two quotations on the same ref within a branch and year.
+        'ADD UNIQUE KEY uniq_sq_branch_year_seq (branch_code, branch_year, branch_seq)',
     ]) {
         try { await db.query(`ALTER TABLE staff_quotations ${idx}`); }
         catch (e) { /* index already present — ignore */ }
     }
+
+    // The old index spanned only code and sequence. With the count restarting each
+    // January that is wrong -- DXB-2026-1 and DXB-2027-1 share a sequence and the second
+    // would be refused -- so it is dropped once the year-aware one above is in place.
+    try { await db.query('ALTER TABLE staff_quotations DROP INDEX uniq_sq_branch_seq'); }
+    catch (e) { /* already dropped, or never created */ }
     tableEnsured = true;
 };
 
@@ -248,9 +257,9 @@ exports.createStaffQuotation = async (req, res, next) => {
 
             const [result] = await conn.execute(
                 `INSERT INTO staff_quotations
-                 (quotation_ref, branch_id, branch_code, branch_seq, customer_id, created_by, created_by_name, created_by_role, customer_name, customer_email, customer_phone, vat_number, items, subtotal, discount_amount, tax_amount, total_amount, notes, status, reviewed_by, reviewed_by_name, reviewed_at, review_note)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [quotation_ref, branchId, branchMeta.code, branchMeta.seq, customer.id,
+                 (quotation_ref, branch_id, branch_code, branch_seq, branch_year, customer_id, created_by, created_by_name, created_by_role, customer_name, customer_email, customer_phone, vat_number, items, subtotal, discount_amount, tax_amount, total_amount, notes, status, reviewed_by, reviewed_by_name, reviewed_at, review_note)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [quotation_ref, branchId, branchMeta.code, branchMeta.seq, branchMeta.year, customer.id,
                     (req.user && req.user.id) || null,
                     // Denormalised on purpose: the join below loses the author entirely if the
                     // account is later deleted, and a quotation must always say who raised it.

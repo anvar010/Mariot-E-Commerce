@@ -3,18 +3,26 @@ const db = require('../config/db');
 /**
  * Branch-scoped quotation numbering.
  *
- * Each branch has its own sequence -- DUB-000001, SHJ-000001, AUH-000001, AIN-000001 --
- * and the two must never collide or repeat. The number is therefore issued by the
- * database, not by the application: `nextQuotationNumber` bumps the branch's counter row
- * and reads it back while holding that row's lock, so two staff submitting at the same
- * instant queue up and take consecutive numbers.
+ * Each branch has its own sequence, restarting every January -- DXB-2026-1, SHJ1-2026-1,
+ * AD1-2026-1 -- and the numbers must never collide or repeat. They are therefore issued
+ * by the database, not by the application: the reservation bumps the counter row for that
+ * branch and year and reads it back while holding the row's lock, so two staff submitting
+ * at the same instant queue up and take consecutive numbers.
  *
  * The obvious alternative, SELECT MAX(branch_seq) + 1, is what this exists to avoid: two
  * concurrent readers both see the same maximum and both write the same ref.
  */
 
-/** Zero-padded to six digits, per the agreed format: DUB-000027. */
-const formatRef = (code, seq) => `${code}-${String(seq).padStart(6, '0')}`;
+/**
+ * The agreed reference format: DXB-2026-1.
+ *
+ * Deliberately not zero-padded. The sequence counts plainly -- 1, 2, 10, 100 -- which is
+ * what was asked for, and the year keeps references distinguishable without it.
+ */
+const formatRef = (code, seq, year) => `${code}-${year}-${seq}`;
+
+/** The year a reference is stamped with, and the year its counter belongs to. */
+const currentYear = () => new Date().getFullYear();
 
 /**
  * Reserve the next number for a branch and return { ref, seq, code }.
@@ -33,37 +41,44 @@ const reserveOnConnection = async (conn, branchId) => {
         throw err;
     }
     const code = branchRows[0].code;
+    const year = currentYear();
 
-    // The UPDATE takes an exclusive lock on this branch's row and holds it until the
-    // caller's transaction ends. Concurrent creators for the SAME branch serialise here;
-    // creators for other branches touch different rows and are unaffected.
+    // The UPDATE takes an exclusive lock on this branch-and-year row and holds it until
+    // the caller's transaction ends. Concurrent creators for the SAME branch in the SAME
+    // year serialise here; every other combination touches a different row and is
+    // unaffected.
     //
     // This is deliberately the FIRST write in the transaction. An earlier
     // `INSERT IGNORE ... VALUES (branch_id, 0)` to guarantee the row existed took a
     // gap/insert-intention lock that deadlocked concurrent transactions against each
-    // other -- reliably, at 20 parallel reservations. The row is seeded for every branch
-    // by the migration, so the common path needs no insert at all; the rare missing row
-    // is handled below, outside the contended path.
+    // other -- reliably, at 20 parallel reservations. The row is seeded for the current
+    // year by the migration, so the common path needs no insert at all; the rare missing
+    // row is handled below, outside the contended path.
     const [upd] = await conn.execute(
-        'UPDATE branch_quote_seq SET last_number = last_number + 1 WHERE branch_id = ?', [branchId]
+        'UPDATE branch_quote_seq SET last_number = last_number + 1 WHERE branch_id = ? AND seq_year = ?',
+        [branchId, year]
     );
 
     if (upd.affectedRows === 0) {
-        // No counter row: a branch added after the migration ran. Create it already
-        // claiming number 1, so this caller takes it and never collides with a
-        // concurrent creator -- which would fail the primary key rather than duplicate.
+        // No counter row for this branch and year: either a branch added after the
+        // migration ran, or -- the common case -- the first quotation of a new year.
+        // Created already claiming number 1, so this caller takes it and never collides
+        // with a concurrent creator, which would fail the primary key rather than
+        // duplicate.
         await conn.execute(
-            'INSERT INTO branch_quote_seq (branch_id, last_number) VALUES (?, 1)', [branchId]
+            'INSERT INTO branch_quote_seq (branch_id, seq_year, last_number) VALUES (?, ?, 1)',
+            [branchId, year]
         );
-        return { ref: formatRef(code, 1), seq: 1, code };
+        return { ref: formatRef(code, 1, year), seq: 1, code, year };
     }
 
     const [seqRows] = await conn.execute(
-        'SELECT last_number FROM branch_quote_seq WHERE branch_id = ?', [branchId]
+        'SELECT last_number FROM branch_quote_seq WHERE branch_id = ? AND seq_year = ?',
+        [branchId, year]
     );
     const seq = Number(seqRows[0].last_number);
 
-    return { ref: formatRef(code, seq), seq, code };
+    return { ref: formatRef(code, seq, year), seq, code, year };
 };
 
 /**

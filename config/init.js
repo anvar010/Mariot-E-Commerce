@@ -744,7 +744,7 @@ const initDb = async () => {
 
         // 6.11 Branches, customers and branch-scoped quotation numbering.
         //
-        // Quotation refs are per-branch sequences (DUB-000001, SHJ-000001, ...). Three
+        // Quotation refs are per-branch, per-year sequences (DXB-2026-1, SHJ1-2026-1). Three
         // tables cooperate:
         //   branches            -- the four UAE offices and their ref codes
         //   customers           -- who a quotation is for, registered on the site or not
@@ -763,14 +763,39 @@ const initDb = async () => {
                     UNIQUE KEY uniq_branch_name (name)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             `);
-            // The four branches are fixed business facts, not user-managed data, so they
-            // are seeded rather than left to an admin screen. INSERT IGNORE keeps this
-            // idempotent and never disturbs a code already in use by live quotations.
+            // The branches are fixed business facts, not user-managed data, so they are
+            // seeded rather than left to an admin screen.
+            //
+            // Abu Dhabi and Sharjah each run two offices, so the single row for each is
+            // renamed to its "1" and a second added. Dubai's code moves from DUB to the
+            // IATA spelling DXB to match the agreed reference format.
+            //
+            // Renaming in place, rather than adding new rows and retiring the old ones,
+            // keeps every quotation already stamped with that branch attached to it --
+            // branch_id does not change, only how the branch is written.
+            for (const [oldCode, name, code] of [
+                ['DUB', 'Dubai', 'DXB'],
+                ['AUH', 'Abu Dhabi 1', 'AD1'],
+                ['SHJ', 'Sharjah 1', 'SHJ1'],
+            ]) {
+                try {
+                    await db.query('UPDATE branches SET name = ?, code = ? WHERE code = ?', [name, code, oldCode]);
+                } catch (e) { /* already renamed, or the new code is taken */ }
+            }
+
+            // INSERT IGNORE keeps this idempotent and never disturbs a code already in
+            // use by live quotations.
             await db.query(`
                 INSERT IGNORE INTO branches (name, code) VALUES
-                    ('Dubai', 'DUB'), ('Sharjah', 'SHJ'),
-                    ('Abu Dhabi', 'AUH'), ('Al Ain', 'AIN')
+                    ('Dubai', 'DXB'), ('Abu Dhabi 1', 'AD1'), ('Abu Dhabi 2', 'AD2'),
+                    ('Al Ain', 'AAN'), ('Sharjah 1', 'SHJ1'), ('Sharjah 2', 'SHJ2')
             `);
+
+            // Al Ain's code also moves, AIN -> AAN. Done after the insert so that if a
+            // row already holds AAN this is a no-op rather than a duplicate-key failure.
+            try {
+                await db.query("UPDATE branches SET code = 'AAN' WHERE code = 'AIN'");
+            } catch (e) { /* already AAN */ }
             console.log('[DB] branches table verified');
         } catch (err) {
             console.error('[DB] Error creating branches table:', err.message);
@@ -854,12 +879,28 @@ const initDb = async () => {
             await db.query(`
                 CREATE TABLE IF NOT EXISTS branch_quote_seq (
                     branch_id INT NOT NULL,
+                    seq_year SMALLINT NOT NULL,
                     last_number INT NOT NULL DEFAULT 0,
-                    PRIMARY KEY (branch_id),
+                    PRIMARY KEY (branch_id, seq_year),
                     CONSTRAINT fk_seq_branch FOREIGN KEY (branch_id) REFERENCES branches (id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             `);
-            await db.query('INSERT IGNORE INTO branch_quote_seq (branch_id, last_number) SELECT id, 0 FROM branches');
+
+            // The year is part of the key because the reference carries it and the count
+            // restarts each January: DXB-2026-500 is followed by DXB-2027-1, not -501.
+            // A table created before this change has one row per branch and no year, so
+            // the column is added and those rows are stamped with the current year --
+            // they hold this year's count, which is exactly what they were counting.
+            try {
+                await db.query('ALTER TABLE branch_quote_seq ADD COLUMN seq_year SMALLINT NOT NULL DEFAULT 0');
+                await db.query('UPDATE branch_quote_seq SET seq_year = YEAR(CURDATE()) WHERE seq_year = 0');
+                await db.query('ALTER TABLE branch_quote_seq DROP PRIMARY KEY, ADD PRIMARY KEY (branch_id, seq_year)');
+                console.log('[DB] branch_quote_seq year column added');
+            } catch (err) { /* already migrated */ }
+
+            // A row per branch for the current year. Later years are created on demand by
+            // the first quotation raised in them.
+            await db.query('INSERT IGNORE INTO branch_quote_seq (branch_id, seq_year, last_number) SELECT id, YEAR(CURDATE()), 0 FROM branches');
             console.log('[DB] branch_quote_seq table verified');
         } catch (err) {
             console.error('[DB] Error creating branch_quote_seq table:', err.message);
