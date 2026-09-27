@@ -504,7 +504,34 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
     const date = new Date(orderData.created_at || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
     const billing = orderData.billing_details || {};
-    const shipping = orderData.shipping_address || billing;
+    /**
+     * Orders reach this function in two shapes: straight from checkout, where the address
+     * is the camelCase form (billing_details), and reloaded from the database by the payment
+     * webhooks, where it is the snake_case addresses row (shipping_address). Reading only the
+     * camelCase keys left the delivery address blank on every card / Tabby / Tamara email,
+     * so both are folded into one shape here.
+     */
+    const addr = orderData.shipping_address || {};
+    const pick = (...vals) => vals.map(v => String(v ?? '').trim()).find(Boolean) || '';
+    const shipping = {
+        firstName: pick(addr.first_name, billing.firstName),
+        lastName: pick(addr.last_name, billing.lastName),
+        streetAddress: pick(addr.address_line1, billing.streetAddress),
+        additionalAddress: pick(addr.address_line2, billing.additionalAddress),
+        city: pick(addr.city, billing.city),
+        state: pick(addr.state, billing.state),
+        postcode: pick(addr.zip_code, billing.postcode),
+        country: pick(addr.country, billing.country),
+        phone: pick(orderData.receiver_phone, billing.phone, addr.phone),
+    };
+    // Who the parcel is for: the receiver named at checkout, then the address's own name,
+    // and only then the account holder the caller passed in.
+    const recipientName = pick(
+        orderData.receiver_name,
+        billing.name,
+        `${shipping.firstName} ${shipping.lastName}`,
+        userName
+    );
     const isPaid = (orderData.payment_status === 'paid' || orderData.payment_status === 'PAID');
     const isAdmin = orderData.is_admin_copy === true;
     const SITE = siteUrl();
@@ -624,7 +651,7 @@ ${dsButton(orderSummaryUrl, L.cta, ar)}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
   <td width="50%" style="vertical-align:top;padding-${ar ? 'left' : 'right'}:18px;">
     <p style="margin:0 0 8px;font-family:${SANS};font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#17181c;">${L.deliveryAddr}</p>
-    <p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.7;color:#17181c;">${shipping.firstName || userName} ${shipping.lastName || ''}<br>${shipping.streetAddress || ''}<br>${shipping.city || ''}<br>${shipping.phone || ''}</p>
+    <p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.7;color:#17181c;">${[recipientName, shipping.streetAddress, shipping.additionalAddress, [shipping.city, shipping.state].filter((v, i, a) => v && a.findIndex(x => x.toLowerCase() === v.toLowerCase()) === i).join(', '), shipping.country, shipping.phone].filter(Boolean).join('<br>')}</p>
   </td>
   <td width="50%" style="vertical-align:top;border-${ar ? 'right' : 'left'}:1px solid #ecedef;padding-${ar ? 'right' : 'left'}:26px;">
     <p style="margin:0 0 8px;font-family:${SANS};font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#17181c;">${L.paymentL}</p>
@@ -644,11 +671,11 @@ ${dsButton(orderSummaryUrl, L.cta, ar)}
      * stray commas for the missing parts is worse than a shorter address.
      */
     const adminAddressParts = [
-        shipping.streetAddress || shipping.address_line1,
-        shipping.additionalAddress || shipping.address_line2,
+        shipping.streetAddress,
+        shipping.additionalAddress,
         shipping.city,
         shipping.state,
-        shipping.postcode || shipping.zip_code,
+        shipping.postcode,
         shipping.country,
     ].map(v => String(v || '').trim()).filter(Boolean);
     // Repeats are common: shoppers type the emirate into both the city and state boxes,
@@ -670,8 +697,9 @@ ${dsButton(orderSummaryUrl, L.cta, ar)}
 <p style="margin:0 0 24px;font-family:${DS_SANS};font-size:15px;line-height:1.65;color:#17181c;">A new order has just been placed on Mariot Store. Review and process it in the admin dashboard.</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #ecedef;border-radius:12px;margin-bottom:24px;"><tr><td style="padding:18px 20px;font-family:${DS_SANS};font-size:13px;line-height:1.9;color:#17181c;">
   <span style="color:#17181c;">Customer</span> <strong style="color:#17181c;">${userName}</strong><br>
-  ${billing.email ? `<span style="color:#17181c;">Email</span> <strong style="color:#17181c;">${billing.email}</strong><br>` : ''}
-  ${(shipping.phone || billing.phone) ? `<span style="color:#17181c;">Phone</span> <strong style="color:#17181c;">${shipping.phone || billing.phone}</strong><br>` : ''}
+  ${recipientName && recipientName.toLowerCase() !== String(userName || '').trim().toLowerCase() ? `<span style="color:#17181c;">Receiver</span> <strong style="color:#17181c;">${recipientName}</strong><br>` : ''}
+  ${(billing.email || orderData.customer_email) ? `<span style="color:#17181c;">Email</span> <strong style="color:#17181c;">${billing.email || orderData.customer_email}</strong><br>` : ''}
+  ${shipping.phone ? `<span style="color:#17181c;">Phone</span> <strong style="color:#17181c;">${shipping.phone}</strong><br>` : ''}
   ${adminAddressLine ? `<span style="color:#17181c;">Deliver to</span> <strong style="color:#17181c;">${adminAddressLine}</strong><br>` : ''}
   <span style="color:#17181c;">Payment method</span> <strong style="color:#17181c;">${paymentDisplay}</strong><br>
   <span style="color:#17181c;">Payment status</span> <strong style="color:${paymentStatusColor};">${paymentStatusLabel}</strong><br>

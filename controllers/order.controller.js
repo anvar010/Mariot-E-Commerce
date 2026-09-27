@@ -29,13 +29,18 @@ const stripe = process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.i
 const sendAdminNewOrderAlert = async (orderId, order, customerName) => {
     try {
         const adminEmail = process.env.RECEIVER_EMAIL || 'anvarshaknavas588@gmail.com';
+        // The orders row carries no customer name or email of its own, so without a name
+        // from the caller the alert used to read "Customer". Look up the account instead.
+        const account = order?.user_id ? await User.findById(order.user_id).catch(() => null) : null;
         await sendOrderConfirmationEmail(
             adminEmail,
-            customerName || order?.billing_name || order?.user_name || 'Customer',
+            customerName || account?.name || order?.receiver_name
+                || `${order?.shipping_address?.first_name || ''} ${order?.shipping_address?.last_name || ''}`.trim()
+                || 'Customer',
             orderId,
             order?.final_amount,
             order?.items,
-            { ...order, payment_status: 'paid', is_admin_copy: true },
+            { ...order, customer_email: account?.email, payment_status: 'paid', is_admin_copy: true },
             'en'
         );
         console.log(`[ORDER] New-order alert sent to ${adminEmail} (order #${orderId})`);
@@ -355,8 +360,22 @@ exports.createOrder = async (req, res, next) => {
         // the customer and the office about an order that never happened -- those are sent
         // from the payment confirmation instead.
         if (!REDIRECT_PAYMENT_METHODS.includes(payment_method)) (async () => {
-            const customerEmail = billing_details?.email || req.user?.email;
-            const customerName = billing_details?.name || req.user?.name || 'Customer';
+            const customerEmail = billing_details?.email || buyer?.email || req.user?.email;
+            // req.user is the token payload and often has no name, which is how "Customer"
+            // ended up in the greeting -- the loaded account and the typed name come first.
+            const typedName = `${billing_details?.firstName || ''} ${billing_details?.lastName || ''}`.trim();
+            const customerName = buyer?.name || billing_details?.name || typedName || req.user?.name || 'Customer';
+            // Reload the saved order so the email carries the address actually stored on it
+            // (a saved address picked at checkout is not repeated in billing_details).
+            // A copy, so the API response built from orderData is left alone.
+            const stored = await Order.findById(orderId).catch(() => null);
+            const mailData = stored ? {
+                ...orderData,
+                shipping_address: stored.shipping_address,
+                receiver_name: stored.receiver_name,
+                receiver_phone: stored.receiver_phone,
+                created_at: stored.created_at,
+            } : orderData;
             const adminEmail = process.env.RECEIVER_EMAIL || 'anvarshaknavas588@gmail.com';
             // Customer's language from the request that placed the order.
             const custLocale = String(req.body?.locale || req.headers?.['x-locale'] || req.cookies?.NEXT_LOCALE || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
@@ -364,7 +383,7 @@ exports.createOrder = async (req, res, next) => {
             // 1. Email to Customer — isolated so a failure here can't block the admin alert.
             if (customerEmail) {
                 try {
-                    await sendOrderConfirmationEmail(customerEmail, customerName, orderId, finalAmount, items, orderData, custLocale);
+                    await sendOrderConfirmationEmail(customerEmail, customerName, orderId, finalAmount, items, mailData, custLocale);
                     console.log(`[ORDER] Confirmation email sent to customer ${customerEmail} (order #${orderId})`);
                 } catch (err) {
                     console.error(`[ORDER] ❌ Customer confirmation failed (order #${orderId}):`, err.message);
@@ -375,7 +394,7 @@ exports.createOrder = async (req, res, next) => {
 
             // 2. Email to Admin (New Order Alert) — always English for the back office.
             try {
-                await sendOrderConfirmationEmail(adminEmail, customerName, orderId, finalAmount, items, { ...orderData, is_admin_copy: true }, 'en');
+                await sendOrderConfirmationEmail(adminEmail, customerName, orderId, finalAmount, items, { ...mailData, customer_email: buyer?.email, is_admin_copy: true }, 'en');
                 console.log(`[ORDER] New-order alert sent to ${adminEmail} (order #${orderId})`);
             } catch (err) {
                 console.error(`[ORDER] ❌ Admin order alert failed (order #${orderId}):`, err.message);
