@@ -625,11 +625,16 @@ const sendOrderConfirmationEmail = async (toEmail, userName, orderId, finalAmoun
             ? `<img src="${imgUrl}" width="48" height="48" style="width:48px;height:48px;border-radius:8px;object-fit:contain;background:#ffffff;border:1px solid #e9e7e2;">`
             : `<div style="width:48px;height:48px;border-radius:8px;background:#ffffff;border:1px solid #e9e7e2;"></div>`;
         const priceText = isFree ? `<span style="color:#10b981;">${L.free}</span>` : `AED ${lineTotal}`;
+        // Image and title open the product page. Quote-sourced lines carry no slug, and the
+        // product page resolves an id just as well; with neither, the line stays unlinked.
+        const productRef = item.slug || item.product_id;
+        const productUrl = productRef ? `${SITE}/${ar ? 'ar' : 'en'}/product/${encodeURIComponent(productRef)}` : '';
+        const linkTo = (inner) => productUrl ? `<a href="${productUrl}" style="color:#17181c;text-decoration:none;">${inner}</a>` : inner;
         return `
 <tr><td style="padding:${i === 0 ? '0 0 16px' : '16px 0'};border-bottom:1px solid #ecedef;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-    <td width="60" style="vertical-align:middle;">${thumb}</td>
-    <td style="vertical-align:middle;padding-${padStart}:16px;"><p style="margin:0;font-family:${SANS};font-size:14px;font-weight:600;color:#17181c;line-height:1.4;">${itemName}${freeBadge}</p><p style="margin:4px 0 0;font-family:${SANS};font-size:12px;color:#17181c;">${ar ? 'الكمية' : 'Qty'} ${item.quantity}</p>${variantLine}${parentLine}</td>
+    <td width="60" style="vertical-align:middle;">${linkTo(thumb)}</td>
+    <td style="vertical-align:middle;padding-${padStart}:16px;"><p style="margin:0;font-family:${SANS};font-size:14px;font-weight:600;color:#17181c;line-height:1.4;">${linkTo(itemName)}${freeBadge}</p><p style="margin:4px 0 0;font-family:${SANS};font-size:12px;color:#17181c;">${ar ? 'الكمية' : 'Qty'} ${item.quantity}</p>${variantLine}${parentLine}</td>
     <td align="${endAlign}" style="vertical-align:middle;white-space:nowrap;"><p style="margin:0;font-family:${SANS};font-size:14px;font-weight:600;color:#17181c;">${priceText}</p></td>
   </tr></table>
 </td></tr>`;
