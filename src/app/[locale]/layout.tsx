@@ -61,10 +61,17 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
         description: isArabic
             ? 'مورد معدات المطابخ التجارية في دبي مع التوصيل إلى الإمارات والسعودية والكويت وعُمان وقطر والبحرين وجميع أنحاء العالم. تجهيز المطاعم والفنادق والمخابز.'
             : 'Commercial kitchen equipment supplier in Dubai, delivering across the UAE, Saudi Arabia, Kuwait, Oman, Qatar, Bahrain and worldwide. Restaurant & hotel gear.',
+        // Google's result favicon wants a square PNG at a multiple of 48px; the .ico stays
+        // for older browsers.
         icons: {
-            icon: '/favicon.ico',
+            icon: [
+                { url: '/favicon.ico', sizes: '48x48' },
+                { url: '/icon-96.png', sizes: '96x96', type: 'image/png' },
+                { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+                { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+            ],
             shortcut: '/favicon.ico',
-            apple: '/favicon.ico',
+            apple: { url: '/apple-touch-icon.png', sizes: '180x180' },
         },
         // Relative URLs in child pages' metadata resolve against this, so a page that
         // forgets an absolute origin still emits a valid tag rather than a bare path.
@@ -141,7 +148,7 @@ export default async function LocaleLayout(
                 )}
                 <link rel="dns-prefetch" href="https://checkout.tabby.ai" />
                 <link rel="dns-prefetch" href="https://accounts.google.com" />
-                <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
+                <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
             </head>
             <body suppressHydrationWarning>
                 <NextIntlClientProvider locale={locale} messages={messages}>
