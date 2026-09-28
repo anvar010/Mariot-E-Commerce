@@ -80,10 +80,21 @@ const RESPONSIVE_EMAIL_STYLE = `
 // app) keeps them — Gmail strips <style> that sits loose in the body. Templates
 // that ship a full doc get the style appended to <head>; bare-fragment templates
 // (no <head>) get wrapped in a minimal doc with a viewport meta + the style.
+// Outlook for Windows renders with Word and scales the whole email by the screen's
+// DPI setting (125% / 150% on most laptops), so a 600px card comes out oversized and
+// looks zoomed in. Pinning PixelsPerInch to 96 turns that scaling off; the Office
+// namespaces on <html> are what let Word read the block at all.
+const OUTLOOK_DPI_FIX = `<!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->`;
+const OFFICE_NS = 'xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"';
+
 const injectResponsive = (html) => {
     if (typeof html !== 'string' || !html) return html;
-    if (html.includes('</head>')) return html.replace('</head>', `${RESPONSIVE_EMAIL_STYLE}</head>`);
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${RESPONSIVE_EMAIL_STYLE}</head><body style="margin:0;padding:0;">${html}</body></html>`;
+    if (html.includes('</head>')) {
+        return html
+            .replace(/<html(?![^>]*xmlns:o)([^>]*)>/i, `<html ${OFFICE_NS}$1>`)
+            .replace('</head>', `${OUTLOOK_DPI_FIX}${RESPONSIVE_EMAIL_STYLE}</head>`);
+    }
+    return `<!DOCTYPE html><html ${OFFICE_NS}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${OUTLOOK_DPI_FIX}${RESPONSIVE_EMAIL_STYLE}</head><body style="margin:0;padding:0;">${html}</body></html>`;
 };
 
 const createTransporter = () => {
@@ -327,7 +338,7 @@ const dsShell = ({ ar = false, preheader = '', hero = true, content = '' }) => {
     const dir = ar ? 'rtl' : 'ltr';
     const align = ar ? 'right' : 'left';
     const heroRow = hero
-        ? `<tr><td style="padding:14px 0 0;font-size:0;line-height:0;"><img src="cid:mariotEmailHero" alt="Mariot — professional kitchen equipment" width="600" style="display:block;width:100%;height:auto;border:0;"></td></tr>`
+        ? `<tr><td style="padding:14px 0 0;font-size:0;line-height:0;"><img src="cid:mariotEmailHero" alt="Mariot — professional kitchen equipment" width="600" height="301" style="display:block;width:100%;height:auto;border:0;"></td></tr>`
         : '';
     return `<!DOCTYPE html>
 <html lang="${ar ? 'ar' : 'en'}" dir="${dir}"><head>
