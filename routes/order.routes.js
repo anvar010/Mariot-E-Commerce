@@ -1,7 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { createOrder, getMyOrders, getOrder, updateOrderStatus, tabbyWebhook, stripeWebhook, tamaraWebhook, refundOrder, getOrderRefunds } = require('../controllers/order.controller');
-const { protect, authorize } = require('../middlewares/auth.middleware');
+const { protect, authorizeAdminOrStaff } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
@@ -37,11 +37,11 @@ router.route('/')
 
 router.route('/:id')
     .get(getOrder)
-    .put(authorize('admin'), updateOrderStatus);
+    .put(authorizeAdminOrStaff('orders'), updateOrderStatus);
 
-// Refunds are admin-only and move real money, so they sit behind the same authorisation
-// as status changes rather than anything looser.
-router.get('/:id/refunds', authorize('admin'), getOrderRefunds);
-router.post('/:id/refund', authorize('admin'), refundOrder);
+// Status, payment status and refunds all follow the `orders` permission -- the same key that
+// shows a staff member the Orders page -- so the page never offers an action the API refuses.
+router.get('/:id/refunds', authorizeAdminOrStaff('orders'), getOrderRefunds);
+router.post('/:id/refund', authorizeAdminOrStaff('orders'), refundOrder);
 
 module.exports = router;

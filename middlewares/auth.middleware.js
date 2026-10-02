@@ -54,29 +54,32 @@ const authorize = (...roles) => {
     };
 };
 
+// True when this staff user holds any of the given permission keys. Fetches
+// staff_permissions from the DB lazily, so it costs nothing for admins and customers.
+const staffHasPermission = async (user, ...permKeys) => {
+    if (user?.role !== 'staff') return false;
+    try {
+        const [rows] = await db.execute(
+            'SELECT staff_permissions FROM users WHERE id = ?',
+            [user.id]
+        );
+        let perms = [];
+        if (rows.length > 0) {
+            const raw = rows[0].staff_permissions;
+            perms = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
+        }
+        return permKeys.some(k => perms.includes(k));
+    } catch (e) {
+        console.error('[staffHasPermission] Error fetching staff permissions:', e.message);
+        return false;
+    }
+};
+
 // Allows admin unconditionally; allows staff if they hold any of the given permission keys.
-// Fetches staff_permissions from DB lazily — only for staff users.
 const authorizeAdminOrStaff = (...permKeys) => {
     return async (req, res, next) => {
         if (req.user.role === 'admin') return next();
-
-        if (req.user.role === 'staff') {
-            try {
-                const [rows] = await db.execute(
-                    'SELECT staff_permissions FROM users WHERE id = ?',
-                    [req.user.id]
-                );
-                let perms = [];
-                if (rows.length > 0) {
-                    const raw = rows[0].staff_permissions;
-                    perms = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
-                }
-                if (permKeys.some(k => perms.includes(k))) return next();
-            } catch (e) {
-                console.error('[authorizeAdminOrStaff] Error fetching staff permissions:', e.message);
-            }
-        }
-
+        if (await staffHasPermission(req.user, ...permKeys)) return next();
         return res.status(403).json({ success: false, message: 'Not authorized to access this section' });
     };
 };
@@ -112,4 +115,4 @@ const optionalProtect = async (req, res, next) => {
     next();
 };
 
-module.exports = { protect, authorize, authorizeAdminOrStaff, optionalProtect };
+module.exports = { protect, authorize, authorizeAdminOrStaff, staffHasPermission, optionalProtect };

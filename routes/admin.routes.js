@@ -98,7 +98,7 @@ router.route('/trending-products')
 
 // Exports — admin only
 router.get('/export/products', authorize('admin'), exportProducts);
-router.get('/export/orders', authorize('admin'), exportOrders);
+router.get('/export/orders', authorizeAdminOrStaff('orders'), exportOrders);
 
 // Reviews
 router.route('/reviews')

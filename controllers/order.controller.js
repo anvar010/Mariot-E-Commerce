@@ -8,6 +8,7 @@ const axios = require('axios');
 const { sendOrderConfirmationEmail, sendEmail } = require('../utils/sendEmail');
 const tamaraService = require('../services/tamara.service');
 const refundService = require('../services/refund.service');
+const { staffHasPermission } = require('../middlewares/auth.middleware');
 const { settlementFeeFor } = require('../config/settlementFee');
 const { regionalDeliveryFor } = require('../config/regionalDelivery');
 const { siteUrl } = require('../config/siteUrl');
@@ -909,8 +910,9 @@ exports.getOrder = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        // Check if order belongs to user or user is admin
-        if (order.user_id !== req.user.id && req.user.role !== 'admin') {
+        // The customer who placed it, an admin, or staff holding the `orders` permission.
+        if (order.user_id !== req.user.id && req.user.role !== 'admin'
+            && !(await staffHasPermission(req.user, 'orders'))) {
             return res.status(403).json({ success: false, message: 'Not authorized to view this order' });
         }
 
