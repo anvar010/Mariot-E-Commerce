@@ -171,6 +171,7 @@ export const CustomProductFormModal = ({ product, onClose, onSaved }: {
                     </p>
 
                     <div className={styles.topRow}>
+                        <div className={styles.imageCol}>
                         <label className={styles.imageBox}>
                             {f.image
                                 ? <img src={resolveUrl(f.image)} alt="" />
@@ -182,9 +183,15 @@ export const CustomProductFormModal = ({ product, onClose, onSaved }: {
                                 onChange={e => { const file = e.target.files?.[0]; if (file) uploadImage(file); e.target.value = ''; }}
                             />
                         </label>
+                        {/* The quotation prints the photo in a small square, so a square
+                            image on a plain background is what reads best there. */}
+                        <span className={styles.imageHint}>
+                            800 × 800 px, square<br />JPG, PNG or WebP · max 5 MB
+                        </span>
                         {f.image && (
                             <button type="button" className={styles.linkBtn} onClick={() => set({ image: '' })}>Remove photo</button>
                         )}
+                        </div>
                         <div className={styles.topFields}>
                             <input className={styles.input} placeholder="Product name *" value={f.name}
                                 onChange={e => set({ name: e.target.value })} />
