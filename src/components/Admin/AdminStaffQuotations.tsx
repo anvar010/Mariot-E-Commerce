@@ -25,6 +25,7 @@ import QuotationEmailModal from './QuotationEmailModal';
 import { matchDialCountry } from '@/data/dialCountries';
 import { useRouter } from '@/i18n/navigation';
 import { whatsappLink } from '@/utils/whatsappLink';
+import { CustomProductsGrid, CustomProduct, useCustomProducts, specsSummary } from './StaffCustomProducts';
 
 type Line = {
     product_id: number | null;
@@ -48,6 +49,8 @@ type Line = {
     variant_id?: number | null;
     variant_label?: string | null;
     custom_dimensions?: Record<string, string> | null;
+    /** Set when the line is one of the quote-only custom products; product_id is then null. */
+    custom_product_id?: number | null;
 };
 
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
@@ -73,6 +76,13 @@ const AdminStaffQuotations = () => {
     const isStaff = user?.role === 'staff';
 
     const [view, setView] = useState<'list' | 'builder'>('list');
+    // The list page holds the quotations and, beside them, the saved custom products.
+    const [listTab, setListTab] = useState<'quotations' | 'custom'>('quotations');
+    // Where the builder's picker draws from: the website catalogue or the custom products.
+    const [pickerTab, setPickerTab] = useState<'catalogue' | 'custom'>('catalogue');
+    const customProducts = useCustomProducts();
+    // Staff may change only the custom products they created; admins any of them.
+    const canModifyCustom = (p: CustomProduct) => !isStaff || Number(p.created_by) === Number(user?.id);
     const [quotations, setQuotations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -403,7 +413,37 @@ const AdminStaffQuotations = () => {
                     ? null : Number(p.max_staff_discount_pct),
             }];
         });
-        setProductQuery('');
+        // The search is deliberately kept: staff often add several results of the same
+        // search in a row, and clearing it made them retype it after every click.
+    };
+
+    /** Puts a saved custom product on the quotation, its specs carried as the line's details. */
+    const addCustomProduct = (p: CustomProduct) => {
+        setLines(prev => {
+            const existing = prev.findIndex(l => l.custom_product_id === p.id);
+            if (existing !== -1) {
+                const next = [...prev];
+                next[existing] = { ...next[existing], quantity: next[existing].quantity + 1 };
+                return next;
+            }
+            return [...prev, {
+                product_id: null,
+                custom_product_id: p.id,
+                slug: '',
+                name: p.name,
+                model: p.model || '',
+                brand: p.brand || '',
+                image: p.image || '',
+                description: p.description || '',
+                description_ar: '',
+                unit_price: Number(p.unit_price) || 0,
+                quantity: 1,
+                discount_pct: 0,
+                // Not a catalogue product, so no admin-set ceiling applies.
+                max_staff_discount_pct: null,
+                custom_dimensions: p.specs && Object.keys(p.specs).length ? p.specs : null,
+            }];
+        });
     };
 
     const updateLine = (idx: number, patch: Partial<Line>) => {
@@ -456,6 +496,12 @@ const AdminStaffQuotations = () => {
             discount_pct: Number(i.discount_pct) || 0,
             max_staff_discount_pct: i.max_staff_discount_pct === null || i.max_staff_discount_pct === undefined
                 ? null : Number(i.max_staff_discount_pct),
+            // Kept on edit: dropping them re-saved a sized or custom line without the
+            // details its price was worked out from.
+            variant_id: i.variant_id ?? null,
+            variant_label: i.variant_label ?? null,
+            custom_dimensions: i.custom_dimensions ?? null,
+            custom_product_id: i.custom_product_id ?? null,
         })));
         setEditingId(q.id);
         setEditingRef(q.quotation_ref || '');
@@ -1093,6 +1139,31 @@ Download: ${url}`;
                                     </span>
                                 )}
                             </div>
+                            <div className={styles.statusTabs}>
+                                <button
+                                    type="button"
+                                    className={`${styles.statusTab} ${pickerTab === 'catalogue' ? styles.statusTabActive : ''}`}
+                                    onClick={() => setPickerTab('catalogue')}
+                                >Products</button>
+                                <button
+                                    type="button"
+                                    className={`${styles.statusTab} ${pickerTab === 'custom' ? styles.statusTabActive : ''}`}
+                                    onClick={() => setPickerTab('custom')}
+                                >
+                                    Custom products
+                                    <span className={styles.tabCount}>{customProducts.items.length}</span>
+                                </button>
+                            </div>
+                            {pickerTab === 'custom' ? (
+                                <CustomProductsGrid
+                                    items={customProducts.items}
+                                    loading={customProducts.loading}
+                                    reload={customProducts.reload}
+                                    onAdd={addCustomProduct}
+                                    addedIds={new Set(lines.map(l => l.custom_product_id).filter((id): id is number => !!id))}
+                                    canModify={canModifyCustom}
+                                />
+                            ) : (<>
                             <select
                                 className={styles.categorySelect}
                                 value={categoryFilter}
@@ -1240,6 +1311,7 @@ Download: ${url}`;
                                     </div>
                                 </div>
                             )}
+                            </>)}
                         </div>
 
                         {/* Line items */}
@@ -1272,10 +1344,13 @@ Download: ${url}`;
                                                 const lineCap = isStaff ? l.max_staff_discount_pct : null;
                                                 const lineTotal = round2(gross - gross * (Math.min(100, Math.max(0, l.discount_pct)) / 100));
                                                 return (
-                                                    <tr key={`${l.product_id}-${idx}`}>
+                                                    <tr key={`${l.product_id ?? `c${l.custom_product_id}`}-${idx}`}>
                                                         <td>
                                                             <div className={styles.lineName}>{l.name}</div>
                                                             <div className={styles.lineMeta}>{l.brand || '—'}{l.model ? ` · ${l.model}` : ''}</div>
+                                                            {l.custom_dimensions && Object.keys(l.custom_dimensions).length > 0 && (
+                                                                <div className={styles.lineMeta}>{specsSummary(l.custom_dimensions)}</div>
+                                                            )}
                                                         </td>
                                                         <td>
                                                             <input
@@ -1534,6 +1609,31 @@ Download: ${url}`;
                 </div>
             </div>
 
+            <div className={styles.statusTabs}>
+                <button
+                    type="button"
+                    className={`${styles.statusTab} ${listTab === 'quotations' ? styles.statusTabActive : ''}`}
+                    onClick={() => setListTab('quotations')}
+                >
+                    Quotations <span className={styles.tabCount}>{quotations.length}</span>
+                </button>
+                <button
+                    type="button"
+                    className={`${styles.statusTab} ${listTab === 'custom' ? styles.statusTabActive : ''}`}
+                    onClick={() => setListTab('custom')}
+                >
+                    Custom products <span className={styles.tabCount}>{customProducts.items.length}</span>
+                </button>
+            </div>
+
+            {listTab === 'custom' ? (
+                <CustomProductsGrid
+                    items={customProducts.items}
+                    loading={customProducts.loading}
+                    reload={customProducts.reload}
+                    canModify={canModifyCustom}
+                />
+            ) : (<>
             <div className={styles.kpiRow}>
                 <button
                     className={`${styles.kpi} ${statusFilter === 'all' ? styles.kpiActive : ''}`}
@@ -1743,7 +1843,7 @@ Download: ${url}`;
                     </tbody>
                 </table>
             </div>
-
+            </>)}
 
             {quotationModal}
 

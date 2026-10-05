@@ -1,0 +1,455 @@
+/* ── Grid ─────────────────────────────────────────────── */
+.toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.searchBox {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0 12px;
+    background: #fff;
+    color: #94a3b8;
+}
+
+.searchBox input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 9px 0;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: #0f172a;
+    background: transparent;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+}
+
+.card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.cardAdded {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px #2563eb;
+}
+
+.thumb {
+    position: relative;
+    height: 120px;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #cbd5e1;
+}
+
+.thumb img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.badge,
+.addedBadge {
+    position: absolute;
+    left: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+}
+
+.badge {
+    top: 8px;
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.addedBadge {
+    bottom: 8px;
+    background: #2563eb;
+    color: #fff;
+}
+
+.cardTools {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    gap: 4px;
+}
+
+.cardTools button {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.cardTools button:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+.cardTools .danger:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+.cardBody {
+    padding: 10px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+}
+
+.cardName {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.35;
+}
+
+.cardMeta,
+.cardBy {
+    font-size: 11.5px;
+    color: #94a3b8;
+}
+
+.cardSpecs {
+    font-size: 11px;
+    color: #334155;
+    background: #f1f5f9;
+    border-radius: 6px;
+    padding: 3px 6px;
+    margin-top: 2px;
+}
+
+.cardFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 6px;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.addBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: none;
+    background: #2563eb;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.addBtn:hover {
+    background: #1d4ed8;
+}
+
+.empty {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+    padding: 26px 10px;
+}
+
+/* ── Buttons ──────────────────────────────────────────── */
+.primaryBtn,
+.secondaryBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.primaryBtn {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+}
+
+.primaryBtn:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.primaryBtn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.secondaryBtn {
+    background: #fff;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+
+.linkBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    color: #2563eb;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0;
+    font-family: inherit;
+}
+
+.iconDanger {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #fee2e2;
+    background: #fff;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* ── Form modal ───────────────────────────────────────── */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 1000;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modalHeader h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.modalHeader button {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #475569;
+}
+
+.modalBody {
+    padding: 18px 20px;
+    overflow-y: auto;
+}
+
+.modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.note {
+    margin: 0 0 14px;
+    font-size: 12px;
+    color: #64748b;
+    background: #f8fafc;
+    border: 1px dashed #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.topRow {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.imageBox {
+    width: 128px;
+    height: 128px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #94a3b8;
+    font-size: 12px;
+    cursor: pointer;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.imageBox:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+.imageBox img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.topFields {
+    flex: 1;
+    min-width: 220px;
+}
+
+.input {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13.5px;
+    color: #0f172a;
+    margin-bottom: 9px;
+    outline: none;
+    font-family: inherit;
+    background: #fff;
+}
+
+textarea.input {
+    resize: vertical;
+}
+
+.input:focus {
+    border-color: #2563eb;
+}
+
+.row2,
+.row3 {
+    display: grid;
+    gap: 9px;
+}
+
+.row2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.row3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.field span {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 6px 0 12px;
+    cursor: pointer;
+}
+
+.fabBox {
+    border: 1px solid #e0f2fe;
+    background: #f8fcff;
+    border-radius: 10px;
+    padding: 12px 12px 4px;
+    margin-bottom: 14px;
+}
+
+.sectionLabel {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin: 4px 0 8px;
+}
+
+.extraRow {
+    display: flex;
+    gap: 8px;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 560px) {
+    .row2,
+    .row3 {
+        grid-template-columns: 1fr;
+    }
+}

@@ -221,7 +221,9 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
     const buildItemRowHTML = (item: any, imgSrc: string, displayNum: number): string => {
         const dims = item.custom_dimensions && typeof item.custom_dimensions === 'object'
             ? Object.entries(item.custom_dimensions)
-                .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}cm`).join(' · ')
+                // Only measurements take a unit. Custom products carry other specs here
+                // too -- material, thickness, finish -- which are printed as typed.
+                .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}${['width', 'depth', 'height', 'length'].includes(k.toLowerCase()) ? 'cm' : ''}`).join(' · ')
             : '';
         const variantLabel = item.variant_label || '';
         const itemName = (isArabic && item.name_ar) ? item.name_ar : item.name;
