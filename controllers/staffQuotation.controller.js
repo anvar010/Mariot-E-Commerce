@@ -196,6 +196,10 @@ const priceItems = (rawItems, caps = new Map()) => {
             // items and the PDF rather than being rebuilt away here.
             variant_id: it.variant_id !== undefined && it.variant_id !== null ? Number(it.variant_id) : null,
             variant_label: it.variant_label || null,
+            // Set for a line taken from the quote-only custom products. product_id stays
+            // null on those, so no catalogue discount cap is ever looked up for them.
+            custom_product_id: it.custom_product_id !== undefined && it.custom_product_id !== null
+                ? Number(it.custom_product_id) : null,
             custom_dimensions: it.custom_dimensions && typeof it.custom_dimensions === 'object'
                 ? it.custom_dimensions
                 : null,

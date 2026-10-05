@@ -15,6 +15,16 @@ const {
     matchCustomer,
     getBranches,
 } = require('../controllers/staffQuotation.controller');
+const {
+    getCustomProducts,
+    createCustomProduct,
+    updateCustomProduct,
+    deleteCustomProduct,
+    requireImage,
+    forceUploadFolder,
+} = require('../controllers/staffCustomProduct.controller');
+const { uploadImage } = require('../controllers/upload.controller');
+const upload = require('../middlewares/upload.middleware');
 const { protect, authorize, authorizeAdminOrStaff } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
@@ -42,6 +52,16 @@ router.get('/customers', lookupCustomers);
 router.get('/customers/match', matchCustomer);
 router.get('/customers/:id/profile', getCustomerProfile);
 router.get('/branches', getBranches);
+
+// Quote-only products. Also above '/:id', for the same reason as '/customers'.
+// Image upload goes through its own route because /upload/image is admin-only.
+router.route('/custom-products')
+    .get(getCustomProducts)
+    .post(createCustomProduct);
+router.post('/custom-products/image', forceUploadFolder, upload.single('image'), requireImage, uploadImage);
+router.route('/custom-products/:id')
+    .put(updateCustomProduct)
+    .delete(deleteCustomProduct);
 
 router.route('/:id')
     .get(getStaffQuotation)
