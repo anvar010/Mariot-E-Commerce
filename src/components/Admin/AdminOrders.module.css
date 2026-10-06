@@ -870,6 +870,25 @@
     flex-wrap: wrap;
 }
 
+.detailChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 13px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+
+.detailChipNeutral {
+    background: #fff;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+
 .detailGrid {
     /* Items across the top, then the summary cards in a row beneath.
        Side by side, the two columns were never the same height -- one item on the left

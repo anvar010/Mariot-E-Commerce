@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
-import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt, AlertTriangle } from 'lucide-react';
+import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt, AlertTriangle, PackageCheck, Truck, XCircle, Clock, CheckCircle2 } from 'lucide-react';
 import WhatsappIcon from '@/components/shared/icons/WhatsappIcon';
 import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { readSeen } from '@/utils/adminActivity';
@@ -637,14 +637,31 @@ const AdminOrders = () => {
                         </span>
                     </div>
                     <div className={styles.detailBadges}>
-                        <span className={`${styles.statusBadge} ${getStatusStyle(detailSummary.status)}`}>
-                            {String(detailSummary.status).toUpperCase()}
-                        </span>
-                        <span className={`${styles.statusBadge} ${detailSummary.payment_status === 'paid' ? styles.statusDelivered
-                            : detailSummary.payment_status === 'refunded' ? styles.statusCancelled : ''}`}>
-                            {String(detailSummary.payment_status || 'pending').toUpperCase()}
-                        </span>
-                        <span className={styles.methodBadge}>{formatPaymentMethod(detailSummary.payment_method)}</span>
+                        {/* Chips rather than the table's compact badges: here they are the
+                            order's headline, so each carries an icon and reads as a word,
+                            not a shouted code. */}
+                        {(() => {
+                            const st = String(detailSummary.status || 'pending');
+                            const StIcon = st === 'delivered' ? PackageCheck : st === 'shipped' ? Truck
+                                : st === 'cancelled' ? XCircle : st === 'processing' ? Package : Clock;
+                            const pay = String(detailSummary.payment_status || 'pending');
+                            const PayIcon = pay === 'paid' ? CheckCircle2 : pay === 'refunded' ? RotateCcw
+                                : pay === 'failed' ? AlertTriangle : Clock;
+                            const payStyle = pay === 'paid' ? styles.statusDelivered
+                                : (pay === 'refunded' || pay === 'failed') ? styles.statusCancelled : styles.statusPending;
+                            const cap = (v: string) => v.charAt(0).toUpperCase() + v.slice(1);
+                            return (<>
+                                <span className={`${styles.detailChip} ${getStatusStyle(st)}`} title="Order status">
+                                    <StIcon size={14} /> {cap(st)}
+                                </span>
+                                <span className={`${styles.detailChip} ${payStyle}`} title="Payment status">
+                                    <PayIcon size={14} /> {cap(pay)}
+                                </span>
+                                <span className={`${styles.detailChip} ${styles.detailChipNeutral}`} title="Payment method">
+                                    <CreditCard size={14} /> {formatPaymentMethod(detailSummary.payment_method)}
+                                </span>
+                            </>);
+                        })()}
                     </div>
                 </div>
 
