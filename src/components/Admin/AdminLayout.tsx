@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
+import AdminBottomNav from './AdminBottomNav';
 import { AdminNavProvider } from './AdminNavContext';
 import styles from './AdminLayout.module.css';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
@@ -102,6 +103,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         {children}
                     </div>
                 </div>
+                <AdminBottomNav />
             </div>
         </AdminNavProvider>
     );

@@ -19,6 +19,10 @@ const MobileBottomNav = () => {
 
     const isActive = (path: string) => pathname === path;
 
+    // The back office has its own bottom bar (AdminBottomNav); the shop's Home / Cart
+    // tabs mean nothing there and would sit on top of it.
+    if (pathname.startsWith('/admin')) return null;
+
     return (
         <div className={styles.bottomNav}>
             <Link href="/" className={`${styles.navItem} ${isActive('/') ? styles.active : ''}`}>

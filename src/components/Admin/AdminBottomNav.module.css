@@ -1,0 +1,63 @@
+.bottomNav {
+    display: none;
+}
+
+/* Same breakpoint as the storefront's bottom bar, which this replaces inside /admin. */
+@media (max-width: 768px) {
+    .bottomNav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        /* Under the sidebar drawer (1000) and its backdrop (999), so opening the menu
+           covers the bar rather than sitting beneath it. */
+        z-index: 950;
+        display: grid;
+        align-items: stretch;
+        height: 62px;
+        padding-bottom: env(safe-area-inset-bottom);
+        background: #fff;
+        border-top: 1px solid #e2e8f0;
+        box-shadow: 0 -4px 16px rgba(15, 23, 42, .06);
+        box-sizing: content-box;
+    }
+}
+
+.navItem {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #64748b;
+    text-decoration: none;
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.navItem span {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.active {
+    color: #2563eb;
+}
+
+/* A short bar along the top edge marks the current tab. */
+.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 28px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: #2563eb;
+    transform: translateX(-50%);
+}

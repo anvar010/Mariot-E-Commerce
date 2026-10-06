@@ -974,7 +974,7 @@ const AdminOrders = () => {
                                             )}
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Total">
                                         <div className={styles.amount}><CurrencyPrice amount={Number(order.final_amount)} /></div>
                                         {(Number(order.points_used) > 0 || Number(order.discount_amount) > 0) && (
                                             <div style={{ fontSize: '11px', color: '#16a34a', marginTop: '4px' }}>
@@ -983,12 +983,12 @@ const AdminOrders = () => {
                                             </div>
                                         )}
                                     </td>
-                                    <td>
+                                    <td data-label="Status">
                                         <span className={`${styles.statusBadge} ${getStatusStyle(order.status)}`}>
                                             {order.status.toUpperCase()}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="Payment">
                                         <div className={styles.customDropdown}>
                                             <div
                                                 className={`${styles.dropdownHeader} ${order.payment_status === 'paid' ? styles.paymentPaid :
@@ -1016,10 +1016,10 @@ const AdminOrders = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Method">
                                         <span className={styles.methodBadge}>{formatPaymentMethod(order.payment_method)}</span>
                                     </td>
-                                    <td>
+                                    <td data-label="Actions">
                                         <div className={styles.customDropdown}>
                                             <div
                                                 className={`${styles.dropdownHeader} ${order.status === 'delivered' ? styles.orderDelivered :
