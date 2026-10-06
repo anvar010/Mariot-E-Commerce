@@ -468,6 +468,22 @@ const AdminOrders = () => {
         // Opened before the PDF is built: a tab opened after an await is no longer tied
         // to the click, and browsers block it as a popup.
         const win = window.open('', '_blank');
+        // Filled straight away, so the tab says what it is doing instead of sitting blank
+        // for the few seconds the PDF takes to build.
+        if (win) {
+            win.document.title = `Invoice ${order.invoice.invoice_number}`;
+            win.document.body.innerHTML = `
+                <style>
+                    body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#475569;background:#f8fafc}
+                    .s{width:34px;height:34px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:r .8s linear infinite}
+                    @keyframes r{to{transform:rotate(360deg)}}
+                </style>
+                <div class="s"></div>
+                <div id="msg"></div>`;
+            // Set as text: the number is typed by staff and must not be read as markup.
+            const msg = win.document.getElementById('msg');
+            if (msg) msg.textContent = `Preparing invoice ${order.invoice.invoice_number}…`;
+        }
         try {
             const { generateInvoicePDF } = await import('@/utils/pdfGenerator');
             const dataUri = await generateInvoicePDF({

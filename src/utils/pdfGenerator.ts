@@ -32,7 +32,7 @@ const EMPTY_IMG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAA
 // Convert an image URL to a base64 data URI.
 // Same-origin assets are fetched directly by the browser (no proxy round-trip).
 // Cross-origin images (e.g. the QR code API) go through the server-side proxy.
-const imageToBase64 = async (url: string): Promise<string> => {
+const loadImageBase64 = async (url: string): Promise<string> => {
     try {
         const fullUrl = url.startsWith('http') ? url : new URL(url, window.location.origin).toString();
         const isSameOrigin = fullUrl.startsWith(window.location.origin + '/');
@@ -93,6 +93,24 @@ const siteOrigin = (): string => {
  *        print dialog lives, and 'silent' does neither -- it only returns the data URI, which
  *        is what emailing needs. Booleans are still accepted so existing callers keep working.
  */
+
+/**
+ * Cached per page load. An invoice pulls ~26 fixed images (logos, badges, brand marks);
+ * fetching and encoding them again on every open was most of the wait before the PDF
+ * appeared. Failures are not cached, so a flaky first fetch is retried next time.
+ */
+const imageCache = new Map<string, Promise<string>>();
+const imageToBase64 = (url: string): Promise<string> => {
+    const hit = imageCache.get(url);
+    if (hit) return hit;
+    const p = loadImageBase64(url).then(b64 => {
+        if (b64 === EMPTY_IMG) imageCache.delete(url);
+        return b64;
+    });
+    imageCache.set(url, p);
+    return p;
+};
+
 export const generateQuotationPDF = async (quotation: any, shouldDownload: boolean | 'download' | 'open' | 'silent' = false, isArabic = false): Promise<string> => {
     const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
 
@@ -672,9 +690,13 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
     // with allowTaint makes canvas.toDataURL() throw a SecurityError).
     const QR_URL = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://mariotstore.com';
     const [mariotLogoEnB64, mariotLogoArB64, faviconB64, isoB64, icvB64, qaB64, qrB64, ...brandLogosB64] = await Promise.all([
-        imageToBase64(window.location.origin + '/assets/mariot-logo2.webp'),   // English logo — left
+        // The cropped copy: mariot-logo2.webp is a 1080px square with the logo floating
+        // in it, so at header height the logo itself came out a fraction of the size.
+        imageToBase64(window.location.origin + '/assets/mariot-logo-invoice.webp'), // English logo — left
         imageToBase64(window.location.origin + '/MARIOT-A.webp'),              // Arabic logo  — right
-        imageToBase64(window.location.origin + '/favicon.ico'),                // Icon          — centre
+        // 512px rather than favicon.ico: the .ico holds a small icon, which turned
+        // blurry once stretched to the header mark and the full-page watermark.
+        imageToBase64(window.location.origin + '/icon-512.png'),               // Icon          — centre
         imageToBase64(window.location.origin + '/ISO.webp'),
         imageToBase64(window.location.origin + '/ICV.webp'),
         imageToBase64(window.location.origin + '/Quality-Assurance.webp'),
@@ -745,8 +767,12 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
         }).join('');
 
         // Two rows of brand logos matching the physical invoice
-        const brandRow1 = brandLogosB64.slice(0, 10).map(b64 => `<img src="${b64}" style="height:18px;max-width:52px;object-fit:contain;">`).join('');
-        const brandRow2 = brandLogosB64.slice(10).map(b64 => `<img src="${b64}" style="height:18px;max-width:52px;object-fit:contain;">`).join('');
+        // Each logo sits in an equal-width cell so both rows span the page and line up
+        // column for column, rather than bunching at the left with the second row short.
+        const brandCell = (b64: string) => `<div style="flex:1 1 0;display:flex;align-items:center;justify-content:center;height:26px;"><img src="${b64}" style="max-height:24px;max-width:62px;object-fit:contain;"></div>`;
+        const brandRow1 = brandLogosB64.slice(0, 10).map(brandCell).join('');
+        // Padded to ten so its cells are the same width as the first row's.
+        const brandRow2 = [...brandLogosB64.slice(10).map(brandCell), ...Array(Math.max(0, 10 - brandLogosB64.slice(10).length)).fill('<div style="flex:1 1 0;"></div>')].join('');
 
         const pageHtml = `
         <div style="width:794px;min-height:1123px;background:#fff;padding:24px 28px 16px;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;box-sizing:border-box;display:flex;flex-direction:column;position:relative;">
@@ -757,15 +783,15 @@ export const generateInvoicePDF = async (data: InvoicePDFData): Promise<string> 
 
             <div style="position:relative;z-index:1;display:flex;flex-direction:column;flex-grow:1;">
                 <!-- Header -->
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                    <div style="flex:1;text-align:left;"><img src="${mariotLogoEnB64}" style="height:72px;object-fit:contain;max-width:260px;"></div>
-                    <div style="flex:0 0 auto;margin:0 20px;text-align:center;"><img src="${faviconB64}" style="height:70px;width:70px;object-fit:contain;"></div>
-                    <div style="flex:1;text-align:right;"><img src="${mariotLogoArB64}" style="height:72px;object-fit:contain;max-width:260px;float:right;"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div style="flex:1;display:flex;justify-content:flex-start;align-items:center;"><img src="${mariotLogoEnB64}" style="height:58px;max-width:230px;object-fit:contain;"></div>
+                    <div style="flex:0 0 auto;margin:0 20px;display:flex;align-items:center;"><img src="${faviconB64}" style="height:78px;width:78px;object-fit:contain;"></div>
+                    <div style="flex:1;display:flex;justify-content:flex-end;align-items:center;"><img src="${mariotLogoArB64}" style="height:58px;max-width:230px;object-fit:contain;"></div>
                 </div>
 
                 <div style="margin-bottom:2px;">
-                    <div style="display:flex;flex-wrap:nowrap;gap:6px;align-items:center;justify-content:flex-start;padding:3px 0;">${brandRow1}</div>
-                    <div style="display:flex;flex-wrap:nowrap;gap:6px;align-items:center;justify-content:flex-start;padding:3px 0;">${brandRow2}</div>
+                    <div style="display:flex;flex-wrap:nowrap;gap:8px;align-items:center;padding:3px 0;">${brandRow1}</div>
+                    <div style="display:flex;flex-wrap:nowrap;gap:8px;align-items:center;padding:3px 0;">${brandRow2}</div>
                 </div>
 
                 <div style="border-top:1px solid #ccc;margin-bottom:8px;"></div>
