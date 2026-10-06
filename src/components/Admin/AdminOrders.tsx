@@ -455,6 +455,55 @@ const AdminOrders = () => {
     // single-order payload does not include.
     const [detailSummary, setDetailSummary] = useState<any | null>(null);
 
+    const [viewingInvoice, setViewingInvoice] = useState(false);
+
+    /**
+     * Opens the order's invoice as a PDF in a new tab, where the browser's own viewer
+     * offers download and print. Built the same way as on the Invoices page, from the
+     * order already loaded here, so nothing extra is fetched.
+     */
+    const viewOrderInvoice = async (order: any, summary: any) => {
+        if (viewingInvoice || !order?.invoice?.invoice_number) return;
+        setViewingInvoice(true);
+        // Opened before the PDF is built: a tab opened after an await is no longer tied
+        // to the click, and browsers block it as a popup.
+        const win = window.open('', '_blank');
+        try {
+            const { generateInvoicePDF } = await import('@/utils/pdfGenerator');
+            const dataUri = await generateInvoicePDF({
+                invoice_number: order.invoice.invoice_number,
+                order_id: order.id ?? summary?.id,
+                customer_name: summary?.user_name || '',
+                given_by_name: order.invoice.given_by_name || '',
+                final_amount: Number(order.invoice.order_total || order.final_amount || summary?.final_amount || 0),
+                delivery_charge: Number(order.delivery_charge) || 0,
+                settlement_fee: Number(order.settlement_fee) || 0,
+                items: order.items || [],
+            });
+            const base64 = dataUri.replace(/^data:application\/pdf[^,]*,/, '');
+            const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+            const blobUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+            if (win) {
+                win.location.href = blobUrl;
+            } else {
+                // Popup blocked anyway -- fall back to a download so the click still does something.
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = `Invoice-${order.invoice.invoice_number}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        } catch (error: any) {
+            win?.close();
+            console.error('[Order Invoice] Failed:', error?.message || error);
+            showNotification('Failed to generate invoice PDF', 'error');
+        } finally {
+            setViewingInvoice(false);
+        }
+    };
+
     const openDetail = async (order: any) => {
         setDetailSummary(order);
         setDetailOrder(null);
@@ -673,7 +722,21 @@ const AdminOrders = () => {
                             <div className={styles.moneyMeta}>
                                 <span><CreditCard size={13} /> {formatPaymentMethod(detailSummary.payment_method)}</span>
                                 {num(o.points_earned) > 0 && <span>{o.points_earned} points earned</span>}
-                                {o.invoice?.invoice_number && <span><FileText size={13} /> Invoice {o.invoice.invoice_number}</span>}
+                                {o.invoice?.invoice_number && (
+                                    <span>
+                                        <FileText size={13} /> Invoice {o.invoice.invoice_number}
+                                        <button
+                                            type="button"
+                                            className={styles.invoiceEye}
+                                            onClick={() => viewOrderInvoice(o, detailSummary)}
+                                            disabled={viewingInvoice}
+                                            title="Open the invoice — download or print it from there"
+                                            aria-label={`Open invoice ${o.invoice.invoice_number}`}
+                                        >
+                                            {viewingInvoice ? <Loader2 size={13} className={styles.spin} /> : <Eye size={13} />}
+                                        </button>
+                                    </span>
+                                )}
                             </div>
                         </section>
 
