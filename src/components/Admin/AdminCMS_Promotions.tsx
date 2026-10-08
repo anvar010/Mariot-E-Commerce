@@ -375,7 +375,7 @@ const AdminCMS_Promotions: React.FC = () => {
                         <label style={labelStyle}>
                             <span style={labelText}>{isPopup ? 'Popup Image (optional)' : 'Banner Image (optional)'}</span>
                             {current.image_url && (
-                                <img src={current.image_url} alt="Image preview" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #eee' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                <img src={current.image_url} alt="Image preview" style={{ display: 'block', width: '100%', height: 'auto', maxHeight: '240px', objectFit: 'contain', background: '#f8fafc', borderRadius: '8px', border: '1px solid #eee' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             )}
                             <input type="text" value={current.image_url || ''} onChange={e => update('image_url', e.target.value)} placeholder="Paste URL or upload below" style={inputStyle} />
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -389,7 +389,7 @@ const AdminCMS_Promotions: React.FC = () => {
                         <label style={labelStyle}>
                             <span style={labelText}>{isPopup ? 'Popup Image — Arabic (optional)' : 'Banner Image — Arabic (optional)'}</span>
                             {current.image_url_ar && (
-                                <img src={current.image_url_ar} alt="Image preview (Arabic)" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #eee' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                <img src={current.image_url_ar} alt="Image preview (Arabic)" style={{ display: 'block', width: '100%', height: 'auto', maxHeight: '240px', objectFit: 'contain', background: '#f8fafc', borderRadius: '8px', border: '1px solid #eee' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             )}
                             <input type="text" value={current.image_url_ar || ''} onChange={e => update('image_url_ar', e.target.value)} placeholder="Paste URL or upload below" style={inputStyle} />
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>

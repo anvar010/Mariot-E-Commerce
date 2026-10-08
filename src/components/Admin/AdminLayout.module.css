@@ -247,15 +247,36 @@
         display: none;
     }
 
-    /* Loading / "nothing found" rows are one cell spanning the table. */
-    .pageBody :global(table[data-card-table] td:only-child) {
-        display: block;
-        text-align: center;
-        border: none !important;
+    /* Loading / "nothing found" rows: one cell spanning the table. Matched on colspan as
+       well as :only-child, and forced, because the field rules above otherwise laid the
+       message out as a value -- pushed to the right edge of an oversized card. Shown as
+       a plain centred note rather than as a card. */
+    .pageBody :global(table[data-card-table] tbody tr:has(> td:only-child)),
+    .pageBody :global(table[data-card-table] tbody tr:has(> td[colspan]:not([colspan="1"]))) {
+        padding: 0;
+        background: transparent;
+        border-style: dashed;
+        box-shadow: none;
     }
 
-    .pageBody :global(table[data-card-table] td:only-child::before) {
-        display: none;
+    .pageBody :global(table[data-card-table] td:only-child),
+    .pageBody :global(table[data-card-table] td[colspan]:not([colspan="1"])) {
+        display: block !important;
+        margin: 0 !important;
+        padding: 28px 16px !important;
+        border: none !important;
+        text-align: center !important;
+    }
+
+    .pageBody :global(table[data-card-table] td:only-child > *),
+    .pageBody :global(table[data-card-table] td[colspan]:not([colspan="1"]) > *) {
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .pageBody :global(table[data-card-table] td:only-child::before),
+    .pageBody :global(table[data-card-table] td[colspan]:not([colspan="1"])::before) {
+        display: none !important;
     }
 }
 

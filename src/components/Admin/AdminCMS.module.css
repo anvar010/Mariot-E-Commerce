@@ -1,0 +1,102 @@
+/* ---------------------------------------------------------------------------
+   Phones: the Homepage CMS Manager.
+
+   This page (and the Promotions section inside it) is laid out almost entirely with
+   inline styles, which a media query cannot reach by class. So the phone rules below
+   match those inline styles by their text -- `[style*="grid-template-columns"]` and
+   so on -- scoped to this page's root, and override them with !important, the only
+   thing that outranks an inline style. Each is listed with and without the space
+   after the colon: the browser writes "padding: 20px", server-rendered HTML writes
+   "padding:20px". Desktop is untouched: everything here sits inside the 768px query.
+   --------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    /* The admin layout already pads the page; this root added 20px more. */
+    .cmsRoot {
+        padding: 0 !important;
+        min-height: 0 !important;
+        background: transparent !important;
+    }
+
+    /* Every two-column form grid (and the simulator's 1.4fr / 1fr split) stacks. */
+    .cmsRoot :global([style*="grid-template-columns"]) {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 14px !important;
+    }
+
+    /* Rows of controls wrap instead of running off the edge. */
+    .cmsRoot :global([style*="display: flex"]),
+    .cmsRoot :global([style*="display:flex"]) {
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
+    /* Desktop padding, trimmed for a phone. */
+    .cmsRoot :global([style*="padding: 30px"]),
+    .cmsRoot :global([style*="padding:30px"]),
+    .cmsRoot :global([style*="padding: 25px"]),
+    .cmsRoot :global([style*="padding:25px"]),
+    .cmsRoot :global([style*="padding: 24px"]),
+    .cmsRoot :global([style*="padding:24px"]) {
+        padding: 16px !important;
+    }
+
+    .cmsRoot :global([style*="padding: 20px 25px"]),
+    .cmsRoot :global([style*="padding:20px 25px"]),
+    .cmsRoot :global([style*="padding: 15px 25px"]),
+    .cmsRoot :global([style*="padding:15px 25px"]),
+    .cmsRoot :global([style*="padding: 16px 24px"]),
+    .cmsRoot :global([style*="padding:16px 24px"]) {
+        padding: 14px 16px !important;
+    }
+
+    .cmsRoot :global(div[style*="padding: 20px"]:not([style*="padding: 20px 25px"])),
+    .cmsRoot :global(div[style*="padding:20px"]:not([style*="padding:20px 25px"])) {
+        padding: 14px !important;
+    }
+
+    /* The big save / delete buttons at the foot of each section: full width, so they
+       are easy to hit and never pushed off the edge. */
+    .cmsRoot :global(button[style*="padding: 14px 40px"]),
+    .cmsRoot :global(button[style*="padding:14px 40px"]),
+    .cmsRoot :global(button[style*="padding: 12px 30px"]),
+    .cmsRoot :global(button[style*="padding:12px 30px"]) {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 16px !important;
+    }
+
+    /* Section headings a size down. */
+    .cmsRoot :global(h1[style]) {
+        font-size: 18px !important;
+    }
+
+    .cmsRoot :global(h2[style]) {
+        font-size: 16px !important;
+    }
+
+    /* Media and fields never wider than their column. */
+    .cmsRoot :global(img),
+    .cmsRoot :global(video) {
+        max-width: 100%;
+    }
+
+    .cmsRoot :global(input),
+    .cmsRoot :global(select),
+    .cmsRoot :global(textarea) {
+        max-width: 100%;
+        min-width: 0;
+    }
+}
+
+/* Tablets and phones: the Quick Jump bar scrolls away with the page. Sticky, it took
+   a large share of a small screen -- and once its links wrap, most of it -- for the
+   whole length of the page. */
+@media (max-width: 1024px) {
+    .quickJump {
+        position: static !important;
+        margin-bottom: 16px !important;
+        gap: 10px !important;
+        backdrop-filter: none !important;
+        background: #fff !important;
+    }
+}

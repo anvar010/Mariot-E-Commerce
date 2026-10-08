@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './AdminAnalytics.module.css'; // Reusing styles for consistency, or I'll create new ones
+import cmsStyles from './AdminCMS.module.css';
 import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/context/AuthContext';
 import { Save, RefreshCw, Layout, Megaphone, Plus, Trash2, ChevronLeft, ChevronRight, ShoppingBag, MessageSquare, Tag, TrendingUp } from 'lucide-react';
@@ -461,7 +462,7 @@ const AdminCMS = () => {
     const currentSlide = cmsData?.hero[activeSlide] || defaultSlide;
 
     return (
-        <div className={styles.container} style={{ padding: '20px', width: '100%', maxWidth: 'none', margin: '0', background: '#f5f7fa', minHeight: '100vh' }}>
+        <div className={`${styles.container} ${cmsStyles.cmsRoot}`} style={{ padding: '20px', width: '100%', maxWidth: 'none', margin: '0', background: '#f5f7fa', minHeight: '100vh' }}>
 
             {/* Header Card */}
             <div style={{
@@ -501,7 +502,7 @@ const AdminCMS = () => {
             </div>
 
             {/* Sticky Quick Jump Navigation */}
-            <div style={{
+            <div className={cmsStyles.quickJump} style={{
                 position: 'sticky',
                 top: '20px',
                 zIndex: 50,
@@ -829,7 +830,7 @@ const AdminCMS = () => {
                                         <img
                                             src={currentSlide.image}
                                             alt="Slide preview"
-                                            style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #eee' }}
+                                            style={{ display: 'block', width: '100%', height: 'auto', maxHeight: '240px', objectFit: 'contain', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eee' }}
                                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                         />
                                     )}
@@ -874,7 +875,7 @@ const AdminCMS = () => {
                                         <img
                                             src={currentSlide.image_ar}
                                             alt="Slide preview (Arabic)"
-                                            style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #eee' }}
+                                            style={{ display: 'block', width: '100%', height: 'auto', maxHeight: '240px', objectFit: 'contain', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eee' }}
                                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                         />
                                     )}
@@ -917,7 +918,7 @@ const AdminCMS = () => {
                                         <img
                                             src={currentSlide.image_mobile}
                                             alt="Slide preview (mobile)"
-                                            style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #eee' }}
+                                            style={{ display: 'block', width: '100%', height: 'auto', maxHeight: '240px', objectFit: 'contain', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eee' }}
                                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                         />
                                     )}
@@ -960,7 +961,7 @@ const AdminCMS = () => {
                                         <img
                                             src={currentSlide.image_mobile_ar}
                                             alt="Slide preview (mobile Arabic)"
-                                            style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #eee' }}
+                                            style={{ display: 'block', width: '100%', height: 'auto', maxHeight: '240px', objectFit: 'contain', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eee' }}
                                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                         />
                                     )}
@@ -1205,7 +1206,7 @@ const AdminCMS = () => {
                                             <img
                                                 src={cmsData.posters[activePoster].image}
                                                 alt="Poster preview"
-                                                style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #eee' }}
+                                                style={{ display: 'block', width: '100%', height: 'auto', maxHeight: '240px', objectFit: 'contain', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eee' }}
                                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                             />
                                         )}
