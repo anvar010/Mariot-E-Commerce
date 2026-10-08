@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AdminUsers.module.css';
 import PhoneNumberInput from '@/components/shared/PhoneNumberInput/PhoneNumberInput';
-import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar, Ban, CheckCircle, Coins, UserPlus, Wrench, Filter, ChevronDown } from 'lucide-react';
+import { Search, Trash2, Shield, User, Users, X, Edit2, Calendar, Ban, CheckCircle, Coins, UserPlus, Wrench, Filter } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import { API_BASE_URL } from '@/config';
@@ -11,6 +11,7 @@ import { getAuthHeaders } from '@/utils/authHeaders';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 // No next-intl import needed
 import { useAuth } from '@/context/AuthContext';
+import FilterDropdown from './FilterDropdown';
 
 // All admin menu items with their permission keys
 const ADMIN_PERMISSIONS = [
@@ -493,20 +494,18 @@ const AdminUsers = () => {
                 </div>
 
                 <div className={styles.filterGroup}>
-                    <div className={styles.filterSelectWrapper}>
-                        <Filter size={16} className={styles.filterIcon} />
-                        <select
-                            className={styles.filterSelect}
-                            value={roleFilter}
-                            onChange={(e) => setRoleFilter(e.target.value)}
-                        >
-                            <option value="all">{t('filters.allRoles')}</option>
-                            <option value="admin">{t('filters.admins')}</option>
-                            <option value="staff">{t('filters.staff')}</option>
-                            <option value="user">{t('filters.users')}</option>
-                        </select>
-                        <ChevronDown size={16} className={styles.chevronIcon} />
-                    </div>
+                    <FilterDropdown
+                        ariaLabel="Filter users by role"
+                        icon={<Filter size={15} />}
+                        value={roleFilter}
+                        onChange={setRoleFilter}
+                        options={[
+                            { value: 'all', label: t('filters.allRoles') },
+                            { value: 'admin', label: t('filters.admins') },
+                            { value: 'staff', label: t('filters.staff') },
+                            { value: 'user', label: t('filters.users') },
+                        ]}
+                    />
                 </div>
             </div>
 

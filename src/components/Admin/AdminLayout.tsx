@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 import AdminBottomNav from './AdminBottomNav';
+import { useCardTables } from './useCardTables';
 import { AdminNavProvider } from './AdminNavContext';
 import styles from './AdminLayout.module.css';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
@@ -53,6 +54,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, loading, error } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    // Phone card layout for every admin table; see useCardTables.
+    const pageBodyRef = useRef<HTMLDivElement>(null);
+    useCardTables(pageBodyRef, !loading && !error && !!user && (user.role === 'admin' || user.role === 'staff'));
 
     useEffect(() => {
         if (loading || error) return;
@@ -99,7 +103,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <AdminSidebar />
                 <div className={styles.mainContent}>
                     <AdminHeader />
-                    <div className={styles.pageBody}>
+                    <div className={styles.pageBody} ref={pageBodyRef}>
                         {children}
                     </div>
                 </div>

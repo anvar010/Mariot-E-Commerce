@@ -25,6 +25,17 @@
     font-weight: 400;
 }
 
+.titleRow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+}
+
+.exportLabelShort {
+    display: none;
+}
+
 .totalBadge {
     display: flex;
     align-items: center;
@@ -1275,17 +1286,42 @@
    button span the width so it is an easy tap target.
    Desktop keeps the row -- this only applies below the breakpoint. */
 @media (max-width: 640px) {
+    /* Title and export stay on one row: a full-width export button was the largest
+       thing on the screen for an action used now and then. The title block takes the
+       room and wraps its count badge under the heading if it has to. */
     .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 14px;
+        align-items: flex-start;
+        gap: 12px;
     }
 
-    .header > button,
-    .addBtn,
-    .createBtn {
-        justify-content: center;
-        width: 100%;
+    .titleSection {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .titleSection h1 {
+        font-size: 17px;
+        margin-bottom: 0;
+    }
+
+    .titleSection p {
+        margin-top: 4px;
+        line-height: 1.4;
+    }
+
+    .exportBtn {
+        flex-shrink: 0;
+        padding: 8px 12px;
+        font-size: 13px;
+        gap: 6px;
+    }
+
+    .exportLabel {
+        display: none;
+    }
+
+    .exportLabelShort {
+        display: inline;
     }
 }
 
@@ -1395,4 +1431,104 @@
         grid-column: 1 / -1;
         padding: 30px 10px !important;
     }
+}
+
+/* ── Pagination ───────────────────────────────────────────────────────────
+   Same look as the Products list. */
+.paginationWrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 12px 16px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .04);
+}
+
+.paginationInfo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.paginationInfo strong {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.paginationBtns {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pageBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 9px;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+}
+
+.pageBtn:hover:not(:disabled) {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.pageBtn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+    background: #f8fafc;
+}
+
+.activePage {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #fff !important;
+}
+
+.dots {
+    color: #94a3b8;
+    font-size: 13px;
+    letter-spacing: 2px;
+}
+
+@media (max-width: 640px) {
+    .paginationWrapper {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .paginationInfo,
+    .paginationBtns {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .navLabel {
+        display: none;
+    }
+}
+
+/* Search and filter controls outlined firmly enough to see on the white bar. */
+.filtersWrapper .searchBox {
+    border-color: #cbd5e1;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
 }

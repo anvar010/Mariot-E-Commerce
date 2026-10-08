@@ -61,21 +61,18 @@
     }
 }
 
-@media (max-width: 640px) {
-    .statsGrid {
-        grid-template-columns: 1fr;
-    }
-}
 
 .statCard {
     background: #ffffff;
     padding: 20px;
     border-radius: 12px;
-    border: 1px solid #f1f5f9;
+    /* #e2e8f0 rather than #f1f5f9: the lighter border all but vanished against the
+       page, so the cards read as floating text rather than as cards. */
+    border: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     gap: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .06), 0 1px 2px rgba(15, 23, 42, .04);
 }
 
 .statIcon {
@@ -631,22 +628,38 @@
     }
 }
 
-/* Small screens: the page header is a space-between row, so on a narrow screen the
-   title and its action button squeeze each other. Stack them instead, and let the
-   button span the width so it is an easy tap target.
-   Desktop keeps the row -- this only applies below the breakpoint. */
+/* Phones: the title and its main button share a row, the button sized to its label.
+   A full-width button was the largest thing on the screen. If the title is long the
+   button wraps under it rather than squeezing it. */
 @media (max-width: 640px) {
     .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 14px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* The title block takes the whole first line; the buttons follow on the next,
+       at their natural size. Side by side, a long title and a long button label
+       ("Add New Brand") squeezed each other into three-line stacks. */
+    .header > :first-child {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    /* Title and its count badge: the badge drops under the title when it must. */
+    .titleSection > div:first-child {
+        flex-wrap: wrap;
+        row-gap: 6px;
     }
 
     .header > button,
     .addBtn,
     .createBtn {
+        flex-shrink: 0;
         justify-content: center;
-        width: 100%;
+        padding: 9px 14px;
+        font-size: 13px;
     }
 }
 
@@ -712,4 +725,54 @@
 .audienceTabActive .audienceCount {
     background: rgba(255, 255, 255, .22);
     color: #ffffff;
+}
+
+/* Phones: two across, as on the dashboard. Kept at the end of the file so it
+   overrides the base .statCard rules, which come after the grid rules above. At half width the icon moves above the
+   figures so the label and number keep the full card width. */
+@media (max-width: 640px) {
+    .statsGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .statCard {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .statIcon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .statIcon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .statInfo {
+        min-width: 0;
+    }
+
+    .statLabel {
+        font-size: 12px;
+    }
+
+    .statValue {
+        font-size: 18px;
+    }
+
+    .statSubLabel {
+        font-size: 10.5px;
+    }
+}
+
+/* Search and filter controls outlined firmly enough to see on the white bar. */
+.filtersWrapper .searchBox,
+.filtersWrapper .filterSelect {
+    border-color: #cbd5e1;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
 }

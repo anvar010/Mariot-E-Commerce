@@ -158,21 +158,99 @@
     }
 }
 
-/* Small screens: the page header is a space-between row, so on a narrow screen the
-   title and its action button squeeze each other. Stack them instead, and let the
-   button span the width so it is an easy tap target.
-   Desktop keeps the row -- this only applies below the breakpoint. */
+/* Phones: the title and its main button share a row, the button sized to its label.
+   A full-width button was the largest thing on the screen. If the title is long the
+   button wraps under it rather than squeezing it. */
 @media (max-width: 640px) {
     .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 14px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* The title block takes the whole first line; the buttons follow on the next,
+       at their natural size. Side by side, a long title and a long button label
+       ("Add New Brand") squeezed each other into three-line stacks. */
+    .header > :first-child {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    /* Title and its count badge: the badge drops under the title when it must. */
+    .titleSection > div:first-child {
+        flex-wrap: wrap;
+        row-gap: 6px;
     }
 
     .header > button,
     .addBtn,
     .createBtn {
+        flex-shrink: 0;
         justify-content: center;
+        padding: 9px 14px;
+        font-size: 13px;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Phones: Global Settings.
+
+   The page added 24px of its own padding inside the admin layout's, and each card
+   another 32px -- over 70px of empty margin before a field on a phone. Trimmed here,
+   with the title brought down to the size used on the other admin pages, and the
+   cards and fields outlined firmly enough to see.
+   --------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+    .adminSettings {
+        padding: 0;
+        min-height: 0;
+    }
+
+    .header {
+        margin-bottom: 16px;
+    }
+
+    .titleSection h1 {
+        font-size: 20px;
+        margin-bottom: 4px;
+    }
+
+    .titleSection p {
+        font-size: 12.5px;
+    }
+
+    .card {
+        padding: 18px 16px;
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .06), 0 1px 2px rgba(15, 23, 42, .04);
+    }
+
+    .sectionTitle {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+    }
+
+    .sectionTitle h3 {
+        font-size: 16px;
+    }
+
+    .formGrid {
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .inputWrapper input {
+        border-color: #cbd5e1;
+        background: #fff;
+    }
+
+    .inputWrapper input:focus {
+        border-color: #3b82f6;
+    }
+
+    .saveBtn {
         width: 100%;
+        justify-content: center;
     }
 }

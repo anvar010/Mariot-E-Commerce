@@ -8,6 +8,7 @@ import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
+import FilterDropdown from './FilterDropdown';
 
 const AdminCategories = () => {
     const [categories, setCategories] = useState<any[]>([]);
@@ -545,15 +546,16 @@ const AdminCategories = () => {
                         />
                     </div>
                     <div className={styles.filterBox}>
-                        <select
-                            className={styles.filterSelect}
+                        <FilterDropdown
+                            ariaLabel="Filter categories by status"
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                        >
-                            <option value="all">Status: All</option>
-                            <option value="active">Status: Active</option>
-                            <option value="inactive">Status: Inactive</option>
-                        </select>
+                            onChange={setStatusFilter}
+                            options={[
+                                { value: 'all', label: 'Status: All' },
+                                { value: 'active', label: 'Status: Active' },
+                                { value: 'inactive', label: 'Status: Inactive' },
+                            ]}
+                        />
                     </div>
                 </div>
                 {selectedIds.length > 0 && (

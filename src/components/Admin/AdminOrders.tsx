@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import styles from './AdminOrders.module.css';
-import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt, AlertTriangle, PackageCheck, Truck, XCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Search, Package, Download, FileText, X, Loader2, Eye, RotateCcw, ArrowLeft, MapPin, User as UserIcon, Phone, Mail, CreditCard, Receipt, AlertTriangle, ChevronLeft, ChevronRight, PackageCheck, Truck, XCircle, Clock, CheckCircle2 } from 'lucide-react';
 import WhatsappIcon from '@/components/shared/icons/WhatsappIcon';
 import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import { readSeen } from '@/utils/adminActivity';
@@ -56,6 +56,11 @@ const AdminOrders = () => {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>(
         STATUS_FILTERS.some(f => f.key === initialStatus) ? initialStatus : 'all'
     );
+    // The list is fetched whole and filtered here, so it is paged here too.
+    const [orderPage, setOrderPage] = useState(1);
+    // A new search or status starts from the first page; staying on page 3 of a
+    // filter that now has one page of results would show nothing.
+    useEffect(() => { setOrderPage(1); }, [searchTerm, statusFilter]);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     const { showNotification } = useNotification();
@@ -577,6 +582,19 @@ const AdminOrders = () => {
         return matchesSearch && matchesStatus;
     });
 
+    const ORDERS_PER_PAGE = 20;
+    const orderPageCount = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PER_PAGE));
+    // Clamped, so an order deleted off the last page cannot strand the view past the end.
+    const currentOrderPage = Math.min(orderPage, orderPageCount);
+    const pagedOrders = filteredOrders.slice(
+        (currentOrderPage - 1) * ORDERS_PER_PAGE,
+        currentOrderPage * ORDERS_PER_PAGE,
+    );
+    const goToOrderPage = (page: number) => {
+        setOrderPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const getStatusStyle = (status: string) => {
         switch (status) {
             case 'pending': return styles.statusPending;
@@ -859,7 +877,7 @@ const AdminOrders = () => {
         <div className={styles.adminOrders}>
             <div className={styles.header}>
                 <div className={styles.titleSection}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className={styles.titleRow}>
                         <h1>Orders Management</h1>
                         <div className={styles.totalBadge}>
                             <Package size={14} />
@@ -874,7 +892,10 @@ const AdminOrders = () => {
                     disabled={exporting}
                 >
                     <Download size={18} />
-                    <span>{exporting ? 'Exporting...' : 'Export CSV'}</span>
+                    <span className={styles.exportLabel}>{exporting ? 'Exporting...' : 'Export CSV'}</span>
+                    {/* Short label for phones, where the full one pushed the button onto
+                        its own full-width row. */}
+                    <span className={styles.exportLabelShort}>{exporting ? '…' : 'CSV'}</span>
                 </button>
             </div>
 
@@ -922,7 +943,7 @@ const AdminOrders = () => {
             </div>
 
             <div className={styles.tableWrapper}>
-                <table className={styles.table}>
+                <table className={styles.table} data-no-cards>
                     <thead>
                         <tr>
                             <th>Order ID</th>
@@ -941,7 +962,7 @@ const AdminOrders = () => {
                         ) : filteredOrders.length === 0 ? (
                             <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>No orders found matching your search.</td></tr>
                         ) : (
-                            filteredOrders.map((order) => (
+                            pagedOrders.map((order) => (
                                 <tr key={order.id}>
                                     <td className={styles.id}>
                                         #{order.id}
@@ -1077,6 +1098,58 @@ const AdminOrders = () => {
                     </tbody>
                 </table>
             </div>
+
+            {!loading && orderPageCount > 1 && (
+                <div className={styles.paginationWrapper}>
+                    <div className={styles.paginationInfo}>
+                        <span>Showing</span>
+                        <strong>
+                            {(currentOrderPage - 1) * ORDERS_PER_PAGE + 1}
+                            {' – '}
+                            {Math.min(currentOrderPage * ORDERS_PER_PAGE, filteredOrders.length)}
+                        </strong>
+                        <span>of</span>
+                        <strong>{filteredOrders.length}</strong>
+                        <span>orders</span>
+                    </div>
+                    <div className={styles.paginationBtns}>
+                        <button
+                            type="button"
+                            className={`${styles.pageBtn} ${styles.navBtn}`}
+                            onClick={() => goToOrderPage(currentOrderPage - 1)}
+                            disabled={currentOrderPage === 1}
+                            aria-label="Previous page"
+                        >
+                            <ChevronLeft size={16} /> <span className={styles.navLabel}>Prev</span>
+                        </button>
+                        {/* First, last and the pages either side of the current one. */}
+                        {Array.from({ length: orderPageCount }, (_, i) => i + 1)
+                            .filter(n => n === 1 || n === orderPageCount || Math.abs(n - currentOrderPage) <= 1)
+                            .map((n, i, arr) => (
+                                <React.Fragment key={n}>
+                                    {i > 0 && arr[i - 1] !== n - 1 && <span className={styles.dots}>···</span>}
+                                    <button
+                                        type="button"
+                                        className={`${styles.pageBtn} ${n === currentOrderPage ? styles.activePage : ''}`}
+                                        onClick={() => goToOrderPage(n)}
+                                        aria-current={n === currentOrderPage ? 'page' : undefined}
+                                    >
+                                        {n}
+                                    </button>
+                                </React.Fragment>
+                            ))}
+                        <button
+                            type="button"
+                            className={`${styles.pageBtn} ${styles.navBtn}`}
+                            onClick={() => goToOrderPage(currentOrderPage + 1)}
+                            disabled={currentOrderPage === orderPageCount}
+                            aria-label="Next page"
+                        >
+                            <span className={styles.navLabel}>Next</span> <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {refundModal.isOpen && (
                 <div className={styles.invoiceOverlay} onClick={() => !refundModal.submitting && setRefundModal(prev => ({ ...prev, isOpen: false }))}>

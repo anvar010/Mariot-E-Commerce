@@ -798,7 +798,7 @@ const AdminDashboard = () => {
                     <button className={styles.filterBtn} onClick={() => router.push('/admin/orders')}><Filter size={14} /> {t('dashboard.orders.all')}</button>
                 </div>
                 <div className={styles.tableWrapper}>
-                    <table className={styles.table}>
+                    <table className={styles.table} data-no-cards>
                         <thead>
                             <tr>
                                 <th>{t('dashboard.orders.table.id')}</th>
@@ -821,13 +821,13 @@ const AdminDashboard = () => {
                                             <div className={styles.avatarPlaceholder}>{order.user_name?.charAt(0) || 'U'}</div>
                                             {order.user_name || 'Unknown'}
                                         </td>
-                                        <td><CurrencyPrice amount={Number(order.total_amount)} /></td>
-                                        <td>
+                                        <td data-label={t('dashboard.orders.table.total')}><CurrencyPrice amount={Number(order.total_amount)} /></td>
+                                        <td data-label={t('dashboard.orders.table.status')}>
                                             <span className={`${styles.statusBadge} ${styles[order.status] || styles.pending}`}>
                                                 {order.status.toUpperCase()}
                                             </span>
                                         </td>
-                                        <td>
+                                        <td data-label={t('dashboard.orders.table.payment')}>
                                             <span className={`${styles.paymentBadge} ${styles[order.payment_status] || styles.pending}`}>
                                                 {order.payment_status?.toUpperCase() || 'PENDING'}
                                             </span>

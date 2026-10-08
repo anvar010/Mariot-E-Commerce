@@ -399,21 +399,54 @@
     }
 }
 
-/* Small screens: the page header is a space-between row, so on a narrow screen the
-   title and its action button squeeze each other. Stack them instead, and let the
-   button span the width so it is an easy tap target.
-   Desktop keeps the row -- this only applies below the breakpoint. */
+/* Phones: the title and its main button share a row, the button sized to its label.
+   A full-width button was the largest thing on the screen. If the title is long the
+   button wraps under it rather than squeezing it. */
 @media (max-width: 640px) {
     .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 14px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* The title block takes the whole first line; the buttons follow on the next,
+       at their natural size. Side by side, a long title and a long button label
+       ("Add New Brand") squeezed each other into three-line stacks. */
+    .header > :first-child {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    /* Title and its count badge: the badge drops under the title when it must. */
+    .titleSection > div:first-child {
+        flex-wrap: wrap;
+        row-gap: 6px;
     }
 
     .header > button,
     .addBtn,
     .createBtn {
+        flex-shrink: 0;
         justify-content: center;
-        width: 100%;
+        padding: 9px 14px;
+        font-size: 13px;
     }
+}
+
+/* Search and filter controls outlined firmly enough to see on the white bar. */
+.filtersWrapper .searchBox {
+    border-color: #cbd5e1;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+}
+
+/* The Issued By filter, outlined firmly enough to see against the white filter bar. */
+.customDropdownHeader {
+    border-color: #cbd5e1;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+}
+
+.customDropdownHeader.isOpen {
+    border-color: #3b82f6;
 }

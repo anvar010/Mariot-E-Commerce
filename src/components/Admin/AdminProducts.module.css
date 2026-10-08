@@ -135,21 +135,18 @@
     }
 }
 
-@media (max-width: 640px) {
-    .statsGrid {
-        grid-template-columns: 1fr;
-    }
-}
 
 .statCard {
     background: #ffffff;
     padding: 20px;
     border-radius: 12px;
-    border: 1px solid #f1f5f9;
+    /* #e2e8f0 rather than #f1f5f9: the lighter border all but vanished against the
+       page, so the cards read as floating text rather than as cards. */
+    border: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     gap: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .06), 0 1px 2px rgba(15, 23, 42, .04);
 }
 
 .statIcon {
@@ -3055,22 +3052,51 @@
     background: #e2e8f0;
 }
 
-/* Small screens: the page header is a space-between row, so on a narrow screen the
-   title and its action button squeeze each other. Stack them instead, and let the
-   button span the width so it is an easy tap target.
-   Desktop keeps the row -- this only applies below the breakpoint. */
+/* Phones: the title and its main button share a row, the button sized to its label.
+   A full-width button was the largest thing on the screen. If the title is long the
+   button wraps under it rather than squeezing it. */
 @media (max-width: 640px) {
     .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 14px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* The title block takes the whole first line; the buttons follow on the next,
+       at their natural size. Side by side, a long title and a long button label
+       ("Add New Brand") squeezed each other into three-line stacks. */
+    .header > :first-child {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    /* Title and its count badge: the badge drops under the title when it must. */
+    .titleSection > div:first-child {
+        flex-wrap: wrap;
+        row-gap: 6px;
     }
 
     .header > button,
     .addBtn,
     .createBtn {
+        flex-shrink: 0;
         justify-content: center;
+        padding: 9px 14px;
+        font-size: 13px;
+    }
+    /* Import, Export and Add: their own row, sharing it equally. */
+    .actionGroup {
         width: 100%;
+        gap: 8px;
+    }
+
+    .actionGroup > button {
+        flex: 1 1 0;
+        justify-content: center;
+        padding: 9px 8px;
+        font-size: 13px;
+        white-space: nowrap;
     }
 }
 
@@ -3085,5 +3111,249 @@
 @media (max-width: 520px) {
     .formGridFour {
         grid-template-columns: 1fr;
+    }
+}
+
+/* Phones: two across, as on the dashboard. Kept at the end of the file so it
+   overrides the base .statCard rules, which come after the grid rules above. At half width the icon moves above the
+   figures so the label and number keep the full card width. */
+@media (max-width: 640px) {
+    .statsGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .statCard {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .statIcon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .statIcon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .statInfo {
+        min-width: 0;
+    }
+
+    .statLabel {
+        font-size: 12px;
+    }
+
+    .statValue {
+        font-size: 18px;
+    }
+
+    .statSubLabel {
+        font-size: 10.5px;
+    }
+}
+
+/* Phones: the five filters as a grid instead of a row that scrolled sideways (and hid
+   three of them off screen). Category, the one used most and with the longest names,
+   takes the full width; the other four pair up. Each dropdown list opens within its
+   own column so it cannot run off the edge of the screen. */
+@media (max-width: 640px) {
+    .filtersWrapper {
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .filterBtns {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        overflow: visible;
+        padding-bottom: 0;
+    }
+
+    .filterBtns > * {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .filterDropdownWrapper {
+        grid-column: 1 / -1;
+        min-width: 0;
+    }
+
+    .filterBtns .customSelectDropdown,
+    .filterDropdownWrapper .customSelectDropdown {
+        min-width: 0;
+        width: 100%;
+        left: 0;
+        right: auto;
+    }
+}
+
+/* The filter bar's controls, outlined firmly enough to see. At #e2e8f0 on a white
+   panel the search box and dropdowns read as loose text. Scoped to the filter bar:
+   the same select is used in the product form, which has its own look. */
+.filtersWrapper .searchBox,
+.filtersWrapper .customSelectTrigger {
+    border-color: #cbd5e1;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+}
+
+.filtersWrapper .searchBox:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
+}
+
+/* Phones: the count and the page buttons each get a line, centred. In one row they
+   ran past the screen and cut off Next. Prev/Next drop their words for arrows. */
+@media (max-width: 640px) {
+    .paginationWrapper {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .paginationInfo {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .paginationBtns {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .navLabel {
+        display: none;
+    }
+
+    .paginationBtns .navBtn {
+        min-width: 36px;
+        padding: 0 8px;
+    }
+}
+
+/* Page buttons outlined firmly enough to see on the white bar. */
+.paginationBtns .pageBtn {
+    border-color: #cbd5e1;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+}
+
+/* ---------------------------------------------------------------------------
+   Phones: the Add / Edit Product form.
+
+   The desktop layout -- a 240px section menu beside the fields -- left the fields half
+   a phone wide, and the footer's Cancel / Save ran off the edge. Below 768px the form
+   fills the screen, the section menu becomes a strip of tabs across the top (swiped
+   sideways, the usual pattern for this many sections), the fields take the full width
+   in one column, and Cancel / Save share the bottom bar.
+   --------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .modalOverlay:has(> .modalLarge) {
+        padding: 0;
+    }
+
+    .modalLarge {
+        max-width: none;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+    }
+
+    .modalSideHeader {
+        padding: 12px 14px;
+        gap: 10px;
+    }
+
+    .modalTitleArea {
+        min-width: 0;
+    }
+
+    .modalMainContainer {
+        flex-direction: column;
+    }
+
+    .modalNavSidebar {
+        flex-direction: row;
+        flex-shrink: 0;
+        width: 100%;
+        gap: 6px;
+        padding: 8px 12px;
+        overflow-x: auto;
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+        scrollbar-width: none;
+    }
+
+    .modalNavSidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* The strip fades out at its right edge, so a tab cut off there reads as "more
+       this way" rather than as a broken layout. */
+    .modalNavSidebar {
+        -webkit-mask-image: linear-gradient(to right, #000 85%, transparent);
+        mask-image: linear-gradient(to right, #000 85%, transparent);
+        padding-right: 32px;
+    }
+
+    /* Each tab outlined so it reads as something to tap; the active one filled blue. */
+    .modalNavSidebar .navItem {
+        flex-shrink: 0;
+        width: auto;
+        padding: 7px 12px;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 99px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+        white-space: nowrap;
+    }
+
+    .modalNavSidebar .activeNav {
+        border-color: #3b82f6;
+        box-shadow: none;
+    }
+
+    .tabContent {
+        padding: 14px;
+    }
+
+    .formGrid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .modalContentFooter {
+        padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+        gap: 10px;
+    }
+
+    .modalContentFooter > button {
+        flex: 1;
+        justify-content: center;
+    }
+    /* Resource rows: title and link each take a line, the upload / remove buttons
+       follow -- four controls side by side do not fit a phone. */
+    .resourceItem {
+        flex-wrap: wrap;
+    }
+
+    .resourceItem .resourceInput {
+        flex: 1 1 100%;
+    }
+
+    .videoLinkItem {
+        min-width: 0;
+    }
+
+    .videoLinkItem .videoInput {
+        flex: 1;
+        min-width: 0;
     }
 }

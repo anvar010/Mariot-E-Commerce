@@ -453,22 +453,38 @@
     }
 }
 
-/* Small screens: the page header is a space-between row, so on a narrow screen the
-   title and its action button squeeze each other. Stack them instead, and let the
-   button span the width so it is an easy tap target.
-   Desktop keeps the row -- this only applies below the breakpoint. */
+/* Phones: the title and its main button share a row, the button sized to its label.
+   A full-width button was the largest thing on the screen. If the title is long the
+   button wraps under it rather than squeezing it. */
 @media (max-width: 640px) {
     .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 14px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* The title block takes the whole first line; the buttons follow on the next,
+       at their natural size. Side by side, a long title and a long button label
+       ("Add New Brand") squeezed each other into three-line stacks. */
+    .header > :first-child {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    /* Title and its count badge: the badge drops under the title when it must. */
+    .titleSection > div:first-child {
+        flex-wrap: wrap;
+        row-gap: 6px;
     }
 
     .header > button,
     .addBtn,
     .createBtn {
+        flex-shrink: 0;
         justify-content: center;
-        width: 100%;
+        padding: 9px 14px;
+        font-size: 13px;
     }
 }
 
@@ -479,8 +495,70 @@
     }
 }
 
-@media (max-width: 520px) {
-    .mainMetrics {
+
+/* ---------------------------------------------------------------------------
+   Phones: Store Insights.
+
+   The four headline figures went one per row, a long scroll of mostly empty cards;
+   they now pair up, as on the Dashboard. The revenue chart and its side panel sat
+   2:1 side by side at every width, which on a phone squeezed both -- they stack
+   below 900px.
+   --------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+    .chartsGrid {
         grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .metricCard {
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .06), 0 1px 2px rgba(15, 23, 42, .04);
+    }
+}
+
+@media (max-width: 640px) {
+    .mainMetrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .metricCard {
+        padding: 14px;
+        gap: 10px;
+        border-radius: 14px;
+    }
+
+    .metricHeader {
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .iconBox {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+    }
+
+    .iconBox svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .trend {
+        padding: 3px 6px;
+        font-size: 10px;
+    }
+
+    .metricBody h3 {
+        font-size: 17px;
+        overflow-wrap: anywhere;
+    }
+
+    .metricBody p {
+        font-size: 11.5px;
+        line-height: 1.35;
     }
 }

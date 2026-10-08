@@ -469,3 +469,19 @@ textarea.input {
         grid-template-columns: 1fr;
     }
 }
+
+/* Phones: custom product cards outlined to match the catalogue cards beside them. */
+@media (max-width: 768px) {
+    .card {
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .06), 0 1px 2px rgba(15, 23, 42, .04);
+    }
+
+    .cardAdded {
+        border-color: #2563eb;
+    }
+
+    .searchBox {
+        border-color: #cbd5e1;
+    }
+}

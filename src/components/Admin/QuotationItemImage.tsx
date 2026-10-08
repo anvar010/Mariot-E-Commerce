@@ -71,8 +71,12 @@ const QuotationItemImage: React.FC<Props> = ({ item, className }) => {
             return;
         }
         triedLive.current = true;
+        // The placeholder goes in at once: until it does, the browser draws the broken
+        // image's alt text -- the product name, squeezed into the thumbnail -- for as
+        // long as the lookup below takes.
+        setSrc(PRODUCT_IMAGE_FALLBACK);
         const live = await fetchLiveImage(item.slug);
-        setSrc(live || PRODUCT_IMAGE_FALLBACK);
+        if (live) setSrc(live);
     };
 
     return (

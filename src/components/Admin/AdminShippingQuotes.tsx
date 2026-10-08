@@ -6,6 +6,7 @@ import { Truck, Search, RefreshCw, Send, X, Package, MapPin, Phone, Mail, AlertT
 import { API_BASE_URL, MEDIA_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import styles from './AdminShippingQuotes.module.css';
+import FilterDropdown from './FilterDropdown';
 
 /**
  * Shipping quote requests, and the one thing the shop does with them: put a delivery price
@@ -200,12 +201,15 @@ const AdminShippingQuotes: React.FC = () => {
                         placeholder="Search reference, customer or country"
                     />
                 </div>
-                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className={styles.select}>
-                    <option value="all">All statuses</option>
-                    {Object.entries(STATUS_LABEL).map(([key, label]) => (
-                        <option key={key} value={key}>{label}</option>
-                    ))}
-                </select>
+                <FilterDropdown
+                    ariaLabel="Filter requests by status"
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={[
+                        { value: 'all', label: 'All statuses' },
+                        ...Object.entries(STATUS_LABEL).map(([key, label]) => ({ value: key, label: String(label) })),
+                    ]}
+                />
             </div>
 
             {loading ? (

@@ -9,6 +9,7 @@ import { getAuthHeaders } from '@/utils/authHeaders';
 import { resolveUrl } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
+import FilterDropdown from './FilterDropdown';
 
 const AdminBrands = () => {
     const [brands, setBrands] = useState<any[]>([]);
@@ -502,15 +503,16 @@ const AdminBrands = () => {
                     />
                 </div>
                 <div className={styles.filterBox}>
-                    <select
-                        className={styles.filterSelect}
+                    <FilterDropdown
+                        ariaLabel="Filter brands by status"
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                        <option value="all">All Brands</option>
-                        <option value="active">Active Only</option>
-                        <option value="inactive">Inactive Only</option>
-                    </select>
+                        onChange={setStatusFilter}
+                        options={[
+                            { value: 'all', label: 'All Brands' },
+                            { value: 'active', label: 'Active Only' },
+                            { value: 'inactive', label: 'Inactive Only' },
+                        ]}
+                    />
                 </div>
             </div>
 

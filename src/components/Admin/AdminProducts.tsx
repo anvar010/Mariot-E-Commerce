@@ -548,6 +548,12 @@ const AdminProducts = () => {
     const [importResult, setImportResult] = useState<any>(null);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [activeTab, setActiveTab] = useState('basic');
+    // On a phone the section menu is a sideways strip of tabs; bring the chosen one into
+    // view, or picking "Next"-side sections leaves the active tab scrolled out of sight.
+    useEffect(() => {
+        document.querySelector(`.${styles.modalNavSidebar} .${styles.activeNav}`)
+            ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }, [activeTab]);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
     const [bulkFormData, setBulkFormData] = useState({
@@ -2518,8 +2524,9 @@ const AdminProducts = () => {
                                 className={`${styles.pageBtn} ${styles.navBtn} ${styles.prevBtn}`}
                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
+                                aria-label="Previous page"
                             >
-                                <ChevronLeft size={16} /> Prev
+                                <ChevronLeft size={16} /> <span className={styles.navLabel}>Prev</span>
                             </button>
 
                             {/* Render page numbers */}
@@ -2547,8 +2554,9 @@ const AdminProducts = () => {
                                 className={`${styles.pageBtn} ${styles.navBtn} ${styles.nextBtn}`}
                                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, paginationInfo.totalPages))}
                                 disabled={currentPage === paginationInfo.totalPages}
+                                aria-label="Next page"
                             >
-                                Next <ChevronRight size={16} />
+                                <span className={styles.navLabel}>Next</span> <ChevronRight size={16} />
                             </button>
                         </div>
                     </div>

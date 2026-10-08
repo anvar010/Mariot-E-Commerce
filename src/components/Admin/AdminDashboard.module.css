@@ -1462,8 +1462,46 @@
 }
 /* The existing rules stop at two columns, which is still tight on a phone. */
 @media (max-width: 560px) {
+    /* Two across: one per row made the eight figures a long scroll. The cards are
+       tightened to fit half a phone's width without the amounts wrapping. */
     .statsGrid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .statCard {
+        padding: 12px;
+        gap: 8px;
+    }
+
+    .statTitle {
+        font-size: 10.5px;
+        line-height: 1.3;
+    }
+
+    .statHeader {
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .statHeader .iconWrapper {
+        flex-shrink: 0;
+        width: 26px;
+        height: 26px;
+    }
+
+    .statHeader .iconWrapper svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    .statValue {
+        font-size: 16px;
+        overflow-wrap: anywhere;
+    }
+
+    .statFooter {
+        font-size: 10.5px;
     }
 
     .banner {
@@ -1480,5 +1518,86 @@
     .bannerButtons > * {
         flex: 1 1 auto;
         justify-content: center;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Recent orders on phones: one card per order instead of a table that scrolls
+   sideways. Cells by position: 1 id · 2 date · 3 customer · 4 total · 5 status ·
+   6 payment.
+   --------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .tableWrapper {
+        overflow-x: visible;
+    }
+
+    .table,
+    .table tbody {
+        display: block;
+        margin-top: 4px;
+    }
+
+    .table thead {
+        display: none;
+    }
+
+    /* Each order is its own bordered card, so one ends visibly before the next. */
+    .table tbody tr {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px 12px;
+        margin-bottom: 10px;
+        padding: 12px 14px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .08), 0 1px 2px rgba(15, 23, 42, .06);
+    }
+
+    .table tbody tr:last-child {
+        margin-bottom: 0;
+    }
+
+    .table td {
+        display: block;
+        min-width: 0;
+        padding: 0;
+        border: none;
+        border-radius: 0 !important;
+    }
+
+    .table td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 4px;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: #94a3b8;
+    }
+
+    /* Date sits opposite the order number. */
+    .table td:nth-child(2) {
+        grid-column: 2 / -1;
+        text-align: end;
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    /* Customer spans the card, avatar beside the name. `.table td` above sets every
+       cell to block, which outranks `.client` and stacked the avatar over the name. */
+    .table td:nth-child(3) {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    /* The empty-state row is one cell spanning the table. */
+    .table td:only-child {
+        grid-column: 1 / -1;
     }
 }

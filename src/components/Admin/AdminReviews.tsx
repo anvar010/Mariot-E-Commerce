@@ -7,7 +7,7 @@ import { useNotification } from '@/context/NotificationContext';
 import { API_BASE_URL } from '@/config';
 import { getAuthHeaders } from '@/utils/authHeaders';
 import { stripHtml } from '@/utils/formatters';
-import { resolveUrl } from '@/utils/resolveUrl';
+import { resolveUrl, PRODUCT_IMAGE_FALLBACK } from '@/utils/resolveUrl';
 import ConfirmModal from '@/components/shared/ConfirmModal/ConfirmModal';
 import AdminLoader from '@/components/shared/AdminLoader/AdminLoader';
 // Removed next-intl import
@@ -200,11 +200,13 @@ const AdminReviews = () => {
                                         {(() => {
                                             const cell = (
                                                 <>
+                                                    {/* The site's own placeholder: via.placeholder.com, used here
+                                                        before, has shut down, so a missing photo drew an empty box. */}
                                                     <img
-                                                        src={resolveUrl(r.product_image) || 'https://via.placeholder.com/40'}
-                                                        alt={r.product_name}
+                                                        src={resolveUrl(r.product_image) || PRODUCT_IMAGE_FALLBACK}
+                                                        alt=""
                                                         className={styles.productImage}
-                                                        onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/40'; }}
+                                                        onError={(e) => { e.currentTarget.src = PRODUCT_IMAGE_FALLBACK; }}
                                                     />
                                                     <span className={styles.productName} title={stripHtml(r.product_name)}>{stripHtml(r.product_name)}</span>
                                                 </>

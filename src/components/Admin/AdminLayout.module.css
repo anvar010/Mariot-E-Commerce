@@ -37,3 +37,243 @@
         padding: 14px 12px;
     }
 }
+
+/* ---------------------------------------------------------------------------
+   Phones: every admin table becomes a stack of cards.
+
+   useCardTables copies each column's heading onto its cells (data-label) and marks
+   the table data-card-table; this turns each row into a card that lists its cells as
+   "LABEL ........ value". The first cell (the row's name or id) heads the card, and an
+   Actions column sits along the bottom. Pages' own .table rules set min-widths and
+   scroll wrappers for tablets; those are overridden here, scoped to the page body.
+   A table with data-no-cards keeps its own layout (Orders, Dashboard).
+   --------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .pageBody :global(div:has(> table[data-card-table])) {
+        overflow: visible !important;
+    }
+
+    .pageBody :global(table[data-card-table]) {
+        display: block;
+        width: 100% !important;
+        min-width: 0 !important;
+        border: none;
+    }
+
+    .pageBody :global(table[data-card-table] thead) {
+        display: none;
+    }
+
+    .pageBody :global(table[data-card-table] tbody) {
+        display: block;
+    }
+
+    .pageBody :global(table[data-card-table] tbody tr) {
+        display: block;
+        margin-bottom: 12px;
+        padding: 12px 14px;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .08), 0 1px 2px rgba(15, 23, 42, .06);
+    }
+
+    .pageBody :global(table[data-card-table] tbody tr:last-child) {
+        margin-bottom: 0;
+    }
+
+    /* A two-column grid: the label (::before) on the left, and everything the cell
+       holds stacked on the right. As a flex row, a cell with two parts -- a name and
+       an email, a country and a city -- spread them across the card with the first one
+       stranded in the middle. */
+    .pageBody :global(table[data-card-table] td) {
+        display: grid;
+        grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+        align-items: start;
+        column-gap: 12px;
+        /* No row gap: the label spans a run of rows, most of them empty, and every gap
+           between them pushed the value down and away from its label. */
+        row-gap: 0;
+        width: auto !important;
+        min-width: 0;
+        max-width: none !important;
+        padding: 6px 0 !important;
+        border: none !important;
+        background: transparent !important;
+        text-align: end;
+        white-space: normal;
+    }
+
+    /* A light rule under each label/value row, so a card with six or seven of them
+       reads as rows rather than one block of text. The heading and the actions draw
+       their own rules; the last field before the actions needs none. */
+    .pageBody :global(table[data-card-table] td[data-label]:not([data-label=""]):not(:first-child):not([data-label*="action" i]):not(td:first-child[data-label=""] + td)) {
+        padding: 8px 0 !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+
+    /* Same exclusions as the rule above plus one more condition each, so these always
+       outrank it -- without the extra weight the last field kept its rule and drew a
+       double line against the actions' own. */
+    .pageBody :global(table[data-card-table] td[data-label]:not([data-label=""]):not(:first-child):not([data-label*="action" i]):not(td:first-child[data-label=""] + td):has(+ td[data-label*="action" i])),
+    .pageBody :global(table[data-card-table] td[data-label]:not([data-label=""]):not(:first-child):not([data-label*="action" i]):not(td:first-child[data-label=""] + td):has(+ td:last-child[data-label=""])),
+    .pageBody :global(table[data-card-table] td[data-label]:not([data-label=""]):not(:first-child):not([data-label*="action" i]):not(td:first-child[data-label=""] + td):last-child) {
+        border-bottom: none !important;
+    }
+
+    .pageBody :global(table[data-card-table] td > *) {
+        grid-column: 2;
+        justify-self: end;
+        max-width: 100%;
+    }
+
+    .pageBody :global(table[data-card-table] td::before) {
+        content: attr(data-label);
+        /* Spans the rows the cell's contents stack into, so they all sit beside it. */
+        grid-column: 1;
+        grid-row: 1 / span 12;
+        align-self: start;
+        padding-top: 2px;
+        max-width: 40vw;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        text-align: start;
+        color: #94a3b8;
+    }
+
+    /* A column with no heading (a checkbox, a thumbnail) has nothing to label. */
+    .pageBody :global(table[data-card-table] td[data-label=""]::before) {
+        display: none;
+    }
+
+    .pageBody :global(table[data-card-table] td[data-label=""]) {
+        grid-template-columns: minmax(0, 1fr);
+        text-align: start;
+    }
+
+    .pageBody :global(table[data-card-table] td[data-label=""] > *) {
+        grid-column: 1;
+        justify-self: start;
+    }
+
+    /* First cell heads the card: full width, no label, ruled off from the rest. */
+    .pageBody :global(table[data-card-table] td:first-child) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+        justify-content: flex-start;
+        text-align: start;
+        margin-bottom: 4px;
+        padding-bottom: 10px !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+
+    .pageBody :global(table[data-card-table] td:first-child::before) {
+        display: none;
+    }
+
+    /* Actions run along the bottom, right-aligned, with room to tap. */
+    .pageBody :global(table[data-card-table] td[data-label*="action" i]) {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        margin-top: 4px;
+        padding-top: 10px !important;
+        border-top: 1px solid #f1f5f9 !important;
+    }
+
+    .pageBody :global(table[data-card-table] td[data-label*="action" i]::before) {
+        display: none;
+    }
+
+    /* Row buttons outlined so they read as buttons. Colour only: a button drawn
+       without a border stays without one. */
+    .pageBody :global(table[data-card-table] td[data-label*="action" i] button),
+    .pageBody :global(table[data-card-table] td:last-child[data-label=""] button) {
+        border-color: #cbd5e1;
+    }
+
+    /* A last column with no heading is the row's buttons -- treat it as Actions. */
+    .pageBody :global(table[data-card-table] td:last-child[data-label=""]:not(:only-child)) {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        margin-top: 4px;
+        padding-top: 10px !important;
+        border-top: 1px solid #f1f5f9 !important;
+    }
+
+    /* A leading checkbox column (bulk select): pinned to the card's corner, and the
+       next cell -- the name -- heads the card instead. */
+    .pageBody :global(table[data-card-table] tbody tr:has(> td:first-child[data-label=""]:not(:only-child))) {
+        position: relative;
+    }
+
+    .pageBody :global(table[data-card-table] td:first-child[data-label=""]:not(:only-child)) {
+        position: absolute;
+        top: 12px;
+        inset-inline-end: 14px;
+        z-index: 1;
+        margin: 0;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    .pageBody :global(table[data-card-table] td:first-child[data-label=""]:not(:only-child) + td) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+        justify-content: flex-start;
+        text-align: start;
+        margin-bottom: 4px;
+        padding-inline-end: 34px !important;
+        padding-bottom: 10px !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+
+    .pageBody :global(table[data-card-table] td:first-child[data-label=""]:not(:only-child) + td::before) {
+        display: none;
+    }
+
+    .pageBody :global(table[data-card-table] td:empty) {
+        display: none;
+    }
+
+    /* Loading / "nothing found" rows are one cell spanning the table. */
+    .pageBody :global(table[data-card-table] td:only-child) {
+        display: block;
+        text-align: center;
+        border: none !important;
+    }
+
+    .pageBody :global(table[data-card-table] td:only-child::before) {
+        display: none;
+    }
+}
+
+/* Phones: form fields across the back office outlined firmly enough to see. Only the
+   colour changes, so a field drawn without a border (a search input inside its box)
+   stays borderless -- border-color has no effect where border-style is none.
+   The class is doubled to outrank page rules such as `.formGroup input`, which would
+   otherwise tie with this and win or lose on stylesheet order. */
+@media (max-width: 768px) {
+    .pageBody.pageBody :global(input:not([type="checkbox"]):not([type="radio"]):not([type="range"])),
+    .pageBody.pageBody :global(select),
+    .pageBody.pageBody :global(textarea) {
+        border-color: #cbd5e1;
+    }
+
+    .pageBody.pageBody :global(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus),
+    .pageBody.pageBody :global(select:focus),
+    .pageBody.pageBody :global(textarea:focus) {
+        border-color: #3b82f6;
+    }
+}

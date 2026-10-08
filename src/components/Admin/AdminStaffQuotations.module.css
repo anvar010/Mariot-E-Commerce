@@ -1451,22 +1451,38 @@
     outline-offset: 2px;
 }
 
-/* Small screens: the page header is a space-between row, so on a narrow screen the
-   title and its action button squeeze each other. Stack them instead, and let the
-   button span the width so it is an easy tap target.
-   Desktop keeps the row -- this only applies below the breakpoint. */
+/* Phones: the title and its main button share a row, the button sized to its label.
+   A full-width button was the largest thing on the screen. If the title is long the
+   button wraps under it rather than squeezing it. */
 @media (max-width: 640px) {
     .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 14px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* The title block takes the whole first line; the buttons follow on the next,
+       at their natural size. Side by side, a long title and a long button label
+       ("Add New Brand") squeezed each other into three-line stacks. */
+    .header > :first-child {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    /* Title and its count badge: the badge drops under the title when it must. */
+    .titleSection > div:first-child {
+        flex-wrap: wrap;
+        row-gap: 6px;
     }
 
     .header > button,
     .addBtn,
     .createBtn {
+        flex-shrink: 0;
         justify-content: center;
-        width: 100%;
+        padding: 9px 14px;
+        font-size: 13px;
     }
 }
 
@@ -1537,4 +1553,38 @@
     outline: none;
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+}
+
+/* Phones: the admin layout already pads the page; this page's own 24px on top made
+   its cards narrower than on every other admin page. */
+@media (max-width: 640px) {
+    .wrapper {
+        padding: 0;
+    }
+}
+
+/* Phones: the quotation builder's cards, tabs and controls outlined firmly enough to
+   see. At #e2e8f0 on the grey page the product cards and panels all but vanished. */
+@media (max-width: 768px) {
+    .card,
+    .productCard {
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .06), 0 1px 2px rgba(15, 23, 42, .04);
+    }
+
+    /* Keeps the green "added" outline rather than the grey above. */
+    .productCardAdded {
+        border-color: #34d399;
+    }
+
+    .backBtn,
+    .searchBox,
+    .cardEye,
+    .statusTab:not(.statusTabActive) {
+        border-color: #cbd5e1;
+    }
+
+    .cardThumb {
+        border-bottom-color: #e2e8f0;
+    }
 }

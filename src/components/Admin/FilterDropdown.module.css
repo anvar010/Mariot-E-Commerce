@@ -1,0 +1,130 @@
+.wrapper {
+    position: relative;
+    flex-shrink: 0;
+    /* Takes the height of the row it sits in, so it lines up with the search box
+       beside it -- those are 36-44px depending on the page. */
+    align-self: stretch;
+    display: flex;
+}
+
+.trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    min-width: 150px;
+    width: 100%;
+    padding: 0 12px;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.trigger:hover {
+    border-color: #94a3b8;
+}
+
+.triggerOpen,
+.trigger:focus-visible {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .14);
+}
+
+.icon {
+    display: inline-flex;
+    color: #64748b;
+}
+
+.label {
+    flex: 1;
+    text-align: start;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chevron {
+    flex-shrink: 0;
+    color: #64748b;
+    transition: transform .2s ease;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+.menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    z-index: 50;
+    min-width: 100%;
+    width: max-content;
+    max-width: min(280px, calc(100vw - 32px));
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .14), 0 4px 8px rgba(15, 23, 42, .05);
+    animation: menuIn .14s ease-out;
+}
+
+.menuEnd {
+    inset-inline-end: 0;
+}
+
+.menuStart {
+    inset-inline-start: 0;
+}
+
+@keyframes menuIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    padding: 9px 10px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    text-align: start;
+    cursor: pointer;
+}
+
+.option:hover {
+    background: #f1f5f9;
+}
+
+.optionSelected {
+    background: #eff6ff;
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.optionSelected:hover {
+    background: #e0edff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu {
+        animation: none;
+    }
+}
