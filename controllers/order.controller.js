@@ -144,6 +144,26 @@ exports.createOrder = async (req, res, next) => {
             }
         }
 
+        // Every paid line must have a price. A product saved at 0 (or a variant without a
+        // price) otherwise reaches checkout as AED 0.00: the order is created for nothing,
+        // Tamara/Tabby/Stripe cannot take a zero payment, and the order sits Pending with
+        // no confirmation email -- which is exactly how order #61 happened. Free gifts are
+        // meant to be 0. A shipping quote carries prices the office already set.
+        if (!sourceQuote) {
+            const unpriced = items.find(item => {
+                if (Number(item.is_free_gift) === 1) return false;
+                const unit = Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price);
+                return !(unit > 0);
+            });
+            if (unpriced) {
+                return res.status(400).json({
+                    success: false,
+                    type: 'UNPRICED_ITEM',
+                    message: `"${unpriced.name}" has no price yet. Please contact us for a quote, or remove it from your cart.`,
+                });
+            }
+        }
+
         // Use the REAL price from DB (already fetched by Cart.getCartItems)
         const subtotal = items.reduce((sum, item) => {
             const unitPrice = Number(item.offer_price) > 0 ? Number(item.offer_price) : Number(item.price);

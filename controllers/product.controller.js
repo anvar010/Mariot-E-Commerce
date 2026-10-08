@@ -700,12 +700,14 @@ exports.getSearchDropdown = async (req, res, next) => {
             });
         }
 
-        // Dynamic product search (top 5)
+        // Dynamic product search (top 5). Out-of-stock products are included on purpose:
+        // a shopper typing an exact model number is looking for that product, and hiding
+        // it made the search look broken rather than the item unavailable. The product
+        // page itself says it is out of stock and offers the notify-me option.
         const { products: prodRows } = await Product.findAll({
             search: q,
             limit: 5,
             status: 'active',
-            stockStatus: 'in_stock'
         });
         const products = prodRows.map(p => ({
             id: p.id,

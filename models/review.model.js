@@ -38,7 +38,7 @@ class Review {
             SELECT r.*, u.name as user_name, p.name as product_name,
             -- Lets the admin list link each review straight to the product it is about.
             p.slug as product_slug,
-            (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as product_image
+            (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as product_image
             FROM reviews r
             LEFT JOIN users u ON r.user_id = u.id
             LEFT JOIN products p ON r.product_id = p.id
