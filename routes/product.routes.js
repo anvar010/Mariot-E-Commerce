@@ -1,6 +1,6 @@
 const express = require('express');
 const { getProducts, getProduct, createProduct, updateProduct, deleteProduct, bulkImport, bulkUpdateProducts, deleteProducts, getSuggestions, getSearchDropdown, subscribeStockNotification, getProductStats } = require('../controllers/product.controller');
-const { protect, authorize } = require('../middlewares/auth.middleware');
+const { protect, authorize, optionalProtect } = require('../middlewares/auth.middleware');
 const multer = require('multer');
 const path = require('path');
 
@@ -29,7 +29,9 @@ router.patch('/bulk-update', protect, authorize('admin'), bulkUpdateProducts);
 router.delete('/bulk-delete', protect, authorize('admin'), deleteProducts);
 
 router.route('/:id')
-    .get(getProduct)
+    // optionalProtect: a signed-in admin or staff member may open a draft (the product
+    // editor loads it through here); everyone else gets 404 for anything not live.
+    .get(optionalProtect, getProduct)
     .put(protect, authorize('admin'), updateProduct)
     .delete(protect, authorize('admin'), deleteProduct);
 

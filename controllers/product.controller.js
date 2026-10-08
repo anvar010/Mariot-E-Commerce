@@ -382,6 +382,15 @@ exports.getProduct = async (req, res, next) => {
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
+        // A draft or deactivated product is hidden from the shop's lists, but its own page
+        // still opened for anyone holding the link -- from Google, a shared message, or an
+        // old bookmark -- and could be added to the cart from there. Only the back office
+        // may see it now; to the public it is simply not found.
+        const isLive = (!product.status || product.status === 'active') && Number(product.is_active) !== 0;
+        const isBackOffice = req.user && (req.user.role === 'admin' || req.user.role === 'staff');
+        if (!isLive && !isBackOffice) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
         res.json({ success: true, data: product });
     } catch (error) {
         next(error);
