@@ -26,6 +26,7 @@ import { matchDialCountry } from '@/data/dialCountries';
 import { useRouter } from '@/i18n/navigation';
 import { whatsappLink } from '@/utils/whatsappLink';
 import { CustomProductsGrid, CustomProduct, useCustomProducts, specsSummary } from './StaffCustomProducts';
+import FilterDropdown from './FilterDropdown';
 
 type Line = {
     product_id: number | null;
@@ -1279,26 +1280,31 @@ Download: ${url}`;
                                     canModify={canModifyCustom}
                                 />
                             ) : (<>
-                            <select
-                                className={styles.categorySelect}
-                                value={categoryFilter}
-                                onChange={e => setCategoryFilter(e.target.value)}
-                            >
-                                <option value="">All categories</option>
-                                {categoryOptions.map(c => (
-                                    <option key={c.slug} value={c.slug}>{c.label}</option>
-                                ))}
-                            </select>
-                            <select
-                                className={styles.categorySelect}
-                                value={brandFilter}
-                                onChange={e => setBrandFilter(e.target.value)}
-                            >
-                                <option value="">All brands</option>
-                                {brandOptions.map((b: any) => (
-                                    <option key={b.id} value={b.slug || b.name}>{b.name}</option>
-                                ))}
-                            </select>
+                            {/* Styled, searchable lists instead of native selects: on a phone the
+                                native picker is the system's plain menu, and finding one brand
+                                in a hundred meant scrolling the whole list. */}
+                            <div className={styles.pickerFilter}>
+                                <FilterDropdown
+                                    fullWidth
+                                    searchable
+                                    searchPlaceholder="Search categories…"
+                                    ariaLabel="Filter by category"
+                                    value={categoryFilter}
+                                    onChange={setCategoryFilter}
+                                    options={[{ value: '', label: 'All categories' }, ...categoryOptions.map(c => ({ value: c.slug, label: c.label }))]}
+                                />
+                            </div>
+                            <div className={styles.pickerFilter}>
+                                <FilterDropdown
+                                    fullWidth
+                                    searchable
+                                    searchPlaceholder="Search brands…"
+                                    ariaLabel="Filter by brand"
+                                    value={brandFilter}
+                                    onChange={setBrandFilter}
+                                    options={[{ value: '', label: 'All brands' }, ...brandOptions.map((b: any) => ({ value: String(b.slug || b.name), label: String(b.name) }))]}
+                                />
+                            </div>
                             <div className={styles.searchBox}>
                                 <Search size={16} />
                                 <input

@@ -128,3 +128,80 @@
         animation: none;
     }
 }
+
+/* The option list inside the menu (the menu itself is now a container, so a search
+   row can sit above the list). */
+.list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* Long lists scroll within a fixed height instead of running down the page. */
+.listScroll {
+    max-height: min(320px, 50vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.searchRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 0 10px;
+    height: 36px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #94a3b8;
+}
+
+.searchRow:focus-within {
+    border-color: #3b82f6;
+    background: #fff;
+}
+
+.searchRow input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: none !important;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.noMatch {
+    padding: 12px 10px;
+    font-size: 13px;
+    color: #94a3b8;
+    text-align: center;
+}
+
+/* Keeps the category tree's indent (non-breaking spaces and └) as written. */
+.optionLabel {
+    white-space: pre;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Full width: the trigger fills its container and the menu matches it. */
+.wrapperFull {
+    display: block;
+    width: 100%;
+    align-self: auto;
+    flex-shrink: 1;
+}
+
+.wrapperFull .trigger {
+    min-height: 40px;
+}
+
+.menuFull {
+    inset-inline-start: 0;
+    width: 100%;
+    max-width: none;
+}

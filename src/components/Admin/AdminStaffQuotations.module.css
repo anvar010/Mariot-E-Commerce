@@ -1697,3 +1697,8 @@
         padding: 0 10px;
     }
 }
+
+/* The category / brand filters above the product picker, spaced as the selects were. */
+.pickerFilter {
+    margin-bottom: 10px;
+}
