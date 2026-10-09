@@ -367,7 +367,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
 
     // ── Measure then pack ─────────────────────────────────────────────────
     const itemHeights  = await measureItemHeights();
-    const chunkIndices = packItemsGreedy(itemHeights); // arrays of original item indices
+    let chunkIndices = packItemsGreedy(itemHeights); // arrays of original item indices
 
     // ── Full-page HTML builder ────────────────────────────────────────────
     const getPageHTML = (idxChunk: number[], isFirstPage: boolean, isLastPage: boolean): string => {
@@ -431,7 +431,10 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
                     </div>
                 `}
 
-                <!-- Items table -->
+                <!-- Items table. Left out on a page that carries only the closing
+                     totals / contact / terms, which the fit check below creates when even
+                     one item cannot share a page with them. -->
+                ${idxChunk.length === 0 ? '' : `
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
                     <thead>
                         <tr style="border-bottom: 2px solid #e2e8f0; background: #f8fafc; font-size: 10px; color: #64748b;">
@@ -447,7 +450,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
                         </tr>
                     </thead>
                     <tbody>${itemRowsHTML}</tbody>
-                </table>
+                </table>`}
 
                 ${isLastPage ? `
                     <!-- Totals -->
@@ -514,6 +517,54 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
             </div>
         `;
     };
+
+    // ── Check every page actually fits, and fix the ones that do not ──────
+    // The packer above works from fixed estimates of everything that is not an item
+    // row. Those drift as the layout changes -- the closing block grew a contact-person
+    // section and terms, and a page holding it plus two items came out taller than A4.
+    // The renderer then shrank that whole page to fit, width included, which is the
+    // narrow page with white bands down the sides. So each page is now laid out exactly
+    // as it will be captured and measured; anything that does not fit moves on: the
+    // page's last item to the next page, or -- when even a single item cannot share a
+    // page with the closing block -- the closing block onto a page of its own.
+    const PAGE_PX = 1122;
+    const FIT_LIMIT = PAGE_PX * 1.02; // the renderer already absorbs a sub-2% overrun
+    const measurePage = async (idxChunk: number[], isFirstPage: boolean, isLastPage: boolean): Promise<number> => {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position:absolute;top:-30000px;left:0;';
+        probe.setAttribute('dir', dir);
+        probe.style.direction = dir;
+        probe.innerHTML = getPageHTML(idxChunk, isFirstPage, isLastPage);
+        document.body.appendChild(probe);
+        try { if (dirhamFontFace) await (document as any).fonts.load("16px 'DirhamPDF'"); } catch { /* ignore */ }
+        await new Promise(r => requestAnimationFrame(r));
+        const h = (probe.firstElementChild as HTMLElement | null)?.offsetHeight || 0;
+        document.body.removeChild(probe);
+        return h;
+    };
+    {
+        const pages = chunkIndices.map(c => [...c]);
+        let guard = items.length * 3 + 6;
+        for (let p = 0; p < pages.length && guard-- > 0; p++) {
+            while (guard-- > 0) {
+                const isLastPage = p === pages.length - 1;
+                if (await measurePage(pages[p], p === 0, isLastPage) <= FIT_LIMIT) break;
+                if (pages[p].length > 1) {
+                    // Too tall with this many rows: carry the last one forward.
+                    const moved = pages[p].pop()!;
+                    if (isLastPage) pages.push([moved]);
+                    else pages[p + 1].unshift(moved);
+                } else if (isLastPage && pages[p].length === 1) {
+                    // One item plus the closing block will not fit: give the closing block
+                    // a page of its own, so this one only needs the "continued" footer.
+                    pages.push([]);
+                } else {
+                    break; // a single item taller than a page -- left to the renderer to scale
+                }
+            }
+        }
+        chunkIndices = pages;
+    }
 
     // ── Render each chunk as one PDF page ─────────────────────────────────
     try {
