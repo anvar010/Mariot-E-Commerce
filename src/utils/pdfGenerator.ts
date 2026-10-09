@@ -518,15 +518,19 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
         `;
     };
 
-    // ── Check every page actually fits, and fix the ones that do not ──────
+    // ── Lay the pages out by measurement ──────────────────────────────────
     // The packer above works from fixed estimates of everything that is not an item
-    // row. Those drift as the layout changes -- the closing block grew a contact-person
-    // section and terms, and a page holding it plus two items came out taller than A4.
-    // The renderer then shrank that whole page to fit, width included, which is the
-    // narrow page with white bands down the sides. So each page is now laid out exactly
-    // as it will be captured and measured; anything that does not fit moves on: the
-    // page's last item to the next page, or -- when even a single item cannot share a
-    // page with the closing block -- the closing block onto a page of its own.
+    // row, and those drift as the layout changes -- the closing block (totals, contact
+    // person, terms) outgrew its allowance, so a page came out taller than A4 and the
+    // renderer shrank it, width included: the narrow page with white bands at the
+    // sides. So pages are now built by measuring each one exactly as it will be
+    // captured.
+    //
+    // Items first: each goes on the current page if that page still fits A4 with it,
+    // otherwise it starts the next one -- so items stay together and no page is left
+    // half empty. Then the closing block: on the last page if it fits there, otherwise
+    // on a page of its own. Moving items off a page to make room for the closing block
+    // (the earlier approach) split two items across two pages with space to spare.
     const PAGE_PX = 1122;
     const FIT_LIMIT = PAGE_PX * 1.02; // the renderer already absorbs a sub-2% overrun
     const measurePage = async (idxChunk: number[], isFirstPage: boolean, isLastPage: boolean): Promise<number> => {
@@ -543,25 +547,22 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
         return h;
     };
     {
-        const pages = chunkIndices.map(c => [...c]);
-        let guard = items.length * 3 + 6;
-        for (let p = 0; p < pages.length && guard-- > 0; p++) {
-            while (guard-- > 0) {
-                const isLastPage = p === pages.length - 1;
-                if (await measurePage(pages[p], p === 0, isLastPage) <= FIT_LIMIT) break;
-                if (pages[p].length > 1) {
-                    // Too tall with this many rows: carry the last one forward.
-                    const moved = pages[p].pop()!;
-                    if (isLastPage) pages.push([moved]);
-                    else pages[p + 1].unshift(moved);
-                } else if (isLastPage && pages[p].length === 1) {
-                    // One item plus the closing block will not fit: give the closing block
-                    // a page of its own, so this one only needs the "continued" footer.
-                    pages.push([]);
-                } else {
-                    break; // a single item taller than a page -- left to the renderer to scale
-                }
+        const pages: number[][] = [];
+        let current: number[] = [];
+        for (let i = 0; i < items.length; i++) {
+            const candidate = [...current, i];
+            if (current.length === 0 || await measurePage(candidate, pages.length === 0, false) <= FIT_LIMIT) {
+                current = candidate;
+            } else {
+                pages.push(current);
+                current = [i];
             }
+        }
+        pages.push(current);
+
+        const last = pages.length - 1;
+        if (await measurePage(pages[last], last === 0, true) > FIT_LIMIT && pages[last].length > 0) {
+            pages.push([]); // the closing block on a page of its own
         }
         chunkIndices = pages;
     }

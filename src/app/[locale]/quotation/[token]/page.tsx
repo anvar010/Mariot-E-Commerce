@@ -18,7 +18,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { FileDown, Eye, Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
+import { FileDown, Eye, Loader2, AlertCircle, ShieldCheck, Share2 } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
 import { generateQuotationPDF } from '@/utils/pdfGenerator';
 import { resolveUrl } from '@/utils/resolveUrl';
@@ -35,6 +35,19 @@ export default function SharedQuotationPage({ params }: Props) {
     const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
     // Tracked separately so only the button that was pressed shows a spinner.
     const [busy, setBusy] = useState<'download' | 'preview' | null>(null);
+
+    /**
+     * The PDF as a file, for the phone's share sheet.
+     *
+     * The browser's own share button shares the page address, not the document -- which
+     * is why it went out as a link. navigator.share can hand over the file itself, named
+     * after the quotation. It is prepared as soon as the quotation loads because iOS only
+     * lets a page share in direct response to a tap, and building the PDF takes longer
+     * than that allowance -- so the tap must find the file already made.
+     */
+    const [pdfFile, setPdfFile] = useState<File | null>(null);
+    const [canShareFile, setCanShareFile] = useState(false);
+    const [shareError, setShareError] = useState('');
 
     const [token, setToken] = useState<string | null>(null);
     const [locale, setLocale] = useState('en');
@@ -68,6 +81,41 @@ export default function SharedQuotationPage({ params }: Props) {
         })();
         return () => { cancelled = true; };
     }, [token]);
+
+    // Builds the shareable file in the background once the quotation is on screen.
+    useEffect(() => {
+        if (!quotation || typeof navigator === 'undefined' || typeof navigator.canShare !== 'function') return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
+                const dataUri = await generateQuotationPDF({
+                    ...quotation,
+                    items: items.map((i: any) => ({ ...i, image: resolveUrl(i.image) })),
+                }, 'silent', locale === 'ar');
+                if (cancelled) return;
+                const bytes = Uint8Array.from(atob(dataUri.replace(/^data:application\/pdf[^,]*,/, '')), c => c.charCodeAt(0));
+                const file = new File([bytes], `${quotation.quotation_ref || 'Quotation'}.pdf`, { type: 'application/pdf' });
+                // Only offered where the browser can actually share a file.
+                if (navigator.canShare({ files: [file] })) {
+                    setPdfFile(file);
+                    setCanShareFile(true);
+                }
+            } catch { /* sharing is simply not offered */ }
+        })();
+        return () => { cancelled = true; };
+    }, [quotation, locale]);
+
+    const sharePdf = async () => {
+        if (!pdfFile) return;
+        setShareError('');
+        try {
+            await navigator.share({ files: [pdfFile], title: `Quotation ${quotation?.quotation_ref || ''}`.trim() });
+        } catch (e: any) {
+            // Closing the share sheet is not an error worth showing.
+            if (e?.name !== 'AbortError') setShareError('Sharing is not available here. Use Download instead.');
+        }
+    };
 
     const run = async (mode: 'download' | 'open') => {
         if (!quotation) return;
@@ -138,7 +186,20 @@ export default function SharedQuotationPage({ params }: Props) {
                             ? <><Loader2 size={16} className={styles.spin} /> Preparing…</>
                             : <><FileDown size={16} /> Download</>}
                     </button>
+                    {/* The PDF file itself to WhatsApp, Mail and the rest, named after the
+                        quotation -- unlike the browser's share button, which sends a link. */}
+                    {canShareFile && (
+                        <button
+                            type="button"
+                            className={styles.secondaryBtn}
+                            onClick={sharePdf}
+                            disabled={busy !== null}
+                        >
+                            <Share2 size={16} /> Share PDF
+                        </button>
+                    )}
                 </div>
+                {shareError && <p className={styles.muted}>{shareError}</p>}
 
                 {quotation.created_by_name && (
                     <div className={styles.contact}>
