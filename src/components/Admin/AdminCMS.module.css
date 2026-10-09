@@ -7,9 +7,9 @@
    so on -- scoped to this page's root, and override them with !important, the only
    thing that outranks an inline style. Each is listed with and without the space
    after the colon: the browser writes "padding: 20px", server-rendered HTML writes
-   "padding:20px". Desktop is untouched: everything here sits inside the 768px query.
+   "padding:20px". Desktop is untouched: everything here sits inside the 1024px (tablet and phone) query.
    --------------------------------------------------------------------------- */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     /* The admin layout already pads the page; this root added 20px more. */
     .cmsRoot {
         padding: 0 !important;

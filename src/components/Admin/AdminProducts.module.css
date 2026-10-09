@@ -3249,12 +3249,12 @@
    Phones: the Add / Edit Product form.
 
    The desktop layout -- a 240px section menu beside the fields -- left the fields half
-   a phone wide, and the footer's Cancel / Save ran off the edge. Below 768px the form
+   a phone wide, and the footer's Cancel / Save ran off the edge. Below 1024px the form
    fills the screen, the section menu becomes a strip of tabs across the top (swiped
    sideways, the usual pattern for this many sections), the fields take the full width
    in one column, and Cancel / Save share the bottom bar.
    --------------------------------------------------------------------------- */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .modalOverlay:has(> .modalLarge) {
         padding: 0;
     }

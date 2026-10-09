@@ -787,6 +787,81 @@ const AdminStaffQuotations = () => {
         }
     };
 
+    /** The generated PDF as a blob URL the browser can display or print. */
+    const pdfBlobUrl = async (q: any) => {
+        const dataUri = await buildPdf(q, 'silent');
+        const bytes = Uint8Array.from(atob(dataUri.replace(/^data:application\/pdf[^,]*,/, '')), c => c.charCodeAt(0));
+        return URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+    };
+
+    /**
+     * Opens the PDF in a new tab from the details popup.
+     *
+     * The tab is opened before the PDF is built: one opened after an await is no longer
+     * tied to the click, so browsers block it -- which is why the older 'open' path often
+     * fell back to a silent download. It says what it is doing while it waits.
+     */
+    const previewQuotation = async (q: any) => {
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.title = q.quotation_ref || 'Quotation';
+            win.document.body.innerHTML = `
+                <style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,sans-serif;color:#475569;background:#f8fafc}
+                .s{width:34px;height:34px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}</style>
+                <div class="s"></div><div id="msg"></div>`;
+            const msg = win.document.getElementById('msg');
+            if (msg) msg.textContent = `Preparing ${q.quotation_ref || 'quotation'}…`;
+        }
+        setBusyId(q.id);
+        try {
+            const url = await pdfBlobUrl(q);
+            if (win) win.location.href = url;
+            else {
+                // Popup blocked anyway: download, so the click still produces the PDF.
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${q.quotation_ref || 'Quotation'}.pdf`;
+                a.click();
+            }
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+        } catch {
+            win?.close();
+            showNotification('Could not generate the PDF', 'error');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    /**
+     * Prints the PDF straight from the popup: it is loaded into a hidden frame and that
+     * frame's print dialog is opened, so there is no tab to find and close afterwards.
+     * Falls back to the preview tab where a browser will not print a PDF from a frame.
+     */
+    const printFromModal = async (q: any) => {
+        setBusyId(q.id);
+        try {
+            const url = await pdfBlobUrl(q);
+            const frame = document.createElement('iframe');
+            frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+            frame.src = url;
+            frame.onload = () => {
+                try {
+                    frame.contentWindow?.focus();
+                    frame.contentWindow?.print();
+                } catch {
+                    window.open(url, '_blank');
+                }
+                // Left in place long enough for the dialog to finish with it.
+                setTimeout(() => { frame.remove(); URL.revokeObjectURL(url); }, 60000);
+            };
+            document.body.appendChild(frame);
+        } catch {
+            showNotification('Could not generate the PDF', 'error');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
     /** Opens the PDF in a new tab, where the browser's print dialog can take over. */
     const printQuotation = async (q: any) => {
         setBusyId(q.id);
@@ -1096,6 +1171,46 @@ Download: ${url}`;
                         <div className={`${styles.totalRow} ${styles.grandTotal}`}><span>Total</span><CurrencyPrice amount={Number(selected.total_amount)} /></div>
                     </div>
                 </div>
+                {/* The same rules as the list row: staff cannot edit an approved
+                    quotation, nor preview or print one that has not been approved. */}
+                {(() => {
+                    const st = selected.status || 'pending';
+                    const canEdit = view === 'list' && (!isStaff || st !== 'approved');
+                    const canOutput = !isStaff || st === 'approved';
+                    const busy = busyId === selected.id;
+                    const blocked = 'Available once the quotation is approved';
+                    return (
+                        <div className={styles.modalActions}>
+                            {canEdit && (
+                                <button
+                                    type="button"
+                                    className={styles.secondaryBtn}
+                                    onClick={() => { const q = selected; setSelected(null); loadForEdit(q); }}
+                                >
+                                    <Pencil size={15} /> Edit
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className={styles.secondaryBtn}
+                                onClick={() => previewQuotation(selected)}
+                                disabled={busy || !canOutput}
+                                title={canOutput ? 'Open the PDF in a new tab' : blocked}
+                            >
+                                {busy ? <Loader2 size={15} className={styles.spin} /> : <Eye size={15} />} Preview
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.primaryBtn}
+                                onClick={() => printFromModal(selected)}
+                                disabled={busy || !canOutput}
+                                title={canOutput ? 'Print the PDF' : blocked}
+                            >
+                                <Printer size={15} /> Print
+                            </button>
+                        </div>
+                    );
+                })()}
             </div>
         </div>
     ) : null;

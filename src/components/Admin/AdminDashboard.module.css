@@ -1526,7 +1526,7 @@
    sideways. Cells by position: 1 id · 2 date · 3 customer · 4 total · 5 status ·
    6 payment.
    --------------------------------------------------------------------------- */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .tableWrapper {
         overflow-x: visible;
     }

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import CurrencyPrice from '@/components/shared/CurrencyPrice/CurrencyPrice';
-import { formatDirham } from 'dirham';
 import styles from './AdminDashboard.module.css';
 import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/context/AuthContext';
@@ -59,7 +58,6 @@ const AdminDashboard = () => {
             'dashboard.refresh': 'Refresh Data',
             'dashboard.refreshing': 'Refreshing...',
             'dashboard.welcome': `Welcome back, ${options?.name || 'Admin'}!`,
-            'dashboard.revenueNote': `Your shop has generated <strong>${formatDirham(Number(options?.amount) || 0)}</strong> in revenue for this period.`,
             'dashboard.actions.addProduct': 'Add New Product',
             'dashboard.actions.advancedAnalytics': 'View Detailed Analytics',
             'dashboard.stats.revenue': 'Total Revenue',
@@ -359,7 +357,14 @@ const AdminDashboard = () => {
             >
                 <div className={styles.bannerContent}>
                     <h2>{t('dashboard.welcome', { name: user?.name?.split(' ')[0] || 'Admin' })}</h2>
-                    <p dangerouslySetInnerHTML={{ __html: t('dashboard.revenueNote', { amount: Number(stats?.totalSales || 0).toLocaleString() }) }} />
+                    {/* CurrencyPrice, not formatDirham in an HTML string: the plain text
+                        put the new dirham character into the body font, which has no glyph
+                        for it and drew a box. The amount is also passed as a number -- it was
+                        passed pre-formatted ("12,345"), which Number() read back as NaN, so
+                        any revenue of a thousand or more showed as 0.00. */}
+                    <p>
+                        Your shop has generated <strong><CurrencyPrice amount={Number(stats?.totalSales || 0)} /></strong> in revenue for this period.
+                    </p>
                 </div>
                 <div className={styles.bannerButtons}>
                     <button className={styles.bannerBtnSecondary} onClick={() => router.push('/admin/products?action=add')}>

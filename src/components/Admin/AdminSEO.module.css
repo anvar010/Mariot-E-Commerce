@@ -452,10 +452,10 @@
 
    The two analysis panels stayed side by side at half a phone's width each, which
    wrapped every label onto three lines and squeezed the values into the edge. They
-   stack below 768px. The four headline figures go two across, icon above the figure,
+   stack below 1024px. The four headline figures go two across, icon above the figure,
    as on the Products and Dashboard pages.
    --------------------------------------------------------------------------- */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .analysisGrid {
         grid-template-columns: 1fr;
         gap: 14px;

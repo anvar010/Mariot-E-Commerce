@@ -2,8 +2,8 @@
     display: none;
 }
 
-/* Same breakpoint as the storefront's bottom bar, which this replaces inside /admin. */
-@media (max-width: 768px) {
+/* Phones and tablets -- the same range in which the sidebar becomes a drawer. */
+@media (max-width: 1024px) {
     .bottomNav {
         position: fixed;
         left: 0;

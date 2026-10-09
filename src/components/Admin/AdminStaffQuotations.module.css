@@ -1565,7 +1565,7 @@
 
 /* Phones: the quotation builder's cards, tabs and controls outlined firmly enough to
    see. At #e2e8f0 on the grey page the product cards and panels all but vanished. */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .card,
     .productCard {
         border-color: #cbd5e1;
@@ -1586,5 +1586,89 @@
 
     .cardThumb {
         border-bottom-color: #e2e8f0;
+    }
+}
+
+/* Phones: the quotation details popup.
+
+   The details grid used 150px-minimum columns and never wrapped long values, so an
+   email address ran off the side of the popup. Two narrow columns that wrap, tighter
+   padding, and the totals box at full width. The line items are already restacked as
+   cards by the shared table rules in AdminLayout.module.css. */
+@media (max-width: 640px) {
+    .modalOverlay {
+        padding: 10px;
+    }
+
+    .modal {
+        max-height: 92dvh;
+    }
+
+    .modalHeader {
+        padding: 12px 14px;
+    }
+
+    .modalBody {
+        padding: 14px;
+    }
+
+    .metaGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 14px;
+    }
+
+    .metaGrid > div {
+        min-width: 0;
+    }
+
+    .metaGrid strong {
+        display: block;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+    }
+
+    .modalTotals {
+        max-width: none;
+    }
+
+    .modal :global(table[data-card-table] tbody tr) {
+        margin-bottom: 10px;
+    }
+}
+
+/* Edit / Preview / Print at the foot of the quotation details popup. */
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.modalActions > button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* Long values (an email address) wrap inside their own column instead of running
+   into the next one -- they overlapped the phone number. */
+.metaGrid > div {
+    min-width: 0;
+}
+
+.metaGrid strong {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+    .modalActions {
+        padding: 12px 14px;
+    }
+
+    .modalActions > button {
+        flex: 1;
+        justify-content: center;
     }
 }

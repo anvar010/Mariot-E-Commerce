@@ -48,7 +48,7 @@
    scroll wrappers for tablets; those are overridden here, scoped to the page body.
    A table with data-no-cards keeps its own layout (Orders, Dashboard).
    --------------------------------------------------------------------------- */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .pageBody :global(div:has(> table[data-card-table])) {
         overflow: visible !important;
     }
@@ -285,7 +285,7 @@
    stays borderless -- border-color has no effect where border-style is none.
    The class is doubled to outrank page rules such as `.formGroup input`, which would
    otherwise tie with this and win or lose on stylesheet order. */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .pageBody.pageBody :global(input:not([type="checkbox"]):not([type="radio"]):not([type="range"])),
     .pageBody.pageBody :global(select),
     .pageBody.pageBody :global(textarea) {
@@ -296,5 +296,14 @@
     .pageBody.pageBody :global(select:focus),
     .pageBody.pageBody :global(textarea:focus) {
         border-color: #3b82f6;
+    }
+}
+
+/* Tablets: the admin bottom tab bar now shows up to 1024px, but the page's own
+   bottom padding for a tab bar (globals.css) stops at 768px. Without this the bar
+   would cover the end of every page between the two. */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .pageBody {
+        padding-bottom: calc(80px + env(safe-area-inset-bottom));
     }
 }
