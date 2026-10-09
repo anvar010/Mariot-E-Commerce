@@ -485,3 +485,25 @@ textarea.input {
         border-color: #cbd5e1;
     }
 }
+
+/* Phones: two custom products per row, matching the catalogue grid beside it. The
+   190px-minimum columns fell back to one per row on narrower phones. */
+@media (max-width: 640px) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .thumb {
+        height: 96px;
+    }
+
+    .cardBody {
+        padding: 8px;
+    }
+
+    .cardName {
+        font-size: 12.5px;
+        overflow-wrap: anywhere;
+    }
+}

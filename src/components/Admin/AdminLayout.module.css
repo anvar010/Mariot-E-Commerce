@@ -49,7 +49,11 @@
    A table with data-no-cards keeps its own layout (Orders, Dashboard).
    --------------------------------------------------------------------------- */
 @media (max-width: 1024px) {
-    .pageBody :global(div:has(> table[data-card-table])) {
+    /* The list pages' table wrappers clip or side-scroll; with cards they need neither.
+       Popup and panel bodies (modalBody, panelBody, refundBody...) are excluded: they
+       are the element that scrolls vertically, and forcing them visible stopped a
+       quotation with many lines from scrolling at all. */
+    .pageBody :global(div:has(> table[data-card-table]):not([class*="body" i])) {
         overflow: visible !important;
     }
 

@@ -1702,3 +1702,33 @@
 .pickerFilter {
     margin-bottom: 10px;
 }
+
+/* Phones: exactly two products per row. The grid asked for 180px-minimum columns, so
+   on narrower phones (two columns need ~372px once the page and panel padding are
+   taken) it fell back to one product per row. The KPI tiles had the same 190px
+   minimum. */
+@media (max-width: 640px) {
+    .productGrid,
+    .kpiRow {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .cardThumb {
+        height: 96px;
+    }
+
+    .cardBody {
+        padding: 8px;
+    }
+
+    .cardName {
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
+
+    .cardPrice,
+    .cardPriceOffer {
+        font-size: 12.5px;
+    }
+}
