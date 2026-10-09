@@ -514,6 +514,7 @@
 }
 
 .modalHeader {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -544,6 +545,11 @@
 .modalBody {
     padding: 20px;
     overflow-y: auto;
+    /* A flex item will not shrink below its content by default, so with a long item
+       list the body grew past the popup's max-height and was clipped instead of
+       scrolling. min-height: 0 lets it shrink and scroll inside the popup. */
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .metaGrid {
@@ -1638,6 +1644,7 @@
 
 /* Edit / Preview / Print at the foot of the quotation details popup. */
 .modalActions {
+    flex-shrink: 0;
     display: flex;
     justify-content: flex-end;
     flex-wrap: wrap;
@@ -1645,6 +1652,18 @@
     padding: 14px 20px;
     border-top: 1px solid #e2e8f0;
     background: #f8fafc;
+}
+
+/* One size for all three. .primaryBtn is built for the builder sidebar, where it is
+   full width with a top margin -- both wrong here, and why Print sat lower and taller. */
+.modalActions > button {
+    width: auto;
+    height: 38px;
+    margin: 0;
+    padding: 0 16px;
+    font-size: 13px;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 .modalActions > button:disabled {
@@ -1667,8 +1686,14 @@
         padding: 12px 14px;
     }
 
+    .modalActions {
+        gap: 8px;
+    }
+
     .modalActions > button {
-        flex: 1;
+        flex: 1 1 0;
+        min-width: 0;
         justify-content: center;
+        padding: 0 10px;
     }
 }
