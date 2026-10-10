@@ -1,0 +1,299 @@
+.wrapper {
+    position: relative;
+    flex-shrink: 0;
+    align-self: stretch;
+    display: flex;
+}
+
+/* Matches FilterDropdown's trigger so the filter bar reads as one row of controls. */
+.trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    min-width: 170px;
+    width: 100%;
+    padding: 0 12px;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+}
+
+.trigger:hover {
+    border-color: #94a3b8;
+}
+
+.triggerOpen,
+.trigger:focus-visible {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .14);
+}
+
+/* A date filter in force reads as such at a glance. */
+.triggerSet {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.icon {
+    flex-shrink: 0;
+    color: #64748b;
+}
+
+.triggerSet .icon {
+    color: #2563eb;
+}
+
+.label {
+    flex: 1;
+    text-align: start;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chevron {
+    flex-shrink: 0;
+    color: #64748b;
+    transition: transform .2s ease;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+.clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    color: #2563eb;
+    flex-shrink: 0;
+}
+
+.clear:hover {
+    background: #dbeafe;
+}
+
+/* ── Panel ──────────────────────────────────────────────────────────────── */
+.panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    inset-inline-end: 0;
+    z-index: 60;
+    display: flex;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, .16), 0 4px 10px rgba(15, 23, 42, .06);
+    overflow: hidden;
+    animation: panelIn .14s ease-out;
+}
+
+@keyframes panelIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.presets {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px;
+    min-width: 132px;
+    background: #f8fafc;
+    border-inline-end: 1px solid #e2e8f0;
+}
+
+.preset {
+    padding: 8px 10px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    text-align: start;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.preset:hover {
+    background: #e2e8f0;
+}
+
+.presetActive,
+.presetActive:hover {
+    background: #2563eb;
+    color: #fff;
+    font-weight: 600;
+}
+
+.calendar {
+    padding: 12px 14px 10px;
+    width: 280px;
+}
+
+.monthBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.monthLabel {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.navBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #475569;
+    cursor: pointer;
+}
+
+.navBtn:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    row-gap: 2px;
+}
+
+.weekday {
+    padding: 4px 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.day {
+    height: 34px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e293b;
+    cursor: pointer;
+}
+
+.day:hover {
+    background: #f1f5f9;
+}
+
+/* Today: outlined, so it is findable without looking selected. */
+.dayToday {
+    box-shadow: inset 0 0 0 1px #93c5fd;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+/* Days between the two ends: one continuous band. */
+.dayInRange,
+.dayInRange:hover {
+    background: #dbeafe;
+    color: #1e3a8a;
+    border-radius: 0;
+}
+
+.daySelected,
+.daySelected:hover {
+    background: #2563eb;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: none;
+}
+
+.dayStart {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+}
+
+.dayEnd {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+}
+
+.hint {
+    margin: 8px 0 0;
+    font-size: 11.5px;
+    color: #64748b;
+    text-align: center;
+}
+
+/* Phones: the panel spans the filter bar it sits in (the host gives that bar
+   position: relative), with the presets as a row of chips above the calendar. The
+   wrapper stops being the positioning box so the panel is not pinned to a trigger that
+   may sit at the right-hand edge. */
+@media (max-width: 640px) {
+    .wrapper {
+        position: static;
+    }
+
+    .trigger {
+        min-width: 0;
+    }
+
+    .panel {
+        left: 0;
+        right: 0;
+        inset-inline-end: auto;
+        flex-direction: column;
+    }
+
+    .presets {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-width: 0;
+        border-inline-end: none;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .preset {
+        padding: 6px 10px;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 99px;
+        font-size: 12px;
+    }
+
+    .calendar {
+        width: auto;
+    }
+
+    .day {
+        height: 38px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .panel {
+        animation: none;
+    }
+}

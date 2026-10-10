@@ -1732,3 +1732,8 @@
         font-size: 12.5px;
     }
 }
+
+/* The date picker's panel spans this bar on phones (DateRangeFilter.module.css). */
+.filterBar {
+    position: relative;
+}

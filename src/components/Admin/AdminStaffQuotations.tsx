@@ -27,6 +27,7 @@ import { useRouter } from '@/i18n/navigation';
 import { whatsappLink } from '@/utils/whatsappLink';
 import { CustomProductsGrid, CustomProduct, useCustomProducts, specsSummary } from './StaffCustomProducts';
 import FilterDropdown from './FilterDropdown';
+import DateRangeFilter, { DateRange, inDateRange } from './DateRangeFilter';
 
 type Line = {
     product_id: number | null;
@@ -99,6 +100,11 @@ const AdminStaffQuotations = () => {
     // before branch numbering existed, which belong to no branch and would otherwise be
     // unreachable once any branch is chosen.
     const [branchFilter, setBranchFilter] = useState('');
+    // When the quotation was raised, as a range of whole days. Empty = all dates.
+    const [dateRange, setDateRange] = useState<DateRange>({ from: '', to: '' });
+    // Who raised it -- a user id, '' for everyone. Offered to admins only: staff are
+    // already limited to their own quotations by the server.
+    const [staffFilter, setStaffFilter] = useState('');
     const [reviewModal, setReviewModal] = useState<{ q: any; decision: 'approved' | 'rejected' } | null>(null);
     const [reviewNote, setReviewNote] = useState('');
     const [reviewSaving, setReviewSaving] = useState(false);
@@ -1041,10 +1047,25 @@ Download: ${url}`;
     // different subset is how a tile ends up reading 12 over a table showing 3.
     const inScope = (q: any) => {
         if (mineOnly && Number(q.created_by) !== Number(user?.id)) return false;
+        if (staffFilter && String(q.created_by) !== staffFilter) return false;
+        if (!inDateRange(q.created_at, dateRange)) return false;
+        // 'none' is checked last: it used to return early, which skipped every check
+        // after it -- a branch filter would have ignored the date and staff filters.
         if (branchFilter === 'none') return !q.branch_id;
         if (branchFilter && Number(q.branch_id) !== Number(branchFilter)) return false;
         return true;
     };
+
+    // Everyone who has raised a quotation, for the staff filter -- taken from the list
+    // itself, so it never offers someone with nothing to show.
+    const staffOptions = Array.from(
+        quotations.reduce((m: Map<string, string>, q: any) => {
+            if (q.created_by != null && !m.has(String(q.created_by))) m.set(String(q.created_by), q.created_by_name || `User #${q.created_by}`);
+            return m;
+        }, new Map<string, string>())
+    )
+        .map(([value, label]) => ({ value, label: label as string }))
+        .sort((a, b) => a.label.localeCompare(b.label));
 
     const statusCounts = quotations
         .filter(inScope)
@@ -1772,25 +1793,30 @@ Download: ${url}`;
                     see it too: their own quotations can span branches if they have moved,
                     and the server already limits them to their own rows. */}
                 {branches.length > 1 && (
-                    <select
-                        className={styles.branchFilter}
+                    <FilterDropdown
+                        ariaLabel="Filter by branch"
                         value={branchFilter}
-                        onChange={e => setBranchFilter(e.target.value)}
-                        aria-label="Filter by branch"
-                    >
-                        <option value="">All branches</option>
-                        {branches.map(b => (
-                            <option key={b.id} value={b.id}>
-                                {b.name}{b.code ? ` (${b.code})` : ''}
-                            </option>
-                        ))}
-                        {/* Only offered when such rows exist, so the option does not
-                            advertise an empty result. */}
-                        {quotations.some(q => !q.branch_id) && (
-                            <option value="none">No branch</option>
-                        )}
-                    </select>
+                        onChange={setBranchFilter}
+                        options={[
+                            { value: '', label: 'All branches' },
+                            ...branches.map((b: any) => ({ value: String(b.id), label: `${b.name}${b.code ? ` (${b.code})` : ''}` })),
+                            // Only offered when such rows exist, so the option does not
+                            // advertise an empty result.
+                            ...(quotations.some(q => !q.branch_id) ? [{ value: 'none', label: 'No branch' }] : []),
+                        ]}
+                    />
                 )}
+                {!isStaff && staffOptions.length > 1 && (
+                    <FilterDropdown
+                        ariaLabel="Filter by staff"
+                        searchable
+                        searchPlaceholder="Search staff…"
+                        value={staffFilter}
+                        onChange={setStaffFilter}
+                        options={[{ value: '', label: 'All staff' }, ...staffOptions]}
+                    />
+                )}
+                <DateRangeFilter value={dateRange} onChange={setDateRange} />
                 {!isStaff && (
                     <button
                         className={`${styles.mineToggle} ${mineOnly ? styles.mineToggleActive : ''}`}
