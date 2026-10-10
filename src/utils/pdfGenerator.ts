@@ -298,7 +298,11 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
                 setTimeout(res, 3000);
             })
         ));
-        await new Promise(r => requestAnimationFrame(r)); // one layout tick
+        // A timer, not requestAnimationFrame: phones pause animation frames entirely in a
+        // tab that is not on screen, so a PDF still being built when the user switched to
+        // the preview tab never finished -- the preview sat on a loading screen for good.
+        // Reading offsetHeight below forces the layout anyway.
+        await new Promise(r => setTimeout(r, 0));
 
         const heights = (Array.from(tbl.querySelectorAll('tr')) as HTMLTableRowElement[])
             .map(r => r.offsetHeight);
@@ -541,7 +545,7 @@ export const generateQuotationPDF = async (quotation: any, shouldDownload: boole
         probe.innerHTML = getPageHTML(idxChunk, isFirstPage, isLastPage);
         document.body.appendChild(probe);
         try { if (dirhamFontFace) await (document as any).fonts.load("16px 'DirhamPDF'"); } catch { /* ignore */ }
-        await new Promise(r => requestAnimationFrame(r));
+        await new Promise(r => setTimeout(r, 0)); // not rAF: see measureItemHeights
         const h = (probe.firstElementChild as HTMLElement | null)?.offsetHeight || 0;
         document.body.removeChild(probe);
         return h;

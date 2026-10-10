@@ -33,23 +33,20 @@ interface Props {
 export default function SharedQuotationPage({ params }: Props) {
     const [quotation, setQuotation] = useState<any>(null);
     const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
-    // Tracked separately so only the button that was pressed shows a spinner.
-    const [busy, setBusy] = useState<'download' | 'preview' | 'share' | null>(null);
     const [notice, setNotice] = useState('');
 
     /**
-     * The PDF, built once and reused by Preview, Download and Share.
+     * The PDF, built once when the page opens and then used by all three buttons.
      *
-     * It used to be built again for every button, and a second copy in the background for
-     * sharing -- two builds at once on a phone, which is what made the page slow. Now the
-     * first build is shared: it starts as soon as the quotation loads, and every button
-     * waits for that same build. After it, all three are instant.
-     *
-     * Building it in advance also matters for sharing: iOS only lets a page open the share
-     * sheet in direct response to a tap, and a PDF takes longer than that allowance to make.
+     * The buttons say "Preparing..." until it exists, and only then act -- straight away,
+     * inside the tap. An earlier version opened the preview tab first and finished the PDF
+     * afterwards; phones pause a tab that is not on screen, so the build stopped the moment
+     * the new tab took over and the preview loaded forever. Acting only on a finished file
+     * also keeps every action inside the tap, which is what lets the browser open a tab or
+     * the share sheet at all rather than blocking it.
      */
-    const pdfPromise = React.useRef<Promise<File> | null>(null);
-    const [pdfReady, setPdfReady] = useState(false);
+    const [pdfFile, setPdfFile] = useState<File | null>(null);
+    const [pdfFailed, setPdfFailed] = useState(false);
 
     const [token, setToken] = useState<string | null>(null);
     const [locale, setLocale] = useState('en');
@@ -76,26 +73,24 @@ export default function SharedQuotationPage({ params }: Props) {
         return () => { cancelled = true; };
     }, [token]);
 
-    const getPdf = useCallback((): Promise<File> => {
-        if (!pdfPromise.current) {
-            pdfPromise.current = (async () => {
-                const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
-                const dataUri = await generateQuotationPDF({
-                    ...quotation,
-                    items: items.map((i: any) => ({ ...i, image: resolveUrl(i.image) })),
-                }, 'silent', locale === 'ar');
-                const bytes = Uint8Array.from(atob(dataUri.replace(/^data:application\/pdf[^,]*,/, '')), c => c.charCodeAt(0));
-                return new File([bytes], `${quotation.quotation_ref || 'Quotation'}.pdf`, { type: 'application/pdf' });
-            })();
-            pdfPromise.current.then(() => setPdfReady(true), () => { pdfPromise.current = null; });
+    const buildPdf = useCallback(async () => {
+        if (!quotation) return;
+        setPdfFailed(false);
+        try {
+            const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
+            const dataUri = await generateQuotationPDF({
+                ...quotation,
+                items: items.map((i: any) => ({ ...i, image: resolveUrl(i.image) })),
+            }, 'silent', locale === 'ar');
+            const bytes = Uint8Array.from(atob(dataUri.replace(/^data:application\/pdf[^,]*,/, '')), c => c.charCodeAt(0));
+            setPdfFile(new File([bytes], `${quotation.quotation_ref || 'Quotation'}.pdf`, { type: 'application/pdf' }));
+        } catch {
+            setPdfFailed(true);
         }
-        return pdfPromise.current;
     }, [quotation, locale]);
 
-    // Starts the one build as soon as the quotation is on screen.
-    useEffect(() => {
-        if (quotation) getPdf().catch(() => { /* retried on the next tap */ });
-    }, [quotation, getPdf]);
+    // Built once, as soon as the quotation is on screen.
+    useEffect(() => { buildPdf(); }, [buildPdf]);
 
     const saveFile = (file: File) => {
         const url = URL.createObjectURL(file);
@@ -108,34 +103,19 @@ export default function SharedQuotationPage({ params }: Props) {
         setTimeout(() => URL.revokeObjectURL(url), 60000);
     };
 
-    const preview = async () => {
-        if (!quotation) return;
+    // All three act on the finished file, synchronously within the tap.
+    const preview = () => {
+        if (!pdfFile) return;
         setNotice('');
-        // Opened in the tap itself; a tab opened after the build has finished would be
-        // blocked as a pop-up. It is filled once the PDF is ready.
-        const win = window.open('', '_blank');
-        setBusy('preview');
-        try {
-            const file = await getPdf();
-            const url = URL.createObjectURL(file);
-            if (win) win.location.href = url;
-            else saveFile(file);
-            setTimeout(() => URL.revokeObjectURL(url), 60000);
-        } catch {
-            win?.close();
-            setNotice('Could not prepare the PDF. Please try again.');
-        } finally {
-            setBusy(null);
-        }
+        const url = URL.createObjectURL(pdfFile);
+        if (!window.open(url, '_blank')) saveFile(pdfFile); // pop-up refused: save it instead
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
     };
 
-    const download = async () => {
-        if (!quotation) return;
+    const download = () => {
+        if (!pdfFile) return;
         setNotice('');
-        setBusy('download');
-        try { saveFile(await getPdf()); }
-        catch { setNotice('Could not prepare the PDF. Please try again.'); }
-        finally { setBusy(null); }
+        saveFile(pdfFile);
     };
 
     /**
@@ -144,35 +124,21 @@ export default function SharedQuotationPage({ params }: Props) {
      * one), it downloads the file instead and says so, so the button always produces the
      * PDF rather than doing nothing or sending a link.
      */
-    const share = async () => {
-        if (!quotation) return;
+    const share = () => {
+        if (!pdfFile) return;
         setNotice('');
-        setBusy('share');
-        try {
-            const file = await getPdf();
-            const canShare = typeof navigator !== 'undefined'
-                && typeof navigator.share === 'function'
-                && typeof navigator.canShare === 'function'
-                && navigator.canShare({ files: [file] });
-            if (canShare) {
-                try {
-                    await navigator.share({ files: [file], title: `Quotation ${quotation.quotation_ref || ''}`.trim() });
-                } catch (e: any) {
-                    if (e?.name === 'AbortError') return; // closed the share sheet
-                    // The tap's allowance ran out while the PDF was still being made.
-                    // The file is ready now, so a second tap shares at once.
-                    if (e?.name === 'NotAllowedError') { setNotice('Your PDF is ready -- tap Share PDF again.'); return; }
-                    throw e;
-                }
-            } else {
-                saveFile(file);
-                setNotice(`This browser can't share files, so ${file.name} was downloaded. You can send it from your Downloads -- or open this link in Chrome or Safari to share it directly.`);
-            }
-        } catch {
-            setNotice('Could not share the PDF. Please use Download instead.');
-        } finally {
-            setBusy(null);
+        const canShare = typeof navigator.share === 'function'
+            && typeof navigator.canShare === 'function'
+            && navigator.canShare({ files: [pdfFile] });
+        if (!canShare) {
+            saveFile(pdfFile);
+            setNotice(`This browser can't share files, so ${pdfFile.name} was downloaded. You can send it from your Downloads -- or open this link in Chrome or Safari to share it directly.`);
+            return;
         }
+        navigator.share({ files: [pdfFile], title: `Quotation ${quotation?.quotation_ref || ''}`.trim() })
+            .catch((e: any) => {
+                if (e?.name !== 'AbortError') setNotice('Could not share the PDF. Please use Download instead.');
+            });
     };
 
     if (state === 'loading') {
@@ -217,42 +183,26 @@ export default function SharedQuotationPage({ params }: Props) {
 
                 <div className={styles.actions}>
                     {/* Preview first: on a phone this is what most people want, and seeing
-                        the document before saving it is the safer order. */}
-                    <button
-                        type="button"
-                        className={styles.secondaryBtn}
-                        onClick={preview}
-                        disabled={busy !== null}
-                    >
-                        {busy === 'preview'
-                            ? <><Loader2 size={16} className={styles.spin} /> Opening…</>
-                            : <><Eye size={16} /> Preview</>}
+                        the document before saving it is the safer order. Every button waits
+                        for the one PDF build, then acts immediately. */}
+                    <button type="button" className={styles.secondaryBtn} onClick={preview} disabled={!pdfFile}>
+                        {pdfFile ? <><Eye size={16} /> Preview</> : <><Loader2 size={16} className={styles.spin} /> Preparing…</>}
                     </button>
-                    <button
-                        type="button"
-                        className={styles.button}
-                        onClick={download}
-                        disabled={busy !== null}
-                    >
-                        {busy === 'download'
-                            ? <><Loader2 size={16} className={styles.spin} /> Preparing…</>
-                            : <><FileDown size={16} /> Download</>}
+                    <button type="button" className={styles.button} onClick={download} disabled={!pdfFile}>
+                        {pdfFile ? <><FileDown size={16} /> Download</> : <><Loader2 size={16} className={styles.spin} /> Preparing…</>}
                     </button>
                     {/* The PDF file itself to WhatsApp, Mail and the rest, named after the
-                        quotation -- unlike the browser's share button, which sends a link.
-                        Always shown: it says "Preparing" until the PDF is ready, and falls
-                        back to a download where a browser cannot share files. */}
-                    <button
-                        type="button"
-                        className={styles.secondaryBtn}
-                        onClick={share}
-                        disabled={busy !== null}
-                    >
-                        {busy === 'share' || !pdfReady
-                            ? <><Loader2 size={16} className={styles.spin} /> {pdfReady ? 'Sharing…' : 'Preparing…'}</>
-                            : <><Share2 size={16} /> Share PDF</>}
+                        quotation -- unlike the browser's share button, which sends a link. */}
+                    <button type="button" className={styles.secondaryBtn} onClick={share} disabled={!pdfFile}>
+                        {pdfFile ? <><Share2 size={16} /> Share PDF</> : <><Loader2 size={16} className={styles.spin} /> Preparing…</>}
                     </button>
                 </div>
+                {pdfFailed && (
+                    <p className={styles.muted}>
+                        The PDF could not be prepared.{' '}
+                        <button type="button" className={styles.linkBtn} onClick={buildPdf}>Try again</button>
+                    </p>
+                )}
                 {notice && <p className={styles.muted}>{notice}</p>}
 
                 {quotation.created_by_name && (

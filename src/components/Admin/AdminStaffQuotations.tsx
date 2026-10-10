@@ -796,40 +796,41 @@ const AdminStaffQuotations = () => {
     };
 
     /**
-     * Opens the PDF in a new tab from the details popup.
+     * The open quotation's PDF, built as soon as the details popup opens.
      *
-     * The tab is opened before the PDF is built: one opened after an await is no longer
-     * tied to the click, so browsers block it -- which is why the older 'open' path often
-     * fell back to a silent download. It says what it is doing while it waits.
+     * Preview & Print waits for it ("Preparing...") and then opens it at once, inside the
+     * tap. It used to open the tab first and build the PDF afterwards; phones pause a tab
+     * that is not on screen, so the build stopped when the new tab took over and the
+     * preview loaded forever. Building first also keeps the open inside the tap, which is
+     * what stops the browser blocking it as a pop-up.
      */
-    const previewQuotation = async (q: any) => {
-        const win = window.open('', '_blank');
-        if (win) {
-            win.document.title = q.quotation_ref || 'Quotation';
-            win.document.body.innerHTML = `
-                <style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,sans-serif;color:#475569;background:#f8fafc}
-                .s{width:34px;height:34px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}</style>
-                <div class="s"></div><div id="msg"></div>`;
-            const msg = win.document.getElementById('msg');
-            if (msg) msg.textContent = `Preparing ${q.quotation_ref || 'quotation'}…`;
-        }
-        setBusyId(q.id);
-        try {
-            const url = await pdfBlobUrl(q);
-            if (win) win.location.href = url;
-            else {
-                // Popup blocked anyway: download, so the click still produces the PDF.
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${q.quotation_ref || 'Quotation'}.pdf`;
-                a.click();
-            }
-            setTimeout(() => URL.revokeObjectURL(url), 60000);
-        } catch {
-            win?.close();
-            showNotification('Could not generate the PDF', 'error');
-        } finally {
-            setBusyId(null);
+    const [modalPdf, setModalPdf] = useState<{ id: number; url: string } | null>(null);
+    useEffect(() => {
+        setModalPdf(null);
+        if (!selected) return;
+        // Staff may only output approved quotations; nothing to build otherwise.
+        if (isStaff && (selected.status || 'pending') !== 'approved') return;
+        let cancelled = false;
+        let made: string | null = null;
+        pdfBlobUrl(selected)
+            .then(url => {
+                if (cancelled) { URL.revokeObjectURL(url); return; }
+                made = url;
+                setModalPdf({ id: selected.id, url });
+            })
+            .catch(() => { if (!cancelled) showNotification('Could not generate the PDF', 'error'); });
+        return () => { cancelled = true; if (made) URL.revokeObjectURL(made); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selected]);
+
+    const previewQuotation = (q: any) => {
+        if (!modalPdf || modalPdf.id !== q.id) return;
+        if (!window.open(modalPdf.url, '_blank')) {
+            // Pop-up refused anyway: download, so the tap still produces the PDF.
+            const a = document.createElement('a');
+            a.href = modalPdf.url;
+            a.download = `${q.quotation_ref || 'Quotation'}.pdf`;
+            a.click();
         }
     };
 
@@ -1148,7 +1149,7 @@ Download: ${url}`;
                     const st = selected.status || 'pending';
                     const canEdit = view === 'list' && (!isStaff || st !== 'approved');
                     const canOutput = !isStaff || st === 'approved';
-                    const busy = busyId === selected.id;
+                    const pdfReady = modalPdf?.id === selected.id;
                     const blocked = 'Available once the quotation is approved';
                     return (
                         <div className={styles.modalActions}>
@@ -1169,10 +1170,12 @@ Download: ${url}`;
                                 type="button"
                                 className={styles.primaryBtn}
                                 onClick={() => previewQuotation(selected)}
-                                disabled={busy || !canOutput}
+                                disabled={!pdfReady || !canOutput}
                                 title={canOutput ? 'Open the PDF in a new tab to read or print it' : blocked}
                             >
-                                {busy ? <Loader2 size={15} className={styles.spin} /> : <Printer size={15} />} Preview &amp; Print
+                                {canOutput && !pdfReady
+                                    ? <><Loader2 size={15} className={styles.spin} /> Preparing…</>
+                                    : <><Printer size={15} /> Preview &amp; Print</>}
                             </button>
                         </div>
                     );
