@@ -833,36 +833,6 @@ const AdminStaffQuotations = () => {
         }
     };
 
-    /**
-     * Prints the PDF straight from the popup: it is loaded into a hidden frame and that
-     * frame's print dialog is opened, so there is no tab to find and close afterwards.
-     * Falls back to the preview tab where a browser will not print a PDF from a frame.
-     */
-    const printFromModal = async (q: any) => {
-        setBusyId(q.id);
-        try {
-            const url = await pdfBlobUrl(q);
-            const frame = document.createElement('iframe');
-            frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
-            frame.src = url;
-            frame.onload = () => {
-                try {
-                    frame.contentWindow?.focus();
-                    frame.contentWindow?.print();
-                } catch {
-                    window.open(url, '_blank');
-                }
-                // Left in place long enough for the dialog to finish with it.
-                setTimeout(() => { frame.remove(); URL.revokeObjectURL(url); }, 60000);
-            };
-            document.body.appendChild(frame);
-        } catch {
-            showNotification('Could not generate the PDF', 'error');
-        } finally {
-            setBusyId(null);
-        }
-    };
-
     /** Opens the PDF in a new tab, where the browser's print dialog can take over. */
     const printQuotation = async (q: any) => {
         setBusyId(q.id);
@@ -1191,23 +1161,18 @@ Download: ${url}`;
                                     <Pencil size={15} /> Edit
                                 </button>
                             )}
-                            <button
-                                type="button"
-                                className={styles.secondaryBtn}
-                                onClick={() => previewQuotation(selected)}
-                                disabled={busy || !canOutput}
-                                title={canOutput ? 'Open the PDF in a new tab' : blocked}
-                            >
-                                {busy ? <Loader2 size={15} className={styles.spin} /> : <Eye size={15} />} Preview
-                            </button>
+                            {/* One button for both: the PDF opens in a new tab, where it is read
+                                and printed with the browser's own print -- the only route that
+                                works on phones. A separate Print button loaded the PDF into a
+                                hidden frame, which mobile browsers print unreliably or not at all. */}
                             <button
                                 type="button"
                                 className={styles.primaryBtn}
-                                onClick={() => printFromModal(selected)}
+                                onClick={() => previewQuotation(selected)}
                                 disabled={busy || !canOutput}
-                                title={canOutput ? 'Print the PDF' : blocked}
+                                title={canOutput ? 'Open the PDF in a new tab to read or print it' : blocked}
                             >
-                                <Printer size={15} /> Print
+                                {busy ? <Loader2 size={15} className={styles.spin} /> : <Printer size={15} />} Preview &amp; Print
                             </button>
                         </div>
                     );
